@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>온더브라이드 · 관리자</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%F0%9F%92%8D%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+  <!-- Login -->
+  <section class="login-wrap" id="loginView">
+    <form class="login-card" id="loginForm">
+      <img src="assets/logo-black.png" alt="온더브라이드" class="login-logo" />
+      <p class="login-sub">관리자 로그인</p>
+      <div class="field"><label>이메일</label><input type="email" id="email" autocomplete="username" required /></div>
+      <div class="field"><label>비밀번호</label><input type="password" id="password" autocomplete="current-password" required /></div>
+      <button type="submit" class="btn-primary full" id="loginBtn">로그인</button>
+      <p class="login-msg" id="loginMsg"></p>
+    </form>
+  </section>
+
+  <!-- Dashboard -->
+  <section class="dash" id="dashView" hidden>
+    <header class="dash-head">
+      <span class="dash-brand"><img src="assets/logo-black.png" alt="온더브라이드" class="dash-logo" /> <em>관리자</em></span>
+      <div class="dash-head-right">
+        <span class="dash-user" id="dashUser"></span>
+        <button class="btn-ghost" id="refreshBtn">새로고침</button>
+        <button class="btn-ghost" id="logoutBtn">로그아웃</button>
+      </div>
+    </header>
+
+    <div class="dash-body">
+      <div class="filters" id="filters">
+        <button class="filter active" data-f="전체">전체 <span id="c_all">0</span></button>
+        <button class="filter" data-f="신규">신규 <span id="c_new">0</span></button>
+        <button class="filter" data-f="확인">확인 <span id="c_ok">0</span></button>
+        <button class="filter" data-f="전송완료">전송완료 <span id="c_sent">0</span></button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="bk-table">
+          <thead>
+            <tr>
+              <th>접수일</th><th>계약자</th><th>예식일</th><th>예식장</th><th>작가</th><th>금액</th><th>상태</th>
+            </tr>
+          </thead>
+          <tbody id="bkRows"></tbody>
+        </table>
+        <p class="empty" id="emptyMsg" hidden>예약이 없습니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Detail modal -->
+  <div class="modal" id="modal" hidden>
+    <div class="modal-backdrop" id="modalBackdrop"></div>
+    <div class="modal-card" id="modalCard"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

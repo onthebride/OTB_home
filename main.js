@@ -1,0 +1,416 @@
+// About story — 마침표(.) 뒤 줄바꿈으로 문장마다 줄을 나눔
+document.querySelectorAll('.story p').forEach((p) => {
+  p.innerHTML = p.innerHTML.replace(/\.\s+/g, '.<br>');
+});
+
+// Header background on scroll
+const header = document.querySelector('.site-header');
+const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 40);
+window.addEventListener('scroll', onScroll);
+onScroll();
+
+// Mobile menu toggle
+const toggle = document.querySelector('.nav-toggle');
+const menu = document.querySelector('.nav-menu');
+toggle.addEventListener('click', () => menu.classList.toggle('open'));
+menu.querySelectorAll('a').forEach((a) =>
+  a.addEventListener('click', () => menu.classList.remove('open'))
+);
+
+// Rules modal (규정 전문)
+const rulesModal = document.getElementById('rulesModal');
+if (rulesModal) {
+  const openBtn = document.getElementById('rulesOpen');
+  const closeBtn = document.getElementById('rulesClose');
+  const backdrop = document.getElementById('rulesBackdrop');
+  const open = () => {
+    rulesModal.hidden = false;
+    document.body.style.overflow = 'hidden';
+  };
+  const close = () => {
+    rulesModal.hidden = true;
+    document.body.style.overflow = '';
+  };
+  if (openBtn) openBtn.addEventListener('click', open);
+  closeBtn.addEventListener('click', close);
+  backdrop.addEventListener('click', close);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !rulesModal.hidden) close();
+  });
+}
+
+// Booking — live price total
+const bookingForm = document.querySelector('.booking-form');
+
+// Pretty date picker (flatpickr)
+let fpDate = null;
+if (bookingForm && window.flatpickr) {
+  fpDate = flatpickr('#f_wedding_date', {
+    locale: 'ko',
+    dateFormat: 'Y-m-d',
+    altInput: true,
+    altFormat: 'Y년 m월 d일',
+    minDate: 'today',
+    disableMobile: true,
+  });
+}
+
+// Phone inputs — auto hyphen
+const formatPhone = (raw) => {
+  const d = raw.replace(/\D/g, '').slice(0, 11);
+  if (d.startsWith('02')) {
+    if (d.length < 3) return d;
+    if (d.length < 6) return d.slice(0, 2) + '-' + d.slice(2);
+    if (d.length < 10) return d.slice(0, 2) + '-' + d.slice(2, 5) + '-' + d.slice(5);
+    return d.slice(0, 2) + '-' + d.slice(2, 6) + '-' + d.slice(6, 10);
+  }
+  if (d.length < 4) return d;
+  if (d.length < 8) return d.slice(0, 3) + '-' + d.slice(3);
+  if (d.length < 11) return d.slice(0, 3) + '-' + d.slice(3, 6) + '-' + d.slice(6);
+  return d.slice(0, 3) + '-' + d.slice(3, 7) + '-' + d.slice(7, 11);
+};
+document.querySelectorAll('input.phone').forEach((el) => {
+  el.addEventListener('input', () => {
+    const pos = el.selectionStart === el.value.length;
+    el.value = formatPhone(el.value);
+    if (pos) el.setSelectionRange(el.value.length, el.value.length);
+  });
+});
+
+// 계약자와 동일 — auto-fill 신랑/신부 from contractor
+const setupSameAs = (cbId, nameId, phoneId) => {
+  const cb = document.getElementById(cbId);
+  if (!cb) return;
+  const nameEl = document.getElementById(nameId);
+  const phoneEl = document.getElementById(phoneId);
+  const sync = () => {
+    if (!cb.checked) return;
+    nameEl.value = document.getElementById('f_contractor_name').value;
+    phoneEl.value = document.getElementById('f_contractor_phone').value;
+  };
+  cb.addEventListener('change', () => {
+    nameEl.readOnly = phoneEl.readOnly = cb.checked;
+    nameEl.classList.toggle('readonly', cb.checked);
+    phoneEl.classList.toggle('readonly', cb.checked);
+    sync();
+  });
+  document.getElementById('f_contractor_name').addEventListener('input', sync);
+  document.getElementById('f_contractor_phone').addEventListener('input', sync);
+};
+setupSameAs('f_groom_same', 'f_groom_name', 'f_groom_phone');
+setupSameAs('f_bride_same', 'f_bride_name', 'f_bride_phone');
+
+// Time — custom picker: 오전/오후 클릭 + 시/분 스크롤 선택
+let tpReset = () => {};
+const tpDisplay = document.getElementById('tpDisplay');
+if (tpDisplay) {
+  const tpInput = document.getElementById('f_wedding_time');
+  const tpPanel = document.getElementById('tpPanel');
+  const tpHours = document.getElementById('tpHours');
+  const tpMins = document.getElementById('tpMins');
+  const tpConfirm = document.getElementById('tpConfirm');
+  const ampmBtns = Array.from(tpPanel.querySelectorAll('.tp-ampm-btn'));
+  const state = { ampm: null, hour: null, min: null };
+
+  for (let h = 1; h <= 12; h++) {
+    const o = document.createElement('div');
+    o.className = 'tp-opt';
+    o.dataset.hour = h;
+    o.textContent = h + '시';
+    tpHours.appendChild(o);
+  }
+  for (let m = 0; m < 60; m += 5) {
+    const mm = String(m).padStart(2, '0');
+    const o = document.createElement('div');
+    o.className = 'tp-opt';
+    o.dataset.min = mm;
+    o.textContent = mm + '분';
+    tpMins.appendChild(o);
+  }
+
+  const updateDisplay = () => {
+    if (state.ampm && state.hour != null && state.min != null) {
+      tpDisplay.textContent = (state.ampm === 'AM' ? '오전' : '오후') + ' ' + state.hour + ':' + state.min;
+      tpDisplay.classList.add('has-value');
+      let h24 = state.hour % 12;
+      if (state.ampm === 'PM') h24 += 12;
+      tpInput.value = String(h24).padStart(2, '0') + ':' + state.min;
+    }
+  };
+
+  ampmBtns.forEach((btn) =>
+    btn.addEventListener('click', () => {
+      state.ampm = btn.dataset.ampm;
+      ampmBtns.forEach((x) => x.classList.toggle('active', x === btn));
+      updateDisplay();
+    })
+  );
+  tpHours.addEventListener('click', (e) => {
+    const o = e.target.closest('.tp-opt');
+    if (!o) return;
+    state.hour = Number(o.dataset.hour);
+    tpHours.querySelectorAll('.tp-opt').forEach((x) => x.classList.toggle('active', x === o));
+    updateDisplay();
+  });
+  tpMins.addEventListener('click', (e) => {
+    const o = e.target.closest('.tp-opt');
+    if (!o) return;
+    state.min = o.dataset.min;
+    tpMins.querySelectorAll('.tp-opt').forEach((x) => x.classList.toggle('active', x === o));
+    updateDisplay();
+  });
+
+  const closePanel = () => (tpPanel.hidden = true);
+  tpDisplay.addEventListener('click', () => (tpPanel.hidden = !tpPanel.hidden));
+  tpConfirm.addEventListener('click', closePanel);
+  document.addEventListener('click', (e) => {
+    if (!document.getElementById('timepicker').contains(e.target)) closePanel();
+  });
+
+  tpReset = () => {
+    state.ampm = state.hour = state.min = null;
+    tpInput.value = '';
+    tpDisplay.textContent = '시간을 선택하세요';
+    tpDisplay.classList.remove('has-value');
+    ampmBtns.forEach((x) => x.classList.remove('active'));
+    tpPanel.querySelectorAll('.tp-opt.active').forEach((x) => x.classList.remove('active'));
+  };
+}
+
+const calcTotal = () => {
+  let sum = 0;
+  bookingForm
+    .querySelectorAll('input[data-price]:checked')
+    .forEach((el) => (sum += Number(el.dataset.price) || 0));
+  return sum;
+};
+if (bookingForm) {
+  const totalEl = document.getElementById('bkTotal');
+  const recalc = () => {
+    totalEl.textContent = calcTotal().toLocaleString('ko-KR') + '만원';
+  };
+  bookingForm.addEventListener('change', recalc);
+  recalc();
+}
+
+// Supabase client
+const sb =
+  window.supabase && window.OTB_CONFIG
+    ? window.supabase.createClient(window.OTB_CONFIG.SUPABASE_URL, window.OTB_CONFIG.SUPABASE_KEY)
+    : null;
+
+const val = (id) => {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+};
+const checked = (id) => {
+  const el = document.getElementById(id);
+  return el ? el.checked : false;
+};
+const radioVal = (name) => {
+  const el = bookingForm.querySelector(`input[name="${name}"]:checked`);
+  return el ? el.value : null;
+};
+
+// Booking — submit to Supabase
+if (bookingForm) {
+  const statusEl = document.getElementById('bkStatus');
+  const submitBtn = bookingForm.querySelector('.bk-submit');
+
+  const setStatus = (msg, type) => {
+    statusEl.textContent = msg;
+    statusEl.className = 'bk-status' + (type ? ' ' + type : '');
+  };
+
+  bookingForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // required fields
+    const required = [
+      ['f_contractor_name', '계약자 성함'],
+      ['f_contractor_phone', '연락처'],
+      ['f_contractor_email', '이메일'],
+      ['f_wedding_date', '예식날짜'],
+      ['f_wedding_time', '예식시간'],
+      ['f_wedding_venue', '예식장소'],
+      ['f_groom_name', '신랑님 성함'],
+      ['f_groom_phone', '신랑님 연락처'],
+      ['f_bride_name', '신부님 성함'],
+      ['f_bride_phone', '신부님 연락처'],
+    ];
+    const missing = required.filter(([id]) => !val(id)).map(([, label]) => label);
+    if (missing.length) {
+      setStatus('필수 항목을 입력해 주세요: ' + missing.join(', '), 'error');
+      return;
+    }
+    if (!checked('f_agree_available') || !checked('f_agree_terms')) {
+      setStatus('확인사항 2개 항목에 모두 체크해 주세요.', 'error');
+      return;
+    }
+    if (!sb) {
+      setStatus('연결 설정 오류입니다. 잠시 후 다시 시도해 주세요.', 'error');
+      return;
+    }
+
+    const row = {
+      agree_available: checked('f_agree_available'),
+      agree_terms: checked('f_agree_terms'),
+      contractor_name: val('f_contractor_name'),
+      contractor_phone: val('f_contractor_phone'),
+      contractor_email: val('f_contractor_email'),
+      wedding_date: val('f_wedding_date') || null,
+      wedding_time: val('f_wedding_time'),
+      wedding_venue: val('f_wedding_venue'),
+      groom_name: val('f_groom_name'),
+      groom_phone: val('f_groom_phone'),
+      bride_name: val('f_bride_name'),
+      bride_phone: val('f_bride_phone'),
+      basic: checked('f_basic'),
+      travel_fee: checked('f_travel'),
+      option_album: checked('f_option_album'),
+      option_reception: checked('f_option_reception'),
+      option_pyebaek: checked('f_option_pyebaek'),
+      option_part2: checked('f_option_part2'),
+      photographer: radioVal('photographer') || '기본',
+      photo_usage_agree: radioVal('usage') === 'yes',
+      total_price: calcTotal(),
+    };
+
+    submitBtn.disabled = true;
+    setStatus('접수 중입니다...', '');
+
+    const { error } = await sb.rpc('submit_booking', { payload: row });
+
+    submitBtn.disabled = false;
+    if (error) {
+      console.error(error);
+      setStatus('접수 중 오류가 발생했어요. 다시 시도하시거나 onthebride@naver.com 으로 연락 주세요.', 'error');
+      return;
+    }
+
+    // 예약 내용을 계약안내서 양식으로 메일 전송 (Web3Forms)
+    const w3key = window.OTB_CONFIG && window.OTB_CONFIG.WEB3FORMS_KEY;
+    if (w3key) {
+      const kTime = (t) => {
+        if (!t) return '';
+        const [hh, mm] = t.split(':').map(Number);
+        return (hh < 12 ? '오전' : '오후') + ' ' + (hh % 12 === 0 ? 12 : hh % 12) + ':' + String(mm).padStart(2, '0');
+      };
+      const items = [];
+      if (row.basic) items.push('베이직(데이터형) (55)');
+      if (row.travel_fee) items.push('출장비 (5)');
+      if (row.option_album) items.push('앨범 1권 추가 (5)');
+      if (row.option_reception) items.push('연회장 인사촬영 (5)');
+      if (row.option_pyebaek) items.push('폐백촬영 (10)');
+      if (row.option_part2) items.push('2부 촬영 (10)');
+      if (row.photographer === '2인 촬영') items.push('2인 촬영 (25)');
+      if (row.photographer === '대표지정') items.push('대표지정 (35)');
+
+      const body = [
+        '* 온더브라이드 계약안내서 *',
+        '',
+        '이 문자는 계약서를 대신하며 채팅창은 추후 상담 내용을 기록하는 수단이니',
+        '보관 부탁드립니다.',
+        '',
+        '* 계약자 성함 : ' + (row.contractor_name || ''),
+        '* 계약자 연락처 : ' + (row.contractor_phone || ''),
+        '* 이메일 주소 : ' + (row.contractor_email || ''),
+        '',
+        '* 예식날짜 : ' + (row.wedding_date || ''),
+        '* 예식장소 : ' + (row.wedding_venue || ''),
+        '* 예식시간 : ' + kTime(row.wedding_time),
+        '',
+        '* 신부님 성함 : ' + (row.bride_name || ''),
+        '* 신부님 연락처 : ' + (row.bride_phone || ''),
+        '',
+        '* 신랑님 성함 : ' + (row.groom_name || ''),
+        '* 신랑님 연락처 : ' + (row.groom_phone || ''),
+        '',
+        '* 신청하신 상품 :',
+        items.join('\n'),
+        '',
+        '* 포스팅 여부 :',
+        row.photo_usage_agree ? 'YES' : 'NO',
+        '',
+        '* 총금액 : ' + row.total_price + ' 만원',
+        '* 계약금 : 10 만원',
+        '',
+        '계약금을 48시간안에 입금 하시면 계약 확정됩니다.',
+        '*입금은 반드시 계약자 성함으로 부탁드립니다',
+        '',
+        '카카오뱅크 / 3333-01-3327565 / 김병훈',
+        '',
+        '진행관련한 문의는 앞으로 이 채팅방을 이용 부탁드립니다~',
+        '감사합니다!',
+      ].join('\n');
+
+      const fd = new FormData();
+      fd.append('access_key', w3key);
+      fd.append('subject', '온더브라이드 계약안내서 - ' + (row.contractor_name || ''));
+      fd.append('from_name', '예약신청접수');
+      fd.append('replyto', 'onthebride@gmail.com');
+      fd.append('email', 'onthebride@gmail.com');
+      fd.append('message', body);
+      fetch('https://api.web3forms.com/submit', { method: 'POST', body: fd }).catch(() => {});
+    }
+
+    bookingForm.reset();
+    if (fpDate) fpDate.clear();
+    tpReset();
+    document.getElementById('bkTotal').textContent = calcTotal().toLocaleString('ko-KR') + '만원';
+    setStatus('예약 신청이 접수되었습니다! 확인 후 빠르게 연락드리겠습니다. 감사합니다 🤍', 'success');
+  });
+}
+
+// Inquiry form — send via Web3Forms (→ email)
+const inquiryForm = document.getElementById('inquiryForm');
+if (inquiryForm) {
+  const statusEl = document.getElementById('inqStatus');
+  const btn = document.getElementById('inqBtn');
+  const setStatus = (msg, type) => {
+    statusEl.textContent = msg;
+    statusEl.className = 'bk-status' + (type ? ' ' + type : '');
+  };
+
+  inquiryForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = val('f_inq_name');
+    const email = val('f_inq_email');
+    const message = val('f_inq_message');
+
+    if (!name || !email || !message) {
+      setStatus('성함, 이메일, 문의내용을 모두 입력해 주세요.', 'error');
+      return;
+    }
+    const key = window.OTB_CONFIG && window.OTB_CONFIG.WEB3FORMS_KEY;
+    if (!key) {
+      setStatus('전송 설정 오류입니다. onthebride@naver.com 으로 연락 주세요.', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    setStatus('전송 중입니다...', '');
+    try {
+      const fd = new FormData();
+      fd.append('access_key', key);
+      fd.append('subject', '[온더브라이드] 홈페이지 문의 - ' + name);
+      fd.append('from_name', name + ' (홈페이지 문의)');
+      fd.append('replyto', email);
+      fd.append('name', name);
+      fd.append('email', email);
+      fd.append('message', message);
+      const res = await fetch('https://api.web3forms.com/submit', { method: 'POST', body: fd });
+      const data = await res.json();
+      btn.disabled = false;
+      if (data.success) {
+        inquiryForm.reset();
+        setStatus('문의가 정상적으로 전송되었습니다! 빠르게 답변드리겠습니다. 감사합니다 🤍', 'success');
+      } else {
+        setStatus('전송에 실패했어요. 잠시 후 다시 시도하시거나 onthebride@naver.com 으로 연락 주세요.', 'error');
+      }
+    } catch (err) {
+      btn.disabled = false;
+      setStatus('전송 중 오류가 발생했어요. onthebride@naver.com 으로 연락 주세요.', 'error');
+    }
+  });
+}
