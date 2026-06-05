@@ -123,9 +123,58 @@ function optionTags(b) {
   return '<div class="opt-tags">' + t.map((x) => `<span class="opt-tag">${esc(x)}</span>`).join('') + '</div>';
 }
 
+const kTimeDisp = (t) => {
+  if (!t) return '-';
+  const [hh, mm] = t.split(':').map(Number);
+  return (hh < 12 ? '오전' : '오후') + ' ' + (hh % 12 === 0 ? 12 : hh % 12) + ':' + String(mm).padStart(2, '0');
+};
+
 function openDetail(id) {
   const b = allBookings.find((x) => x.id === id);
   if (!b) return;
+  $('modal').hidden = false;
+  renderView(b);
+}
+
+// 읽기 전용 보기 (한눈에) — "수정" 누르면 편집 모드로
+function renderView(b, flash) {
+  const field = (label, value) =>
+    `<div><p class="dl">${label}</p><p class="dv">${esc(value || '-')}</p></div>`;
+  $('modalCard').innerHTML = `
+    <button class="modal-close" id="modalClose">&times;</button>
+    <p class="modal-title">${esc(b.contractor_name || '예약')} 님 <span class="badge ${esc(b.status)}">${esc(b.status)}</span></p>
+    <p class="modal-sub">접수 ${esc(fmtDateTime(b.created_at))}</p>
+    ${flash ? `<p class="save-msg ok" style="text-align:left;margin:0 0 12px">${esc(flash)}</p>` : ''}
+
+    <div class="detail-grid">
+      ${field('연락처', b.contractor_phone)}
+      ${field('이메일', b.contractor_email)}
+      ${field('예식일', fmtDate(b.wedding_date))}
+      ${field('예식시간', kTimeDisp(b.wedding_time))}
+      <div class="full2">${field('예식장소', b.wedding_venue)}</div>
+      ${field('신랑님', (b.groom_name || '') + ' / ' + (b.groom_phone || ''))}
+      ${field('신부님', (b.bride_name || '') + ' / ' + (b.bride_phone || ''))}
+      ${field('상품', b.package)}
+      ${field('출장비', b.travel_fee ? '있음 (50,000원)' : '없음')}
+      ${field('작가', b.photographer)}
+      ${field('촬영본 사용동의', b.photo_usage_agree ? 'YES' : 'NO')}
+      ${field('합계', won(b.total_price))}
+      <div class="full2"><p class="dl">추가 옵션</p>${optionTags(b)}</div>
+      ${b.admin_note ? `<div class="full2">${field('관리자 메모', b.admin_note)}</div>` : ''}
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn-primary" id="mEdit">수정</button>
+      <button class="btn-kakao" id="mKakao" disabled>카카오 전송</button>
+    </div>
+    <p class="kakao-hint">※ 카카오 알림톡은 비즈니스 인증·템플릿 승인 후 연결됩니다.</p>`;
+
+  $('modalClose').addEventListener('click', closeModal);
+  $('mEdit').addEventListener('click', () => renderEdit(b));
+}
+
+// 편집 모드
+function renderEdit(b) {
   const v = (s) => esc(s == null ? '' : s);
   const dval = (s) => (s ? esc(String(s).slice(0, 10)) : '');
   const ck = (c) => (c ? 'checked' : '');
@@ -133,7 +182,7 @@ function openDetail(id) {
 
   $('modalCard').innerHTML = `
     <button class="modal-close" id="modalClose">&times;</button>
-    <p class="modal-title">예약 상세 · 수정</p>
+    <p class="modal-title">예약 수정</p>
     <p class="modal-sub">접수 ${esc(fmtDateTime(b.created_at))}</p>
 
     <h5 class="eg">계약자 정보</h5>
@@ -195,13 +244,10 @@ function openDetail(id) {
     <div class="field" style="margin-top:12px"><label>관리자 메모</label><textarea id="mNote" rows="2">${esc(b.admin_note || '')}</textarea></div>
 
     <div class="modal-btns">
+      <button class="btn-ghost" id="mCancel">취소</button>
       <button class="btn-primary" id="mSave">저장</button>
-      <button class="btn-kakao" id="mKakao" disabled>카카오 전송</button>
     </div>
-    <p class="kakao-hint">※ 카카오 알림톡은 비즈니스 인증·템플릿 승인 후 연결됩니다.</p>
     <p class="save-msg" id="mMsg"></p>`;
-
-  $('modal').hidden = false;
 
   const recalcEdit = () => {
     let sum = 0;
@@ -217,6 +263,7 @@ function openDetail(id) {
   recalcEdit();
 
   $('modalClose').addEventListener('click', closeModal);
+  $('mCancel').addEventListener('click', () => renderView(b));
   $('mSave').addEventListener('click', () => saveDetail(b.id, recalcEdit));
 }
 
@@ -268,6 +315,5 @@ async function saveDetail(id, recalcEdit) {
   const i = allBookings.findIndex((x) => x.id === id);
   if (i >= 0 && data) allBookings[i] = data;
   render();
-  msg.className = 'save-msg ok';
-  msg.textContent = '저장되었습니다.';
+  renderView(data || allBookings[i], '저장되었습니다.');
 }
