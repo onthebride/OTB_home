@@ -1,3 +1,10 @@
+// Hero — 새로고침마다 랜덤 배경 사진
+const heroBg = document.querySelector('.hero-bg');
+if (heroBg) {
+  const heroImgs = ['assets/hero/hero1.jpg', 'assets/hero/hero2.jpg', 'assets/hero/hero3.jpg', 'assets/hero/hero4.jpg'];
+  heroBg.style.backgroundImage = `url("${heroImgs[Math.floor(Math.random() * heroImgs.length)]}")`;
+}
+
 // About story — 마침표(.) 뒤 줄바꿈으로 문장마다 줄을 나눔
 document.querySelectorAll('.story p').forEach((p) => {
   p.innerHTML = p.innerHTML.replace(/\.\s+/g, '.<br>');
