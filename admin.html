@@ -36,23 +36,45 @@
     </header>
 
     <div class="dash-body">
-      <div class="filters" id="filters">
-        <button class="filter active" data-f="전체">전체 <span id="c_all">0</span></button>
-        <button class="filter" data-f="신규">신규 <span id="c_new">0</span></button>
-        <button class="filter" data-f="확인">확인 <span id="c_ok">0</span></button>
-        <button class="filter" data-f="전송완료">전송완료 <span id="c_sent">0</span></button>
+      <div class="dash-tabs">
+        <button class="dtab active" data-tab="bookings">예약</button>
+        <button class="dtab" data-tab="gallery">갤러리</button>
       </div>
 
-      <div class="table-wrap">
-        <table class="bk-table">
-          <thead>
-            <tr>
-              <th>접수일</th><th>계약자</th><th>예식일</th><th>예식장</th><th>작가</th><th>금액</th><th>상태</th>
-            </tr>
-          </thead>
-          <tbody id="bkRows"></tbody>
-        </table>
-        <p class="empty" id="emptyMsg" hidden>예약이 없습니다.</p>
+      <div id="tab-bookings">
+        <div class="filters" id="filters">
+          <button class="filter active" data-f="전체">전체 <span id="c_all">0</span></button>
+          <button class="filter" data-f="신규">신규 <span id="c_new">0</span></button>
+          <button class="filter" data-f="확인">확인 <span id="c_ok">0</span></button>
+          <button class="filter" data-f="전송완료">전송완료 <span id="c_sent">0</span></button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="bk-table">
+            <thead>
+              <tr>
+                <th>접수일</th><th>계약자</th><th>예식일</th><th>예식장</th><th>작가</th><th>금액</th><th>상태</th>
+              </tr>
+            </thead>
+            <tbody id="bkRows"></tbody>
+          </table>
+          <p class="empty" id="emptyMsg" hidden>예약이 없습니다.</p>
+        </div>
+      </div>
+
+      <div id="tab-gallery" hidden>
+        <div class="gl-upload">
+          <h3>사진 업로드</h3>
+          <div class="gl-up-row">
+            <label class="gl-file"><input type="file" id="glFiles" accept="image/*" multiple /><span id="glFileLabel">사진 선택 (여러 장 가능)</span></label>
+            <input type="text" id="glVenue" placeholder="예식장소 태그 (예: 아펠가모 선릉)" />
+            <button class="btn-primary" id="glUploadBtn">업로드</button>
+          </div>
+          <p class="gl-status" id="glStatus"></p>
+          <p class="gl-hint">※ 여러 장 한꺼번에 선택 가능. 같은 장소면 태그 한 번만 입력하면 돼요. 업로드 시 자동으로 용량을 줄여 빠르게 올립니다.</p>
+        </div>
+        <div class="gl-grid" id="glGrid"></div>
+        <p class="empty" id="glEmpty" hidden>등록된 사진이 없습니다.</p>
       </div>
     </div>
   </section>

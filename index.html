@@ -139,16 +139,32 @@
     <div class="container section-head center">
       <p class="overline">GALLERY</p>
       <h2 class="section-title">기록된 순간들</h2>
-      <p class="section-desc">실제 본식스냅 포트폴리오를 인스타그램에서 만나보세요.</p>
+      <p class="section-desc">온더브라이드가 담은 본식의 순간들.</p>
+    </div>
+    <div class="container">
+      <div class="gallery-tags" id="galleryTags"></div>
+      <div class="gallery-grid2" id="galleryGrid"></div>
+      <p class="gallery-empty" id="galleryEmpty" hidden>등록된 사진이 준비 중입니다.</p>
+    </div>
+
+    <!-- 인스타그램 한 줄 -->
+    <div class="container ig-strip">
       <a href="https://www.instagram.com/onthebride/" target="_blank" rel="noopener" class="ig-handle">@onthebride</a>
-    </div>
-    <div class="container gallery-embed">
-      <iframe src="https://snapwidget.com/embed/1124789" class="snapwidget-widget" allowtransparency="true" frameborder="0" scrolling="no" style="border:none; overflow:hidden; width:100%;" title="온더브라이드 인스타그램"></iframe>
-    </div>
-    <div class="center">
-      <a href="https://www.instagram.com/onthebride/" target="_blank" rel="noopener" class="btn btn-outline">인스타그램에서 더보기</a>
+      <div class="ig-strip-frame">
+        <iframe src="https://snapwidget.com/embed/1124821" class="snapwidget-widget" allowtransparency="true" frameborder="0" scrolling="no" style="border:none; overflow:hidden; width:100%;" title="온더브라이드 인스타그램"></iframe>
+      </div>
     </div>
   </section>
+
+  <!-- 갤러리 라이트박스 -->
+  <div class="lightbox" id="lightbox" hidden>
+    <div class="lb-backdrop" id="lbBackdrop"></div>
+    <button class="lb-nav lb-prev" id="lbPrev" aria-label="이전">‹</button>
+    <img class="lb-img" id="lbImg" src="" alt="갤러리 사진" />
+    <button class="lb-nav lb-next" id="lbNext" aria-label="다음">›</button>
+    <button class="lb-close" id="lbClose" aria-label="닫기">&times;</button>
+    <p class="lb-venue" id="lbVenue"></p>
+  </div>
 
   <!-- ===== Pricing ===== -->
   <section class="pricing section" id="pricing">

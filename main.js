@@ -428,3 +428,64 @@ if (inquiryForm) {
     }
   });
 }
+
+// ===== Gallery (custom: 태그 필터 + 라이트박스) =====
+(async function initGallery() {
+  const grid = document.getElementById('galleryGrid');
+  const tagsEl = document.getElementById('galleryTags');
+  const emptyEl = document.getElementById('galleryEmpty');
+  if (!grid || typeof sb === 'undefined' || !sb) return;
+  const esc = (s) => (s == null ? '' : String(s)).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  const { data, error } = await sb.rpc('gallery_list');
+  if (error) { console.error(error); return; }
+  const photos = data || [];
+  if (!photos.length) { if (emptyEl) emptyEl.hidden = false; return; }
+
+  let activeTag = '전체';
+  const venues = ['전체', ...Array.from(new Set(photos.map((p) => p.venue).filter(Boolean)))];
+  const visible = () => (activeTag === '전체' ? photos : photos.filter((p) => p.venue === activeTag));
+
+  const renderTags = () => {
+    if (venues.length <= 1) { tagsEl.style.display = 'none'; return; }
+    tagsEl.innerHTML = venues.map((v) => `<button class="gtag${v === activeTag ? ' active' : ''}" data-v="${esc(v)}">${esc(v)}</button>`).join('');
+  };
+  const renderGrid = () => {
+    grid.innerHTML = visible().map((p, i) => `<button class="gthumb" data-i="${i}"><img src="${esc(p.image_url)}" alt="${esc(p.venue || '')}" loading="lazy" /></button>`).join('');
+  };
+  renderTags();
+  renderGrid();
+
+  tagsEl.addEventListener('click', (e) => {
+    const b = e.target.closest('.gtag');
+    if (!b) return;
+    activeTag = b.dataset.v;
+    renderTags();
+    renderGrid();
+  });
+
+  // lightbox
+  const lb = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lbImg');
+  const lbVenue = document.getElementById('lbVenue');
+  let curList = [];
+  let curIdx = 0;
+  const show = (i) => {
+    curIdx = (i + curList.length) % curList.length;
+    lbImg.src = curList[curIdx].image_url;
+    lbVenue.textContent = curList[curIdx].venue || '';
+  };
+  const open = (i) => { curList = visible(); show(i); lb.hidden = false; document.body.style.overflow = 'hidden'; };
+  const close = () => { lb.hidden = true; document.body.style.overflow = ''; };
+  grid.addEventListener('click', (e) => { const t = e.target.closest('.gthumb'); if (t) open(Number(t.dataset.i)); });
+  document.getElementById('lbClose').addEventListener('click', close);
+  document.getElementById('lbBackdrop').addEventListener('click', close);
+  document.getElementById('lbPrev').addEventListener('click', () => show(curIdx - 1));
+  document.getElementById('lbNext').addEventListener('click', () => show(curIdx + 1));
+  document.addEventListener('keydown', (e) => {
+    if (lb.hidden) return;
+    if (e.key === 'Escape') close();
+    else if (e.key === 'ArrowLeft') show(curIdx - 1);
+    else if (e.key === 'ArrowRight') show(curIdx + 1);
+  });
+})();

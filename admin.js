@@ -317,3 +317,103 @@ async function saveDetail(id, recalcEdit) {
   render();
   renderView(data || allBookings[i], '저장되었습니다.');
 }
+
+/* ===== Gallery management ===== */
+const dashTabs = document.querySelector('.dash-tabs');
+if (dashTabs) {
+  dashTabs.addEventListener('click', (e) => {
+    const t = e.target.closest('.dtab');
+    if (!t) return;
+    document.querySelectorAll('.dtab').forEach((x) => x.classList.toggle('active', x === t));
+    const tab = t.dataset.tab;
+    $('tab-bookings').hidden = tab !== 'bookings';
+    $('tab-gallery').hidden = tab !== 'gallery';
+    if (tab === 'gallery') loadGallery();
+  });
+}
+
+const glFiles = $('glFiles');
+if (glFiles) {
+  glFiles.addEventListener('change', (e) => {
+    const n = e.target.files.length;
+    $('glFileLabel').textContent = n ? n + '장 선택됨' : '사진 선택 (여러 장 가능)';
+  });
+  $('glUploadBtn').addEventListener('click', uploadGallery);
+}
+
+function setGlStatus(msg, type) {
+  const s = $('glStatus');
+  s.textContent = msg;
+  s.className = 'gl-status' + (type ? ' ' + type : '');
+}
+
+// 클라이언트에서 리사이즈 (용량 작게)
+function resizeImage(file, maxDim, quality) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w >= h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+        else { w = Math.round((w * maxDim) / h); h = maxDim; }
+      }
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(img, 0, 0, w, h);
+      cv.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('이미지 변환 실패'))), 'image/jpeg', quality);
+    };
+    img.onerror = () => reject(new Error('이미지를 읽을 수 없습니다'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+async function uploadGallery() {
+  const files = Array.from($('glFiles').files);
+  const venue = $('glVenue').value.trim();
+  if (!files.length) { setGlStatus('사진을 선택해 주세요.', 'err'); return; }
+  const btn = $('glUploadBtn');
+  btn.disabled = true;
+  try {
+    for (let i = 0; i < files.length; i++) {
+      setGlStatus('업로드 중... (' + (i + 1) + '/' + files.length + ')');
+      const blob = await resizeImage(files[i], 1400, 0.82);
+      const path = Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.jpg';
+      const up = await sb.storage.from('gallery').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+      if (up.error) throw up.error;
+      const pub = sb.storage.from('gallery').getPublicUrl(path);
+      const add = await sb.rpc('admin_gallery_add', { payload: { image_path: path, image_url: pub.data.publicUrl, venue } });
+      if (add.error) throw add.error;
+    }
+    $('glFiles').value = '';
+    $('glVenue').value = '';
+    $('glFileLabel').textContent = '사진 선택 (여러 장 가능)';
+    setGlStatus(files.length + '장 업로드 완료!', 'ok');
+    loadGallery();
+  } catch (err) {
+    setGlStatus('실패: ' + (err.message || err), 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function loadGallery() {
+  const grid = $('glGrid');
+  const { data, error } = await sb.rpc('gallery_list');
+  if (error) { grid.innerHTML = '<p class="empty">목록 오류: ' + esc(error.message) + '</p>'; return; }
+  const items = data || [];
+  $('glEmpty').hidden = items.length > 0;
+  grid.innerHTML = items
+    .map((g) => `<div class="gl-item"><img src="${esc(g.image_url)}" alt="" /><div class="gl-meta"><span>${esc(g.venue || '태그없음')}</span><button class="gl-del" data-id="${esc(g.id)}" data-path="${esc(g.image_path)}">삭제</button></div></div>`)
+    .join('');
+  grid.querySelectorAll('.gl-del').forEach((b) =>
+    b.addEventListener('click', () => deleteGalleryItem(b.dataset.id, b.dataset.path))
+  );
+}
+
+async function deleteGalleryItem(id, path) {
+  if (!confirm('이 사진을 삭제할까요?')) return;
+  const { error } = await sb.rpc('admin_gallery_delete', { p_id: id });
+  if (error) { alert('삭제 실패: ' + error.message); return; }
+  if (path) await sb.storage.from('gallery').remove([path]);
+  loadGallery();
+}

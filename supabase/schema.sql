@@ -171,3 +171,55 @@ revoke all on function public.admin_save_booking(uuid, jsonb) from public, anon;
 grant execute on function public.admin_list_bookings() to authenticated;
 grant execute on function public.admin_update_booking(uuid, text, text) to authenticated;
 grant execute on function public.admin_save_booking(uuid, jsonb) to authenticated;
+
+-- ============================================
+-- 갤러리 (자체 갤러리: Storage 업로드 + 태그 + 라이트박스)
+-- ============================================
+create table if not exists public.gallery (
+  id          uuid primary key default gen_random_uuid(),
+  image_path  text not null,
+  image_url   text not null,
+  venue       text,
+  sort        integer default 0,
+  created_at  timestamptz not null default now()
+);
+create index if not exists gallery_sort_idx on public.gallery (sort, created_at desc);
+alter table public.gallery enable row level security;
+
+create or replace function public.gallery_list()
+returns setof public.gallery language sql security definer set search_path=public, pg_temp
+as $$ select * from public.gallery order by sort asc, created_at desc $$;
+revoke all on function public.gallery_list() from public;
+grant execute on function public.gallery_list() to anon, authenticated;
+
+create or replace function public.admin_gallery_add(payload jsonb)
+returns public.gallery language plpgsql security definer set search_path=public, pg_temp
+as $$
+declare r public.gallery;
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  insert into public.gallery (image_path, image_url, venue, sort)
+  values (payload->>'image_path', payload->>'image_url', nullif(payload->>'venue',''), coalesce((payload->>'sort')::int,0))
+  returning * into r;
+  return r;
+end; $$;
+revoke all on function public.admin_gallery_add(jsonb) from public, anon;
+grant execute on function public.admin_gallery_add(jsonb) to authenticated;
+
+create or replace function public.admin_gallery_delete(p_id uuid)
+returns text language plpgsql security definer set search_path=public, pg_temp
+as $$
+declare pth text;
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  delete from public.gallery where id = p_id returning image_path into pth;
+  return pth;
+end; $$;
+revoke all on function public.admin_gallery_delete(uuid) from public, anon;
+grant execute on function public.admin_gallery_delete(uuid) to authenticated;
+
+-- Storage 버킷 'gallery' (public) + 정책: 공개읽기 / 인증사용자 업로드·삭제
+-- insert into storage.buckets (id,name,public) values ('gallery','gallery',true) on conflict (id) do update set public=true;
+-- create policy "gallery_public_read" on storage.objects for select using (bucket_id='gallery');
+-- create policy "gallery_auth_insert" on storage.objects for insert to authenticated with check (bucket_id='gallery');
+-- create policy "gallery_auth_delete" on storage.objects for delete to authenticated using (bucket_id='gallery');
