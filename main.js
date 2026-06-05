@@ -1,7 +1,7 @@
 // Hero — 새로고침마다 랜덤 배경 사진
 const heroBg = document.querySelector('.hero-bg');
 if (heroBg) {
-  const heroImgs = ['assets/hero/hero1.jpg', 'assets/hero/hero2.jpg', 'assets/hero/hero3.jpg', 'assets/hero/hero4.jpg'];
+  const heroImgs = Array.from({ length: 12 }, (_, i) => 'assets/hero/hero' + (i + 1) + '.jpg');
   heroBg.style.backgroundImage = `url("${heroImgs[Math.floor(Math.random() * heroImgs.length)]}")`;
 }
 
@@ -12,9 +12,16 @@ document.querySelectorAll('.story p').forEach((p) => {
 
 // Header background on scroll
 const header = document.querySelector('.site-header');
-const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 40);
+const toTop = document.getElementById('toTop');
+const onScroll = () => {
+  header.classList.toggle('scrolled', window.scrollY > 40);
+  if (toTop) toTop.classList.toggle('show', window.scrollY > 500);
+};
 window.addEventListener('scroll', onScroll);
 onScroll();
+if (toTop) {
+  toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+}
 
 // Mobile menu toggle
 const toggle = document.querySelector('.nav-toggle');
