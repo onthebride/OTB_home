@@ -346,7 +346,7 @@ if (bookingForm) {
 
       const fd = new FormData();
       fd.append('access_key', w3key);
-      fd.append('subject', '온더브라이드 계약안내서 - ' + (row.contractor_name || ''));
+      fd.append('subject', (row.contractor_name || '') + ' / ' + (row.wedding_date || '') + ' / ' + kTime(row.wedding_time) + ' / ' + (row.photo_usage_agree ? 'YES' : 'NO'));
       fd.append('from_name', '예약신청접수');
       fd.append('replyto', 'onthebride@gmail.com');
       fd.append('email', 'onthebride@gmail.com');
