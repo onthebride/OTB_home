@@ -88,7 +88,7 @@ function render() {
   $('bkRows').innerHTML = rows
     .map(
       (b) => `<tr data-id="${b.id}">
-        <td>${esc(fmtDateTime(b.created_at))}</td>
+        <td>${esc(fmtDate(b.created_at))}</td>
         <td>${esc(b.contractor_name || '-')}</td>
         <td>${esc(fmtDate(b.wedding_date))}</td>
         <td>${esc(b.wedding_venue || '-')}</td>
