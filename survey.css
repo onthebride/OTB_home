@@ -60,19 +60,30 @@ img { display: block; max-width: 100%; }
   background: #faf4ea;
   border: 1px solid #ecdcc3;
   border-radius: var(--radius);
-  padding: 16px 18px;
+  padding: 18px 20px;
   margin-bottom: 6px;
 }
+.sv-confirm .sv-h { margin-bottom: 12px; }
 .sv-confirm.flash { animation: flashok .8s ease; }
 @keyframes flashok { 0%,100%{background:#faf4ea;} 40%{background:#ffe6e0;} }
+.sv-notice { list-style: none; margin: 0 0 14px; display: grid; gap: 9px; }
+.sv-notice li { position: relative; padding-left: 26px; font-size: .9rem; line-height: 1.6; }
+.sv-notice li::before { content: "✅"; position: absolute; left: 0; top: 1px; font-size: .82rem; }
+.sv-notice-p { font-size: .88rem; color: var(--ink-soft); margin-bottom: 12px; line-height: 1.65; }
+.sv-notice b { color: var(--ink); }
+.sv-confirm .sv-check { border-top: 1px solid #ecdcc3; padding-top: 16px; margin-top: 2px; font-weight: 500; }
 
 /* fields */
 .sv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.sv-field { min-width: 0; }
 .sv-field.full { grid-column: 1 / -1; }
 .sv-field label { display: block; font-size: .82rem; color: var(--ink-soft); margin-bottom: 6px; }
 .sv-field input,
 textarea {
+  display: block;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   font-family: var(--sans);
   font-size: .95rem;
   color: var(--ink);
@@ -80,6 +91,11 @@ textarea {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 11px 13px;
+}
+.sv-field input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 44px;
 }
 textarea { resize: vertical; }
 .sv-field input:focus, textarea:focus { outline: none; border-color: var(--gold); }
@@ -89,12 +105,16 @@ textarea { resize: vertical; }
 .sv-check input { width: 19px; height: 19px; margin-top: 2px; accent-color: var(--gold-deep); flex: 0 0 auto; }
 .sv-check.req em { color: #c0392b; font-style: normal; font-size: .85rem; }
 
-.sv-choices { display: flex; flex-wrap: wrap; gap: 10px; }
-.sv-pill { position: relative; cursor: pointer; }
+.sv-choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.sv-pill { position: relative; cursor: pointer; min-width: 0; }
 .sv-pill input { position: absolute; opacity: 0; pointer-events: none; }
 .sv-pill span {
-  display: inline-block;
-  padding: 9px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 46px;
+  padding: 8px 14px;
   border: 1px solid var(--line);
   border-radius: 40px;
   font-size: .9rem;
@@ -102,6 +122,7 @@ textarea { resize: vertical; }
   color: var(--ink-soft);
   transition: all .18s ease;
 }
+.sv-pill:hover span { border-color: var(--gold); }
 .sv-pill input:checked + span {
   background: var(--ink);
   border-color: var(--ink);
