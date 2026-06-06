@@ -304,10 +304,11 @@
     <div class="container section-head center">
       <p class="overline">BOOKING</p>
       <h2 class="section-title">예약신청</h2>
-      <p class="section-desc">아래 양식을 작성해 주세요. <em class="req">*</em> 표시는 필수 항목입니다.</p>
+      <p class="section-desc">예식 일정과 상품을 선택해 간편하게 예약을 신청하세요.</p>
+      <button type="button" class="btn btn-primary booking-start" id="bookingStart">예약신청 시작하기</button>
     </div>
 
-    <form class="booking-form" onsubmit="return false;">
+    <form class="booking-form" id="bookingForm" onsubmit="return false;" hidden>
       <!-- 규정 안내 -->
       <fieldset class="bk-group">
         <legend>규정 안내</legend>
@@ -435,7 +436,6 @@
 
       <button type="submit" class="btn btn-primary full bk-submit">제출하기</button>
       <p class="bk-status" id="bkStatus" role="status"></p>
-      <p class="bk-disclaimer">※ 실제 견적·일정은 확인 후 안내드립니다. 가격 및 옵션은 변동될 수 있습니다.</p>
     </form>
   </section>
 

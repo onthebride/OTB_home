@@ -56,6 +56,16 @@ if (rulesModal) {
 // Booking — live price total
 const bookingForm = document.querySelector('.booking-form');
 
+// 예약신청 시작하기 → 폼 펼치기
+const bookingStart = document.getElementById('bookingStart');
+if (bookingStart && bookingForm) {
+  bookingStart.addEventListener('click', () => {
+    bookingForm.hidden = false;
+    bookingStart.hidden = true;
+    bookingForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
 // Pretty date picker (flatpickr)
 let fpDate = null;
 if (bookingForm && window.flatpickr) {
