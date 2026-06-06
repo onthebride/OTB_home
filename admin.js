@@ -332,13 +332,28 @@ if (dashTabs) {
   });
 }
 
+let glPending = [];
 const glFiles = $('glFiles');
+const glDrop = document.querySelector('.gl-upload');
 if (glFiles) {
-  glFiles.addEventListener('change', (e) => {
-    const n = e.target.files.length;
-    $('glFileLabel').textContent = n ? n + '장 선택됨' : '사진 선택 (여러 장 가능)';
-  });
+  const setPending = (files) => {
+    glPending = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    $('glFileLabel').textContent = glPending.length ? glPending.length + '장 선택됨' : '사진 선택 / 드래그앤드롭';
+  };
+  glFiles.addEventListener('change', (e) => setPending(e.target.files));
   $('glUploadBtn').addEventListener('click', uploadGallery);
+
+  if (glDrop) {
+    ['dragenter', 'dragover'].forEach((ev) =>
+      glDrop.addEventListener(ev, (e) => { e.preventDefault(); glDrop.classList.add('drag'); })
+    );
+    glDrop.addEventListener('dragleave', (e) => { if (!glDrop.contains(e.relatedTarget)) glDrop.classList.remove('drag'); });
+    glDrop.addEventListener('drop', (e) => {
+      e.preventDefault();
+      glDrop.classList.remove('drag');
+      if (e.dataTransfer.files.length) setPending(e.dataTransfer.files);
+    });
+  }
 }
 
 function setGlStatus(msg, type) {
@@ -368,7 +383,7 @@ function resizeImage(file, maxDim, quality) {
 }
 
 async function uploadGallery() {
-  const files = Array.from($('glFiles').files);
+  const files = glPending;
   const venue = $('glVenue').value.trim();
   if (!files.length) { setGlStatus('사진을 선택해 주세요.', 'err'); return; }
   const btn = $('glUploadBtn');
@@ -384,10 +399,12 @@ async function uploadGallery() {
       const add = await sb.rpc('admin_gallery_add', { payload: { image_path: path, image_url: pub.data.publicUrl, venue } });
       if (add.error) throw add.error;
     }
+    const n = files.length;
+    glPending = [];
     $('glFiles').value = '';
     $('glVenue').value = '';
-    $('glFileLabel').textContent = '사진 선택 (여러 장 가능)';
-    setGlStatus(files.length + '장 업로드 완료!', 'ok');
+    $('glFileLabel').textContent = '사진 선택 / 드래그앤드롭';
+    setGlStatus(n + '장 업로드 완료!', 'ok');
     loadGallery();
   } catch (err) {
     setGlStatus('실패: ' + (err.message || err), 'err');
@@ -403,11 +420,25 @@ async function loadGallery() {
   const items = data || [];
   $('glEmpty').hidden = items.length > 0;
   grid.innerHTML = items
-    .map((g) => `<div class="gl-item"><img src="${esc(g.image_url)}" alt="" /><div class="gl-meta"><span>${esc(g.venue || '태그없음')}</span><button class="gl-del" data-id="${esc(g.id)}" data-path="${esc(g.image_path)}">삭제</button></div></div>`)
+    .map((g) => `<div class="gl-item"><img src="${esc(g.image_url)}" alt="" /><div class="gl-meta"><input class="gl-venue-edit" data-id="${esc(g.id)}" value="${esc(g.venue || '')}" placeholder="장소 태그" /><button class="gl-del" data-id="${esc(g.id)}" data-path="${esc(g.image_path)}">삭제</button></div></div>`)
     .join('');
   grid.querySelectorAll('.gl-del').forEach((b) =>
     b.addEventListener('click', () => deleteGalleryItem(b.dataset.id, b.dataset.path))
   );
+  grid.querySelectorAll('.gl-venue-edit').forEach((inp) => {
+    let orig = inp.value;
+    const save = async () => {
+      const val = inp.value.trim();
+      if (val === orig) return;
+      const { error } = await sb.rpc('admin_gallery_update', { p_id: inp.dataset.id, p_venue: val });
+      if (error) { alert('태그 수정 실패: ' + error.message); inp.value = orig; return; }
+      orig = val;
+      inp.classList.add('saved');
+      setTimeout(() => inp.classList.remove('saved'), 900);
+    };
+    inp.addEventListener('blur', save);
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') inp.blur(); });
+  });
 }
 
 async function deleteGalleryItem(id, path) {

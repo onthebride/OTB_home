@@ -489,6 +489,20 @@ if (inquiryForm) {
     document.getElementById('gallery').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
+  // 모바일: 좌우 스와이프로 페이지 넘김
+  let swipeGuard = 0;
+  let tX = 0, tY = 0;
+  grid.addEventListener('touchstart', (e) => { tX = e.changedTouches[0].clientX; tY = e.changedTouches[0].clientY; }, { passive: true });
+  grid.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - tX;
+    const dy = e.changedTouches[0].clientY - tY;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    const pages = Math.ceil(visible().length / PER);
+    if (dx < 0 && page < pages) { page += 1; renderGrid(); }
+    else if (dx > 0 && page > 1) { page -= 1; renderGrid(); }
+    swipeGuard = Date.now();
+  }, { passive: true });
+
   // lightbox
   const lb = document.getElementById('lightbox');
   const lbImg = document.getElementById('lbImg');
@@ -502,7 +516,11 @@ if (inquiryForm) {
   };
   const open = (i) => { curList = visible(); show(i); lb.hidden = false; document.body.style.overflow = 'hidden'; };
   const close = () => { lb.hidden = true; document.body.style.overflow = ''; };
-  grid.addEventListener('click', (e) => { const t = e.target.closest('.gthumb'); if (t) open(Number(t.dataset.i)); });
+  grid.addEventListener('click', (e) => {
+    if (Date.now() - swipeGuard < 350) return; // 스와이프 직후 클릭 무시
+    const t = e.target.closest('.gthumb');
+    if (t) open(Number(t.dataset.i));
+  });
   document.getElementById('lbClose').addEventListener('click', close);
   document.getElementById('lbBackdrop').addEventListener('click', close);
   document.getElementById('lbPrev').addEventListener('click', () => show(curIdx - 1));

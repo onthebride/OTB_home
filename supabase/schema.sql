@@ -223,3 +223,15 @@ grant execute on function public.admin_gallery_delete(uuid) to authenticated;
 -- create policy "gallery_public_read" on storage.objects for select using (bucket_id='gallery');
 -- create policy "gallery_auth_insert" on storage.objects for insert to authenticated with check (bucket_id='gallery');
 -- create policy "gallery_auth_delete" on storage.objects for delete to authenticated using (bucket_id='gallery');
+
+create or replace function public.admin_gallery_update(p_id uuid, p_venue text)
+returns public.gallery language plpgsql security definer set search_path=public, pg_temp
+as $$
+declare r public.gallery;
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  update public.gallery set venue = nullif(p_venue,'') where id = p_id returning * into r;
+  return r;
+end; $$;
+revoke all on function public.admin_gallery_update(uuid, text) from public, anon;
+grant execute on function public.admin_gallery_update(uuid, text) to authenticated;
