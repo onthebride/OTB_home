@@ -219,8 +219,14 @@ a { color: inherit; text-decoration: none; }
 .gallery-embed iframe { display: block; width: 100%; }
 
 /* Gallery — custom (tags + 4-col square + lightbox) */
-.gallery-tags { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 30px; }
+.gallery-tags { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-content: flex-start; max-height: 88px; overflow: hidden; margin-bottom: 30px; }
 .gtag { background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 8px 20px; cursor: pointer; color: var(--ink-soft); font-family: var(--sans); font-size: .9rem; transition: all .2s; }
+.gtag-search { display: inline-flex; align-items: center; padding: 0 14px; cursor: text; }
+.gtag-search::before { content: "🔍"; font-size: .78rem; opacity: .55; margin-right: 4px; }
+.gtag-search input { border: none; background: transparent; font-family: var(--sans); font-size: .9rem; color: var(--ink); width: 100px; padding: 7px 0; }
+.gtag-search input::placeholder { color: var(--ink-soft); }
+.gtag-search input:focus { outline: none; }
+.gtag-search:focus-within { border-color: var(--gold); }
 .gtag:hover { border-color: var(--gold); color: var(--gold-deep); }
 .gtag.active { background: var(--ink); color: #fff; border-color: var(--ink); }
 

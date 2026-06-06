@@ -451,17 +451,47 @@ if (inquiryForm) {
   if (error) { console.error(error); return; }
   const photos = data || [];
   if (!photos.length) { if (emptyEl) emptyEl.hidden = false; return; }
+  // 썸네일 랜덤 순서 (로드마다)
+  for (let i = photos.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [photos[i], photos[j]] = [photos[j], photos[i]];
+  }
 
   const pagerEl = document.getElementById('galleryPager');
   const PER = 16; // 4 x 4
   let activeTag = '전체';
+  let searchTerm = '';
   let page = 1;
-  const venues = ['전체', ...Array.from(new Set(photos.map((p) => p.venue).filter(Boolean)))];
-  const visible = () => (activeTag === '전체' ? photos : photos.filter((p) => p.venue === activeTag));
+
+  // 예식장 태그: 사진 많은 순 정렬
+  const counts = {};
+  photos.forEach((p) => { if (p.venue) counts[p.venue] = (counts[p.venue] || 0) + 1; });
+  const venues = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+
+  const visible = () => {
+    if (searchTerm) {
+      const t = searchTerm.toLowerCase();
+      return photos.filter((p) => (p.venue || '').toLowerCase().includes(t));
+    }
+    return activeTag === '전체' ? photos : photos.filter((p) => p.venue === activeTag);
+  };
 
   const renderTags = () => {
-    if (venues.length <= 1) { tagsEl.style.display = 'none'; return; }
-    tagsEl.innerHTML = venues.map((v) => `<button class="gtag${v === activeTag ? ' active' : ''}" data-v="${esc(v)}">${esc(v)}</button>`).join('');
+    if (!venues.length) { tagsEl.style.display = 'none'; return; }
+    const allActive = activeTag === '전체' && !searchTerm ? ' active' : '';
+    tagsEl.innerHTML =
+      `<button class="gtag${allActive}" data-v="전체">전체</button>` +
+      `<span class="gtag gtag-search"><input id="gtagSearch" type="text" placeholder="예식장 검색" autocomplete="off" /></span>` +
+      venues.map((v) => `<button class="gtag${v === activeTag && !searchTerm ? ' active' : ''}" data-v="${esc(v)}">${esc(v)}</button>`).join('');
+    const si = document.getElementById('gtagSearch');
+    si.value = searchTerm;
+    si.addEventListener('input', () => {
+      searchTerm = si.value.trim();
+      activeTag = '전체';
+      page = 1;
+      tagsEl.querySelectorAll('button.gtag').forEach((b) => b.classList.toggle('active', searchTerm === '' && b.dataset.v === '전체'));
+      renderGrid();
+    });
   };
   const renderPager = (total) => {
     const pages = Math.ceil(total / PER);
@@ -484,9 +514,10 @@ if (inquiryForm) {
   renderGrid();
 
   tagsEl.addEventListener('click', (e) => {
-    const b = e.target.closest('.gtag');
+    const b = e.target.closest('button.gtag');
     if (!b) return;
     activeTag = b.dataset.v;
+    searchTerm = '';
     page = 1;
     renderTags();
     renderGrid();
