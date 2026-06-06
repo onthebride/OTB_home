@@ -55,6 +55,12 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .gl-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .gl-up-row > input[type=text] { flex: 1; min-width: 200px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 4px; font-size: .95rem; }
 .gl-up-row > input[type=text]:focus { outline: none; border-color: var(--gold); }
+.gl-queue { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.gl-queue:empty { margin-top: 0; }
+.gq-item { position: relative; width: 72px; height: 72px; border-radius: 6px; overflow: hidden; border: 1px solid var(--line); }
+.gq-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gq-x { position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; border: none; border-radius: 50%; background: rgba(20,16,14,.7); color: #fff; cursor: pointer; font-size: 14px; line-height: 1; display: flex; align-items: center; justify-content: center; }
+.gq-x:hover { background: #c0392b; }
 .gl-status { margin-top: 12px; font-size: .9rem; min-height: 1.1em; }
 .gl-status.ok { color: #2f7d4f; } .gl-status.err { color: #c0392b; }
 .gl-hint { margin-top: 8px; font-size: .82rem; color: var(--ink-soft); }

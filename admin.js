@@ -332,15 +332,40 @@ if (dashTabs) {
   });
 }
 
-let glPending = [];
+let glQueue = []; // [{ file, url }] — 하나씩 누적
 const glFiles = $('glFiles');
 const glDrop = document.querySelector('.gl-upload');
+
+function renderQueue() {
+  const q = $('glQueue');
+  if (!q) return;
+  q.innerHTML = glQueue
+    .map((it, i) => `<div class="gq-item"><img src="${it.url}" alt="" /><button type="button" class="gq-x" data-i="${i}" aria-label="빼기">×</button></div>`)
+    .join('');
+  q.querySelectorAll('.gq-x').forEach((b) =>
+    b.addEventListener('click', () => {
+      const i = Number(b.dataset.i);
+      URL.revokeObjectURL(glQueue[i].url);
+      glQueue.splice(i, 1);
+      renderQueue();
+    })
+  );
+  $('glFileLabel').textContent = glQueue.length ? glQueue.length + '장 대기 중 · 더 추가 가능' : '사진 선택 / 드래그앤드롭';
+}
+function addFiles(files) {
+  Array.from(files)
+    .filter((f) => f.type.startsWith('image/'))
+    .forEach((f) => glQueue.push({ file: f, url: URL.createObjectURL(f) }));
+  renderQueue();
+}
+function clearQueue() {
+  glQueue.forEach((it) => URL.revokeObjectURL(it.url));
+  glQueue = [];
+  renderQueue();
+}
+
 if (glFiles) {
-  const setPending = (files) => {
-    glPending = Array.from(files).filter((f) => f.type.startsWith('image/'));
-    $('glFileLabel').textContent = glPending.length ? glPending.length + '장 선택됨' : '사진 선택 / 드래그앤드롭';
-  };
-  glFiles.addEventListener('change', (e) => setPending(e.target.files));
+  glFiles.addEventListener('change', (e) => { addFiles(e.target.files); e.target.value = ''; });
   $('glUploadBtn').addEventListener('click', uploadGallery);
 
   if (glDrop) {
@@ -351,7 +376,7 @@ if (glFiles) {
     glDrop.addEventListener('drop', (e) => {
       e.preventDefault();
       glDrop.classList.remove('drag');
-      if (e.dataTransfer.files.length) setPending(e.dataTransfer.files);
+      if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
     });
   }
 }
@@ -383,7 +408,7 @@ function resizeImage(file, maxDim, quality) {
 }
 
 async function uploadGallery() {
-  const files = glPending;
+  const files = glQueue.map((it) => it.file);
   const venue = $('glVenue').value.trim();
   if (!files.length) { setGlStatus('사진을 선택해 주세요.', 'err'); return; }
   const btn = $('glUploadBtn');
@@ -400,10 +425,9 @@ async function uploadGallery() {
       if (add.error) throw add.error;
     }
     const n = files.length;
-    glPending = [];
+    clearQueue();
     $('glFiles').value = '';
     $('glVenue').value = '';
-    $('glFileLabel').textContent = '사진 선택 / 드래그앤드롭';
     setGlStatus(n + '장 업로드 완료!', 'ok');
     loadGallery();
   } catch (err) {
