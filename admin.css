@@ -161,6 +161,22 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 }
 .survey-head { font-weight: 700; color: var(--gold-deep); margin-bottom: 12px; }
 .survey-head small { font-weight: 400; color: var(--ink-soft); font-size: .76rem; margin-left: 6px; }
+.survey-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.survey-toggle {
+  flex: 1; min-width: 0; text-align: left;
+  background: none; border: none; cursor: pointer;
+  font-weight: 700; color: var(--gold-deep); font-size: .95rem; padding: 0;
+}
+.survey-toggle small { font-weight: 400; color: var(--ink-soft); font-size: .76rem; margin-left: 6px; }
+.sv-caret { margin-left: 4px; font-size: .8rem; }
+.survey-share {
+  background: #fff; border: 1px solid var(--gold); color: var(--gold-deep);
+  border-radius: 40px; padding: 6px 14px; font-size: .8rem; cursor: pointer; white-space: nowrap;
+  transition: all .18s ease;
+}
+.survey-share:hover { background: var(--gold); color: #fff; }
+.survey-share.copied { background: #2f7d4f; border-color: #2f7d4f; color: #fff; }
+.survey-detail { margin-top: 12px; }
 .sv-row { display: flex; gap: 12px; padding: 7px 0; border-top: 1px dashed var(--line); font-size: .9rem; }
 .sv-row:first-of-type { border-top: none; }
 .sv-row.col { flex-direction: column; gap: 8px; }

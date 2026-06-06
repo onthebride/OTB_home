@@ -381,3 +381,33 @@ begin
 end; $$;
 revoke all on function public.admin_survey_ids() from public, anon;
 grant execute on function public.admin_survey_ids() to authenticated;
+
+-- 작가 공유용: 예약ID(토큰)로 설문 + 촬영 핵심정보 읽기 (anon, 연락처/이메일 제외)
+create or replace function public.survey_view(p_booking_id uuid)
+returns jsonb language plpgsql security definer set search_path=public, pg_temp
+as $$
+declare b public.bookings; s public.surveys; refs jsonb;
+begin
+  select * into b from public.bookings where id = p_booking_id;
+  if not found then return null; end if;
+  select * into s from public.surveys where booking_id = p_booking_id;
+  if not found then
+    return jsonb_build_object(
+      'has_survey', false,
+      'contractor_name', b.contractor_name, 'bride_name', b.bride_name, 'groom_name', b.groom_name,
+      'wedding_date', b.wedding_date, 'wedding_time', b.wedding_time, 'wedding_venue', b.wedding_venue);
+  end if;
+  select coalesce(jsonb_agg(data_url order by sort), '[]'::jsonb) into refs
+    from public.survey_refs where booking_id = p_booking_id;
+  return jsonb_build_object(
+    'has_survey', true,
+    'contractor_name', b.contractor_name, 'bride_name', b.bride_name, 'groom_name', b.groom_name,
+    'wedding_date', b.wedding_date, 'wedding_time', b.wedding_time, 'wedding_venue', b.wedding_venue,
+    'priority', s.priority, 'prop_ring', s.prop_ring, 'bride_room_req', s.bride_room_req,
+    'prog_items', s.prog_items, 'bridal_focus', s.bridal_focus,
+    'wonpan_first', s.wonpan_first, 'wonpan_light', s.wonpan_light,
+    'extra_req', s.extra_req, 'etc_req', s.etc_req,
+    'updated_at', s.updated_at, 'refs', refs);
+end; $$;
+revoke all on function public.survey_view(uuid) from public;
+grant execute on function public.survey_view(uuid) to anon, authenticated;

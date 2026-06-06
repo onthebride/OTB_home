@@ -50,7 +50,22 @@
 .ba-grid figcaption { text-align: center; font-size: .78rem; color: var(--ink-soft); margin-top: 6px; }
 .ba-note { font-size: .8rem; color: var(--ink-soft); }
 
+/* 작가용 설문 보기 */
+.sv-vlist { display: grid; gap: 0; }
+.sv-vrow { display: flex; gap: 14px; padding: 11px 0; border-top: 1px dashed var(--line); font-size: .92rem; }
+.sv-vrow:first-child { border-top: none; }
+.sv-vrow.col { flex-direction: column; gap: 10px; }
+.sv-vl { flex: 0 0 116px; color: var(--ink-soft); }
+.sv-vv { flex: 1; white-space: pre-wrap; word-break: break-word; }
+.sv-vrefs { display: flex; flex-wrap: wrap; gap: 10px; }
+.sv-vrefs img { width: 120px; height: 120px; object-fit: cover; border-radius: var(--radius); border: 1px solid var(--line); cursor: zoom-in; }
+
 .g-contact { text-align: center; color: var(--ink-soft); font-size: .88rem; line-height: 1.9; }
+
+@media (max-width: 560px) {
+  .sv-vl { flex-basis: 92px; }
+  .sv-vrefs img { width: 96px; height: 96px; }
+}
 .g-contact b { color: var(--ink); }
 
 html { scroll-behavior: smooth; }

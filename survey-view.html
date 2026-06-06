@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>온더브라이드 · 예식 설문 (작가용)</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="survey.css" />
+  <link rel="stylesheet" href="guide.css" />
+</head>
+<body>
+  <header class="sv-header">
+    <img src="assets/logo-black.png" alt="온더브라이드" class="sv-logo" />
+  </header>
+
+  <main class="sv-wrap">
+    <section class="sv-card sv-msg" id="errCard" hidden>
+      <h1>설문을 찾을 수 없어요</h1>
+      <p>링크를 다시 확인해 주세요.</p>
+    </section>
+
+    <section class="sv-card sv-msg" id="loadCard">
+      <p>불러오는 중입니다…</p>
+    </section>
+
+    <article class="sv-card" id="viewCard" hidden>
+      <div class="sv-intro">
+        <p class="sv-eyebrow">SHOOTING BRIEF</p>
+        <h1 class="sv-title">예식 전 설문 (작가용)</h1>
+      </div>
+
+      <section class="g-summary" id="weddingInfo"></section>
+
+      <div id="surveyBody"></div>
+    </article>
+  </main>
+
+  <footer class="sv-footer">© ONTHEBRIDE</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="survey-view.js"></script>
+</body>
+</html>

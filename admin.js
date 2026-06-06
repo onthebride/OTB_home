@@ -143,7 +143,7 @@ async function openDetail(id) {
     const { data } = await sb.rpc('admin_survey_get', { p_booking_id: id });
     // 모달이 여전히 같은 예약을 보고 있을 때만 주입
     const slot = $('surveySlot');
-    if (data && slot && slot.dataset.bid === id) slot.innerHTML = renderSurvey(data);
+    if (data && slot && slot.dataset.bid === id) { slot.innerHTML = renderSurvey(data); bindSurveyControls(); }
   }
 }
 
@@ -159,22 +159,59 @@ function renderSurvey(s) {
     ? `<div class="sv-row col"><span class="sv-l">레퍼런스 (${refs.length})</span>
         <div class="sv-refs">${refs.map((u, i) => `<img src="${esc(u)}" data-i="${i}" alt="레퍼런스" />`).join('')}</div></div>`
     : '';
+  const shareUrl = location.origin + '/survey-view?b=' + s.booking_id;
   return `
     <div class="survey-box">
-      <p class="survey-head">📝 예식 전 설문 <small>${esc(fmtDateTime(s.updated_at))} 작성</small></p>
-      ${row('안내사항 확인', yn(s.agree_check))}
-      ${row('촬영 우선순위', s.priority)}
-      ${row('반지·청첩장 소품', yn(s.prop_ring))}
-      ${row('신부대기실 요청', s.bride_room_req)}
-      ${row('본식 진행항목', prog)}
-      ${row('본식 중점', s.bridal_focus)}
-      ${row('원판 선진행', yn(s.wonpan_first))}
-      ${row('원판 조명', s.wonpan_light)}
-      ${row('추가 요청', s.extra_req)}
-      ${row('기타 요청', s.etc_req)}
-      ${row('설문 이메일', s.email)}
-      ${refHtml}
+      <div class="survey-bar">
+        <button type="button" class="survey-toggle" id="svToggle" aria-expanded="false">
+          📝 예식 전 설문 <small>${esc(fmtDateTime(s.updated_at))} 작성</small> <span class="sv-caret">▾</span>
+        </button>
+        <button type="button" class="survey-share" id="svShare" data-url="${esc(shareUrl)}">작가 공유 링크 복사</button>
+      </div>
+      <div class="survey-detail" id="svDetail" hidden>
+        ${row('안내사항 확인', yn(s.agree_check))}
+        ${row('촬영 우선순위', s.priority)}
+        ${row('반지·청첩장 소품', yn(s.prop_ring))}
+        ${row('신부대기실 요청', s.bride_room_req)}
+        ${row('본식 진행항목', prog)}
+        ${row('본식 중점', s.bridal_focus)}
+        ${row('원판 선진행', yn(s.wonpan_first))}
+        ${row('원판 조명', s.wonpan_light)}
+        ${row('추가 요청', s.extra_req)}
+        ${row('기타 요청', s.etc_req)}
+        ${row('설문 이메일', s.email)}
+        ${refHtml}
+      </div>
     </div>`;
+}
+
+function bindSurveyControls() {
+  const toggle = $('svToggle');
+  const detail = $('svDetail');
+  if (toggle && detail) {
+    toggle.addEventListener('click', () => {
+      const open = detail.hidden;
+      detail.hidden = !open;
+      toggle.setAttribute('aria-expanded', String(open));
+      const caret = toggle.querySelector('.sv-caret');
+      if (caret) caret.textContent = open ? '▴' : '▾';
+    });
+  }
+  const share = $('svShare');
+  if (share) {
+    share.addEventListener('click', async () => {
+      const url = share.dataset.url;
+      try {
+        await navigator.clipboard.writeText(url);
+        const t = share.textContent;
+        share.textContent = '복사됨! ✓';
+        share.classList.add('copied');
+        setTimeout(() => { share.textContent = t; share.classList.remove('copied'); }, 1600);
+      } catch (_) {
+        prompt('작가에게 보낼 링크를 복사하세요:', url);
+      }
+    });
+  }
 }
 
 // 읽기 전용 보기 (한눈에) — "수정" 누르면 편집 모드로
