@@ -21,16 +21,29 @@ const kTime = (t) => {
   return (hh < 12 ? '오전' : '오후') + ' ' + (hh % 12 === 0 ? 12 : hh % 12) + ':' + String(mm).padStart(2, '0');
 };
 
+function person(name, phone) {
+  const n = name || '-';
+  return phone ? `${n} (${phone})` : n;
+}
+
 function renderWeddingInfo(d) {
-  const bride = d.bride_name || '';
-  const groom = d.groom_name || '';
-  const couple = (groom || bride) ? `${groom}${groom && bride ? ' · ' : ''}${bride}` : (d.contractor_name || '');
+  const opts = [];
+  if (d.option_reception) opts.push('연회장 인사촬영');
+  if (d.option_pyebaek) opts.push('폐백촬영');
+  if (d.option_part2) opts.push('2부 촬영');
+  if (d.option_album) opts.push('앨범 1권 추가');
+  if (d.photographer && d.photographer !== '기본') opts.push(d.photographer);
+  if (d.travel_fee) opts.push('출장');
+  const optText = opts.length ? opts.join(', ') : '없음';
+
   $('weddingInfo').innerHTML = `
     <h2>📷 촬영 정보</h2>
     <ul>
-      <li><b>예식일</b> ${esc(fmtDate(d.wedding_date))} ${esc(kTime(d.wedding_time))}</li>
-      <li><b>예식장</b> ${esc(d.wedding_venue || '-')}</li>
-      <li><b>신랑 · 신부</b> ${esc(couple || '-')}</li>
+      <li><b>예식 날짜</b> ${esc(fmtDate(d.wedding_date))}${d.wedding_time ? ' ' + esc(kTime(d.wedding_time)) : ''}</li>
+      <li><b>예식 장소</b> ${esc(d.wedding_venue || '-')}</li>
+      <li><b>신랑</b> ${esc(person(d.groom_name, d.groom_phone))}</li>
+      <li><b>신부</b> ${esc(person(d.bride_name, d.bride_phone))}</li>
+      <li><b>촬영 옵션</b> ${esc(optText)}</li>
     </ul>`;
 }
 

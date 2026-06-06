@@ -223,6 +223,8 @@ grant execute on function public.admin_gallery_delete(uuid) to authenticated;
 -- create policy "gallery_public_read" on storage.objects for select using (bucket_id='gallery');
 -- create policy "gallery_auth_insert" on storage.objects for insert to authenticated with check (bucket_id='gallery');
 -- create policy "gallery_auth_delete" on storage.objects for delete to authenticated using (bucket_id='gallery');
+-- 설문 레퍼런스: 익명 업로드 허용 (gallery 버킷의 refs/ 폴더 한정) — 설문 사진을 Storage에 저장(빠른 로딩)
+-- create policy "refs_anon_insert" on storage.objects for insert to anon with check (bucket_id='gallery' and name like 'refs/%');
 
 create or replace function public.admin_gallery_update(p_id uuid, p_venue text)
 returns public.gallery language plpgsql security definer set search_path=public, pg_temp
@@ -394,15 +396,25 @@ begin
   if not found then
     return jsonb_build_object(
       'has_survey', false,
-      'contractor_name', b.contractor_name, 'bride_name', b.bride_name, 'groom_name', b.groom_name,
-      'wedding_date', b.wedding_date, 'wedding_time', b.wedding_time, 'wedding_venue', b.wedding_venue);
+      'contractor_name', b.contractor_name,
+      'bride_name', b.bride_name, 'bride_phone', b.bride_phone,
+      'groom_name', b.groom_name, 'groom_phone', b.groom_phone,
+      'wedding_date', b.wedding_date, 'wedding_time', b.wedding_time, 'wedding_venue', b.wedding_venue,
+      'option_reception', b.option_reception, 'option_pyebaek', b.option_pyebaek,
+      'option_part2', b.option_part2, 'option_album', b.option_album,
+      'travel_fee', b.travel_fee, 'photographer', b.photographer);
   end if;
   select coalesce(jsonb_agg(data_url order by sort), '[]'::jsonb) into refs
     from public.survey_refs where booking_id = p_booking_id;
   return jsonb_build_object(
     'has_survey', true,
-    'contractor_name', b.contractor_name, 'bride_name', b.bride_name, 'groom_name', b.groom_name,
+    'contractor_name', b.contractor_name,
+    'bride_name', b.bride_name, 'bride_phone', b.bride_phone,
+    'groom_name', b.groom_name, 'groom_phone', b.groom_phone,
     'wedding_date', b.wedding_date, 'wedding_time', b.wedding_time, 'wedding_venue', b.wedding_venue,
+    'option_reception', b.option_reception, 'option_pyebaek', b.option_pyebaek,
+    'option_part2', b.option_part2, 'option_album', b.option_album,
+    'travel_fee', b.travel_fee, 'photographer', b.photographer,
     'priority', s.priority, 'prop_ring', s.prop_ring, 'bride_room_req', s.bride_room_req,
     'prog_items', s.prog_items, 'bridal_focus', s.bridal_focus,
     'wonpan_first', s.wonpan_first, 'wonpan_light', s.wonpan_light,

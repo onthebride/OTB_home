@@ -21,9 +21,9 @@ const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /* ===== 레퍼런스 사진 (base64, 최대 5장) ===== */
 const MAX_REFS = 5;
-let refs = []; // [{ dataUrl }]
+let refs = []; // [{ url: objectURL(미리보기), blob }]
 
-function resizeToDataUrl(file, maxDim, quality) {
+function resizeToBlob(file, maxDim, quality) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
@@ -35,7 +35,7 @@ function resizeToDataUrl(file, maxDim, quality) {
       const cv = document.createElement('canvas');
       cv.width = w; cv.height = h;
       cv.getContext('2d').drawImage(img, 0, 0, w, h);
-      resolve(cv.toDataURL('image/jpeg', quality));
+      cv.toBlob((b) => (b ? resolve(b) : reject(new Error('이미지 변환 실패'))), 'image/jpeg', quality);
     };
     img.onerror = () => reject(new Error('이미지를 읽을 수 없습니다'));
     img.src = URL.createObjectURL(file);
@@ -45,13 +45,18 @@ function resizeToDataUrl(file, maxDim, quality) {
 function renderRefs() {
   const grid = $('refPreview');
   grid.innerHTML = refs
-    .map((r, i) => `<div class="sv-ref"><img src="${r.dataUrl}" alt="" /><button type="button" class="sv-ref-x" data-i="${i}" aria-label="삭제">×</button></div>`)
+    .map((r, i) => `<div class="sv-ref"><img src="${r.url}" alt="" /><button type="button" class="sv-ref-x" data-i="${i}" aria-label="삭제">×</button></div>`)
     .join('');
   grid.querySelectorAll('.sv-ref-x').forEach((b) =>
-    b.addEventListener('click', () => { refs.splice(Number(b.dataset.i), 1); renderRefs(); })
+    b.addEventListener('click', () => {
+      const i = Number(b.dataset.i);
+      URL.revokeObjectURL(refs[i].url);
+      refs.splice(i, 1);
+      renderRefs();
+    })
   );
   grid.querySelectorAll('.sv-ref img').forEach((im, i) =>
-    im.addEventListener('click', () => openLb(refs[i].dataUrl))
+    im.addEventListener('click', () => openLb(refs[i].url))
   );
   $('refLabel').textContent = refs.length
     ? `${refs.length}/${MAX_REFS}장 · ${refs.length < MAX_REFS ? '더 추가 가능' : '최대'}`
@@ -62,10 +67,22 @@ async function addRefFiles(files) {
   const imgs = Array.from(files).filter((f) => f.type.startsWith('image/'));
   for (const f of imgs) {
     if (refs.length >= MAX_REFS) { setStatus(`레퍼런스는 최대 ${MAX_REFS}장까지 올릴 수 있어요.`, 'error'); break; }
-    try { refs.push({ dataUrl: await resizeToDataUrl(f, 1200, 0.7) }); }
+    try { const blob = await resizeToBlob(f, 1400, 0.78); refs.push({ url: URL.createObjectURL(blob), blob }); }
     catch (_) {}
   }
   renderRefs();
+}
+
+// 레퍼런스를 Storage에 업로드하고 공개 URL 배열 반환
+async function uploadRefs() {
+  const urls = [];
+  for (let i = 0; i < refs.length; i++) {
+    const path = `refs/${bookingId}/${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}.jpg`;
+    const up = await sb.storage.from('gallery').upload(path, refs[i].blob, { contentType: 'image/jpeg', upsert: false });
+    if (up.error) throw up.error;
+    urls.push(sb.storage.from('gallery').getPublicUrl(path).data.publicUrl);
+  }
+  return urls;
 }
 
 function openLb(src) {
@@ -146,6 +163,20 @@ form.addEventListener('submit', async (e) => {
   const priority = (document.querySelector('input[name="priority"]:checked') || {}).value || '';
   const light = ck('s_wonpan_nolight') ? '미사용' : '사용';
 
+  const btn = $('s_submit');
+  btn.disabled = true;
+
+  let refUrls = [];
+  try {
+    if (refs.length) setStatus('사진 업로드 중입니다…', '');
+    refUrls = await uploadRefs();
+  } catch (err) {
+    console.error(err);
+    btn.disabled = false;
+    setStatus('사진 업로드 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.', 'error');
+    return;
+  }
+
   const payload = {
     booking_id: bookingId,
     agree_check: ck('s_agree'),
@@ -162,11 +193,9 @@ form.addEventListener('submit', async (e) => {
     wonpan_light: light,
     extra_req: val('s_extra'),
     etc_req: val('s_etc'),
-    refs: refs.map((r) => r.dataUrl),
+    refs: refUrls,
   };
 
-  const btn = $('s_submit');
-  btn.disabled = true;
   setStatus('제출 중입니다…', '');
   const { error } = await sb.rpc('submit_survey', { payload });
   btn.disabled = false;
