@@ -235,3 +235,149 @@ begin
 end; $$;
 revoke all on function public.admin_gallery_update(uuid, text) from public, anon;
 grant execute on function public.admin_gallery_update(uuid, text) to authenticated;
+
+-- ============================================
+-- 예식 전 설문 (survey)
+-- 고객이 카톡 링크(?b=예약ID)로 접속해 작성 → 관리자 예약 상세에서 확인.
+-- 레퍼런스 사진은 SECURITY DEFINER 경로 보장을 위해 base64로 DB 저장.
+-- ============================================
+create table if not exists public.surveys (
+  booking_id     uuid primary key references public.bookings(id) on delete cascade,
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now(),
+  agree_check    boolean default false,
+  name           text,
+  wedding_date   date,
+  wedding_venue  text,
+  email          text,
+  priority       text,                          -- 촬영 우선순위 (단일)
+  prop_ring      boolean default false,         -- 반지/청첩장 소품촬영
+  bride_room_req text,                           -- 신부대기실 특별요청
+  prog_items     jsonb default '[]'::jsonb,      -- 본식 진행항목 (복수)
+  bridal_focus   text,                           -- 본식 중 신경쓸 부분
+  wonpan_first   boolean default false,          -- 원판 선진행
+  wonpan_light   text,                           -- 사용 / 미사용
+  extra_req      text,
+  etc_req        text
+);
+alter table public.surveys enable row level security;
+
+create table if not exists public.survey_refs (
+  id          uuid primary key default gen_random_uuid(),
+  booking_id  uuid not null references public.bookings(id) on delete cascade,
+  data_url    text not null,
+  sort        integer default 0,
+  created_at  timestamptz not null default now()
+);
+create index if not exists survey_refs_booking_idx on public.survey_refs (booking_id, sort);
+alter table public.survey_refs enable row level security;
+
+-- 설문용: 예약 기본정보 조회 (anon) — 프리필/본인확인용, 민감정보 제외
+create or replace function public.survey_booking_info(p_booking_id uuid)
+returns jsonb language plpgsql security definer set search_path=public, pg_temp
+as $$
+declare b public.bookings; has_s boolean;
+begin
+  select * into b from public.bookings where id = p_booking_id;
+  if not found then return null; end if;
+  select exists(select 1 from public.surveys where booking_id = p_booking_id) into has_s;
+  return jsonb_build_object(
+    'contractor_name', b.contractor_name,
+    'wedding_date',     b.wedding_date,
+    'wedding_venue',    b.wedding_venue,
+    'contractor_email', b.contractor_email,
+    'already',          has_s
+  );
+end; $$;
+revoke all on function public.survey_booking_info(uuid) from public;
+grant execute on function public.survey_booking_info(uuid) to anon, authenticated;
+
+-- 설문 제출 (anon) — booking_id 기준 upsert + 레퍼런스 교체(최대 5장)
+create or replace function public.submit_survey(payload jsonb)
+returns uuid language plpgsql security definer set search_path=public, pg_temp
+as $$
+declare bid uuid; el jsonb; i int := 0;
+begin
+  bid := nullif(payload->>'booking_id','')::uuid;
+  if bid is null then raise exception 'booking_id required'; end if;
+  if not exists(select 1 from public.bookings where id = bid) then
+    raise exception 'booking not found';
+  end if;
+
+  insert into public.surveys (
+    booking_id, agree_check, name, wedding_date, wedding_venue, email,
+    priority, prop_ring, bride_room_req, prog_items, bridal_focus,
+    wonpan_first, wonpan_light, extra_req, etc_req, updated_at
+  ) values (
+    bid,
+    coalesce((payload->>'agree_check')::boolean,false),
+    nullif(payload->>'name',''),
+    nullif(payload->>'wedding_date','')::date,
+    nullif(payload->>'wedding_venue',''),
+    nullif(payload->>'email',''),
+    nullif(payload->>'priority',''),
+    coalesce((payload->>'prop_ring')::boolean,false),
+    nullif(payload->>'bride_room_req',''),
+    coalesce(payload->'prog_items','[]'::jsonb),
+    nullif(payload->>'bridal_focus',''),
+    coalesce((payload->>'wonpan_first')::boolean,false),
+    nullif(payload->>'wonpan_light',''),
+    nullif(payload->>'extra_req',''),
+    nullif(payload->>'etc_req',''),
+    now()
+  )
+  on conflict (booking_id) do update set
+    agree_check=excluded.agree_check, name=excluded.name,
+    wedding_date=excluded.wedding_date, wedding_venue=excluded.wedding_venue,
+    email=excluded.email, priority=excluded.priority, prop_ring=excluded.prop_ring,
+    bride_room_req=excluded.bride_room_req, prog_items=excluded.prog_items,
+    bridal_focus=excluded.bridal_focus, wonpan_first=excluded.wonpan_first,
+    wonpan_light=excluded.wonpan_light, extra_req=excluded.extra_req,
+    etc_req=excluded.etc_req, updated_at=now();
+
+  -- 레퍼런스 교체
+  delete from public.survey_refs where booking_id = bid;
+  if jsonb_typeof(payload->'refs') = 'array' then
+    for el in select * from jsonb_array_elements(payload->'refs') loop
+      exit when i >= 5;
+      if jsonb_typeof(el) = 'string' and length(el #>> '{}') > 0 then
+        insert into public.survey_refs (booking_id, data_url, sort)
+        values (bid, el #>> '{}', i);
+        i := i + 1;
+      end if;
+    end loop;
+  end if;
+
+  return bid;
+end; $$;
+revoke all on function public.submit_survey(jsonb) from public;
+grant execute on function public.submit_survey(jsonb) to anon, authenticated;
+
+-- 관리자: 특정 예약의 설문 + 레퍼런스 조회
+create or replace function public.admin_survey_get(p_booking_id uuid)
+returns jsonb language plpgsql security definer set search_path=public, pg_temp
+as $$
+declare s public.surveys; refs jsonb;
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  select * into s from public.surveys where booking_id = p_booking_id;
+  if not found then return null; end if;
+  select coalesce(jsonb_agg(data_url order by sort), '[]'::jsonb) into refs
+    from public.survey_refs where booking_id = p_booking_id;
+  return to_jsonb(s) || jsonb_build_object('refs', refs);
+end; $$;
+revoke all on function public.admin_survey_get(uuid) from public, anon;
+grant execute on function public.admin_survey_get(uuid) to authenticated;
+
+-- 관리자: 설문이 제출된 예약 ID 목록 (목록에 배지 표시용)
+create or replace function public.admin_survey_ids()
+returns jsonb language plpgsql security definer set search_path=public, pg_temp
+as $$
+declare ids jsonb;
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  select coalesce(jsonb_agg(booking_id), '[]'::jsonb) into ids from public.surveys;
+  return ids;
+end; $$;
+revoke all on function public.admin_survey_ids() from public, anon;
+grant execute on function public.admin_survey_ids() to authenticated;

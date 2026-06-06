@@ -149,8 +149,31 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .save-msg.ok { color: #2f7d4f; }
 .save-msg.err { color: #c0392b; }
 
+/* ===== 설문 (예약 상세) ===== */
+.survey-badge { font-size: .82rem; }
+.survey-loading { color: var(--ink-soft); font-size: .85rem; margin-top: 16px; }
+.survey-box {
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbf7f1;
+  padding: 16px 18px;
+}
+.survey-head { font-weight: 700; color: var(--gold-deep); margin-bottom: 12px; }
+.survey-head small { font-weight: 400; color: var(--ink-soft); font-size: .76rem; margin-left: 6px; }
+.sv-row { display: flex; gap: 12px; padding: 7px 0; border-top: 1px dashed var(--line); font-size: .9rem; }
+.sv-row:first-of-type { border-top: none; }
+.sv-row.col { flex-direction: column; gap: 8px; }
+.sv-l { flex: 0 0 110px; color: var(--ink-soft); }
+.sv-v { flex: 1; white-space: pre-wrap; word-break: break-word; }
+.sv-refs { display: flex; flex-wrap: wrap; gap: 8px; }
+.sv-refs img { width: 84px; height: 84px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); cursor: pointer; }
+.sv-lb { position: fixed; inset: 0; z-index: 1000; background: rgba(20,17,15,.9); display: flex; align-items: center; justify-content: center; padding: 30px; cursor: zoom-out; }
+.sv-lb img { max-width: 100%; max-height: 100%; border-radius: 6px; }
+
 @media (max-width: 600px) {
   .detail-grid { grid-template-columns: 1fr; }
   .dash-body { padding: 16px; }
   .bk-table th:nth-child(4), .bk-table td:nth-child(4) { display: none; }
+  .sv-l { flex-basis: 84px; }
 }

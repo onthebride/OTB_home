@@ -16,6 +16,7 @@ const fmtDateTime = (s) =>
 
 let allBookings = [];
 let filter = '전체';
+let surveyIds = new Set(); // 설문 제출된 예약 ID
 
 /* ===== Auth views ===== */
 const showLogin = () => {
@@ -69,6 +70,9 @@ async function loadBookings() {
     return;
   }
   allBookings = data || [];
+  // 설문 제출 여부
+  const sres = await sb.rpc('admin_survey_ids');
+  surveyIds = new Set(Array.isArray(sres.data) ? sres.data : []);
   render();
 }
 
@@ -89,7 +93,7 @@ function render() {
     .map(
       (b) => `<tr data-id="${b.id}">
         <td>${esc(fmtDate(b.created_at))}</td>
-        <td>${esc(b.contractor_name || '-')}</td>
+        <td>${esc(b.contractor_name || '-')}${surveyIds.has(b.id) ? ' <span class="survey-badge" title="설문 제출됨">📝</span>' : ''}</td>
         <td>${esc(fmtDate(b.wedding_date))}</td>
         <td>${esc(b.wedding_venue || '-')}</td>
         <td>${esc(b.photographer || '-')}</td>
@@ -129,11 +133,48 @@ const kTimeDisp = (t) => {
   return (hh < 12 ? '오전' : '오후') + ' ' + (hh % 12 === 0 ? 12 : hh % 12) + ':' + String(mm).padStart(2, '0');
 };
 
-function openDetail(id) {
+async function openDetail(id) {
   const b = allBookings.find((x) => x.id === id);
   if (!b) return;
   $('modal').hidden = false;
   renderView(b);
+  // 설문이 있으면 비동기로 불러와 상세에 주입
+  if (surveyIds.has(id)) {
+    const { data } = await sb.rpc('admin_survey_get', { p_booking_id: id });
+    // 모달이 여전히 같은 예약을 보고 있을 때만 주입
+    const slot = $('surveySlot');
+    if (data && slot && slot.dataset.bid === id) slot.innerHTML = renderSurvey(data);
+  }
+}
+
+const PROG_ALL = ['신랑신부 동시 입장', '예물교환', '주례말씀', '축사', '축가', '예배식'];
+
+function renderSurvey(s) {
+  const row = (label, value) =>
+    value ? `<div class="sv-row"><span class="sv-l">${esc(label)}</span><span class="sv-v">${esc(value)}</span></div>` : '';
+  const yn = (v) => (v ? '예' : '');
+  const prog = Array.isArray(s.prog_items) ? s.prog_items.join(', ') : '';
+  const refs = Array.isArray(s.refs) ? s.refs : [];
+  const refHtml = refs.length
+    ? `<div class="sv-row col"><span class="sv-l">레퍼런스 (${refs.length})</span>
+        <div class="sv-refs">${refs.map((u, i) => `<img src="${esc(u)}" data-i="${i}" alt="레퍼런스" />`).join('')}</div></div>`
+    : '';
+  return `
+    <div class="survey-box">
+      <p class="survey-head">📝 예식 전 설문 <small>${esc(fmtDateTime(s.updated_at))} 작성</small></p>
+      ${row('안내사항 확인', yn(s.agree_check))}
+      ${row('촬영 우선순위', s.priority)}
+      ${row('반지·청첩장 소품', yn(s.prop_ring))}
+      ${row('신부대기실 요청', s.bride_room_req)}
+      ${row('본식 진행항목', prog)}
+      ${row('본식 중점', s.bridal_focus)}
+      ${row('원판 선진행', yn(s.wonpan_first))}
+      ${row('원판 조명', s.wonpan_light)}
+      ${row('추가 요청', s.extra_req)}
+      ${row('기타 요청', s.etc_req)}
+      ${row('설문 이메일', s.email)}
+      ${refHtml}
+    </div>`;
 }
 
 // 읽기 전용 보기 (한눈에) — "수정" 누르면 편집 모드로
@@ -163,6 +204,8 @@ function renderView(b, flash) {
       ${b.admin_note ? `<div class="full2">${field('관리자 메모', b.admin_note)}</div>` : ''}
     </div>
 
+    <div id="surveySlot" data-bid="${esc(b.id)}">${surveyIds.has(b.id) ? '<p class="survey-loading">📝 설문 불러오는 중…</p>' : ''}</div>
+
     <div class="modal-btns">
       <button class="btn-primary" id="mEdit">수정</button>
       <button class="btn-kakao" id="mKakao" disabled>카카오 전송</button>
@@ -171,6 +214,17 @@ function renderView(b, flash) {
 
   $('modalClose').addEventListener('click', closeModal);
   $('mEdit').addEventListener('click', () => renderEdit(b));
+
+  // 레퍼런스 사진 클릭 → 크게 보기
+  $('modalCard').addEventListener('click', (e) => {
+    const im = e.target.closest('.sv-refs img');
+    if (!im) return;
+    const lb = document.createElement('div');
+    lb.className = 'sv-lb';
+    lb.innerHTML = `<img src="${im.src}" alt="" />`;
+    lb.addEventListener('click', () => lb.remove());
+    document.body.appendChild(lb);
+  });
 }
 
 // 편집 모드
