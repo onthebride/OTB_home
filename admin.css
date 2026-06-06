@@ -65,6 +65,17 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .gl-status.ok { color: #2f7d4f; } .gl-status.err { color: #c0392b; }
 .gl-hint { margin-top: 8px; font-size: .82rem; color: var(--ink-soft); }
 
+.gl-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.gl-tag { background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 7px 16px; cursor: pointer; color: var(--ink-soft); font-family: var(--sans); font-size: .85rem; transition: all .2s; }
+.gl-tag:hover { border-color: var(--gold); color: var(--gold-deep); }
+.gl-tag.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+.gl-pager { display: flex; justify-content: center; gap: 6px; margin-top: 22px; }
+.gl-pager .gpg { min-width: 36px; height: 36px; padding: 0 6px; border: 1px solid var(--line); background: var(--paper); color: var(--ink-soft); border-radius: 4px; cursor: pointer; font-family: var(--sans); font-size: .9rem; transition: all .2s; }
+.gl-pager .gpg:hover:not(:disabled) { border-color: var(--gold); color: var(--gold-deep); }
+.gl-pager .gpg.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+.gl-pager .gpg:disabled { opacity: .35; cursor: default; }
+
 .gl-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .gl-item { border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--paper); }
 .gl-item img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }

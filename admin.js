@@ -437,13 +437,42 @@ async function uploadGallery() {
   }
 }
 
+let glAllItems = [];
+let glActiveTag = '전체';
+let glPage = 1;
+const GL_PER = 20; // 4 x 5
+
 async function loadGallery() {
-  const grid = $('glGrid');
   const { data, error } = await sb.rpc('gallery_list');
-  if (error) { grid.innerHTML = '<p class="empty">목록 오류: ' + esc(error.message) + '</p>'; return; }
-  const items = data || [];
-  $('glEmpty').hidden = items.length > 0;
-  grid.innerHTML = items
+  if (error) { $('glGrid').innerHTML = '<p class="empty">목록 오류: ' + esc(error.message) + '</p>'; return; }
+  glAllItems = data || [];
+  glActiveTag = '전체';
+  glPage = 1;
+  renderGalleryAdmin();
+}
+
+const glVisible = () => (glActiveTag === '전체' ? glAllItems : glAllItems.filter((g) => g.venue === glActiveTag));
+
+function renderGalleryAdmin() {
+  $('glEmpty').hidden = glAllItems.length > 0;
+
+  // 태그 (사진 많은 순)
+  const counts = {};
+  glAllItems.forEach((g) => { if (g.venue) counts[g.venue] = (counts[g.venue] || 0) + 1; });
+  const venues = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+  $('glTags').innerHTML =
+    `<button class="gl-tag${glActiveTag === '전체' ? ' active' : ''}" data-v="전체">전체 ${glAllItems.length}</button>` +
+    venues.map((v) => `<button class="gl-tag${v === glActiveTag ? ' active' : ''}" data-v="${esc(v)}">${esc(v)} ${counts[v]}</button>`).join('');
+  $('glTags').querySelectorAll('.gl-tag').forEach((b) =>
+    b.addEventListener('click', () => { glActiveTag = b.dataset.v; glPage = 1; renderGalleryAdmin(); })
+  );
+
+  // 그리드 (페이지네이션 20장)
+  const list = glVisible();
+  const start = (glPage - 1) * GL_PER;
+  const grid = $('glGrid');
+  grid.innerHTML = list
+    .slice(start, start + GL_PER)
     .map((g) => `<div class="gl-item"><img src="${esc(g.image_url)}" alt="" /><div class="gl-meta"><input class="gl-venue-edit" data-id="${esc(g.id)}" value="${esc(g.venue || '')}" placeholder="장소 태그" /><button class="gl-del" data-id="${esc(g.id)}" data-path="${esc(g.image_path)}">삭제</button></div></div>`)
     .join('');
   grid.querySelectorAll('.gl-del').forEach((b) =>
@@ -457,12 +486,25 @@ async function loadGallery() {
       const { error } = await sb.rpc('admin_gallery_update', { p_id: inp.dataset.id, p_venue: val });
       if (error) { alert('태그 수정 실패: ' + error.message); inp.value = orig; return; }
       orig = val;
-      inp.classList.add('saved');
-      setTimeout(() => inp.classList.remove('saved'), 900);
+      const it = glAllItems.find((x) => x.id === inp.dataset.id);
+      if (it) it.venue = val || null;
+      renderGalleryAdmin();
     };
     inp.addEventListener('blur', save);
     inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') inp.blur(); });
   });
+
+  // 페이저
+  const pages = Math.ceil(list.length / GL_PER);
+  const pg = $('glPager');
+  if (pages <= 1) { pg.innerHTML = ''; return; }
+  let html = `<button class="gpg nav" data-p="${glPage - 1}"${glPage === 1 ? ' disabled' : ''}>‹</button>`;
+  for (let i = 1; i <= pages; i++) html += `<button class="gpg${i === glPage ? ' active' : ''}" data-p="${i}">${i}</button>`;
+  html += `<button class="gpg nav" data-p="${glPage + 1}"${glPage === pages ? ' disabled' : ''}>›</button>`;
+  pg.innerHTML = html;
+  pg.querySelectorAll('.gpg').forEach((b) =>
+    b.addEventListener('click', () => { if (b.disabled) return; glPage = Number(b.dataset.p); renderGalleryAdmin(); $('glTags').scrollIntoView({ behavior: 'smooth', block: 'start' }); })
+  );
 }
 
 async function deleteGalleryItem(id, path) {
@@ -470,5 +512,9 @@ async function deleteGalleryItem(id, path) {
   const { error } = await sb.rpc('admin_gallery_delete', { p_id: id });
   if (error) { alert('삭제 실패: ' + error.message); return; }
   if (path) await sb.storage.from('gallery').remove([path]);
-  loadGallery();
+  glAllItems = glAllItems.filter((g) => g.id !== id);
+  // 현재 페이지가 비면 이전 페이지로
+  const pages = Math.max(1, Math.ceil(glVisible().length / GL_PER));
+  if (glPage > pages) glPage = pages;
+  renderGalleryAdmin();
 }
