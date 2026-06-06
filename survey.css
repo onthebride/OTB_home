@@ -55,6 +55,20 @@ img { display: block; max-width: 100%; }
 .sv-h { font-family: var(--kserif); font-weight: 600; font-size: 1.18rem; margin-bottom: 6px; }
 .sv-h small { font-weight: 400; font-size: .82rem; color: var(--ink-soft); }
 .sv-sub { color: var(--ink-soft); font-size: .9rem; margin-bottom: 12px; }
+.sv-hint { color: var(--ink-soft); font-size: .8rem; margin-top: 6px; line-height: 1.55; }
+.sv-desc { color: var(--ink-soft); font-size: .86rem; line-height: 1.65; margin: -4px 0 14px; }
+.sv-bullets { list-style: none; margin: 0 0 14px; display: grid; gap: 7px; }
+.sv-bullets li { position: relative; padding-left: 15px; font-size: .85rem; color: var(--ink-soft); line-height: 1.6; }
+.sv-bullets li::before { content: "–"; position: absolute; left: 0; top: 0; }
+.sv-explain { margin: 4px 0 14px; display: grid; gap: 10px; }
+.sv-explain p { font-size: .84rem; color: var(--ink-soft); line-height: 1.6; }
+.sv-explain b { color: var(--ink); }
+.sv-info { background: #faf7f2; border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+.sv-info .sv-bullets { margin-bottom: 0; }
+.sv-info-t { font-weight: 600; font-size: .9rem; margin-bottom: 6px; }
+.sv-info .sv-notice { margin-bottom: 0; }
+.sv-info .sv-notice li { font-size: .85rem; color: var(--ink-soft); }
+.sv-info .sv-notice li b { color: var(--ink); }
 
 .sv-confirm {
   background: #faf4ea;

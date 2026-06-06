@@ -144,7 +144,7 @@ form.addEventListener('submit', async (e) => {
 
   const prog = Array.from(document.querySelectorAll('input[name="prog"]:checked')).map((x) => x.value);
   const priority = (document.querySelector('input[name="priority"]:checked') || {}).value || '';
-  const light = (document.querySelector('input[name="light"]:checked') || {}).value || '';
+  const light = ck('s_wonpan_nolight') ? '미사용' : '사용';
 
   const payload = {
     booking_id: bookingId,

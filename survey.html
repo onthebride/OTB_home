@@ -61,21 +61,30 @@
         </label>
       </section>
 
-      <!-- 기본정보 -->
+      <!-- 1. 기본정보 -->
       <section class="sv-sec">
-        <h2 class="sv-h">기본정보</h2>
+        <h2 class="sv-h">1. 기본정보</h2>
         <div class="sv-grid">
           <div class="sv-field"><label>성함</label><input type="text" id="s_name" /></div>
           <div class="sv-field"><label>예식 날짜</label><input type="date" id="s_date" /></div>
-          <div class="sv-field full"><label>예식 장소</label><input type="text" id="s_venue" /></div>
-          <div class="sv-field full"><label>E-mail 주소</label><input type="email" id="s_email" placeholder="데이터 안내를 받으실 이메일" /></div>
+          <div class="sv-field full">
+            <label>예식 장소</label>
+            <input type="text" id="s_venue" />
+            <p class="sv-hint">📌 예식장이 아닌 특별한 장소(교회, 레스토랑 등)에서 진행될 경우, 정확한 주소를 기입해 주세요.</p>
+          </div>
+          <div class="sv-field full">
+            <label>E-mail 주소</label>
+            <input type="email" id="s_email" placeholder="예) onthebride@naver.com" />
+            <p class="sv-hint">촬영 후 데이터(다운로드 링크)를 받으실 이메일이니 정확히 적어주세요.</p>
+          </div>
         </div>
       </section>
 
       <!-- 촬영 우선순위 -->
       <section class="sv-sec">
         <h2 class="sv-h">촬영 우선순위</h2>
-        <p class="sv-sub">📌 촬영에 중요하게 생각하시는 부분을 하나만 선택해 주세요.</p>
+        <p class="sv-sub">📌 촬영에 중요하게 생각하시는 부분을 하나만 선택해 주세요!</p>
+        <p class="sv-desc">일부 항목은 동시에 발생하는 일정으로 인해, 1인 촬영으로는 물리적으로 커버하기 어려운 경우가 있습니다. 예를 들면 친구들과의 기념촬영을 중요하게 생각하신 분들은 하객 맞는 쪽 촬영이 충분히 안 될 수 있습니다.</p>
         <div class="sv-choices" id="priorityWrap">
           <label class="sv-pill"><input type="radio" name="priority" value="많은 연출촬영" /><span>많은 연출촬영</span></label>
           <label class="sv-pill"><input type="radio" name="priority" value="자연스러운 스냅사진" /><span>자연스러운 스냅사진</span></label>
@@ -88,20 +97,28 @@
       <!-- 웨딩소품 -->
       <section class="sv-sec">
         <h2 class="sv-h">웨딩소품 촬영</h2>
+        <p class="sv-sub">📌 반지나 청첩장 등 웨딩소품 촬영을 원하시면 체크해 주세요! 💍✨</p>
         <label class="sv-check"><input type="checkbox" id="s_prop_ring" /><span>반지 · 청첩장 소품촬영 요청</span></label>
       </section>
 
-      <!-- 신부대기실 -->
+      <!-- 2. 신부대기실 -->
       <section class="sv-sec">
-        <h2 class="sv-h">신부대기실 특별 요청</h2>
+        <h2 class="sv-h">2. 신부대기실 촬영</h2>
         <p class="sv-sub">📌 신부 대기실에서 꼭 남기고 싶은 장면이 있으면 알려주세요!</p>
+        <ul class="sv-bullets">
+          <li>예식 전 연출 촬영을 먼저 진행합니다.</li>
+          <li>이후 지인분들의 기념촬영과 자연스러운 스냅 사진을 촬영합니다.</li>
+          <li>1인 촬영은 신부대기실과 로비를 오가며 촬영하기 때문에 잠시 자리를 비울 수 있으며, 하객분들이 많아 끊임없이 기념촬영이 이어지면 부모님 쪽 촬영이 어려울 수 있습니다.</li>
+          <li>신부대기실 촬영은 예식 10분 전까지 진행되며, 이후엔 작가님도 본식 준비를 위해 대기실에서 빠지게 됩니다.</li>
+          <li>10분 전까지는 오셔야 촬영이 가능하니, 꼭 촬영 원하시는 분들도 너무 늦지 않게 오실 수 있도록 말씀해 주세요!</li>
+        </ul>
         <textarea id="s_bride_room" rows="3" placeholder="예) 부모님과 함께, 부케 클로즈업 등"></textarea>
       </section>
 
-      <!-- 본식 진행항목 -->
+      <!-- 3. 본식촬영 -->
       <section class="sv-sec">
-        <h2 class="sv-h">본식 진행 항목</h2>
-        <p class="sv-sub">해당하는 항목을 모두 선택해 주세요.</p>
+        <h2 class="sv-h">3. 본식촬영</h2>
+        <p class="sv-sub">📌 본식에서 아래 해당하는 사항이 있으면 체크 부탁드립니다~</p>
         <div class="sv-choices">
           <label class="sv-pill"><input type="checkbox" name="prog" value="신랑신부 동시 입장" /><span>신랑신부 동시 입장</span></label>
           <label class="sv-pill"><input type="checkbox" name="prog" value="예물교환" /><span>예물교환</span></label>
@@ -110,19 +127,35 @@
           <label class="sv-pill"><input type="checkbox" name="prog" value="축가" /><span>축가</span></label>
           <label class="sv-pill"><input type="checkbox" name="prog" value="예배식" /><span>예배식</span></label>
         </div>
-        <p class="sv-sub" style="margin-top:18px">📌 본식 중 특히 신경 써서 촬영했으면 하는 부분</p>
+        <p class="sv-sub" style="margin-top:20px">📌 본식 중 특히 신경 써서 촬영했으면 하는 부분이 있다면 적어주세요.</p>
+        <ul class="sv-bullets">
+          <li>본식은 흐름대로 촬영이 진행됩니다.</li>
+          <li>본식에선 적극적인 디렉팅이 힘들기 때문에 어느 정도는 표정 관리나 자세를 알아서 해주시는 게 좋습니다.</li>
+          <li>본식 스냅은 연출로는 만들어낼 수 없는 사진이 많습니다. 감정 표현과 풍부한 리액션은 훨씬 더 좋은 사진을 만들어 냅니다!</li>
+          <li>예식 타임테이블을 작성해 시간을 체크해 보시는 게 좋습니다. (예배식 예식 특히 주의!!)</li>
+          <li>예식이 많이 길어질 경우 해당 예식장 뒤 타임 예식 준비 때문에, 이후 촬영할 부케 던지는 씬·핸드폰 라이트 촬영 등이 시간이 모자라면 생략될 수 있습니다.</li>
+          <li>저희는 찍고 싶어도 예식장에서 쫓아냅니다 ㅠㅠ</li>
+          <li>한 시간 텀 예식은 시간이 매우 모자랄 수 있으며, 예식은 30분을 넘기지 않는 게 좋습니다.</li>
+        </ul>
         <textarea id="s_focus" rows="3"></textarea>
       </section>
 
-      <!-- 원판촬영 -->
+      <!-- 4. 원판촬영 -->
       <section class="sv-sec">
-        <h2 class="sv-h">원판촬영 (기념촬영)</h2>
+        <h2 class="sv-h">4. 원판촬영 (기념촬영)</h2>
+        <p class="sv-sub">📌 원판 촬영을 예식 전에 먼저 진행할지 선택해 주세요.</p>
+        <ul class="sv-bullets">
+          <li>첫 예식이거나, 앞 타임 예식이 없는 경우, 예식 간 텀이 충분할 때 가능합니다.</li>
+          <li>직계 가족분들은 예식 1시간 30분 전까지 모든 준비를 마치셔야 합니다.</li>
+        </ul>
         <label class="sv-check"><input type="checkbox" id="s_wonpan_first" /><span>원판 선진행 요청</span></label>
-        <p class="sv-sub" style="margin-top:14px">원판 조명 사용 여부</p>
-        <div class="sv-choices">
-          <label class="sv-pill"><input type="radio" name="light" value="사용" /><span>조명 사용</span></label>
-          <label class="sv-pill"><input type="radio" name="light" value="미사용" /><span>조명 미사용</span></label>
+
+        <p class="sv-sub" style="margin-top:22px">📌 원판촬영 시 플래시(조명)를 사용합니다. 원하지 않으시면 체크해 주세요!</p>
+        <div class="sv-explain">
+          <p><b>· 미사용 시</b><br>실내조명에 의지하기 때문에 부분적으로 빛이 부족해 어둡거나 그림자가 생길 수 있습니다. 장소에 따라 매우 고감도로 촬영되어 화질이 저하될 수 있습니다.</p>
+          <p><b>· 사용 시</b><br>조명의 방향이 달라 다른 스냅사진과 느낌 차이가 있으며, 이는 동일하게 만들 수 없습니다. 안경에 빛 반사가 생길 수 있고 일부 수정이 어려울 수 있습니다.</p>
         </div>
+        <label class="sv-check"><input type="checkbox" id="s_wonpan_nolight" /><span>원판 조명 미사용</span></label>
       </section>
 
       <!-- 추가 요청 -->
@@ -130,8 +163,25 @@
         <h2 class="sv-h">추가 요청사항</h2>
         <p class="sv-sub">📌 추가로 촬영을 원하시거나 요청사항이 있으면 적어주세요!</p>
         <textarea id="s_extra" rows="3"></textarea>
-        <p class="sv-sub" style="margin-top:18px">📌 기타 요청사항이 있으면 적어주세요!</p>
-        <textarea id="s_etc" rows="3"></textarea>
+      </section>
+
+      <!-- 5. 이후 촬영 안내 -->
+      <section class="sv-sec">
+        <h2 class="sv-h">5. 이후 촬영 (연회장 및 폐백)</h2>
+        <p class="sv-sub">📌 연회장 및 폐백 촬영은 추가 선택하신 분들만 진행됩니다.</p>
+        <div class="sv-info">
+          <p class="sv-info-t">✅ 연회장 촬영 안내</p>
+          <ul class="sv-bullets"><li>대략 모든 하객분들과 인사를 마칠 때까지 촬영하며, 최대 30분간 진행됩니다.</li></ul>
+          <p class="sv-info-t" style="margin-top:12px">✅ 폐백 촬영 안내</p>
+          <ul class="sv-bullets"><li>환복 후 기념사진, 폐백 진행 장면, 간단한 연출 촬영까지 진행됩니다.</li></ul>
+        </div>
+      </section>
+
+      <!-- 6. 기타 요청사항 -->
+      <section class="sv-sec">
+        <h2 class="sv-h">6. 기타 요청사항</h2>
+        <p class="sv-sub">📌 기타 요청사항이 있으면 적어주세요!</p>
+        <textarea id="s_etc" rows="3" placeholder="예) 특정 연출 사진 제외, 특정 가족 구성원과의 촬영 요청 등"></textarea>
       </section>
 
       <!-- 레퍼런스 -->
@@ -142,6 +192,21 @@
           <label class="sv-file"><input type="file" id="s_refs" accept="image/*" multiple /><span id="refLabel">사진 선택 / 드래그앤드롭</span></label>
         </div>
         <div class="sv-ref-grid" id="refPreview"></div>
+      </section>
+
+      <!-- 7. 다운로드 안내 -->
+      <section class="sv-sec">
+        <h2 class="sv-h">7. 촬영파일 제공 및 다운로드 안내</h2>
+        <p class="sv-sub">📌 촬영 후 일주일 이내에 네이버 박스(MYBOX) 링크를 이메일로 보내드려요~</p>
+        <div class="sv-info">
+          <ul class="sv-notice">
+            <li>링크에 들어가면 JPG 파일을 모바일에서도 바로 확인할 수 있어요!</li>
+            <li>마이박스는 ‘원본보기’를 눌러야 제대로 된 화질로 보입니다.</li>
+            <li>링크는 30일 동안 유지됩니다! 그 이후에는 한 번 더 공유해 드립니다.</li>
+            <li>기간 내 다운로드를 못 하셨다면 USB 구매(5만원)를 통해 데이터를 받으실 수 있습니다.</li>
+          </ul>
+        </div>
+        <p class="sv-desc" style="margin-top:14px">💍 소중한 날을 더욱 특별하게 기록할 수 있도록 최선을 다하겠습니다. 궁금한 점이 있으면 언제든지 문의 주세요! 😊</p>
       </section>
 
       <div class="sv-submit">
