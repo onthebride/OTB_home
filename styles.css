@@ -241,6 +241,11 @@ a { color: inherit; text-decoration: none; }
 .ig-strip { text-align: center; margin-top: 56px; padding-top: 36px; border-top: 1px solid var(--line); }
 .ig-strip .ig-handle { margin-top: 0; margin-bottom: 18px; }
 .ig-strip-frame { border-radius: var(--radius); overflow: hidden; max-width: 1120px; margin: 0 auto; }
+.ig-mobile-btn { display: none; }
+@media (max-width: 860px) {
+  .ig-strip-frame { display: none; }
+  .ig-mobile-btn { display: inline-block; }
+}
 
 /* Lightbox */
 .lightbox { position: fixed; inset: 0; z-index: 120; display: flex; align-items: center; justify-content: center; }
