@@ -442,7 +442,10 @@ if (inquiryForm) {
   const photos = data || [];
   if (!photos.length) { if (emptyEl) emptyEl.hidden = false; return; }
 
+  const pagerEl = document.getElementById('galleryPager');
+  const PER = 16; // 4 x 4
   let activeTag = '전체';
+  let page = 1;
   const venues = ['전체', ...Array.from(new Set(photos.map((p) => p.venue).filter(Boolean)))];
   const visible = () => (activeTag === '전체' ? photos : photos.filter((p) => p.venue === activeTag));
 
@@ -450,8 +453,22 @@ if (inquiryForm) {
     if (venues.length <= 1) { tagsEl.style.display = 'none'; return; }
     tagsEl.innerHTML = venues.map((v) => `<button class="gtag${v === activeTag ? ' active' : ''}" data-v="${esc(v)}">${esc(v)}</button>`).join('');
   };
+  const renderPager = (total) => {
+    const pages = Math.ceil(total / PER);
+    if (pages <= 1) { pagerEl.innerHTML = ''; return; }
+    let html = `<button class="gpg nav" data-p="${page - 1}"${page === 1 ? ' disabled' : ''}>‹</button>`;
+    for (let i = 1; i <= pages; i++) html += `<button class="gpg${i === page ? ' active' : ''}" data-p="${i}">${i}</button>`;
+    html += `<button class="gpg nav" data-p="${page + 1}"${page === pages ? ' disabled' : ''}>›</button>`;
+    pagerEl.innerHTML = html;
+  };
   const renderGrid = () => {
-    grid.innerHTML = visible().map((p, i) => `<button class="gthumb" data-i="${i}"><img src="${esc(p.image_url)}" alt="${esc(p.venue || '')}" loading="lazy" /></button>`).join('');
+    const list = visible();
+    const start = (page - 1) * PER;
+    grid.innerHTML = list
+      .slice(start, start + PER)
+      .map((p, i) => `<button class="gthumb" data-i="${start + i}"><img src="${esc(p.image_url)}" alt="${esc(p.venue || '')}" loading="lazy" /></button>`)
+      .join('');
+    renderPager(list.length);
   };
   renderTags();
   renderGrid();
@@ -460,8 +477,16 @@ if (inquiryForm) {
     const b = e.target.closest('.gtag');
     if (!b) return;
     activeTag = b.dataset.v;
+    page = 1;
     renderTags();
     renderGrid();
+  });
+  pagerEl.addEventListener('click', (e) => {
+    const b = e.target.closest('.gpg');
+    if (!b || b.disabled) return;
+    page = Number(b.dataset.p);
+    renderGrid();
+    document.getElementById('gallery').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
   // lightbox

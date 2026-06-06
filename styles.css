@@ -230,10 +230,17 @@ a { color: inherit; text-decoration: none; }
 .gthumb:hover img { transform: scale(1.06); }
 .gallery-empty { text-align: center; color: var(--ink-soft); padding: 40px 0; }
 
+/* Gallery pagination */
+.gallery-pager { display: flex; justify-content: center; gap: 6px; margin-top: 32px; }
+.gpg { min-width: 38px; height: 38px; padding: 0 6px; border: 1px solid var(--line); background: var(--paper); color: var(--ink-soft); border-radius: 4px; cursor: pointer; font-family: var(--sans); font-size: .92rem; transition: all .2s; }
+.gpg:hover:not(:disabled) { border-color: var(--gold); color: var(--gold-deep); }
+.gpg.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+.gpg:disabled { opacity: .35; cursor: default; }
+
 /* Instagram one-row strip */
 .ig-strip { text-align: center; margin-top: 56px; padding-top: 36px; border-top: 1px solid var(--line); }
 .ig-strip .ig-handle { margin-top: 0; margin-bottom: 18px; }
-.ig-strip-frame { border-radius: var(--radius); overflow: hidden; max-width: 900px; margin: 0 auto; }
+.ig-strip-frame { border-radius: var(--radius); overflow: hidden; max-width: 1120px; margin: 0 auto; }
 
 /* Lightbox */
 .lightbox { position: fixed; inset: 0; z-index: 120; display: flex; align-items: center; justify-content: center; }
