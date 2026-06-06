@@ -67,7 +67,7 @@ async function addRefFiles(files) {
   const imgs = Array.from(files).filter((f) => f.type.startsWith('image/'));
   for (const f of imgs) {
     if (refs.length >= MAX_REFS) { setStatus(`레퍼런스는 최대 ${MAX_REFS}장까지 올릴 수 있어요.`, 'error'); break; }
-    try { const blob = await resizeToBlob(f, 1400, 0.78); refs.push({ url: URL.createObjectURL(blob), blob }); }
+    try { const blob = await resizeToBlob(f, 1000, 0.7); refs.push({ url: URL.createObjectURL(blob), blob }); }
     catch (_) {}
   }
   renderRefs();
