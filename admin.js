@@ -530,6 +530,8 @@ async function uploadGallery() {
 
 let glAllItems = [];
 let glActiveTag = '전체';
+let glSearch = '';
+let glTagsOpen = false;
 let glPage = 1;
 const GL_PER = 20; // 4 x 5
 
@@ -538,26 +540,62 @@ async function loadGallery() {
   if (error) { $('glGrid').innerHTML = '<p class="empty">목록 오류: ' + esc(error.message) + '</p>'; return; }
   glAllItems = data || [];
   glActiveTag = '전체';
+  glSearch = '';
+  glTagsOpen = false;
   glPage = 1;
   renderGalleryAdmin();
 }
 
-const glVisible = () => (glActiveTag === '전체' ? glAllItems : glAllItems.filter((g) => g.venue === glActiveTag));
+const glVisible = () => {
+  if (glSearch) {
+    const t = glSearch.toLowerCase();
+    return glAllItems.filter((g) => (g.venue || '').toLowerCase().includes(t));
+  }
+  return glActiveTag === '전체' ? glAllItems : glAllItems.filter((g) => g.venue === glActiveTag);
+};
 
 function renderGalleryAdmin() {
-  $('glEmpty').hidden = glAllItems.length > 0;
+  renderGalleryTags();
+  renderGalleryGrid();
+}
 
-  // 태그 (사진 많은 순)
+// 태그: 사진 많은 순 + 검색 + 한 줄 접기(더보기)
+function renderGalleryTags() {
+  $('glEmpty').hidden = glAllItems.length > 0;
   const counts = {};
   glAllItems.forEach((g) => { if (g.venue) counts[g.venue] = (counts[g.venue] || 0) + 1; });
   const venues = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
-  $('glTags').innerHTML =
-    `<button class="gl-tag${glActiveTag === '전체' ? ' active' : ''}" data-v="전체">전체 ${glAllItems.length}</button>` +
-    venues.map((v) => `<button class="gl-tag${v === glActiveTag ? ' active' : ''}" data-v="${esc(v)}">${esc(v)} ${counts[v]}</button>`).join('');
-  $('glTags').querySelectorAll('.gl-tag').forEach((b) =>
-    b.addEventListener('click', () => { glActiveTag = b.dataset.v; glPage = 1; renderGalleryAdmin(); })
-  );
 
+  const top = `<div class="gl-tags-top">
+      <button class="gl-tag${glActiveTag === '전체' && !glSearch ? ' active' : ''}" data-v="전체">전체 ${glAllItems.length}</button>
+      <span class="gl-tag-search"><input id="glTagSearch" type="text" placeholder="예식장 검색" autocomplete="off" value="${esc(glSearch)}" /></span>
+      ${venues.length ? `<button type="button" class="gl-more" id="glMore">${glTagsOpen ? '접기 ▴' : '더보기 ▾'}</button>` : ''}
+    </div>`;
+  const wrap = `<div class="gl-tagwrap${glTagsOpen ? ' open' : ''}" id="glTagWrap">` +
+    venues.map((v) => `<button class="gl-tag${v === glActiveTag && !glSearch ? ' active' : ''}" data-v="${esc(v)}">${esc(v)} ${counts[v]}</button>`).join('') +
+    `</div>`;
+  $('glTags').innerHTML = top + wrap;
+
+  const si = $('glTagSearch');
+  si.addEventListener('input', () => {
+    glSearch = si.value.trim();
+    glActiveTag = '전체';
+    glPage = 1;
+    $('glTags').querySelectorAll('.gl-tag').forEach((b) => b.classList.remove('active'));
+    renderGalleryGrid();
+  });
+  const more = $('glMore');
+  if (more) more.addEventListener('click', () => {
+    glTagsOpen = !glTagsOpen;
+    $('glTagWrap').classList.toggle('open', glTagsOpen);
+    more.textContent = glTagsOpen ? '접기 ▴' : '더보기 ▾';
+  });
+  $('glTags').querySelectorAll('#glTagWrap .gl-tag, .gl-tags-top .gl-tag').forEach((b) =>
+    b.addEventListener('click', () => { glActiveTag = b.dataset.v; glSearch = ''; glPage = 1; renderGalleryAdmin(); })
+  );
+}
+
+function renderGalleryGrid() {
   // 그리드 (페이지네이션 20장)
   const list = glVisible();
   const start = (glPage - 1) * GL_PER;
@@ -594,7 +632,7 @@ function renderGalleryAdmin() {
   html += `<button class="gpg nav" data-p="${glPage + 1}"${glPage === pages ? ' disabled' : ''}>›</button>`;
   pg.innerHTML = html;
   pg.querySelectorAll('.gpg').forEach((b) =>
-    b.addEventListener('click', () => { if (b.disabled) return; glPage = Number(b.dataset.p); renderGalleryAdmin(); $('glTags').scrollIntoView({ behavior: 'smooth', block: 'start' }); })
+    b.addEventListener('click', () => { if (b.disabled) return; glPage = Number(b.dataset.p); renderGalleryGrid(); $('glTags').scrollIntoView({ behavior: 'smooth', block: 'start' }); })
   );
 }
 

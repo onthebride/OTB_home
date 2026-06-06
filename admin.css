@@ -65,7 +65,14 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .gl-status.ok { color: #2f7d4f; } .gl-status.err { color: #c0392b; }
 .gl-hint { margin-top: 8px; font-size: .82rem; color: var(--ink-soft); }
 
-.gl-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.gl-tags { display: block; margin-bottom: 18px; }
+.gl-tags-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+.gl-tag-search input { border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; font-size: .85rem; font-family: var(--sans); color: var(--ink); outline: none; width: 150px; }
+.gl-tag-search input:focus { border-color: var(--gold); }
+.gl-more { background: none; border: 1px solid var(--line); border-radius: 999px; padding: 7px 13px; font-size: .82rem; color: var(--ink-soft); cursor: pointer; font-family: var(--sans); }
+.gl-more:hover { border-color: var(--gold); color: var(--ink); }
+.gl-tagwrap { display: flex; flex-wrap: wrap; gap: 8px; max-height: 42px; overflow: hidden; transition: max-height .25s ease; }
+.gl-tagwrap.open { max-height: 800px; }
 .gl-tag { background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 7px 16px; cursor: pointer; color: var(--ink-soft); font-family: var(--sans); font-size: .85rem; transition: all .2s; }
 .gl-tag:hover { border-color: var(--gold); color: var(--gold-deep); }
 .gl-tag.active { background: var(--ink); color: #fff; border-color: var(--ink); }
