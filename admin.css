@@ -197,10 +197,43 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .sv-lb img { max-width: 100%; max-height: 100%; border-radius: 6px; }
 
 @media (max-width: 600px) {
-  .detail-grid { grid-template-columns: 1fr; }
-  .dash-body { padding: 16px; }
-  .bk-table th:nth-child(4), .bk-table td:nth-child(4) { display: none; }
+  .detail-grid { grid-template-columns: 1fr; gap: 12px 16px; }
+  .dash-body { padding: 14px 14px 60px; }
   .sv-l { flex-basis: 84px; }
+
+  /* 헤더 */
+  .dash-head { padding: 12px 14px; }
+  .dash-logo { height: 22px; }
+  .dash-brand em { display: none; }
+  .dash-head-right { gap: 8px; }
+  .dash-user { display: none; }
+  .btn-ghost { padding: 7px 12px; font-size: .85rem; }
+
+  /* 탭: 가로 스크롤 */
+  .dash-tabs { gap: 2px; overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
+  .dtab { padding: 11px 14px; font-size: .92rem; white-space: nowrap; }
+
+  /* 예약 표: 가로 스크롤 */
+  .table-wrap { overflow-x: auto; }
+  .bk-table { min-width: 520px; }
+
+  /* 모달 */
+  .modal { padding: 0; align-items: flex-end; }
+  .modal-card { max-width: 100%; max-height: 94vh; border-radius: 16px 16px 0 0; padding: 24px 18px 28px; }
+  .modal-title { font-size: 1.15rem; }
+  .modal-sub { margin-bottom: 16px; }
+  .modal-btns { flex-wrap: wrap; }
+  .modal-btns .btn-primary { flex: 1 1 100%; }
+  .btn-outline, .btn-del { flex: 1; }
+
+  /* 캘린더 */
+  .cal-grid { gap: 2px; }
+  .cal-cell { padding: 3px; }
+  .cal-d { font-size: .7rem; }
+
+  /* 작가관리 */
+  .staff-item input.st-name { flex: 1 1 100%; }
+  .staff-item input.st-phone { flex: 1 1 100%; }
 }
 
 /* ===== Dashboard ===== */
