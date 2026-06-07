@@ -272,7 +272,8 @@ function renderView(b, flash) {
       ${field('촬영본 사용동의', b.photo_usage_agree ? 'YES' : 'NO')}
       ${field('합계', won(b.total_price))}
       ${field('담당자', staffName(b.assignee_id) || '미배정')}
-      ${field('입금', b.deposit_paid ? '입금완료 ✓' : '미입금')}
+      ${field('계약금', b.deposit_paid ? '입금완료 ✓' : '미입금')}
+      ${field('잔금', b.balance_paid ? '입금완료 ✓' : '미입금')}
       <div class="full2"><p class="dl">추가 옵션</p>${optionTags(b)}</div>
       ${b.admin_note ? `<div class="full2">${field('관리자 메모', b.admin_note)}</div>` : ''}
     </div>
@@ -358,6 +359,7 @@ function renderEdit(b) {
       <div class="field"><label>담당자</label><select id="e_assignee">${assigneeOptions(b.assignee_id)}</select></div>
     </div>
     <label class="eopt"><input type="checkbox" id="e_deposit" ${ck(b.deposit_paid)} /><span>계약금 입금 완료</span><b></b></label>
+    <label class="eopt"><input type="checkbox" id="e_balance" ${ck(b.balance_paid)} /><span>잔금 입금 완료</span><b></b></label>
 
     <h5 class="eg">확인사항</h5>
     <label class="eopt"><input type="checkbox" id="e_agree_available" ${ck(b.agree_available)} /><span>예약가능 답변 확인</span><b></b></label>
@@ -438,6 +440,7 @@ async function saveDetail(id, recalcEdit) {
     agree_terms: cc('e_agree_terms'),
     total_price: recalcEdit(),
     deposit_paid: cc('e_deposit'),
+    balance_paid: cc('e_balance'),
     assignee_id: $('e_assignee') ? $('e_assignee').value : '',
   };
   const { data, error } = await sb.rpc('admin_save_booking', { p_id: id, payload });
@@ -522,23 +525,27 @@ function renderDashboard() {
     }).join('')
     : '<p class="dash-empty">2주 내 예식이 없어요.</p>';
 
-  // 💳 미입금 (입금 미확인 + 예식 안 지남)
-  const unpaid = allBookings.filter((b) => { const d = wDate(b); return !b.deposit_paid && (!d || d >= today); })
-    .sort((a, b) => (wDate(a) || 0) - (wDate(b) || 0));
-  $('dcUnpaid').textContent = unpaid.length;
-  $('listUnpaid').innerHTML = unpaid.length
-    ? unpaid.slice(0, 40).map((b) => `
-      <div class="dl-item" data-id="${b.id}">
-        <div class="dl-main">
-          <span class="dl-name">${esc(b.contractor_name || '-')}</span>
-          <span class="dl-meta">${esc(fmtDate(b.wedding_date))} · ${esc(b.wedding_venue || '-')} · ${esc(won(b.total_price))}</span>
-        </div>
-        <div class="dl-actions">
-          <button class="btn-sm dl-paid" data-id="${b.id}">입금확인</button>
-          <button class="btn-sm btn-kakao-sm" data-send="${b.id}" data-tpl="A">계약안내 전송</button>
-        </div>
-      </div>`).join('')
-    : '<p class="dash-empty">미입금 건이 없어요 👍</p>';
+  // 💳 미입금 (계약금 / 잔금)
+  const byDate = (a, b) => (wDate(a) || 0) - (wDate(b) || 0);
+  const depUnpaid = allBookings.filter((b) => { const d = wDate(b); return !b.deposit_paid && (!d || d >= today); }).sort(byDate);
+  const balUnpaid = allBookings.filter((b) => { const d = wDate(b); return b.deposit_paid && !b.balance_paid && (!d || d >= today); }).sort(byDate);
+  const unpaidItem = (b, kind) => `
+    <div class="dl-item" data-id="${b.id}">
+      <div class="dl-main">
+        <span class="dl-name">${esc(b.contractor_name || '-')}</span>
+        <span class="dl-meta">${esc(fmtDate(b.wedding_date))} · ${esc(b.wedding_venue || '-')} · ${esc(won(b.total_price))}</span>
+      </div>
+      <div class="dl-actions">
+        <button class="btn-sm dl-paid" data-id="${b.id}" data-pay="${kind}">${kind === 'deposit' ? '계약금 확인' : '잔금 확인'}</button>
+        ${kind === 'deposit' ? `<button class="btn-sm btn-kakao-sm" data-send="${b.id}" data-tpl="A">계약안내</button>` : ''}
+      </div>
+    </div>`;
+  $('dcUnpaid').textContent = depUnpaid.length + balUnpaid.length;
+  $('listUnpaid').innerHTML =
+    `<div class="dl-sub">계약금 미입금 <b>${depUnpaid.length}</b></div>` +
+    (depUnpaid.length ? depUnpaid.slice(0, 30).map((b) => unpaidItem(b, 'deposit')).join('') : '<p class="dash-empty sm">없음</p>') +
+    `<div class="dl-sub">잔금 미입금 <b>${balUnpaid.length}</b></div>` +
+    (balUnpaid.length ? balUnpaid.slice(0, 30).map((b) => unpaidItem(b, 'balance')).join('') : '<p class="dash-empty sm">없음</p>');
 
   // ⬇️ 다운로드 링크 필요 (예식 지남 + E 미발송)
   const needDl = allBookings.filter((b) => { const d = wDate(b); return d && d < today && !(b.alimtalk_sent && b.alimtalk_sent.E); })
@@ -573,17 +580,19 @@ function bindDashEvents() {
   document.querySelectorAll('#tab-dashboard [data-send]').forEach((btn) =>
     btn.addEventListener('click', (e) => { e.stopPropagation(); sendAlimtalk(btn.dataset.send, btn.dataset.tpl); })
   );
-  // 입금 확인
+  // 입금 확인 (계약금/잔금)
   document.querySelectorAll('#tab-dashboard .dl-paid').forEach((btn) =>
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const id = btn.dataset.id;
+      const kind = btn.dataset.pay;
+      const fn = kind === 'balance' ? 'admin_set_balance' : 'admin_set_deposit';
       btn.disabled = true;
-      const { data, error } = await sb.rpc('admin_set_deposit', { p_id: id, p_paid: true });
+      const { data, error } = await sb.rpc(fn, { p_id: id, p_paid: true });
       if (error) { btn.disabled = false; alert('처리 실패: ' + error.message); return; }
       const i = allBookings.findIndex((x) => x.id === id);
       if (i >= 0 && data) allBookings[i] = data;
-      toast('입금 확인 처리했어요.');
+      toast((kind === 'balance' ? '잔금' : '계약금') + ' 입금 확인했어요.');
       renderDashboard();
     })
   );

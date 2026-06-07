@@ -160,6 +160,7 @@ begin
     agree_terms       = coalesce((payload->>'agree_terms')::boolean, false),
     total_price       = nullif(payload->>'total_price','')::int,
     deposit_paid      = coalesce((payload->>'deposit_paid')::boolean, deposit_paid),
+    balance_paid      = coalesce((payload->>'balance_paid')::boolean, balance_paid),
     assignee_id       = case when payload ? 'assignee_id' then nullif(payload->>'assignee_id','')::uuid else assignee_id end
   where id = p_id
   returning * into r;
@@ -218,6 +219,7 @@ create table if not exists public.staff (
 alter table public.staff enable row level security;
 
 alter table public.bookings add column if not exists deposit_paid boolean not null default false;
+alter table public.bookings add column if not exists balance_paid boolean not null default false;
 alter table public.bookings add column if not exists assignee_id uuid references public.staff(id) on delete set null;
 
 create or replace function public.admin_staff_list()
@@ -259,6 +261,14 @@ as $$ declare r public.bookings; begin
   return r;
 end; $$;
 
+create or replace function public.admin_set_balance(p_id uuid, p_paid boolean)
+returns public.bookings language plpgsql security definer set search_path=public, pg_temp
+as $$ declare r public.bookings; begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  update public.bookings set balance_paid = coalesce(p_paid,false) where id=p_id returning * into r;
+  return r;
+end; $$;
+
 create or replace function public.admin_assign(p_ids uuid[], p_assignee uuid)
 returns integer language plpgsql security definer set search_path=public, pg_temp
 as $$ declare n integer; begin
@@ -273,12 +283,14 @@ revoke all on function public.admin_staff_add(text, text) from public, anon;
 revoke all on function public.admin_staff_update(uuid, text, text, boolean) from public, anon;
 revoke all on function public.admin_staff_delete(uuid) from public, anon;
 revoke all on function public.admin_set_deposit(uuid, boolean) from public, anon;
+revoke all on function public.admin_set_balance(uuid, boolean) from public, anon;
 revoke all on function public.admin_assign(uuid[], uuid) from public, anon;
 grant execute on function public.admin_staff_list() to authenticated;
 grant execute on function public.admin_staff_add(text, text) to authenticated;
 grant execute on function public.admin_staff_update(uuid, text, text, boolean) to authenticated;
 grant execute on function public.admin_staff_delete(uuid) to authenticated;
 grant execute on function public.admin_set_deposit(uuid, boolean) to authenticated;
+grant execute on function public.admin_set_balance(uuid, boolean) to authenticated;
 grant execute on function public.admin_assign(uuid[], uuid) to authenticated;
 
 -- ============================================
