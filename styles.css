@@ -518,3 +518,8 @@ input.readonly { background: var(--cream); color: var(--ink-soft); cursor: not-a
   .gallery-grid { grid-template-columns: repeat(2,1fr); }
   .event-band { padding: 56px 32px; }
 }
+
+/* 모바일 입력 시 자동 확대 방지 (iOS는 16px 미만 입력칸 포커스 시 확대됨) */
+@media (max-width: 640px) {
+  input, select, textarea { font-size: 16px; }
+}

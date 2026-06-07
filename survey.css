@@ -203,6 +203,11 @@ textarea { resize: vertical; }
 }
 .sv-lb img { max-width: 100%; max-height: 100%; border-radius: 6px; }
 
+/* 모바일 입력 시 자동 확대 방지 (iOS) */
+@media (max-width: 640px) {
+  input, select, textarea, .sv-field input { font-size: 16px; }
+}
+
 @media (max-width: 560px) {
   .sv-card { padding: 30px 20px; }
   .sv-grid { grid-template-columns: 1fr; }
