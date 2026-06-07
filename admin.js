@@ -287,8 +287,8 @@ function renderView(b, flash) {
       ${b.photographer && b.photographer !== '기본' ? field('촬영', b.photographer) : ''}
       ${b.photo_usage_agree ? field('촬영본 사용동의', 'YES') : ''}
       ${field('합계', won(b.total_price))}
-      ${field('계약금', b.deposit_paid ? '입금완료 ✓' : '미입금')}
-      ${field('잔금', b.balance_paid ? '입금완료 ✓' : '미입금')}
+      ${field('계약금', won(10) + ' · ' + (b.deposit_paid ? '입금완료 ✓' : '미입금'))}
+      ${field('잔금', (b.total_price != null ? won(b.total_price - 10) : '-') + ' · ' + (b.balance_paid ? '입금완료 ✓' : '미입금'))}
       <div class="full2"><p class="dl">추가 옵션</p>${optionTags(b)}</div>
       ${b.admin_note ? `<div class="full2">${field('관리자 메모', b.admin_note)}</div>` : ''}
     </div>
@@ -617,17 +617,20 @@ function renderDashboard() {
   const depUnpaid = allBookings.filter((b) => { const d = wDate(b); return !b.deposit_paid && (!d || d >= today) && notCancelled(b); }).sort(byDate);
   // 잔금 미입금: 예식 2일 전부터 표시 (이후 미납분 포함)
   const balUnpaid = allBookings.filter((b) => { const d = wDate(b); return b.deposit_paid && !b.balance_paid && d && d <= in2 && notCancelled(b); }).sort(byDate);
-  const unpaidItem = (b, kind) => `
+  const unpaidItem = (b, kind) => {
+    const amt = kind === 'deposit' ? won(10) : (b.total_price != null ? won(b.total_price - 10) : '-');
+    return `
     <div class="dl-item" data-id="${b.id}">
       <div class="dl-main">
         <span class="dl-name">${esc(b.contractor_name || '-')}</span>
-        <span class="dl-meta">${esc(fmtDate(b.wedding_date))} · ${esc(b.wedding_venue || '-')} · ${esc(won(b.total_price))}</span>
+        <span class="dl-meta">${esc(fmtDate(b.wedding_date))} · ${esc(b.wedding_venue || '-')} · ${kind === 'deposit' ? '계약금' : '잔금'} ${esc(amt)}</span>
       </div>
       <div class="dl-actions">
         <button class="btn-sm dl-paid" data-id="${b.id}" data-pay="${kind}">${kind === 'deposit' ? '계약금 확인' : '잔금 확인'}</button>
         ${kind === 'deposit' ? `<button class="btn-sm btn-kakao-sm" data-send="${b.id}" data-tpl="A">계약안내</button>` : ''}
       </div>
     </div>`;
+  };
   $('dcUnpaid').textContent = depUnpaid.length + balUnpaid.length;
   const activeUnpaid = unpaidTab === 'balance' ? balUnpaid : depUnpaid;
   $('listUnpaid').innerHTML =
