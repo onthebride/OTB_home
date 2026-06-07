@@ -803,8 +803,8 @@ function renderStaff() {
   $('staffEmpty').hidden = allStaff.length > 0;
   $('staffList').innerHTML = allStaff.map((s) => `
     <div class="staff-item${s.active ? '' : ' inactive'}" data-id="${s.id}">
-      <input class="st-name" data-id="${s.id}" value="${esc(s.name || '')}" placeholder="이름" />
-      <input class="st-phone" data-id="${s.id}" value="${esc(s.phone || '')}" placeholder="연락처" />
+      <input type="text" class="st-name" data-id="${s.id}" value="${esc(s.name || '')}" placeholder="이름" />
+      <input type="text" class="st-phone" data-id="${s.id}" value="${esc(s.phone || '')}" placeholder="연락처" />
       <label class="st-active"><input type="checkbox" class="st-act" data-id="${s.id}" ${s.active ? 'checked' : ''} /> 활성</label>
       <button class="btn-sm st-save" data-id="${s.id}">저장</button>
       <button class="btn-sm st-del" data-id="${s.id}">삭제</button>
