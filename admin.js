@@ -103,14 +103,13 @@ function populateAssigneeSelects() {
 }
 
 function render() {
-  const counts = { 전체: allBookings.length, 신규: 0, 확인: 0, 전송완료: 0, 취소: 0 };
+  const counts = { 전체: allBookings.length, 신규: 0, 확정: 0, 취소: 0 };
   allBookings.forEach((b) => {
     if (counts[b.status] != null) counts[b.status]++;
   });
   $('c_all').textContent = counts['전체'];
   $('c_new').textContent = counts['신규'];
-  $('c_ok').textContent = counts['확인'];
-  $('c_sent').textContent = counts['전송완료'];
+  if ($('c_confirm')) $('c_confirm').textContent = counts['확정'];
   if ($('c_cancel')) $('c_cancel').textContent = counts['취소'];
 
   const term = bkSearchTerm.toLowerCase();
@@ -261,6 +260,11 @@ function renderView(b, flash) {
     <p class="modal-sub">접수 ${esc(fmtDateTime(b.created_at))}</p>
     ${flash ? `<p class="save-msg ok" style="text-align:left;margin:0 0 12px">${esc(flash)}</p>` : ''}
 
+    <div class="md-assignee">
+      <span class="md-asg-label">👤 담당자</span>
+      <select id="mAssignee">${assigneeOptions(b.assignee_id)}</select>
+    </div>
+
     <div class="detail-grid">
       ${field('연락처', b.contractor_phone)}
       ${field('이메일', b.contractor_email)}
@@ -274,7 +278,6 @@ function renderView(b, flash) {
       ${field('작가', b.photographer)}
       ${field('촬영본 사용동의', b.photo_usage_agree ? 'YES' : 'NO')}
       ${field('합계', won(b.total_price))}
-      ${field('담당자', staffName(b.assignee_id) || '미배정')}
       ${field('계약금', b.deposit_paid ? '입금완료 ✓' : '미입금')}
       ${field('잔금', b.balance_paid ? '입금완료 ✓' : '미입금')}
       <div class="full2"><p class="dl">추가 옵션</p>${optionTags(b)}</div>
@@ -303,6 +306,16 @@ function renderView(b, flash) {
   $('mEdit').addEventListener('click', () => renderEdit(b));
   $('mDelete').addEventListener('click', () => deleteBooking(b.id));
   $('mCancelBk').addEventListener('click', () => cancelBooking(b.id));
+  if ($('mAssignee')) $('mAssignee').addEventListener('change', async (e) => {
+    const aid = e.target.value || null;
+    const { error } = await sb.rpc('admin_assign', { p_ids: [b.id], p_assignee: aid });
+    if (error) { alert('배정 실패: ' + error.message); return; }
+    b.assignee_id = aid;
+    const i = allBookings.findIndex((x) => x.id === b.id);
+    if (i >= 0) allBookings[i].assignee_id = aid;
+    renderDashboard();
+    toast(aid ? `담당자: ${staffName(aid)}` : '담당 해제');
+  });
   $('modalCard').querySelectorAll('.atk-badge').forEach((btn) =>
     btn.addEventListener('click', async () => {
       const k = btn.dataset.atk;
@@ -399,8 +412,7 @@ function renderEdit(b) {
       <div class="field"><label>상태</label>
         <select id="mStatus">
           <option value="신규" ${sl(b.status, '신규')}>신규</option>
-          <option value="확인" ${sl(b.status, '확인')}>확인</option>
-          <option value="전송완료" ${sl(b.status, '전송완료')}>전송완료</option>
+          <option value="확정" ${sl(b.status, '확정')}>확정</option>
           <option value="취소" ${sl(b.status, '취소')}>취소</option>
         </select>
       </div>

@@ -117,6 +117,7 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .badge.신규 { background: #fbeee0; color: var(--gold-deep); }
 .badge.확인 { background: #e3edf5; color: #2c6b9b; }
 .badge.전송완료 { background: #e4f1e8; color: #2f7d4f; }
+.badge.확정 { background: #e4f1e8; color: #2f7d4f; }
 
 /* Modal */
 .modal { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
@@ -312,6 +313,12 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .atk-badge { border: 1px solid var(--line); background: #fff; color: var(--ink-soft); border-radius: 999px; padding: 7px 13px; font-size: .82rem; cursor: pointer; transition: all .18s; }
 .atk-badge:hover { border-color: var(--gold); }
 .atk-badge.on { background: #e4f1e8; border-color: #9cc7ad; color: #2f7d4f; font-weight: 600; }
+
+/* 상세 상단 담당자 */
+.md-assignee { display: flex; align-items: center; gap: 10px; background: #faf7f2; border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; }
+.md-asg-label { font-size: .85rem; color: var(--ink-soft); font-weight: 600; white-space: nowrap; }
+.md-assignee select { flex: 1; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-size: .9rem; background: #fff; color: var(--ink); }
+.md-assignee select:focus { outline: none; border-color: var(--gold); }
 
 @media (max-width: 760px) {
   .dash-cards { grid-template-columns: 1fr; }

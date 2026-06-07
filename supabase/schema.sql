@@ -257,7 +257,10 @@ create or replace function public.admin_set_deposit(p_id uuid, p_paid boolean)
 returns public.bookings language plpgsql security definer set search_path=public, pg_temp
 as $$ declare r public.bookings; begin
   if auth.uid() is null then raise exception 'unauthorized'; end if;
-  update public.bookings set deposit_paid = coalesce(p_paid,false) where id=p_id returning * into r;
+  update public.bookings
+     set deposit_paid = coalesce(p_paid,false),
+         status = case when coalesce(p_paid,false) and status = '신규' then '확정' else status end
+   where id=p_id returning * into r;
   return r;
 end; $$;
 
