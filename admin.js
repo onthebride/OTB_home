@@ -452,7 +452,6 @@ function sendAlimtalk(id, tpl) {
 function renderDashboard() {
   if (!$('tab-dashboard')) return;
   const today = startOfToday();
-  const in7 = new Date(today); in7.setDate(in7.getDate() + 7);
 
   // 🔔 신규 예약
   const news = allBookings.filter((b) => b.status === '신규')
@@ -471,25 +470,25 @@ function renderDashboard() {
       </div>`).join('')
     : '<p class="dash-empty">새 예약이 없어요.</p>';
 
-  // 📅 다가오는 예식
-  const upcoming = allBookings.filter((b) => { const d = wDate(b); return d && d >= today; })
+  // 📅 이번 주 예식 (오늘 ~ 이번 주 토요일)
+  const endOfWeek = new Date(today); endOfWeek.setDate(endOfWeek.getDate() + (6 - today.getDay()));
+  const thisWeek = allBookings.filter((b) => { const d = wDate(b); return d && d >= today && d <= endOfWeek; })
     .sort((a, b) => wDate(a) - wDate(b));
-  $('dcUpcoming').textContent = upcoming.length;
-  $('listUpcoming').innerHTML = upcoming.length
-    ? upcoming.slice(0, 40).map((b) => {
+  $('dcUpcoming').textContent = thisWeek.length;
+  $('listUpcoming').innerHTML = thisWeek.length
+    ? thisWeek.map((b) => {
       const d = wDate(b);
       const dleft = Math.round((d - today) / 86400000);
-      const soon = d < in7;
       const dtag = dleft === 0 ? '오늘' : 'D-' + dleft;
       return `
-      <div class="dl-item${soon ? ' soon' : ''}" data-id="${b.id}">
+      <div class="dl-item soon" data-id="${b.id}">
         <div class="dl-main">
           <span class="dl-name">${esc(b.contractor_name || '-')} <span class="dday">${dtag}</span></span>
           <span class="dl-meta">${esc(fmtDate(b.wedding_date))} ${esc(kTimeShort(b.wedding_time))} · ${esc(b.wedding_venue || '-')}</span>
         </div>
       </div>`;
     }).join('')
-    : '<p class="dash-empty">예정된 예식이 없어요.</p>';
+    : '<p class="dash-empty">이번 주 예식이 없어요.</p>';
 
   // ⬇️ 다운로드 링크 필요 (예식 지남 + E 미발송)
   const needDl = allBookings.filter((b) => { const d = wDate(b); return d && d < today && !(b.alimtalk_sent && b.alimtalk_sent.E); })
