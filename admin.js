@@ -22,7 +22,7 @@ let calMonth = null; // 캘린더 현재 월 {y, m}
 let unpaidTab = 'deposit'; // 미입금 탭: deposit | balance
 let allStaff = [];
 let staffMap = {};
-const ATK_TPLS = [['A', '계약안내'], ['B', '한달전'], ['C', '일주일전'], ['D', '이틀전'], ['E', '다운로드']];
+const ATK_TPLS = [['A', '계약안내'], ['B', '한달 전'], ['C', '잔금안내'], ['D', '최종안내'], ['E', '링크안내']];
 const notCancelled = (b) => b.status !== '취소';
 const STAFF_COLORS = ['#b08d57', '#6b8e9b', '#9b6b8e', '#7d9b6b', '#9b7d6b', '#6b6b9b', '#b5727a', '#5fa3a3', '#a38b5f', '#8a6ba3'];
 function staffColor(id) {

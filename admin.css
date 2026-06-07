@@ -311,9 +311,9 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .btn-del:hover { background: #b5462f; border-color: #b5462f; color: #fff; }
 
 /* 알림톡 진행 */
-.atk-prog { margin: 18px 0 4px; }
-.atk-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-.atk-badge { border: 1px solid var(--line); background: #fff; color: var(--ink-soft); border-radius: 999px; padding: 7px 13px; font-size: .82rem; cursor: pointer; transition: all .18s; }
+.atk-prog { margin: 16px 0 4px; }
+.atk-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+.atk-badge { border: 1px solid var(--line); background: #fff; color: var(--ink-soft); border-radius: 999px; padding: 4px 9px; font-size: .72rem; cursor: pointer; transition: all .18s; }
 .atk-badge:hover { border-color: var(--gold); }
 .atk-badge.on { background: #e4f1e8; border-color: #9cc7ad; color: #2f7d4f; font-weight: 600; }
 
