@@ -16,7 +16,9 @@ const fmtDateTime = (s) =>
 
 let allBookings = [];
 let filter = '전체';
+let bkSearchTerm = '';
 let surveyIds = new Set(); // 설문 제출된 예약 ID
+let calMonth = null; // 캘린더 현재 월 {y, m}
 
 /* ===== Auth views ===== */
 const showLogin = () => {
@@ -74,6 +76,7 @@ async function loadBookings() {
   const sres = await sb.rpc('admin_survey_ids');
   surveyIds = new Set(Array.isArray(sres.data) ? sres.data : []);
   render();
+  renderDashboard();
 }
 
 function render() {
@@ -86,7 +89,13 @@ function render() {
   $('c_ok').textContent = counts['확인'];
   $('c_sent').textContent = counts['전송완료'];
 
-  const rows = allBookings.filter((b) => filter === '전체' || b.status === filter);
+  const term = bkSearchTerm.toLowerCase();
+  const rows = allBookings.filter((b) => {
+    if (filter !== '전체' && b.status !== filter) return false;
+    if (!term) return true;
+    return [b.contractor_name, b.wedding_venue, b.contractor_phone, b.groom_name, b.bride_name]
+      .some((v) => (v || '').toLowerCase().includes(term));
+  });
   $('emptyMsg').hidden = rows.length > 0;
 
   $('bkRows').innerHTML = rows
@@ -115,6 +124,10 @@ $('filters').addEventListener('click', (e) => {
   document.querySelectorAll('.filter').forEach((f) => f.classList.toggle('active', f === btn));
   render();
 });
+
+if ($('bkSearch')) {
+  $('bkSearch').addEventListener('input', (e) => { bkSearchTerm = e.target.value.trim(); render(); });
+}
 
 /* ===== Detail modal ===== */
 function optionTags(b) {
@@ -406,7 +419,164 @@ async function saveDetail(id, recalcEdit) {
   const i = allBookings.findIndex((x) => x.id === id);
   if (i >= 0 && data) allBookings[i] = data;
   render();
+  renderDashboard();
   renderView(data || allBookings[i], '저장되었습니다.');
+}
+
+/* ===== Dashboard ===== */
+function startOfToday() { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }
+function wDate(b) {
+  if (!b.wedding_date) return null;
+  const d = new Date(b.wedding_date); d.setHours(0, 0, 0, 0); return d;
+}
+const kTimeShort = (t) => {
+  if (!t) return '';
+  const [hh, mm] = String(t).split(':').map(Number);
+  return (hh < 12 ? '오전' : '오후') + (hh % 12 === 0 ? 12 : hh % 12) + ':' + String(mm).padStart(2, '0');
+};
+
+function toast(msg) {
+  let el = $('toast');
+  if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; document.body.appendChild(el); }
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+// 알림톡 발송 (솔라피 연동 전: 안내만)
+function sendAlimtalk(id, tpl) {
+  toast('카카오 알림톡은 솔라피 연동(자격증명 등록) 후 실제 발송됩니다.');
+}
+
+function renderDashboard() {
+  if (!$('tab-dashboard')) return;
+  const today = startOfToday();
+  const in7 = new Date(today); in7.setDate(in7.getDate() + 7);
+
+  // 🔔 신규 예약
+  const news = allBookings.filter((b) => b.status === '신규')
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  $('dcNew').textContent = news.length;
+  $('listNew').innerHTML = news.length
+    ? news.slice(0, 40).map((b) => `
+      <div class="dl-item" data-id="${b.id}">
+        <div class="dl-main">
+          <span class="dl-name">${esc(b.contractor_name || '-')}</span>
+          <span class="dl-meta">${esc(fmtDate(b.wedding_date))} · ${esc(b.wedding_venue || '-')} · ${esc(won(b.total_price))}</span>
+        </div>
+        <div class="dl-actions">
+          <button class="btn-sm btn-kakao-sm" data-send="${b.id}" data-tpl="A">계약안내 전송</button>
+        </div>
+      </div>`).join('')
+    : '<p class="dash-empty">새 예약이 없어요.</p>';
+
+  // 📅 다가오는 예식
+  const upcoming = allBookings.filter((b) => { const d = wDate(b); return d && d >= today; })
+    .sort((a, b) => wDate(a) - wDate(b));
+  $('dcUpcoming').textContent = upcoming.length;
+  $('listUpcoming').innerHTML = upcoming.length
+    ? upcoming.slice(0, 40).map((b) => {
+      const d = wDate(b);
+      const dleft = Math.round((d - today) / 86400000);
+      const soon = d < in7;
+      const dtag = dleft === 0 ? '오늘' : 'D-' + dleft;
+      return `
+      <div class="dl-item${soon ? ' soon' : ''}" data-id="${b.id}">
+        <div class="dl-main">
+          <span class="dl-name">${esc(b.contractor_name || '-')} <span class="dday">${dtag}</span></span>
+          <span class="dl-meta">${esc(fmtDate(b.wedding_date))} ${esc(kTimeShort(b.wedding_time))} · ${esc(b.wedding_venue || '-')}</span>
+        </div>
+      </div>`;
+    }).join('')
+    : '<p class="dash-empty">예정된 예식이 없어요.</p>';
+
+  // ⬇️ 다운로드 링크 필요 (예식 지남 + E 미발송)
+  const needDl = allBookings.filter((b) => { const d = wDate(b); return d && d < today && !(b.alimtalk_sent && b.alimtalk_sent.E); })
+    .sort((a, b) => wDate(b) - wDate(a));
+  $('dcDownload').textContent = needDl.length;
+  $('listDownload').innerHTML = needDl.length
+    ? needDl.slice(0, 40).map((b) => `
+      <div class="dl-item dl-download" data-id="${b.id}">
+        <div class="dl-main">
+          <span class="dl-name">${esc(b.contractor_name || '-')}</span>
+          <span class="dl-meta">${esc(fmtDate(b.wedding_date))} · ${esc(b.wedding_venue || '-')}</span>
+        </div>
+        <div class="dl-dlrow">
+          <input type="text" class="dl-link" data-id="${b.id}" placeholder="다운로드 링크 붙여넣기" value="${esc(b.download_link || '')}" />
+          <button class="btn-sm dl-save" data-id="${b.id}">저장</button>
+          <button class="btn-sm btn-kakao-sm" data-send="${b.id}" data-tpl="E">카톡 전송</button>
+        </div>
+      </div>`).join('')
+    : '<p class="dash-empty">모두 처리됐어요 👍</p>';
+
+  bindDashEvents();
+  renderCalendar();
+}
+
+function bindDashEvents() {
+  // 항목(이름/메타) 클릭 → 상세
+  document.querySelectorAll('#tab-dashboard .dl-main').forEach((m) =>
+    m.addEventListener('click', () => openDetail(m.closest('.dl-item').dataset.id))
+  );
+  // 카톡 전송
+  document.querySelectorAll('#tab-dashboard [data-send]').forEach((btn) =>
+    btn.addEventListener('click', (e) => { e.stopPropagation(); sendAlimtalk(btn.dataset.send, btn.dataset.tpl); })
+  );
+  // 다운로드 링크 저장
+  document.querySelectorAll('#tab-dashboard .dl-save').forEach((btn) =>
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const inp = document.querySelector(`#tab-dashboard .dl-link[data-id="${id}"]`);
+      btn.disabled = true; btn.textContent = '저장중';
+      const { data, error } = await sb.rpc('admin_set_download_link', { p_id: id, p_link: inp.value.trim() });
+      btn.disabled = false;
+      if (error) { btn.textContent = '저장'; alert('저장 실패: ' + error.message); return; }
+      const i = allBookings.findIndex((x) => x.id === id);
+      if (i >= 0 && data) allBookings[i] = data;
+      btn.textContent = '저장됨 ✓';
+      setTimeout(() => { btn.textContent = '저장'; }, 1500);
+    })
+  );
+}
+
+function renderCalendar() {
+  if (!calMonth) { const t = new Date(); calMonth = { y: t.getFullYear(), m: t.getMonth() }; }
+  const { y, m } = calMonth;
+  $('calLabel').textContent = `${y}년 ${m + 1}월`;
+  const startDay = new Date(y, m, 1).getDay();
+  const days = new Date(y, m + 1, 0).getDate();
+  const today = startOfToday();
+
+  const byDay = {};
+  allBookings.forEach((b) => {
+    const d = wDate(b);
+    if (d && d.getFullYear() === y && d.getMonth() === m) (byDay[d.getDate()] = byDay[d.getDate()] || []).push(b);
+  });
+
+  let html = '<div class="cal-grid">';
+  ['일', '월', '화', '수', '목', '금', '토'].forEach((w) => (html += `<div class="cal-wd">${w}</div>`));
+  for (let i = 0; i < startDay; i++) html += '<div class="cal-cell empty"></div>';
+  for (let dnum = 1; dnum <= days; dnum++) {
+    const items = (byDay[dnum] || []).sort((a, b) => (a.wedding_time || '').localeCompare(b.wedding_time || ''));
+    const isToday = today.getFullYear() === y && today.getMonth() === m && today.getDate() === dnum;
+    html += `<div class="cal-cell${isToday ? ' today' : ''}${items.length ? ' has' : ''}">
+      <span class="cal-d">${dnum}</span>
+      ${items.slice(0, 3).map((b) => `<span class="cal-ev" data-id="${b.id}" title="${esc((b.contractor_name || '') + ' ' + (b.wedding_venue || ''))}">${esc(kTimeShort(b.wedding_time))} ${esc(b.contractor_name || '')}</span>`).join('')}
+      ${items.length > 3 ? `<span class="cal-more">+${items.length - 3}</span>` : ''}
+    </div>`;
+  }
+  html += '</div>';
+  $('calendar').innerHTML = html;
+  $('calendar').querySelectorAll('.cal-ev').forEach((e) =>
+    e.addEventListener('click', () => openDetail(e.dataset.id))
+  );
+}
+
+if ($('calPrev')) {
+  $('calPrev').addEventListener('click', () => { calMonth.m--; if (calMonth.m < 0) { calMonth.m = 11; calMonth.y--; } renderCalendar(); });
+  $('calNext').addEventListener('click', () => { calMonth.m++; if (calMonth.m > 11) { calMonth.m = 0; calMonth.y++; } renderCalendar(); });
 }
 
 /* ===== Gallery management ===== */
@@ -417,8 +587,10 @@ if (dashTabs) {
     if (!t) return;
     document.querySelectorAll('.dtab').forEach((x) => x.classList.toggle('active', x === t));
     const tab = t.dataset.tab;
+    $('tab-dashboard').hidden = tab !== 'dashboard';
     $('tab-bookings').hidden = tab !== 'bookings';
     $('tab-gallery').hidden = tab !== 'gallery';
+    if (tab === 'dashboard') renderDashboard();
     if (tab === 'gallery') loadGallery();
   });
 }

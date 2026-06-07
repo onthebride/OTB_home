@@ -172,6 +172,37 @@ grant execute on function public.admin_list_bookings() to authenticated;
 grant execute on function public.admin_update_booking(uuid, text, text) to authenticated;
 grant execute on function public.admin_save_booking(uuid, jsonb) to authenticated;
 
+-- 대시보드: 다운로드 링크 저장 + 알림톡 발송 기록 컬럼
+alter table public.bookings add column if not exists download_link text;
+alter table public.bookings add column if not exists alimtalk_sent jsonb not null default '{}'::jsonb;
+
+create or replace function public.admin_set_download_link(p_id uuid, p_link text)
+returns public.bookings language plpgsql security definer set search_path=public, pg_temp
+as $$
+declare r public.bookings;
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  update public.bookings set download_link = nullif(p_link,'') where id = p_id returning * into r;
+  return r;
+end; $$;
+revoke all on function public.admin_set_download_link(uuid, text) from public, anon;
+grant execute on function public.admin_set_download_link(uuid, text) to authenticated;
+
+-- 알림톡 발송 기록 (실제 발송 시 호출) — alimtalk_sent에 {템플릿: 시각} 누적
+create or replace function public.admin_mark_alimtalk(p_id uuid, p_template text)
+returns public.bookings language plpgsql security definer set search_path=public, pg_temp
+as $$
+declare r public.bookings;
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  update public.bookings
+     set alimtalk_sent = coalesce(alimtalk_sent,'{}'::jsonb) || jsonb_build_object(p_template, to_jsonb(now()))
+   where id = p_id returning * into r;
+  return r;
+end; $$;
+revoke all on function public.admin_mark_alimtalk(uuid, text) from public, anon;
+grant execute on function public.admin_mark_alimtalk(uuid, text) to authenticated;
+
 -- ============================================
 -- 갤러리 (자체 갤러리: Storage 업로드 + 태그 + 라이트박스)
 -- ============================================

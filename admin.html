@@ -37,16 +37,52 @@
 
     <div class="dash-body">
       <div class="dash-tabs">
-        <button class="dtab active" data-tab="bookings">예약</button>
+        <button class="dtab active" data-tab="dashboard">대시보드</button>
+        <button class="dtab" data-tab="bookings">예약</button>
         <button class="dtab" data-tab="gallery">갤러리</button>
       </div>
 
-      <div id="tab-bookings">
+      <div id="tab-dashboard">
+        <div class="dash-cards">
+          <div class="dash-card" id="card-new">
+            <div class="dash-card-head"><h3>🔔 신규 예약</h3><span class="dash-count" id="dcNew">0</span></div>
+            <div class="dash-list" id="listNew"></div>
+          </div>
+
+          <div class="dash-card" id="card-upcoming">
+            <div class="dash-card-head"><h3>📅 다가오는 예식</h3><span class="dash-count" id="dcUpcoming">0</span></div>
+            <div class="dash-list" id="listUpcoming"></div>
+          </div>
+
+          <div class="dash-card" id="card-download">
+            <div class="dash-card-head"><h3>⬇️ 다운로드 링크 필요</h3><span class="dash-count" id="dcDownload">0</span></div>
+            <div class="dash-list" id="listDownload"></div>
+          </div>
+        </div>
+
+        <div class="dash-card cal-card">
+          <div class="dash-card-head">
+            <h3>📆 예식 캘린더</h3>
+            <div class="cal-nav">
+              <button class="btn-ghost" id="calPrev">‹</button>
+              <span id="calLabel"></span>
+              <button class="btn-ghost" id="calNext">›</button>
+            </div>
+          </div>
+          <div class="calendar" id="calendar"></div>
+        </div>
+      </div>
+
+      <div id="tab-bookings" hidden>
         <div class="filters" id="filters">
           <button class="filter active" data-f="전체">전체 <span id="c_all">0</span></button>
           <button class="filter" data-f="신규">신규 <span id="c_new">0</span></button>
           <button class="filter" data-f="확인">확인 <span id="c_ok">0</span></button>
           <button class="filter" data-f="전송완료">전송완료 <span id="c_sent">0</span></button>
+        </div>
+
+        <div class="bk-search">
+          <input type="text" id="bkSearch" placeholder="🔍 이름 · 예식장 · 연락처 검색" autocomplete="off" />
         </div>
 
         <div class="table-wrap">

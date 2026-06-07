@@ -200,3 +200,61 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
   .bk-table th:nth-child(4), .bk-table td:nth-child(4) { display: none; }
   .sv-l { flex-basis: 84px; }
 }
+
+/* ===== Dashboard ===== */
+.dash-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; }
+.dash-card { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+.dash-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.dash-card-head h3 { font-size: 1rem; font-weight: 700; }
+.dash-count { background: var(--ink); color: #fff; border-radius: 999px; min-width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: .78rem; padding: 0 8px; }
+#card-download .dash-count { background: var(--gold-deep); }
+.dash-list { display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto; }
+.dash-empty { color: var(--ink-soft); font-size: .86rem; padding: 14px 4px; }
+
+.dl-item { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: #fff; }
+.dl-item.soon { border-color: var(--gold); background: #fdf8f0; }
+.dl-main { cursor: pointer; }
+.dl-name { font-weight: 600; font-size: .92rem; }
+.dl-meta { display: block; color: var(--ink-soft); font-size: .8rem; margin-top: 2px; }
+.dday { font-size: .72rem; color: var(--gold-deep); font-weight: 700; margin-left: 4px; }
+.dl-actions { margin-top: 8px; display: flex; gap: 6px; }
+.dl-dlrow { margin-top: 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.dl-link { flex: 1; min-width: 120px; border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; font-size: .82rem; outline: none; }
+.dl-link:focus { border-color: var(--gold); }
+.btn-sm { border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 7px 12px; font-size: .8rem; cursor: pointer; white-space: nowrap; }
+.btn-sm:hover { border-color: var(--gold); }
+.dl-save { color: var(--ink); }
+.btn-kakao-sm { background: #fae100; border: none; color: #3a1d1d; font-weight: 700; }
+.btn-kakao-sm:hover { filter: brightness(.97); }
+
+/* Calendar */
+.cal-card { margin-top: 4px; }
+.cal-nav { display: flex; align-items: center; gap: 12px; }
+.cal-nav span { font-weight: 600; min-width: 96px; text-align: center; }
+.cal-nav .btn-ghost { padding: 4px 12px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-wd { text-align: center; font-size: .76rem; color: var(--ink-soft); padding: 6px 0; font-weight: 600; }
+.cal-wd:first-child { color: #c0392b; }
+.cal-cell { min-height: 92px; border: 1px solid var(--line); border-radius: 6px; padding: 5px; background: #fff; display: flex; flex-direction: column; gap: 3px; }
+.cal-cell.empty { background: transparent; border: none; }
+.cal-cell.today { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.cal-cell.has { background: #fdfbf7; }
+.cal-d { font-size: .78rem; color: var(--ink-soft); }
+.cal-cell.today .cal-d { color: var(--gold-deep); font-weight: 700; }
+.cal-ev { font-size: .72rem; background: var(--ink); color: #fff; border-radius: 4px; padding: 2px 5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-ev:hover { background: var(--gold-deep); }
+.cal-more { font-size: .7rem; color: var(--ink-soft); padding-left: 2px; }
+
+.bk-search { margin-bottom: 14px; }
+.bk-search input { width: 100%; max-width: 360px; border: 1px solid var(--line); border-radius: 999px; padding: 10px 16px; font-size: .9rem; outline: none; background: #fff; }
+.bk-search input:focus { border-color: var(--gold); }
+
+/* Toast */
+.toast { position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%) translateY(20px); background: var(--ink); color: #fff; padding: 12px 20px; border-radius: 8px; font-size: .88rem; opacity: 0; pointer-events: none; transition: all .25s ease; z-index: 2000; max-width: 90%; text-align: center; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 760px) {
+  .dash-cards { grid-template-columns: 1fr; }
+  .cal-cell { min-height: 64px; }
+  .cal-ev { font-size: .64rem; }
+}
