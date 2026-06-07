@@ -269,6 +269,26 @@ as $$ declare r public.bookings; begin
   return r;
 end; $$;
 
+create or replace function public.admin_delete_booking(p_id uuid)
+returns void language plpgsql security definer set search_path=public, pg_temp
+as $$ begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  delete from public.bookings where id = p_id;  -- surveys/survey_refs는 cascade 삭제
+end; $$;
+
+-- 알림톡 발송 표시 on/off (진행 추적용; 실제 발송 연동 시에도 사용)
+create or replace function public.admin_set_alimtalk(p_id uuid, p_template text, p_on boolean)
+returns public.bookings language plpgsql security definer set search_path=public, pg_temp
+as $$ declare r public.bookings; begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  if coalesce(p_on,true) then
+    update public.bookings set alimtalk_sent = coalesce(alimtalk_sent,'{}'::jsonb) || jsonb_build_object(p_template, to_jsonb(now())) where id=p_id returning * into r;
+  else
+    update public.bookings set alimtalk_sent = coalesce(alimtalk_sent,'{}'::jsonb) - p_template where id=p_id returning * into r;
+  end if;
+  return r;
+end; $$;
+
 create or replace function public.admin_assign(p_ids uuid[], p_assignee uuid)
 returns integer language plpgsql security definer set search_path=public, pg_temp
 as $$ declare n integer; begin
@@ -284,6 +304,8 @@ revoke all on function public.admin_staff_update(uuid, text, text, boolean) from
 revoke all on function public.admin_staff_delete(uuid) from public, anon;
 revoke all on function public.admin_set_deposit(uuid, boolean) from public, anon;
 revoke all on function public.admin_set_balance(uuid, boolean) from public, anon;
+revoke all on function public.admin_delete_booking(uuid) from public, anon;
+revoke all on function public.admin_set_alimtalk(uuid, text, boolean) from public, anon;
 revoke all on function public.admin_assign(uuid[], uuid) from public, anon;
 grant execute on function public.admin_staff_list() to authenticated;
 grant execute on function public.admin_staff_add(text, text) to authenticated;
@@ -291,6 +313,8 @@ grant execute on function public.admin_staff_update(uuid, text, text, boolean) t
 grant execute on function public.admin_staff_delete(uuid) to authenticated;
 grant execute on function public.admin_set_deposit(uuid, boolean) to authenticated;
 grant execute on function public.admin_set_balance(uuid, boolean) to authenticated;
+grant execute on function public.admin_delete_booking(uuid) to authenticated;
+grant execute on function public.admin_set_alimtalk(uuid, text, boolean) to authenticated;
 grant execute on function public.admin_assign(uuid[], uuid) to authenticated;
 
 -- ============================================

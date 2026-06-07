@@ -21,6 +21,8 @@ let surveyIds = new Set(); // 설문 제출된 예약 ID
 let calMonth = null; // 캘린더 현재 월 {y, m}
 let allStaff = [];
 let staffMap = {};
+const ATK_TPLS = [['A', '계약안내'], ['B', '한달전'], ['C', '일주일전'], ['D', '이틀전'], ['E', '다운로드']];
+const notCancelled = (b) => b.status !== '취소';
 
 /* ===== Auth views ===== */
 const showLogin = () => {
@@ -101,7 +103,7 @@ function populateAssigneeSelects() {
 }
 
 function render() {
-  const counts = { 전체: allBookings.length, 신규: 0, 확인: 0, 전송완료: 0 };
+  const counts = { 전체: allBookings.length, 신규: 0, 확인: 0, 전송완료: 0, 취소: 0 };
   allBookings.forEach((b) => {
     if (counts[b.status] != null) counts[b.status]++;
   });
@@ -109,6 +111,7 @@ function render() {
   $('c_new').textContent = counts['신규'];
   $('c_ok').textContent = counts['확인'];
   $('c_sent').textContent = counts['전송완료'];
+  if ($('c_cancel')) $('c_cancel').textContent = counts['취소'];
 
   const term = bkSearchTerm.toLowerCase();
   const rows = allBookings.filter((b) => {
@@ -280,14 +283,39 @@ function renderView(b, flash) {
 
     <div id="surveySlot" data-bid="${esc(b.id)}">${surveyIds.has(b.id) ? '<p class="survey-loading">📝 설문 불러오는 중…</p>' : ''}</div>
 
+    <div class="atk-prog">
+      <p class="dl">알림톡 진행 <small>(눌러서 보냄/취소 표시 · 실제 자동발송은 솔라피 연동 후)</small></p>
+      <div class="atk-badges">
+        ${ATK_TPLS.map(([k, label]) => {
+          const on = b.alimtalk_sent && b.alimtalk_sent[k];
+          return `<button class="atk-badge${on ? ' on' : ''}" data-atk="${k}">${esc(k)}. ${esc(label)}${on ? ' ✓' : ''}</button>`;
+        }).join('')}
+      </div>
+    </div>
+
     <div class="modal-btns">
       <button class="btn-primary" id="mEdit">수정</button>
-      <button class="btn-kakao" id="mKakao" disabled>카카오 전송</button>
-    </div>
-    <p class="kakao-hint">※ 카카오 알림톡은 비즈니스 인증·템플릿 승인 후 연결됩니다.</p>`;
+      <button class="btn-outline" id="mCancelBk">${b.status === '취소' ? '취소 해제' : '예약 취소'}</button>
+      <button class="btn-del" id="mDelete">삭제</button>
+    </div>`;
 
   $('modalClose').addEventListener('click', closeModal);
   $('mEdit').addEventListener('click', () => renderEdit(b));
+  $('mDelete').addEventListener('click', () => deleteBooking(b.id));
+  $('mCancelBk').addEventListener('click', () => cancelBooking(b.id));
+  $('modalCard').querySelectorAll('.atk-badge').forEach((btn) =>
+    btn.addEventListener('click', async () => {
+      const k = btn.dataset.atk;
+      const on = !(b.alimtalk_sent && b.alimtalk_sent[k]);
+      btn.disabled = true;
+      const { data, error } = await sb.rpc('admin_set_alimtalk', { p_id: b.id, p_template: k, p_on: on });
+      if (error) { btn.disabled = false; alert('처리 실패: ' + error.message); return; }
+      const i = allBookings.findIndex((x) => x.id === b.id);
+      if (i >= 0 && data) allBookings[i] = data;
+      renderDashboard();
+      renderView(data || b);
+    })
+  );
 
   // 레퍼런스 사진 클릭 → 크게 보기
   $('modalCard').addEventListener('click', (e) => {
@@ -373,6 +401,7 @@ function renderEdit(b) {
           <option value="신규" ${sl(b.status, '신규')}>신규</option>
           <option value="확인" ${sl(b.status, '확인')}>확인</option>
           <option value="전송완료" ${sl(b.status, '전송완료')}>전송완료</option>
+          <option value="취소" ${sl(b.status, '취소')}>취소</option>
         </select>
       </div>
     </div>
@@ -406,6 +435,32 @@ function closeModal() {
   $('modal').hidden = true;
 }
 $('modalBackdrop').addEventListener('click', closeModal);
+
+async function deleteBooking(id) {
+  if (!confirm('이 예약을 완전히 삭제할까요?\n설문·레퍼런스도 함께 삭제되며 되돌릴 수 없습니다.')) return;
+  const { error } = await sb.rpc('admin_delete_booking', { p_id: id });
+  if (error) { alert('삭제 실패: ' + error.message); return; }
+  allBookings = allBookings.filter((b) => b.id !== id);
+  closeModal();
+  render();
+  renderDashboard();
+  toast('예약을 삭제했어요.');
+}
+
+async function cancelBooking(id) {
+  const b = allBookings.find((x) => x.id === id);
+  if (!b) return;
+  const reactivate = b.status === '취소';
+  if (!confirm(reactivate ? '예약 취소를 해제할까요? (신규로 되돌림)' : '이 예약을 취소 처리할까요? (기록은 남고 목록/캘린더에서 제외)')) return;
+  const { data, error } = await sb.rpc('admin_update_booking', { p_id: id, p_status: reactivate ? '신규' : '취소' });
+  if (error) { alert('처리 실패: ' + error.message); return; }
+  const i = allBookings.findIndex((x) => x.id === id);
+  if (i >= 0 && data) allBookings[i] = data;
+  render();
+  renderDashboard();
+  renderView(data || b);
+  toast(reactivate ? '취소를 해제했어요.' : '예약을 취소 처리했어요.');
+}
 
 async function saveDetail(id, recalcEdit) {
   const btn = $('mSave');
@@ -478,9 +533,14 @@ function toast(msg) {
   toast._t = setTimeout(() => el.classList.remove('show'), 2600);
 }
 
-// 알림톡 발송 (솔라피 연동 전: 안내만)
-function sendAlimtalk(id, tpl) {
-  toast('카카오 알림톡은 솔라피 연동(자격증명 등록) 후 실제 발송됩니다.');
+// 알림톡 발송 표시 (솔라피 연동 전: 보냄 표시만, 연동 후 실제 발송+표시)
+async function sendAlimtalk(id, tpl) {
+  const { data, error } = await sb.rpc('admin_set_alimtalk', { p_id: id, p_template: tpl, p_on: true });
+  if (error) { alert('처리 실패: ' + error.message); return; }
+  const i = allBookings.findIndex((x) => x.id === id);
+  if (i >= 0 && data) allBookings[i] = data;
+  toast('알림톡 "보냄"으로 표시했어요. (실제 자동발송은 솔라피 연동 후)');
+  renderDashboard();
 }
 
 function renderDashboard() {
@@ -506,7 +566,7 @@ function renderDashboard() {
 
   // 📅 다가오는 예식 (오늘 ~ 2주)
   const in14 = new Date(today); in14.setDate(in14.getDate() + 14);
-  const upcoming = allBookings.filter((b) => { const d = wDate(b); return d && d >= today && d <= in14; })
+  const upcoming = allBookings.filter((b) => { const d = wDate(b); return d && d >= today && d <= in14 && notCancelled(b); })
     .sort((a, b) => wDate(a) - wDate(b));
   $('dcUpcoming').textContent = upcoming.length;
   $('listUpcoming').innerHTML = upcoming.length
@@ -527,8 +587,8 @@ function renderDashboard() {
 
   // 💳 미입금 (계약금 / 잔금)
   const byDate = (a, b) => (wDate(a) || 0) - (wDate(b) || 0);
-  const depUnpaid = allBookings.filter((b) => { const d = wDate(b); return !b.deposit_paid && (!d || d >= today); }).sort(byDate);
-  const balUnpaid = allBookings.filter((b) => { const d = wDate(b); return b.deposit_paid && !b.balance_paid && (!d || d >= today); }).sort(byDate);
+  const depUnpaid = allBookings.filter((b) => { const d = wDate(b); return !b.deposit_paid && (!d || d >= today) && notCancelled(b); }).sort(byDate);
+  const balUnpaid = allBookings.filter((b) => { const d = wDate(b); return b.deposit_paid && !b.balance_paid && (!d || d >= today) && notCancelled(b); }).sort(byDate);
   const unpaidItem = (b, kind) => `
     <div class="dl-item" data-id="${b.id}">
       <div class="dl-main">
@@ -548,7 +608,7 @@ function renderDashboard() {
     (balUnpaid.length ? balUnpaid.slice(0, 30).map((b) => unpaidItem(b, 'balance')).join('') : '<p class="dash-empty sm">없음</p>');
 
   // ⬇️ 다운로드 링크 필요 (예식 지남 + E 미발송)
-  const needDl = allBookings.filter((b) => { const d = wDate(b); return d && d < today && !(b.alimtalk_sent && b.alimtalk_sent.E); })
+  const needDl = allBookings.filter((b) => { const d = wDate(b); return d && d < today && !(b.alimtalk_sent && b.alimtalk_sent.E) && notCancelled(b); })
     .sort((a, b) => wDate(b) - wDate(a));
   $('dcDownload').textContent = needDl.length;
   $('listDownload').innerHTML = needDl.length
@@ -625,7 +685,7 @@ function renderCalendar() {
   const byDay = {};
   allBookings.forEach((b) => {
     const d = wDate(b);
-    if (d && d.getFullYear() === y && d.getMonth() === m) (byDay[d.getDate()] = byDay[d.getDate()] || []).push(b);
+    if (d && d.getFullYear() === y && d.getMonth() === m && notCancelled(b)) (byDay[d.getDate()] = byDay[d.getDate()] || []).push(b);
   });
 
   let html = '<div class="cal-grid">';
@@ -669,7 +729,7 @@ function renderSchedule() {
   if (!wrap || !calMonth) return;
   const { y, m } = calMonth;
   const items = allBookings
-    .filter((b) => { const d = wDate(b); return d && d.getFullYear() === y && d.getMonth() === m; })
+    .filter((b) => { const d = wDate(b); return d && d.getFullYear() === y && d.getMonth() === m && notCancelled(b); })
     .sort((a, b) => (wDate(a) - wDate(b)) || (a.wedding_time || '').localeCompare(b.wedding_time || ''));
 
   if (!items.length) { wrap.innerHTML = '<p class="dash-empty">이 달 예식이 없어요.</p>'; updateSchedCount(); return; }

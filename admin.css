@@ -296,8 +296,22 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .staff-item input[type="text"] { border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font-size: .9rem; color: var(--ink); background: var(--cream); transition: all .15s; }
 .staff-item input[type="text"]:focus { outline: none; border-color: var(--gold); background: #fff; }
 .staff-item .st-active { font-size: .82rem; display: flex; align-items: center; gap: 4px; white-space: nowrap; color: var(--ink-soft); }
-.staff-add-row input { background: var(--cream); }
+.staff-add-row input { background: var(--cream); border-radius: 8px; }
 .staff-add-row input:focus { background: #fff; }
+
+/* 상태 배지 / 버튼 */
+.badge.취소 { background: #f1e3e3; color: #b5462f; }
+.btn-outline { background: #fff; border: 1px solid var(--ink); color: var(--ink); padding: 13px 18px; border-radius: 4px; cursor: pointer; font-weight: 500; transition: all .2s; }
+.btn-outline:hover { background: var(--ink); color: #fff; }
+.btn-del { background: #fff; border: 1px solid #d9b3aa; color: #b5462f; padding: 13px 18px; border-radius: 4px; cursor: pointer; font-weight: 500; transition: all .2s; }
+.btn-del:hover { background: #b5462f; border-color: #b5462f; color: #fff; }
+
+/* 알림톡 진행 */
+.atk-prog { margin: 18px 0 4px; }
+.atk-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.atk-badge { border: 1px solid var(--line); background: #fff; color: var(--ink-soft); border-radius: 999px; padding: 7px 13px; font-size: .82rem; cursor: pointer; transition: all .18s; }
+.atk-badge:hover { border-color: var(--gold); }
+.atk-badge.on { background: #e4f1e8; border-color: #9cc7ad; color: #2f7d4f; font-weight: 600; }
 
 @media (max-width: 760px) {
   .dash-cards { grid-template-columns: 1fr; }
