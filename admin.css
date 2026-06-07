@@ -314,11 +314,16 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .atk-badge:hover { border-color: var(--gold); }
 .atk-badge.on { background: #e4f1e8; border-color: #9cc7ad; color: #2f7d4f; font-weight: 600; }
 
-/* 상세 상단 담당자 */
-.md-assignee { display: flex; align-items: center; gap: 10px; background: #faf7f2; border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; }
-.md-asg-label { font-size: .85rem; color: var(--ink-soft); font-weight: 600; white-space: nowrap; }
-.md-assignee select { flex: 1; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-size: .9rem; background: #fff; color: var(--ink); }
-.md-assignee select:focus { outline: none; border-color: var(--gold); }
+/* 상세 상단 작가 배정 (컴팩트) */
+.md-assignee { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; background: #faf7f2; border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; }
+.md-asg-label { font-size: .8rem; color: var(--ink-soft); font-weight: 600; white-space: nowrap; }
+.md-sel { border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font-size: .85rem; background: #fff; color: var(--ink); }
+.md-sel:focus { outline: none; border-color: var(--gold); }
+
+/* 캘린더 범례 */
+.cal-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+.cal-leg { display: inline-flex; align-items: center; gap: 5px; font-size: .76rem; color: var(--ink-soft); }
+.cal-leg i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
 
 @media (max-width: 760px) {
   .dash-cards { grid-template-columns: 1fr; }

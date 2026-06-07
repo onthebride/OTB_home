@@ -23,6 +23,13 @@ let allStaff = [];
 let staffMap = {};
 const ATK_TPLS = [['A', '계약안내'], ['B', '한달전'], ['C', '일주일전'], ['D', '이틀전'], ['E', '다운로드']];
 const notCancelled = (b) => b.status !== '취소';
+const STAFF_COLORS = ['#b08d57', '#6b8e9b', '#9b6b8e', '#7d9b6b', '#9b7d6b', '#6b6b9b', '#b5727a', '#5fa3a3', '#a38b5f', '#8a6ba3'];
+function staffColor(id) {
+  if (!id) return null;
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return STAFF_COLORS[h % STAFF_COLORS.length];
+}
 
 /* ===== Auth views ===== */
 const showLogin = () => {
@@ -261,8 +268,9 @@ function renderView(b, flash) {
     ${flash ? `<p class="save-msg ok" style="text-align:left;margin:0 0 12px">${esc(flash)}</p>` : ''}
 
     <div class="md-assignee">
-      <span class="md-asg-label">👤 담당자</span>
-      <select id="mAssignee">${assigneeOptions(b.assignee_id)}</select>
+      <span class="md-asg-label">메인작가</span>
+      <select id="mAssignee" class="md-sel">${assigneeOptions(b.assignee_id)}</select>
+      ${b.photographer === '2인 촬영' ? `<span class="md-asg-label">서브작가</span><select id="mSubAssignee" class="md-sel">${assigneeOptions(b.sub_assignee_id)}</select>` : ''}
     </div>
 
     <div class="detail-grid">
@@ -306,16 +314,19 @@ function renderView(b, flash) {
   $('mEdit').addEventListener('click', () => renderEdit(b));
   $('mDelete').addEventListener('click', () => deleteBooking(b.id));
   $('mCancelBk').addEventListener('click', () => cancelBooking(b.id));
-  if ($('mAssignee')) $('mAssignee').addEventListener('change', async (e) => {
-    const aid = e.target.value || null;
-    const { error } = await sb.rpc('admin_assign', { p_ids: [b.id], p_assignee: aid });
+  const saveAssignees = async () => {
+    const main = $('mAssignee').value || null;
+    const sub = $('mSubAssignee') ? ($('mSubAssignee').value || null) : (b.sub_assignee_id || null);
+    const { error } = await sb.rpc('admin_set_assignees', { p_id: b.id, p_main: main, p_sub: sub });
     if (error) { alert('배정 실패: ' + error.message); return; }
-    b.assignee_id = aid;
+    b.assignee_id = main; b.sub_assignee_id = sub;
     const i = allBookings.findIndex((x) => x.id === b.id);
-    if (i >= 0) allBookings[i].assignee_id = aid;
+    if (i >= 0) { allBookings[i].assignee_id = main; allBookings[i].sub_assignee_id = sub; }
     renderDashboard();
-    toast(aid ? `담당자: ${staffName(aid)}` : '담당 해제');
-  });
+    toast('작가 배정을 변경했어요.');
+  };
+  if ($('mAssignee')) $('mAssignee').addEventListener('change', saveAssignees);
+  if ($('mSubAssignee')) $('mSubAssignee').addEventListener('change', saveAssignees);
   $('modalCard').querySelectorAll('.atk-badge').forEach((btn) =>
     btn.addEventListener('click', async () => {
       const k = btn.dataset.atk;
@@ -395,9 +406,10 @@ function renderEdit(b) {
     </div>
     <label class="eopt" style="margin-top:8px"><input type="checkbox" id="e_usage" data-price="-1" ${ck(b.photo_usage_agree)} /><span>촬영본 사용동의 (YES)</span><b>-1만원</b></label>
 
-    <h5 class="eg">담당자 · 입금</h5>
+    <h5 class="eg">작가 배정 · 입금</h5>
     <div class="edit-grid">
-      <div class="field"><label>담당자</label><select id="e_assignee">${assigneeOptions(b.assignee_id)}</select></div>
+      <div class="field"><label>메인작가</label><select id="e_assignee">${assigneeOptions(b.assignee_id)}</select></div>
+      ${b.photographer === '2인 촬영' ? `<div class="field"><label>서브작가</label><select id="e_sub_assignee">${assigneeOptions(b.sub_assignee_id)}</select></div>` : ''}
     </div>
     <label class="eopt"><input type="checkbox" id="e_deposit" ${ck(b.deposit_paid)} /><span>계약금 입금 완료</span><b></b></label>
     <label class="eopt"><input type="checkbox" id="e_balance" ${ck(b.balance_paid)} /><span>잔금 입금 완료</span><b></b></label>
@@ -510,6 +522,7 @@ async function saveDetail(id, recalcEdit) {
     balance_paid: cc('e_balance'),
     assignee_id: $('e_assignee') ? $('e_assignee').value : '',
   };
+  if ($('e_sub_assignee')) payload.sub_assignee_id = $('e_sub_assignee').value;
   const { data, error } = await sb.rpc('admin_save_booking', { p_id: id, payload });
   btn.disabled = false;
   if (error) {
@@ -700,7 +713,9 @@ function renderCalendar() {
     if (d && d.getFullYear() === y && d.getMonth() === m && notCancelled(b)) (byDay[d.getDate()] = byDay[d.getDate()] || []).push(b);
   });
 
-  let html = '<div class="cal-grid">';
+  const legend = allStaff.filter((s) => s.active).map((s) => `<span class="cal-leg"><i style="background:${staffColor(s.id)}"></i>${esc(s.name)}</span>`).join('');
+  let html = legend ? `<div class="cal-legend">${legend}</div>` : '';
+  html += '<div class="cal-grid">';
   ['일', '월', '화', '수', '목', '금', '토'].forEach((w) => (html += `<div class="cal-wd">${w}</div>`));
   for (let i = 0; i < startDay; i++) html += '<div class="cal-cell empty"></div>';
   for (let dnum = 1; dnum <= days; dnum++) {
@@ -708,7 +723,7 @@ function renderCalendar() {
     const isToday = today.getFullYear() === y && today.getMonth() === m && today.getDate() === dnum;
     html += `<div class="cal-cell${isToday ? ' today' : ''}${items.length ? ' has' : ''}">
       <span class="cal-d">${dnum}</span>
-      ${items.map((b) => `<span class="cal-ev${b.assignee_id ? ' assigned' : ''}" data-id="${b.id}" title="${esc((b.contractor_name || '') + ' ' + (b.wedding_venue || '') + (b.assignee_id ? ' / 담당 ' + staffName(b.assignee_id) : ''))}">${esc(kTimeShort(b.wedding_time))} ${esc(b.contractor_name || '')}</span>`).join('')}
+      ${items.map((b) => { const col = staffColor(b.assignee_id); return `<span class="cal-ev" data-id="${b.id}"${col ? ` style="background:${col}"` : ''} title="${esc((b.contractor_name || '') + ' ' + (b.wedding_venue || '') + (b.assignee_id ? ' / 메인 ' + staffName(b.assignee_id) : '') + (b.sub_assignee_id ? ' / 서브 ' + staffName(b.sub_assignee_id) : ''))}">${esc(kTimeShort(b.wedding_time))} ${esc(b.contractor_name || '')}</span>`; }).join('')}
     </div>`;
   }
   html += '</div>';

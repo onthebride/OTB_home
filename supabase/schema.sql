@@ -161,7 +161,8 @@ begin
     total_price       = nullif(payload->>'total_price','')::int,
     deposit_paid      = coalesce((payload->>'deposit_paid')::boolean, deposit_paid),
     balance_paid      = coalesce((payload->>'balance_paid')::boolean, balance_paid),
-    assignee_id       = case when payload ? 'assignee_id' then nullif(payload->>'assignee_id','')::uuid else assignee_id end
+    assignee_id       = case when payload ? 'assignee_id' then nullif(payload->>'assignee_id','')::uuid else assignee_id end,
+    sub_assignee_id   = case when payload ? 'sub_assignee_id' then nullif(payload->>'sub_assignee_id','')::uuid else sub_assignee_id end
   where id = p_id
   returning * into r;
   return r;
@@ -221,6 +222,7 @@ alter table public.staff enable row level security;
 alter table public.bookings add column if not exists deposit_paid boolean not null default false;
 alter table public.bookings add column if not exists balance_paid boolean not null default false;
 alter table public.bookings add column if not exists assignee_id uuid references public.staff(id) on delete set null;
+alter table public.bookings add column if not exists sub_assignee_id uuid references public.staff(id) on delete set null;
 
 create or replace function public.admin_staff_list()
 returns setof public.staff language plpgsql security definer set search_path=public, pg_temp
@@ -301,6 +303,15 @@ as $$ declare n integer; begin
   return n;
 end; $$;
 
+-- 메인/서브 작가 동시 설정 (예약 상세에서)
+create or replace function public.admin_set_assignees(p_id uuid, p_main uuid, p_sub uuid)
+returns public.bookings language plpgsql security definer set search_path=public, pg_temp
+as $$ declare r public.bookings; begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  update public.bookings set assignee_id = p_main, sub_assignee_id = p_sub where id = p_id returning * into r;
+  return r;
+end; $$;
+
 revoke all on function public.admin_staff_list() from public, anon;
 revoke all on function public.admin_staff_add(text, text) from public, anon;
 revoke all on function public.admin_staff_update(uuid, text, text, boolean) from public, anon;
@@ -310,6 +321,7 @@ revoke all on function public.admin_set_balance(uuid, boolean) from public, anon
 revoke all on function public.admin_delete_booking(uuid) from public, anon;
 revoke all on function public.admin_set_alimtalk(uuid, text, boolean) from public, anon;
 revoke all on function public.admin_assign(uuid[], uuid) from public, anon;
+revoke all on function public.admin_set_assignees(uuid, uuid, uuid) from public, anon;
 grant execute on function public.admin_staff_list() to authenticated;
 grant execute on function public.admin_staff_add(text, text) to authenticated;
 grant execute on function public.admin_staff_update(uuid, text, text, boolean) to authenticated;
@@ -319,6 +331,7 @@ grant execute on function public.admin_set_balance(uuid, boolean) to authenticat
 grant execute on function public.admin_delete_booking(uuid) to authenticated;
 grant execute on function public.admin_set_alimtalk(uuid, text, boolean) to authenticated;
 grant execute on function public.admin_assign(uuid[], uuid) to authenticated;
+grant execute on function public.admin_set_assignees(uuid, uuid, uuid) to authenticated;
 
 -- ============================================
 -- 갤러리 (자체 갤러리: Storage 업로드 + 태그 + 라이트박스)
