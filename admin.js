@@ -283,9 +283,9 @@ function renderView(b, flash) {
       ${field('신랑님', (b.groom_name || '') + ' / ' + (b.groom_phone || ''))}
       ${field('신부님', (b.bride_name || '') + ' / ' + (b.bride_phone || ''))}
       ${field('상품', b.package)}
-      ${field('출장비', b.travel_fee ? '있음 (50,000원)' : '없음')}
-      ${field('작가', b.photographer)}
-      ${field('촬영본 사용동의', b.photo_usage_agree ? 'YES' : 'NO')}
+      ${b.travel_fee ? field('출장비', '있음 (50,000원)') : ''}
+      ${b.photographer && b.photographer !== '기본' ? field('촬영', b.photographer) : ''}
+      ${b.photo_usage_agree ? field('촬영본 사용동의', 'YES') : ''}
       ${field('합계', won(b.total_price))}
       ${field('계약금', b.deposit_paid ? '입금완료 ✓' : '미입금')}
       ${field('잔금', b.balance_paid ? '입금완료 ✓' : '미입금')}
