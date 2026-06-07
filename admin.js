@@ -19,6 +19,8 @@ let filter = '전체';
 let bkSearchTerm = '';
 let surveyIds = new Set(); // 설문 제출된 예약 ID
 let calMonth = null; // 캘린더 현재 월 {y, m}
+let allStaff = [];
+let staffMap = {};
 
 /* ===== Auth views ===== */
 const showLogin = () => {
@@ -75,8 +77,27 @@ async function loadBookings() {
   // 설문 제출 여부
   const sres = await sb.rpc('admin_survey_ids');
   surveyIds = new Set(Array.isArray(sres.data) ? sres.data : []);
+  await loadStaff();
   render();
   renderDashboard();
+}
+
+async function loadStaff() {
+  const { data } = await sb.rpc('admin_staff_list');
+  allStaff = data || [];
+  staffMap = {};
+  allStaff.forEach((s) => { staffMap[s.id] = s; });
+  populateAssigneeSelects();
+}
+const staffName = (id) => (id && staffMap[id] ? staffMap[id].name : '');
+function assigneeOptions(selId) {
+  return '<option value="">미배정</option>' +
+    allStaff.map((s) => `<option value="${s.id}"${s.id === selId ? ' selected' : ''}>${esc(s.name)}${s.active ? '' : ' (비활성)'}</option>`).join('');
+}
+function populateAssigneeSelects() {
+  const sa = $('schedAssignee');
+  if (sa) sa.innerHTML = '<option value="">담당자 선택…</option>' +
+    allStaff.filter((s) => s.active).map((s) => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
 }
 
 function render() {
@@ -250,6 +271,8 @@ function renderView(b, flash) {
       ${field('작가', b.photographer)}
       ${field('촬영본 사용동의', b.photo_usage_agree ? 'YES' : 'NO')}
       ${field('합계', won(b.total_price))}
+      ${field('담당자', staffName(b.assignee_id) || '미배정')}
+      ${field('입금', b.deposit_paid ? '입금완료 ✓' : '미입금')}
       <div class="full2"><p class="dl">추가 옵션</p>${optionTags(b)}</div>
       ${b.admin_note ? `<div class="full2">${field('관리자 메모', b.admin_note)}</div>` : ''}
     </div>
@@ -330,6 +353,12 @@ function renderEdit(b) {
     </div>
     <label class="eopt" style="margin-top:8px"><input type="checkbox" id="e_usage" data-price="-1" ${ck(b.photo_usage_agree)} /><span>촬영본 사용동의 (YES)</span><b>-1만원</b></label>
 
+    <h5 class="eg">담당자 · 입금</h5>
+    <div class="edit-grid">
+      <div class="field"><label>담당자</label><select id="e_assignee">${assigneeOptions(b.assignee_id)}</select></div>
+    </div>
+    <label class="eopt"><input type="checkbox" id="e_deposit" ${ck(b.deposit_paid)} /><span>계약금 입금 완료</span><b></b></label>
+
     <h5 class="eg">확인사항</h5>
     <label class="eopt"><input type="checkbox" id="e_agree_available" ${ck(b.agree_available)} /><span>예약가능 답변 확인</span><b></b></label>
     <label class="eopt"><input type="checkbox" id="e_agree_terms" ${ck(b.agree_terms)} /><span>규정 동의</span><b></b></label>
@@ -408,6 +437,8 @@ async function saveDetail(id, recalcEdit) {
     agree_available: cc('e_agree_available'),
     agree_terms: cc('e_agree_terms'),
     total_price: recalcEdit(),
+    deposit_paid: cc('e_deposit'),
+    assignee_id: $('e_assignee') ? $('e_assignee').value : '',
   };
   const { data, error } = await sb.rpc('admin_save_booking', { p_id: id, payload });
   btn.disabled = false;
@@ -470,25 +501,44 @@ function renderDashboard() {
       </div>`).join('')
     : '<p class="dash-empty">새 예약이 없어요.</p>';
 
-  // 📅 이번 주 예식 (오늘 ~ 이번 주 토요일)
-  const endOfWeek = new Date(today); endOfWeek.setDate(endOfWeek.getDate() + (6 - today.getDay()));
-  const thisWeek = allBookings.filter((b) => { const d = wDate(b); return d && d >= today && d <= endOfWeek; })
+  // 📅 다가오는 예식 (오늘 ~ 2주)
+  const in14 = new Date(today); in14.setDate(in14.getDate() + 14);
+  const upcoming = allBookings.filter((b) => { const d = wDate(b); return d && d >= today && d <= in14; })
     .sort((a, b) => wDate(a) - wDate(b));
-  $('dcUpcoming').textContent = thisWeek.length;
-  $('listUpcoming').innerHTML = thisWeek.length
-    ? thisWeek.map((b) => {
+  $('dcUpcoming').textContent = upcoming.length;
+  $('listUpcoming').innerHTML = upcoming.length
+    ? upcoming.map((b) => {
       const d = wDate(b);
       const dleft = Math.round((d - today) / 86400000);
       const dtag = dleft === 0 ? '오늘' : 'D-' + dleft;
+      const asg = b.assignee_id ? ` · 담당 ${esc(staffName(b.assignee_id))}` : '';
       return `
       <div class="dl-item soon" data-id="${b.id}">
         <div class="dl-main">
           <span class="dl-name">${esc(b.contractor_name || '-')} <span class="dday">${dtag}</span></span>
-          <span class="dl-meta">${esc(fmtDate(b.wedding_date))} ${esc(kTimeShort(b.wedding_time))} · ${esc(b.wedding_venue || '-')}</span>
+          <span class="dl-meta">${esc(fmtDate(b.wedding_date))} ${esc(kTimeShort(b.wedding_time))} · ${esc(b.wedding_venue || '-')}${asg}</span>
         </div>
       </div>`;
     }).join('')
-    : '<p class="dash-empty">이번 주 예식이 없어요.</p>';
+    : '<p class="dash-empty">2주 내 예식이 없어요.</p>';
+
+  // 💳 미입금 (입금 미확인 + 예식 안 지남)
+  const unpaid = allBookings.filter((b) => { const d = wDate(b); return !b.deposit_paid && (!d || d >= today); })
+    .sort((a, b) => (wDate(a) || 0) - (wDate(b) || 0));
+  $('dcUnpaid').textContent = unpaid.length;
+  $('listUnpaid').innerHTML = unpaid.length
+    ? unpaid.slice(0, 40).map((b) => `
+      <div class="dl-item" data-id="${b.id}">
+        <div class="dl-main">
+          <span class="dl-name">${esc(b.contractor_name || '-')}</span>
+          <span class="dl-meta">${esc(fmtDate(b.wedding_date))} · ${esc(b.wedding_venue || '-')} · ${esc(won(b.total_price))}</span>
+        </div>
+        <div class="dl-actions">
+          <button class="btn-sm dl-paid" data-id="${b.id}">입금확인</button>
+          <button class="btn-sm btn-kakao-sm" data-send="${b.id}" data-tpl="A">계약안내 전송</button>
+        </div>
+      </div>`).join('')
+    : '<p class="dash-empty">미입금 건이 없어요 👍</p>';
 
   // ⬇️ 다운로드 링크 필요 (예식 지남 + E 미발송)
   const needDl = allBookings.filter((b) => { const d = wDate(b); return d && d < today && !(b.alimtalk_sent && b.alimtalk_sent.E); })
@@ -511,6 +561,7 @@ function renderDashboard() {
 
   bindDashEvents();
   renderCalendar();
+  renderSchedule();
 }
 
 function bindDashEvents() {
@@ -521,6 +572,20 @@ function bindDashEvents() {
   // 카톡 전송
   document.querySelectorAll('#tab-dashboard [data-send]').forEach((btn) =>
     btn.addEventListener('click', (e) => { e.stopPropagation(); sendAlimtalk(btn.dataset.send, btn.dataset.tpl); })
+  );
+  // 입금 확인
+  document.querySelectorAll('#tab-dashboard .dl-paid').forEach((btn) =>
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      btn.disabled = true;
+      const { data, error } = await sb.rpc('admin_set_deposit', { p_id: id, p_paid: true });
+      if (error) { btn.disabled = false; alert('처리 실패: ' + error.message); return; }
+      const i = allBookings.findIndex((x) => x.id === id);
+      if (i >= 0 && data) allBookings[i] = data;
+      toast('입금 확인 처리했어요.');
+      renderDashboard();
+    })
   );
   // 다운로드 링크 저장
   document.querySelectorAll('#tab-dashboard .dl-save').forEach((btn) =>
@@ -562,8 +627,7 @@ function renderCalendar() {
     const isToday = today.getFullYear() === y && today.getMonth() === m && today.getDate() === dnum;
     html += `<div class="cal-cell${isToday ? ' today' : ''}${items.length ? ' has' : ''}">
       <span class="cal-d">${dnum}</span>
-      ${items.slice(0, 3).map((b) => `<span class="cal-ev" data-id="${b.id}" title="${esc((b.contractor_name || '') + ' ' + (b.wedding_venue || ''))}">${esc(kTimeShort(b.wedding_time))} ${esc(b.contractor_name || '')}</span>`).join('')}
-      ${items.length > 3 ? `<span class="cal-more">+${items.length - 3}</span>` : ''}
+      ${items.map((b) => `<span class="cal-ev${b.assignee_id ? ' assigned' : ''}" data-id="${b.id}" title="${esc((b.contractor_name || '') + ' ' + (b.wedding_venue || '') + (b.assignee_id ? ' / 담당 ' + staffName(b.assignee_id) : ''))}">${esc(kTimeShort(b.wedding_time))} ${esc(b.contractor_name || '')}</span>`).join('')}
     </div>`;
   }
   html += '</div>';
@@ -574,8 +638,150 @@ function renderCalendar() {
 }
 
 if ($('calPrev')) {
-  $('calPrev').addEventListener('click', () => { calMonth.m--; if (calMonth.m < 0) { calMonth.m = 11; calMonth.y--; } renderCalendar(); });
-  $('calNext').addEventListener('click', () => { calMonth.m++; if (calMonth.m > 11) { calMonth.m = 0; calMonth.y++; } renderCalendar(); });
+  $('calPrev').addEventListener('click', () => { calMonth.m--; if (calMonth.m < 0) { calMonth.m = 11; calMonth.y--; } renderCalendar(); renderSchedule(); });
+  $('calNext').addEventListener('click', () => { calMonth.m++; if (calMonth.m > 11) { calMonth.m = 0; calMonth.y++; } renderCalendar(); renderSchedule(); });
+}
+
+/* ===== 월별 일정 · 담당자 배정 ===== */
+if ($('schedToggle')) {
+  $('schedToggle').addEventListener('click', () => {
+    const body = $('schedBody');
+    const open = body.hidden;
+    body.hidden = !open;
+    $('schedToggle').setAttribute('aria-expanded', String(open));
+    const caret = $('schedToggle').querySelector('.sv-caret');
+    if (caret) caret.textContent = open ? '▴' : '▾';
+    if (open) renderSchedule();
+  });
+}
+
+function renderSchedule() {
+  const wrap = $('schedList');
+  if (!wrap || !calMonth) return;
+  const { y, m } = calMonth;
+  const items = allBookings
+    .filter((b) => { const d = wDate(b); return d && d.getFullYear() === y && d.getMonth() === m; })
+    .sort((a, b) => (wDate(a) - wDate(b)) || (a.wedding_time || '').localeCompare(b.wedding_time || ''));
+
+  if (!items.length) { wrap.innerHTML = '<p class="dash-empty">이 달 예식이 없어요.</p>'; updateSchedCount(); return; }
+
+  const groups = {};
+  items.forEach((b) => { const k = fmtDate(b.wedding_date); (groups[k] = groups[k] || []).push(b); });
+
+  wrap.innerHTML = Object.keys(groups).map((k) => `
+    <div class="sched-group">
+      <p class="sched-date">${esc(k)} <span>(${groups[k].length})</span></p>
+      ${groups[k].map((b) => `
+        <label class="sched-row" data-id="${b.id}">
+          <input type="checkbox" class="sched-cb" value="${b.id}" />
+          <span class="sched-time">${esc(kTimeShort(b.wedding_time)) || '-'}</span>
+          <span class="sched-name">${esc(b.contractor_name || '-')}</span>
+          <span class="sched-venue">${esc(b.wedding_venue || '-')}</span>
+          <span class="sched-asg">${b.assignee_id ? '👤 ' + esc(staffName(b.assignee_id)) : '<em>미배정</em>'}</span>
+        </label>`).join('')}
+    </div>`).join('');
+  bindSchedule();
+}
+
+function schedChecked() {
+  return Array.from(document.querySelectorAll('#schedList .sched-cb:checked')).map((c) => c.value);
+}
+function updateSchedCount() {
+  const n = schedChecked().length;
+  if ($('schedSelCount')) $('schedSelCount').textContent = n ? `${n}건 선택` : '';
+}
+function bindSchedule() {
+  document.querySelectorAll('#schedList .sched-cb').forEach((c) => c.addEventListener('change', updateSchedCount));
+  updateSchedCount();
+}
+if ($('schedAll')) {
+  $('schedAll').addEventListener('change', (e) => {
+    document.querySelectorAll('#schedList .sched-cb').forEach((c) => { c.checked = e.target.checked; });
+    updateSchedCount();
+  });
+}
+if ($('schedAssign')) {
+  $('schedAssign').addEventListener('click', async () => {
+    const ids = schedChecked();
+    const aid = $('schedAssignee').value;
+    if (!ids.length) { toast('배정할 일정을 선택하세요.'); return; }
+    if (!aid) { toast('담당자를 선택하세요.'); return; }
+    const { error } = await sb.rpc('admin_assign', { p_ids: ids, p_assignee: aid });
+    if (error) { alert('배정 실패: ' + error.message); return; }
+    ids.forEach((id) => { const b = allBookings.find((x) => x.id === id); if (b) b.assignee_id = aid; });
+    toast(`${ids.length}건 → ${staffName(aid)} 배정 완료`);
+    renderSchedule(); renderCalendar();
+    if ($('schedAll')) $('schedAll').checked = false;
+  });
+}
+if ($('schedShare')) {
+  $('schedShare').addEventListener('click', async () => {
+    const ids = schedChecked();
+    if (!ids.length) { toast('공유할 일정을 선택하세요.'); return; }
+    const rows = ids.map((id) => allBookings.find((b) => b.id === id)).filter(Boolean)
+      .sort((a, b) => (wDate(a) - wDate(b)) || (a.wedding_time || '').localeCompare(b.wedding_time || ''));
+    const text = rows.map((b) =>
+      `${fmtDate(b.wedding_date)} ${kTimeShort(b.wedding_time)} | ${b.wedding_venue || '-'} | ${b.contractor_name || '-'}${b.assignee_id ? ' | 담당 ' + staffName(b.assignee_id) : ''}`
+    ).join('\n');
+    try { await navigator.clipboard.writeText(text); toast(`${rows.length}건 일정 복사됨! 카톡/문자에 붙여넣기 하세요.`); }
+    catch (_) { prompt('아래 내용을 복사하세요:', text); }
+  });
+}
+
+/* ===== 담당자 관리 ===== */
+function renderStaff() {
+  if (!$('staffList')) return;
+  $('staffEmpty').hidden = allStaff.length > 0;
+  $('staffList').innerHTML = allStaff.map((s) => `
+    <div class="staff-item${s.active ? '' : ' inactive'}" data-id="${s.id}">
+      <input class="st-name" data-id="${s.id}" value="${esc(s.name || '')}" placeholder="이름" />
+      <input class="st-phone" data-id="${s.id}" value="${esc(s.phone || '')}" placeholder="연락처" />
+      <label class="st-active"><input type="checkbox" class="st-act" data-id="${s.id}" ${s.active ? 'checked' : ''} /> 활성</label>
+      <button class="btn-sm st-save" data-id="${s.id}">저장</button>
+      <button class="btn-sm st-del" data-id="${s.id}">삭제</button>
+    </div>`).join('');
+
+  $('staffList').querySelectorAll('.st-save').forEach((btn) =>
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const name = $('staffList').querySelector(`.st-name[data-id="${id}"]`).value.trim();
+      const phone = $('staffList').querySelector(`.st-phone[data-id="${id}"]`).value.trim();
+      const active = $('staffList').querySelector(`.st-act[data-id="${id}"]`).checked;
+      if (!name) { alert('이름을 입력하세요.'); return; }
+      btn.disabled = true;
+      const { error } = await sb.rpc('admin_staff_update', { p_id: id, p_name: name, p_phone: phone, p_active: active });
+      btn.disabled = false;
+      if (error) { alert('저장 실패: ' + error.message); return; }
+      await loadStaff();
+      renderStaff();
+      toast('저장되었습니다.');
+    })
+  );
+  $('staffList').querySelectorAll('.st-del').forEach((btn) =>
+    btn.addEventListener('click', async () => {
+      if (!confirm('이 담당자를 삭제할까요? (배정된 예식은 미배정으로 바뀝니다)')) return;
+      const { error } = await sb.rpc('admin_staff_delete', { p_id: btn.dataset.id });
+      if (error) { alert('삭제 실패: ' + error.message); return; }
+      await loadStaff();
+      renderStaff();
+    })
+  );
+}
+if ($('stAddBtn')) {
+  $('stAddBtn').addEventListener('click', async () => {
+    const name = $('stName').value.trim();
+    const phone = $('stPhone').value.trim();
+    const msg = $('stMsg');
+    if (!name) { msg.textContent = '이름을 입력하세요.'; return; }
+    $('stAddBtn').disabled = true;
+    const { error } = await sb.rpc('admin_staff_add', { p_name: name, p_phone: phone });
+    $('stAddBtn').disabled = false;
+    if (error) { msg.textContent = '추가 실패: ' + error.message; return; }
+    $('stName').value = ''; $('stPhone').value = ''; msg.textContent = '';
+    await loadStaff();
+    renderStaff();
+    toast('담당자를 추가했어요.');
+  });
 }
 
 /* ===== Gallery management ===== */
@@ -588,8 +794,10 @@ if (dashTabs) {
     const tab = t.dataset.tab;
     $('tab-dashboard').hidden = tab !== 'dashboard';
     $('tab-bookings').hidden = tab !== 'bookings';
+    $('tab-staff').hidden = tab !== 'staff';
     $('tab-gallery').hidden = tab !== 'gallery';
     if (tab === 'dashboard') renderDashboard();
+    if (tab === 'staff') renderStaff();
     if (tab === 'gallery') loadGallery();
   });
 }

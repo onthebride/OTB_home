@@ -158,7 +158,9 @@ begin
     photo_usage_agree = coalesce((payload->>'photo_usage_agree')::boolean, false),
     agree_available   = coalesce((payload->>'agree_available')::boolean, false),
     agree_terms       = coalesce((payload->>'agree_terms')::boolean, false),
-    total_price       = nullif(payload->>'total_price','')::int
+    total_price       = nullif(payload->>'total_price','')::int,
+    deposit_paid      = coalesce((payload->>'deposit_paid')::boolean, deposit_paid),
+    assignee_id       = case when payload ? 'assignee_id' then nullif(payload->>'assignee_id','')::uuid else assignee_id end
   where id = p_id
   returning * into r;
   return r;
@@ -202,6 +204,82 @@ begin
 end; $$;
 revoke all on function public.admin_mark_alimtalk(uuid, text) from public, anon;
 grant execute on function public.admin_mark_alimtalk(uuid, text) to authenticated;
+
+-- ============================================
+-- 담당자(작가) 명단 + 배정 + 입금확인
+-- ============================================
+create table if not exists public.staff (
+  id         uuid primary key default gen_random_uuid(),
+  name       text not null,
+  phone      text,
+  active     boolean not null default true,
+  created_at timestamptz not null default now()
+);
+alter table public.staff enable row level security;
+
+alter table public.bookings add column if not exists deposit_paid boolean not null default false;
+alter table public.bookings add column if not exists assignee_id uuid references public.staff(id) on delete set null;
+
+create or replace function public.admin_staff_list()
+returns setof public.staff language plpgsql security definer set search_path=public, pg_temp
+as $$ begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  return query select * from public.staff order by active desc, name;
+end; $$;
+
+create or replace function public.admin_staff_add(p_name text, p_phone text)
+returns public.staff language plpgsql security definer set search_path=public, pg_temp
+as $$ declare r public.staff; begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  insert into public.staff (name, phone) values (nullif(p_name,''), nullif(p_phone,'')) returning * into r;
+  return r;
+end; $$;
+
+create or replace function public.admin_staff_update(p_id uuid, p_name text, p_phone text, p_active boolean)
+returns public.staff language plpgsql security definer set search_path=public, pg_temp
+as $$ declare r public.staff; begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  update public.staff set name=nullif(p_name,''), phone=nullif(p_phone,''), active=coalesce(p_active,true)
+   where id=p_id returning * into r;
+  return r;
+end; $$;
+
+create or replace function public.admin_staff_delete(p_id uuid)
+returns void language plpgsql security definer set search_path=public, pg_temp
+as $$ begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  delete from public.staff where id=p_id;
+end; $$;
+
+create or replace function public.admin_set_deposit(p_id uuid, p_paid boolean)
+returns public.bookings language plpgsql security definer set search_path=public, pg_temp
+as $$ declare r public.bookings; begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  update public.bookings set deposit_paid = coalesce(p_paid,false) where id=p_id returning * into r;
+  return r;
+end; $$;
+
+create or replace function public.admin_assign(p_ids uuid[], p_assignee uuid)
+returns integer language plpgsql security definer set search_path=public, pg_temp
+as $$ declare n integer; begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  update public.bookings set assignee_id = p_assignee where id = any(p_ids);
+  get diagnostics n = row_count;
+  return n;
+end; $$;
+
+revoke all on function public.admin_staff_list() from public, anon;
+revoke all on function public.admin_staff_add(text, text) from public, anon;
+revoke all on function public.admin_staff_update(uuid, text, text, boolean) from public, anon;
+revoke all on function public.admin_staff_delete(uuid) from public, anon;
+revoke all on function public.admin_set_deposit(uuid, boolean) from public, anon;
+revoke all on function public.admin_assign(uuid[], uuid) from public, anon;
+grant execute on function public.admin_staff_list() to authenticated;
+grant execute on function public.admin_staff_add(text, text) to authenticated;
+grant execute on function public.admin_staff_update(uuid, text, text, boolean) to authenticated;
+grant execute on function public.admin_staff_delete(uuid) to authenticated;
+grant execute on function public.admin_set_deposit(uuid, boolean) to authenticated;
+grant execute on function public.admin_assign(uuid[], uuid) to authenticated;
 
 -- ============================================
 -- 갤러리 (자체 갤러리: Storage 업로드 + 태그 + 라이트박스)

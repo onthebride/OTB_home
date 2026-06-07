@@ -39,6 +39,7 @@
       <div class="dash-tabs">
         <button class="dtab active" data-tab="dashboard">대시보드</button>
         <button class="dtab" data-tab="bookings">예약</button>
+        <button class="dtab" data-tab="staff">담당자</button>
         <button class="dtab" data-tab="gallery">갤러리</button>
       </div>
 
@@ -50,8 +51,13 @@
           </div>
 
           <div class="dash-card" id="card-upcoming">
-            <div class="dash-card-head"><h3>📅 이번 주 예식</h3><span class="dash-count" id="dcUpcoming">0</span></div>
+            <div class="dash-card-head"><h3>📅 다가오는 예식 <small>(2주)</small></h3><span class="dash-count" id="dcUpcoming">0</span></div>
             <div class="dash-list" id="listUpcoming"></div>
+          </div>
+
+          <div class="dash-card" id="card-unpaid">
+            <div class="dash-card-head"><h3>💳 미입금</h3><span class="dash-count" id="dcUnpaid">0</span></div>
+            <div class="dash-list" id="listUnpaid"></div>
           </div>
 
           <div class="dash-card" id="card-download">
@@ -71,6 +77,36 @@
           </div>
           <div class="calendar" id="calendar"></div>
         </div>
+
+        <div class="dash-card sched-card">
+          <div class="dash-card-head sched-head">
+            <button class="sched-toggle" id="schedToggle" aria-expanded="false">🗂 월별 일정 · 담당자 배정 <span class="sv-caret">▾</span></button>
+          </div>
+          <div id="schedBody" hidden>
+            <div class="sched-bar">
+              <label class="sched-all"><input type="checkbox" id="schedAll" /> 전체선택</label>
+              <select id="schedAssignee"><option value="">담당자 선택…</option></select>
+              <button class="btn-sm dl-save" id="schedAssign">선택 배정</button>
+              <button class="btn-sm" id="schedShare">선택 공유(복사)</button>
+              <span class="sched-selcount" id="schedSelCount"></span>
+            </div>
+            <div id="schedList"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-staff" hidden>
+        <div class="staff-add">
+          <h3>담당자 등록</h3>
+          <div class="staff-add-row">
+            <input type="text" id="stName" placeholder="이름" />
+            <input type="text" id="stPhone" class="phone" placeholder="연락처" />
+            <button class="btn-primary" id="stAddBtn">추가</button>
+          </div>
+          <p class="staff-msg" id="stMsg"></p>
+        </div>
+        <div class="staff-list" id="staffList"></div>
+        <p class="empty" id="staffEmpty" hidden>등록된 담당자가 없습니다.</p>
       </div>
 
       <div id="tab-bookings" hidden>
