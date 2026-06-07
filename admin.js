@@ -19,6 +19,7 @@ let filter = '전체';
 let bkSearchTerm = '';
 let surveyIds = new Set(); // 설문 제출된 예약 ID
 let calMonth = null; // 캘린더 현재 월 {y, m}
+let unpaidTab = 'deposit'; // 미입금 탭: deposit | balance
 let allStaff = [];
 let staffMap = {};
 const ATK_TPLS = [['A', '계약안내'], ['B', '한달전'], ['C', '일주일전'], ['D', '이틀전'], ['E', '다운로드']];
@@ -628,11 +629,15 @@ function renderDashboard() {
       </div>
     </div>`;
   $('dcUnpaid').textContent = depUnpaid.length + balUnpaid.length;
+  const activeUnpaid = unpaidTab === 'balance' ? balUnpaid : depUnpaid;
   $('listUnpaid').innerHTML =
-    `<div class="dl-sub">계약금 미입금 <b>${depUnpaid.length}</b></div>` +
-    (depUnpaid.length ? depUnpaid.slice(0, 30).map((b) => unpaidItem(b, 'deposit')).join('') : '<p class="dash-empty sm">없음</p>') +
-    `<div class="dl-sub">잔금 미입금 <b>${balUnpaid.length}</b></div>` +
-    (balUnpaid.length ? balUnpaid.slice(0, 30).map((b) => unpaidItem(b, 'balance')).join('') : '<p class="dash-empty sm">없음</p>');
+    `<div class="unpaid-tabs">
+      <button class="upt${unpaidTab === 'deposit' ? ' active' : ''}" data-upt="deposit">계약금 ${depUnpaid.length}</button>
+      <button class="upt${unpaidTab === 'balance' ? ' active' : ''}" data-upt="balance">잔금 ${balUnpaid.length}</button>
+    </div>` +
+    (activeUnpaid.length
+      ? activeUnpaid.slice(0, 40).map((b) => unpaidItem(b, unpaidTab)).join('')
+      : '<p class="dash-empty sm">없음</p>');
 
   // ⬇️ 다운로드 링크 필요 (예식 지남 + E 미발송)
   const needDl = allBookings.filter((b) => { const d = wDate(b); return d && d < today && !(b.alimtalk_sent && b.alimtalk_sent.E) && notCancelled(b); })
@@ -659,6 +664,10 @@ function renderDashboard() {
 }
 
 function bindDashEvents() {
+  // 미입금 탭(계약금/잔금)
+  document.querySelectorAll('#listUnpaid .upt').forEach((btn) =>
+    btn.addEventListener('click', () => { unpaidTab = btn.dataset.upt; renderDashboard(); })
+  );
   // 항목(이름/메타) 클릭 → 상세
   document.querySelectorAll('#tab-dashboard .dl-main').forEach((m) =>
     m.addEventListener('click', () => openDetail(m.closest('.dl-item').dataset.id))

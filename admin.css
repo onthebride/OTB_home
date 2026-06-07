@@ -210,6 +210,9 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .dl-sub:first-child { margin-top: 0; }
 .dl-sub b { color: var(--gold-deep); }
 .dash-empty.sm { padding: 6px 4px; font-size: .82rem; }
+.unpaid-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+.unpaid-tabs .upt { flex: 1; background: var(--cream); border: 1px solid var(--line); border-radius: 8px; padding: 8px 6px; font-size: .82rem; cursor: pointer; color: var(--ink-soft); transition: all .15s; }
+.unpaid-tabs .upt.active { background: var(--ink); color: #fff; border-color: var(--ink); font-weight: 600; }
 .dash-card { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
 .dash-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .dash-card-head h3 { font-size: 1rem; font-weight: 700; }
