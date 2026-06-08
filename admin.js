@@ -592,7 +592,7 @@ function renderDashboard() {
 
   // 📅 다가오는 예식 (오늘 ~ 2주)
   const in14 = new Date(today); in14.setDate(in14.getDate() + 14);
-  const upcoming = allBookings.filter((b) => { const d = wDate(b); return d && d >= today && d <= in14 && notCancelled(b); })
+  const upcoming = allBookings.filter((b) => { const d = wDate(b); return d && d >= today && d <= in14 && b.status === '확정'; })
     .sort((a, b) => wDate(a) - wDate(b));
   $('dcUpcoming').textContent = upcoming.length;
   $('listUpcoming').innerHTML = upcoming.length
