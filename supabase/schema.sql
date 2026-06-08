@@ -215,9 +215,27 @@ create table if not exists public.staff (
   name       text not null,
   phone      text,
   active     boolean not null default true,
+  is_rep     boolean not null default false,   -- 대표(대표지정 자동배정 대상)
   created_at timestamptz not null default now()
 );
 alter table public.staff enable row level security;
+alter table public.staff add column if not exists is_rep boolean not null default false;
+
+-- 대표지정 예약은 대표 작가로 자동 배정 (미배정일 때만)
+create or replace function public.auto_assign_rep()
+returns trigger language plpgsql security definer set search_path=public, pg_temp
+as $$
+declare rep uuid;
+begin
+  if new.photographer = '대표지정' and new.assignee_id is null then
+    select id into rep from public.staff where is_rep = true and active = true order by created_at limit 1;
+    if rep is not null then new.assignee_id := rep; end if;
+  end if;
+  return new;
+end; $$;
+drop trigger if exists trg_auto_rep on public.bookings;
+create trigger trg_auto_rep before insert or update on public.bookings
+for each row execute function public.auto_assign_rep();
 
 alter table public.bookings add column if not exists deposit_paid boolean not null default false;
 alter table public.bookings add column if not exists balance_paid boolean not null default false;
@@ -239,11 +257,16 @@ as $$ declare r public.staff; begin
   return r;
 end; $$;
 
-create or replace function public.admin_staff_update(p_id uuid, p_name text, p_phone text, p_active boolean)
+drop function if exists public.admin_staff_update(uuid, text, text, boolean);
+create or replace function public.admin_staff_update(p_id uuid, p_name text, p_phone text, p_active boolean, p_rep boolean)
 returns public.staff language plpgsql security definer set search_path=public, pg_temp
 as $$ declare r public.staff; begin
   if auth.uid() is null then raise exception 'unauthorized'; end if;
-  update public.staff set name=nullif(p_name,''), phone=nullif(p_phone,''), active=coalesce(p_active,true)
+  if coalesce(p_rep,false) then
+    update public.staff set is_rep = false where id <> p_id;  -- 대표는 1명만
+  end if;
+  update public.staff set name=nullif(p_name,''), phone=nullif(p_phone,''),
+       active=coalesce(p_active,true), is_rep=coalesce(p_rep,false)
    where id=p_id returning * into r;
   return r;
 end; $$;
@@ -314,7 +337,7 @@ end; $$;
 
 revoke all on function public.admin_staff_list() from public, anon;
 revoke all on function public.admin_staff_add(text, text) from public, anon;
-revoke all on function public.admin_staff_update(uuid, text, text, boolean) from public, anon;
+revoke all on function public.admin_staff_update(uuid, text, text, boolean, boolean) from public, anon;
 revoke all on function public.admin_staff_delete(uuid) from public, anon;
 revoke all on function public.admin_set_deposit(uuid, boolean) from public, anon;
 revoke all on function public.admin_set_balance(uuid, boolean) from public, anon;
@@ -324,7 +347,7 @@ revoke all on function public.admin_assign(uuid[], uuid) from public, anon;
 revoke all on function public.admin_set_assignees(uuid, uuid, uuid) from public, anon;
 grant execute on function public.admin_staff_list() to authenticated;
 grant execute on function public.admin_staff_add(text, text) to authenticated;
-grant execute on function public.admin_staff_update(uuid, text, text, boolean) to authenticated;
+grant execute on function public.admin_staff_update(uuid, text, text, boolean, boolean) to authenticated;
 grant execute on function public.admin_staff_delete(uuid) to authenticated;
 grant execute on function public.admin_set_deposit(uuid, boolean) to authenticated;
 grant execute on function public.admin_set_balance(uuid, boolean) to authenticated;

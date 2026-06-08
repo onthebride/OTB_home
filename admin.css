@@ -160,6 +160,9 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 
 /* ===== 설문 (예약 상세) ===== */
 .survey-badge { font-size: .82rem; }
+.ph-badge { display: inline-block; font-size: .68rem; font-weight: 600; padding: 1px 6px; border-radius: 6px; margin-left: 4px; vertical-align: middle; white-space: nowrap; }
+.ph-badge.rep { background: #f3e3d2; color: #97743f; }
+.ph-badge.two { background: #e3edf5; color: #2c6b9b; }
 .survey-loading { color: var(--ink-soft); font-size: .85rem; margin-top: 16px; }
 .survey-box {
   margin-top: 18px;

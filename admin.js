@@ -24,6 +24,9 @@ let allStaff = [];
 let staffMap = {};
 const ATK_TPLS = [['A', '계약안내'], ['B', '한달 전'], ['C', '잔금안내'], ['D', '최종안내'], ['E', '링크안내']];
 const notCancelled = (b) => b.status !== '취소';
+const phBadge = (b) =>
+  b.photographer === '대표지정' ? ' <span class="ph-badge rep">대표지정</span>'
+    : b.photographer === '2인 촬영' ? ' <span class="ph-badge two">2인촬영</span>' : '';
 const STAFF_COLORS = ['#b08d57', '#6b8e9b', '#9b6b8e', '#7d9b6b', '#9b7d6b', '#6b6b9b', '#b5727a', '#5fa3a3', '#a38b5f', '#8a6ba3'];
 function staffColor(id) {
   if (!id) return null;
@@ -133,7 +136,7 @@ function render() {
     .map(
       (b) => `<tr data-id="${b.id}">
         <td data-label="접수일">${esc(fmtDate(b.created_at))}</td>
-        <td data-label="계약자">${esc(b.contractor_name || '-')}${surveyIds.has(b.id) ? ' <span class="survey-badge" title="설문 제출됨">📝</span>' : ''}</td>
+        <td data-label="계약자">${esc(b.contractor_name || '-')}${phBadge(b)}${surveyIds.has(b.id) ? ' <span class="survey-badge" title="설문 제출됨">📝</span>' : ''}</td>
         <td data-label="예식일">${esc(fmtDate(b.wedding_date))}</td>
         <td data-label="예식장">${esc(b.wedding_venue || '-')}</td>
         <td data-label="작가">${esc(staffName(b.assignee_id) || '-')}</td>
@@ -581,7 +584,7 @@ function renderDashboard() {
     ? news.slice(0, 40).map((b) => `
       <div class="dl-item" data-id="${b.id}">
         <div class="dl-main">
-          <span class="dl-name">${esc(b.contractor_name || '-')}</span>
+          <span class="dl-name">${esc(b.contractor_name || '-')}${phBadge(b)}</span>
           <span class="dl-meta">${esc(fmtDate(b.wedding_date))} · ${esc(b.wedding_venue || '-')} · ${esc(won(b.total_price))}</span>
         </div>
         <div class="dl-actions">
@@ -604,7 +607,7 @@ function renderDashboard() {
       return `
       <div class="dl-item soon" data-id="${b.id}">
         <div class="dl-main">
-          <span class="dl-name">${esc(b.contractor_name || '-')} <span class="dday">${dtag}</span></span>
+          <span class="dl-name">${esc(b.contractor_name || '-')}${phBadge(b)} <span class="dday">${dtag}</span></span>
           <span class="dl-meta">${esc(fmtDate(b.wedding_date))} ${esc(kTimeShort(b.wedding_time))} · ${esc(b.wedding_venue || '-')}${asg}</span>
         </div>
       </div>`;
@@ -622,7 +625,7 @@ function renderDashboard() {
     return `
     <div class="dl-item" data-id="${b.id}">
       <div class="dl-main">
-        <span class="dl-name">${esc(b.contractor_name || '-')}</span>
+        <span class="dl-name">${esc(b.contractor_name || '-')}${phBadge(b)}</span>
         <span class="dl-meta">${esc(fmtDate(b.wedding_date))} · ${esc(b.wedding_venue || '-')} · ${kind === 'deposit' ? '계약금' : '잔금'} ${esc(amt)}</span>
       </div>
       <div class="dl-actions">
@@ -650,7 +653,7 @@ function renderDashboard() {
     ? needDl.slice(0, 40).map((b) => `
       <div class="dl-item dl-download" data-id="${b.id}">
         <div class="dl-main">
-          <span class="dl-name">${esc(b.contractor_name || '-')}</span>
+          <span class="dl-name">${esc(b.contractor_name || '-')}${phBadge(b)}</span>
           <span class="dl-meta">${esc(fmtDate(b.wedding_date))} · ${esc(b.wedding_venue || '-')}</span>
         </div>
         <div class="dl-dlrow">
@@ -846,6 +849,7 @@ function renderStaff() {
     <div class="staff-item${s.active ? '' : ' inactive'}" data-id="${s.id}">
       <input type="text" class="st-name" data-id="${s.id}" value="${esc(s.name || '')}" placeholder="이름" />
       <input type="text" class="st-phone" data-id="${s.id}" value="${esc(s.phone || '')}" placeholder="연락처" />
+      <label class="st-active"><input type="checkbox" class="st-rep" data-id="${s.id}" ${s.is_rep ? 'checked' : ''} /> 대표</label>
       <label class="st-active"><input type="checkbox" class="st-act" data-id="${s.id}" ${s.active ? 'checked' : ''} /> 활성</label>
       <button class="btn-sm st-save" data-id="${s.id}">저장</button>
       <button class="btn-sm st-del" data-id="${s.id}">삭제</button>
@@ -857,13 +861,15 @@ function renderStaff() {
       const name = $('staffList').querySelector(`.st-name[data-id="${id}"]`).value.trim();
       const phone = $('staffList').querySelector(`.st-phone[data-id="${id}"]`).value.trim();
       const active = $('staffList').querySelector(`.st-act[data-id="${id}"]`).checked;
+      const rep = $('staffList').querySelector(`.st-rep[data-id="${id}"]`).checked;
       if (!name) { alert('이름을 입력하세요.'); return; }
       btn.disabled = true;
-      const { error } = await sb.rpc('admin_staff_update', { p_id: id, p_name: name, p_phone: phone, p_active: active });
+      const { error } = await sb.rpc('admin_staff_update', { p_id: id, p_name: name, p_phone: phone, p_active: active, p_rep: rep });
       btn.disabled = false;
       if (error) { alert('저장 실패: ' + error.message); return; }
       await loadStaff();
       renderStaff();
+      renderDashboard();
       toast('저장되었습니다.');
     })
   );
