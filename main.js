@@ -102,27 +102,32 @@ document.querySelectorAll('input.phone').forEach((el) => {
 });
 
 // 계약자와 동일 — auto-fill 신랑/신부 from contractor
+const sameAsResets = [];
 const setupSameAs = (cbId, nameId, phoneId) => {
   const cb = document.getElementById(cbId);
   if (!cb) return;
   const nameEl = document.getElementById(nameId);
   const phoneEl = document.getElementById(phoneId);
+  const apply = (locked) => {
+    nameEl.readOnly = phoneEl.readOnly = locked;
+    nameEl.classList.toggle('readonly', locked);
+    phoneEl.classList.toggle('readonly', locked);
+  };
   const sync = () => {
     if (!cb.checked) return;
     nameEl.value = document.getElementById('f_contractor_name').value;
     phoneEl.value = document.getElementById('f_contractor_phone').value;
   };
-  cb.addEventListener('change', () => {
-    nameEl.readOnly = phoneEl.readOnly = cb.checked;
-    nameEl.classList.toggle('readonly', cb.checked);
-    phoneEl.classList.toggle('readonly', cb.checked);
-    sync();
-  });
+  cb.addEventListener('change', () => { apply(cb.checked); sync(); });
   document.getElementById('f_contractor_name').addEventListener('input', sync);
   document.getElementById('f_contractor_phone').addEventListener('input', sync);
+  apply(cb.checked); // 초기/복원 상태 동기화
+  sameAsResets.push(() => { cb.checked = false; apply(false); });
 };
 setupSameAs('f_groom_same', 'f_groom_name', 'f_groom_phone');
 setupSameAs('f_bride_same', 'f_bride_name', 'f_bride_phone');
+// 폼 리셋 시 신랑/신부 잠금 해제
+const resetSameAs = () => sameAsResets.forEach((fn) => fn());
 
 // Time — custom picker: 오전/오후 클릭 + 시/분 스크롤 선택
 let tpReset = () => {};
@@ -379,6 +384,7 @@ if (bookingForm) {
     }
 
     bookingForm.reset();
+    resetSameAs();
     if (fpDate) fpDate.clear();
     tpReset();
     document.getElementById('bkTotal').textContent = calcTotal().toLocaleString('ko-KR') + '만원';
