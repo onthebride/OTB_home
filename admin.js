@@ -132,13 +132,13 @@ function render() {
   $('bkRows').innerHTML = rows
     .map(
       (b) => `<tr data-id="${b.id}">
-        <td>${esc(fmtDate(b.created_at))}</td>
-        <td>${esc(b.contractor_name || '-')}${surveyIds.has(b.id) ? ' <span class="survey-badge" title="설문 제출됨">📝</span>' : ''}</td>
-        <td>${esc(fmtDate(b.wedding_date))}</td>
-        <td>${esc(b.wedding_venue || '-')}</td>
-        <td>${esc(b.photographer || '-')}</td>
-        <td>${esc(won(b.total_price))}</td>
-        <td><span class="badge ${esc(b.status)}">${esc(b.status)}</span></td>
+        <td data-label="접수일">${esc(fmtDate(b.created_at))}</td>
+        <td data-label="계약자">${esc(b.contractor_name || '-')}${surveyIds.has(b.id) ? ' <span class="survey-badge" title="설문 제출됨">📝</span>' : ''}</td>
+        <td data-label="예식일">${esc(fmtDate(b.wedding_date))}</td>
+        <td data-label="예식장">${esc(b.wedding_venue || '-')}</td>
+        <td data-label="작가">${esc(staffName(b.assignee_id) || '-')}</td>
+        <td data-label="금액">${esc(won(b.total_price))}</td>
+        <td data-label="상태"><span class="badge ${esc(b.status)}">${esc(b.status)}</span></td>
       </tr>`
     )
     .join('');

@@ -213,9 +213,17 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
   .dash-tabs { gap: 2px; overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
   .dtab { padding: 11px 14px; font-size: .92rem; white-space: nowrap; }
 
-  /* 예약 표: 가로 스크롤 */
-  .table-wrap { overflow-x: auto; }
-  .bk-table { min-width: 520px; }
+  /* 예약 목록: 모바일은 카드 형태 */
+  .table-wrap { overflow: visible; border: none; background: transparent; border-radius: 0; }
+  .bk-table { min-width: 0; }
+  .bk-table thead { display: none; }
+  .bk-table, .bk-table tbody, .bk-table tr, .bk-table td { display: block; width: 100%; }
+  .bk-table tr { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .bk-table tbody tr:last-child td { border-bottom: none; }
+  .bk-table td { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 5px 0; border: none; font-size: .9rem; text-align: right; }
+  .bk-table td::before { content: attr(data-label); color: var(--ink-soft); font-size: .8rem; font-weight: 500; flex: 0 0 auto; text-align: left; }
+  .bk-table td[data-label="계약자"] { font-weight: 700; font-size: 1.02rem; }
+  .bk-table td[data-label="계약자"]::before { font-weight: 500; font-size: .8rem; }
 
   /* 모달 */
   .modal { padding: 0; align-items: flex-end; }
