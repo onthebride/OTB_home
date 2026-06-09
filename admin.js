@@ -774,7 +774,15 @@ function renderCalendar() {
     const isToday = today.getFullYear() === y && today.getMonth() === m && today.getDate() === dnum;
     html += `<div class="cal-cell${isToday ? ' today' : ''}${items.length ? ' has' : ''}">
       <span class="cal-d">${dnum}</span>
-      ${items.map((b) => { const col = staffColor(b.assignee_id); return `<span class="cal-ev" data-id="${b.id}"${col ? ` style="background:${col}"` : ''} title="${esc((b.contractor_name || '') + ' ' + (b.wedding_venue || '') + (b.assignee_id ? ' / 메인 ' + staffName(b.assignee_id) : '') + (b.sub_assignee_id ? ' / 서브 ' + staffName(b.sub_assignee_id) : ''))}">${esc(kTimeShort(b.wedding_time))} ${esc(b.contractor_name || '')}</span>`; }).join('')}
+      ${items.map((b) => {
+        const col = staffColor(b.assignee_id);
+        const to = [];
+        if (b.option_reception) to.push('연회장');
+        if (b.option_pyebaek) to.push('폐백');
+        if (b.option_part2) to.push('2부');
+        const tt = (b.wedding_venue || '-') + (to.length ? '\n옵션: ' + to.join(', ') : '');
+        return `<span class="cal-ev" data-id="${b.id}"${col ? ` style="background:${col}"` : ''} title="${esc(tt)}">${esc(kTimeShort(b.wedding_time))} ${esc(b.contractor_name || '')}</span>`;
+      }).join('')}
     </div>`;
   }
   html += '</div>';
