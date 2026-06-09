@@ -148,7 +148,8 @@ begin
     groom_phone       = nullif(payload->>'groom_phone',''),
     bride_name        = nullif(payload->>'bride_name',''),
     bride_phone       = nullif(payload->>'bride_phone',''),
-    package           = case when coalesce((payload->>'basic')::boolean, true) then '베이직(데이터형)' else null end,
+    package           = case when payload ? 'package' then nullif(payload->>'package','')
+                             else (case when coalesce((payload->>'basic')::boolean, true) then '베이직(데이터형)' else null end) end,
     travel_fee        = coalesce((payload->>'travel_fee')::boolean, false),
     option_album      = coalesce((payload->>'option_album')::boolean, false),
     option_reception  = coalesce((payload->>'option_reception')::boolean, false),

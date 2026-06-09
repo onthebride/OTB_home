@@ -409,8 +409,15 @@ function renderEdit(b) {
     </div>
 
     <h5 class="eg">상품 · 옵션 <small>(체크 시 합계 자동 변경)</small></h5>
+    <div class="field" style="margin-bottom:10px">
+      <label>상품</label>
+      <select id="e_package">
+        <option value="베이직(데이터형)" data-price="55" ${sl(b.package, '베이직(데이터형)')}>베이직 (데이터형) · 55만원</option>
+        <option value="스페셜" data-price="55" ${sl(b.package, '스페셜')}>스페셜 · 55만원 (구상품)</option>
+        <option value="" data-price="0" ${b.package ? '' : 'selected'}>상품 없음</option>
+      </select>
+    </div>
     <div class="edit-opts">
-      <label class="eopt"><input type="checkbox" id="e_basic" data-price="55" ${ck(b.package)} /><span>베이직 (데이터형)</span><b>55만원</b></label>
       <label class="eopt"><input type="checkbox" id="e_travel" data-price="5" ${ck(b.travel_fee)} /><span>출장비</span><b>5만원</b></label>
       <label class="eopt"><input type="checkbox" id="e_option_album" data-price="5" ${ck(b.option_album)} /><span>앨범 1권 추가</span><b>+5만원</b></label>
       <label class="eopt"><input type="checkbox" id="e_option_reception" data-price="5" ${ck(b.option_reception)} /><span>연회장 인사촬영</span><b>+5만원</b></label>
@@ -463,6 +470,8 @@ function renderEdit(b) {
     $('modalCard')
       .querySelectorAll('input[data-price]:checked')
       .forEach((el) => (sum += Number(el.dataset.price) || 0));
+    const pk = $('e_package') && $('e_package').selectedOptions[0];
+    if (pk) sum += Number(pk.dataset.price) || 0;
     const ph = $('e_photographer').selectedOptions[0];
     if (ph) sum += Number(ph.dataset.price) || 0;
     $('eTotal').textContent = sum.toLocaleString('ko-KR') + '만원';
@@ -528,7 +537,7 @@ async function saveDetail(id, recalcEdit) {
     groom_phone: cv('e_groom_phone'),
     bride_name: cv('e_bride_name'),
     bride_phone: cv('e_bride_phone'),
-    basic: cc('e_basic'),
+    package: $('e_package') ? $('e_package').value : '베이직(데이터형)',
     travel_fee: cc('e_travel'),
     option_album: cc('e_option_album'),
     option_reception: cc('e_option_reception'),
