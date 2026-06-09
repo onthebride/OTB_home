@@ -348,8 +348,13 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .sched-asg-ctrls select { border: 1px solid var(--line); border-radius: 6px; padding: 5px 7px; font-size: .8rem; background: #fff; max-width: 130px; }
 .sched-asg-ctrls select:focus { outline: none; border-color: var(--gold); }
 
-@media (max-width: 640px) {
-  /* 좁아지면 2줄: (시간·계약자·예식장·옵션) / (작가 드롭다운) */
+/* 중간 폭: 그리드 칸 약간 축소해 작가칸을 오른쪽에 유지 */
+@media (max-width: 560px) {
+  .sched-row { grid-template-columns: 16px 54px 78px 1fr auto; gap: 0 8px; }
+  .sched-asg-ctrls select { max-width: 108px; }
+}
+/* 진짜 좁을 때만 2줄: (정보) / (작가 드롭다운) */
+@media (max-width: 440px) {
   .sched-row { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 10px; }
   .sched-mid { flex: 1 1 auto; }
   .sched-asg-ctrls { flex: 1 1 100%; flex-direction: row; justify-self: auto; }
