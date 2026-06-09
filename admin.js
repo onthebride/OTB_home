@@ -415,7 +415,6 @@ function renderEdit(b) {
         <option value="베이직(데이터형)" data-price="55" ${sl(b.package, '베이직(데이터형)')}>베이직 (데이터형) · 55만원</option>
         <option value="스페셜" data-price="55" ${sl(b.package, '스페셜')}>스페셜 · 55만원 (구상품)</option>
         <option value="베이직(구)" data-price="50" ${sl(b.package, '베이직(구)')}>베이직(구) · 50만원 (구상품)</option>
-        <option value="" data-price="0" ${b.package ? '' : 'selected'}>상품 없음</option>
       </select>
     </div>
     <div class="edit-opts">
