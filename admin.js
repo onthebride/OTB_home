@@ -616,10 +616,10 @@ function renderDashboard() {
 
   // 💳 미입금 (계약금 / 잔금)
   const byDate = (a, b) => (wDate(a) || 0) - (wDate(b) || 0);
-  const in2 = new Date(today); in2.setDate(in2.getDate() + 2);
-  const depUnpaid = allBookings.filter((b) => { const d = wDate(b); return !b.deposit_paid && (!d || d >= today) && notCancelled(b); }).sort(byDate);
-  // 잔금 미입금: 예식 2일 전부터 표시 (이후 미납분 포함)
-  const balUnpaid = allBookings.filter((b) => { const d = wDate(b); return b.deposit_paid && !b.balance_paid && d && d <= in2 && notCancelled(b); }).sort(byDate);
+  // 계약금 미입금: 계약안내(A) 보낸 뒤 ~ 입금 확인 전
+  const depUnpaid = allBookings.filter((b) => b.alimtalk_sent && b.alimtalk_sent.A && !b.deposit_paid && notCancelled(b)).sort(byDate);
+  // 잔금 미입금: 잔금안내(C) 보낸 뒤 ~ 입금 확인 전
+  const balUnpaid = allBookings.filter((b) => b.alimtalk_sent && b.alimtalk_sent.C && !b.balance_paid && notCancelled(b)).sort(byDate);
   const unpaidItem = (b, kind) => {
     const amt = kind === 'deposit' ? won(10) : (b.total_price != null ? won(b.total_price - 10) : '-');
     return `
