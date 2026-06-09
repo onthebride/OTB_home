@@ -108,6 +108,7 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .bk-table { width: 100%; border-collapse: collapse; }
 .bk-table th { text-align: left; font-size: .78rem; color: var(--ink-soft); font-weight: 500; padding: 14px 16px; border-bottom: 1px solid var(--line); background: var(--cream); }
 .bk-table td { padding: 14px 16px; border-bottom: 1px solid var(--line); font-size: .92rem; }
+.bk-table td:nth-child(1), .bk-table td:nth-child(2), .bk-table td:nth-child(3), .bk-table td:nth-child(5), .bk-table td:nth-child(7) { white-space: nowrap; }
 .bk-table tbody tr { cursor: pointer; transition: background .15s; }
 .bk-table tbody tr:hover { background: var(--cream); }
 .bk-table tbody tr:last-child td { border-bottom: none; }
@@ -199,6 +200,26 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .sv-lb { position: fixed; inset: 0; z-index: 1000; background: rgba(20,17,15,.9); display: flex; align-items: center; justify-content: center; padding: 30px; cursor: zoom-out; }
 .sv-lb img { max-width: 100%; max-height: 100%; border-radius: 6px; }
 
+/* 예약 목록: 좁아지면(태블릿~모바일) 2줄 카드형으로 — 어색한 줄바꿈 방지 */
+@media (max-width: 820px) {
+  .table-wrap { overflow: visible; border: none; background: transparent; border-radius: 0; }
+  .bk-table { min-width: 0; }
+  .bk-table thead { display: none; }
+  .bk-table, .bk-table tbody { display: block; }
+  .bk-table tr { display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; row-gap: 3px; background: var(--paper); border: 1px solid var(--line); border-radius: 9px; padding: 11px 14px; margin-bottom: 8px; }
+  .bk-table td { display: inline; padding: 0; border: none; font-size: .84rem; color: var(--ink-soft); white-space: normal; }
+  .bk-table td::before { display: none; }
+  .bk-table td[data-label="접수일"] { display: none; }
+  .bk-table td[data-label="계약자"] { order: 1; flex: 1 1 auto; font-weight: 700; font-size: 1rem; color: var(--ink); white-space: nowrap; }
+  .bk-table td[data-label="상태"] { order: 2; flex: 0 0 auto; }
+  .bk-table td[data-label="예식일"] { order: 3; flex: 0 0 100%; color: var(--ink); white-space: nowrap; }
+  .bk-table td[data-label="예식장"] { order: 4; flex: 0 0 100%; }
+  .bk-table td[data-label="작가"] { order: 5; white-space: nowrap; }
+  .bk-table td[data-label="작가"]::before { content: "작가 "; color: var(--ink-soft); }
+  .bk-table td[data-label="옵션"] { order: 6; flex: 1 1 auto; display: flex; flex-wrap: wrap; gap: 4px; }
+  .bk-table td[data-label="옵션"] .muted { display: none; }
+}
+
 @media (max-width: 600px) {
   .detail-grid { grid-template-columns: 1fr; gap: 12px 16px; }
   .dash-body { padding: 14px 14px 60px; }
@@ -215,24 +236,6 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
   /* 탭: 가로 스크롤 */
   .dash-tabs { gap: 2px; overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
   .dtab { padding: 11px 14px; font-size: .92rem; white-space: nowrap; }
-
-  /* 예약 목록: 모바일은 2줄 압축 카드 */
-  .table-wrap { overflow: visible; border: none; background: transparent; border-radius: 0; }
-  .bk-table { min-width: 0; }
-  .bk-table thead { display: none; }
-  .bk-table, .bk-table tbody { display: block; }
-  .bk-table tr { display: flex; flex-wrap: wrap; align-items: center; column-gap: 6px; row-gap: 3px; background: var(--paper); border: 1px solid var(--line); border-radius: 9px; padding: 10px 13px; margin-bottom: 8px; }
-  .bk-table td { display: inline; padding: 0; border: none; font-size: .83rem; color: var(--ink-soft); }
-  .bk-table td::before { display: none; }
-  .bk-table td[data-label="접수일"] { display: none; }
-  .bk-table td[data-label="계약자"] { order: 1; flex: 1 1 auto; font-weight: 700; font-size: .98rem; color: var(--ink); }
-  .bk-table td[data-label="상태"] { order: 2; flex: 0 0 auto; }
-  .bk-table td[data-label="예식일"] { order: 3; flex: 0 0 100%; color: var(--ink); }
-  .bk-table td[data-label="예식장"] { order: 4; flex: 0 0 100%; }
-  .bk-table td[data-label="작가"] { order: 5; }
-  .bk-table td[data-label="작가"]::before { content: "작가 "; color: var(--ink-soft); }
-  .bk-table td[data-label="옵션"] { order: 6; flex: 1 1 auto; display: flex; flex-wrap: wrap; gap: 4px; }
-  .bk-table td[data-label="옵션"] .muted { display: none; }
 
   /* 모달 */
   .modal { padding: 0; align-items: flex-end; }
