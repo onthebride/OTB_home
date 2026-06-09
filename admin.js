@@ -931,17 +931,26 @@ if ($('schedShare')) {
     if (!ids.length) { toast('공유할 일정을 선택하세요.'); return; }
     const rows = ids.map((id) => allBookings.find((b) => b.id === id)).filter(Boolean)
       .sort((a, b) => (wDate(a) - wDate(b)) || (a.wedding_time || '').localeCompare(b.wedding_time || ''));
-    const text = '[온더브라이드 촬영 스케줄]\n\n' + rows.map((b) => {
+    const fmtDot = (s) => (s ? String(s).slice(0, 10).replace(/-/g, '.') : '-');
+    const pkg = (b) => ((b.package || '').replace(/\s*\(.*\)\s*/, '') || '베이직');
+    const text = rows.map((b) => {
       const opts = bookingOpts(b);
-      const ln = [];
-      ln.push(`■ ${fmtDate(b.wedding_date)}(${wdLabel(b)}) ${kTimeShort(b.wedding_time)}`);
-      ln.push(`  예식장: ${b.wedding_venue || '-'}`);
-      ln.push(`  신랑 ${b.groom_name || '-'}${b.groom_phone ? ' ' + b.groom_phone : ''} / 신부 ${b.bride_name || '-'}${b.bride_phone ? ' ' + b.bride_phone : ''}`);
-      if (opts.length) ln.push(`  옵션: ${opts.join(', ')}`);
-      ln.push(`  메인작가: ${staffName(b.assignee_id) || '미배정'}${b.photographer === '2인 촬영' ? ' / 서브작가: ' + (staffName(b.sub_assignee_id) || '미배정') : ''}`);
-      return ln.join('\n');
-    }).join('\n\n');
-    try { await navigator.clipboard.writeText(text); toast(`${rows.length}건 전체 스케줄 복사됨! 작가에게 붙여넣기 하세요.`); }
+      return [
+        `* 예식날짜 : ${fmtDot(b.wedding_date)}`,
+        `* 예식장소 : ${b.wedding_venue || '-'}`,
+        `* 예식시간 : ${b.wedding_time || '-'}`,
+        '',
+        `* 신부님 성함 : ${b.bride_name || '-'}`,
+        `* 신부님 연락처 : ${b.bride_phone || '-'}`,
+        '',
+        `* 신랑님 성함 : ${b.groom_name || '-'}`,
+        `* 신랑님 연락처 : ${b.groom_phone || '-'}`,
+        '',
+        `* 상품 : ${pkg(b)}`,
+        `* 옵션 : ${opts.length ? opts.join(', ') : '없음'}`,
+      ].join('\n');
+    }).join('\n\n━━━━━━━━━━\n\n');
+    try { await navigator.clipboard.writeText(text); toast(`${rows.length}건 스케줄 복사됨! 작가에게 붙여넣기 하세요.`); }
     catch (_) { prompt('아래 내용을 복사하세요:', text); }
   });
 }
