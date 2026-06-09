@@ -637,16 +637,21 @@ function renderDashboard() {
   const depUnpaid = allBookings.filter((b) => b.alimtalk_sent && b.alimtalk_sent.A && !b.deposit_paid && notCancelled(b)).sort(byDate);
   // 잔금 미입금: 잔금안내(C) 보낸 뒤 ~ 입금 확인 전
   const balUnpaid = allBookings.filter((b) => b.alimtalk_sent && b.alimtalk_sent.C && !b.balance_paid && notCancelled(b)).sort(byDate);
+  const nowMs = Date.now();
   const unpaidItem = (b, kind) => {
     const amt = kind === 'deposit' ? won(10) : (b.total_price != null ? won(b.total_price - 10) : '-');
+    const sent = b.alimtalk_sent && b.alimtalk_sent[kind === 'deposit' ? 'A' : 'C'];
+    const days = sent ? Math.floor((nowMs - new Date(sent).getTime()) / 86400000) : 0;
+    const overdue = days >= 5;
     return `
-    <div class="dl-item" data-id="${b.id}">
+    <div class="dl-item${overdue ? ' overdue' : ''}" data-id="${b.id}">
       <div class="dl-main">
-        <span class="dl-name">${esc(b.contractor_name || '-')}${phBadge(b)}</span>
+        <span class="dl-name">${esc(b.contractor_name || '-')}${phBadge(b)}${overdue ? ` <span class="od-badge">⚠️ ${days}일 미입금</span>` : ''}</span>
         <span class="dl-meta">${esc(fmtDate(b.wedding_date))} · ${esc(b.wedding_venue || '-')} · ${kind === 'deposit' ? '계약금' : '잔금'} ${esc(amt)}</span>
       </div>
       <div class="dl-actions">
         <button class="btn-sm dl-paid" data-id="${b.id}" data-pay="${kind}">${kind === 'deposit' ? '계약금 확인' : '잔금 확인'}</button>
+        ${overdue ? `<button class="btn-sm od-cancel" data-id="${b.id}">예약 취소</button>` : ''}
       </div>
     </div>`;
   };
@@ -698,6 +703,10 @@ function bindDashEvents() {
   document.querySelectorAll('#tab-dashboard [data-send]').forEach((btn) =>
     btn.addEventListener('click', (e) => { e.stopPropagation(); sendAlimtalk(btn.dataset.send, btn.dataset.tpl); })
   );
+  // 5일+ 미입금 → 예약 취소
+  document.querySelectorAll('#tab-dashboard .od-cancel').forEach((btn) =>
+    btn.addEventListener('click', (e) => { e.stopPropagation(); cancelBooking(btn.dataset.id); })
+  );
   // 입금 확인 (계약금/잔금)
   document.querySelectorAll('#tab-dashboard .dl-paid').forEach((btn) =>
     btn.addEventListener('click', async (e) => {
@@ -743,7 +752,7 @@ function renderCalendar() {
   const byDay = {};
   allBookings.forEach((b) => {
     const d = wDate(b);
-    if (d && d.getFullYear() === y && d.getMonth() === m && notCancelled(b)) (byDay[d.getDate()] = byDay[d.getDate()] || []).push(b);
+    if (d && d.getFullYear() === y && d.getMonth() === m && notCancelled(b) && b.deposit_paid) (byDay[d.getDate()] = byDay[d.getDate()] || []).push(b);
   });
 
   const legend = allStaff.filter((s) => s.active).map((s) => `<span class="cal-leg"><i style="background:${staffColor(s.id)}"></i>${esc(s.name)}</span>`).join('');
@@ -801,7 +810,7 @@ function schedMonthItems() {
   if (!calMonth) return [];
   const { y, m } = calMonth;
   return allBookings
-    .filter((b) => { const d = wDate(b); return d && d.getFullYear() === y && d.getMonth() === m && notCancelled(b); })
+    .filter((b) => { const d = wDate(b); return d && d.getFullYear() === y && d.getMonth() === m && notCancelled(b) && b.deposit_paid; })
     .sort((a, b) => (wDate(a) - wDate(b)) || (a.wedding_time || '').localeCompare(b.wedding_time || ''));
 }
 

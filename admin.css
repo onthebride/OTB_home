@@ -274,6 +274,10 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 
 .dl-item { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: #fff; }
 .dl-item.soon { border-color: var(--gold); background: #fdf8f0; }
+.dl-item.overdue { border-color: #d9b3aa; background: #fcf3f1; }
+.od-badge { display: inline-block; font-size: .68rem; font-weight: 600; color: #b5462f; background: #f7e0da; border-radius: 6px; padding: 1px 6px; margin-left: 4px; }
+.od-cancel { background: #fff; border-color: #d9b3aa; color: #b5462f; }
+.od-cancel:hover { background: #b5462f; border-color: #b5462f; color: #fff; }
 .dl-main { cursor: pointer; }
 .dl-name { font-weight: 600; font-size: .92rem; }
 .dl-meta { display: block; color: var(--ink-soft); font-size: .8rem; margin-top: 2px; }
