@@ -122,11 +122,17 @@
           <input type="text" id="bkSearch" placeholder="🔍 이름 · 예식장 · 연락처 검색" autocomplete="off" />
         </div>
 
+        <div class="bk-monthnav" id="bkMonthNav">
+          <button class="btn-ghost" id="bkPrev">‹</button>
+          <span id="bkMonthLabel"></span>
+          <button class="btn-ghost" id="bkNext">›</button>
+        </div>
+
         <div class="table-wrap">
           <table class="bk-table">
             <thead>
               <tr>
-                <th>접수일</th><th>계약자</th><th>예식일</th><th>예식장</th><th>작가</th><th>금액</th><th>상태</th>
+                <th>접수일</th><th>계약자</th><th>예식일</th><th>예식장</th><th>작가</th><th>옵션</th><th>상태</th>
               </tr>
             </thead>
             <tbody id="bkRows"></tbody>

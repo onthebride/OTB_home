@@ -11,12 +11,14 @@ const esc = (s) =>
   );
 const won = (n) => (n == null ? '-' : Number(n).toLocaleString('ko-KR') + '만원');
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString('ko-KR') : '-');
+const fmtDateShort = (s) => { if (!s) return '-'; const d = new Date(s); return `${String(d.getFullYear() % 100).padStart(2, '0')}. ${d.getMonth() + 1}. ${d.getDate()}.`; };
 const fmtDateTime = (s) =>
   s ? new Date(s).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }) : '-';
 
 let allBookings = [];
 let filter = '전체';
 let bkSearchTerm = '';
+let bkMonth = null; // 예약 목록 월별 페이지 {y, m}
 let surveyIds = new Set(); // 설문 제출된 예약 ID
 let calMonth = null; // 캘린더 현재 월 {y, m}
 let unpaidTab = 'deposit'; // 미입금 탭: deposit | balance
@@ -123,27 +125,41 @@ function render() {
   if ($('c_confirm')) $('c_confirm').textContent = counts['확정'];
   if ($('c_cancel')) $('c_cancel').textContent = counts['취소'];
 
+  if (!bkMonth) { const t = new Date(); bkMonth = { y: t.getFullYear(), m: t.getMonth() }; }
   const term = bkSearchTerm.toLowerCase();
-  const rows = allBookings.filter((b) => {
+  const searching = !!term;
+
+  let rows = allBookings.filter((b) => {
     if (filter !== '전체' && b.status !== filter) return false;
     if (!term) return true;
     return [b.contractor_name, b.wedding_venue, b.contractor_phone, b.groom_name, b.bride_name]
       .some((v) => (v || '').toLowerCase().includes(term));
   });
+
+  if (searching) {
+    if ($('bkMonthNav')) $('bkMonthNav').hidden = true;
+    rows.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  } else {
+    if ($('bkMonthNav')) $('bkMonthNav').hidden = false;
+    rows = rows.filter((b) => { const d = wDate(b); return d && d.getFullYear() === bkMonth.y && d.getMonth() === bkMonth.m; });
+    rows.sort((a, b) => (wDate(a) - wDate(b)) || (a.wedding_time || '').localeCompare(b.wedding_time || ''));
+    if ($('bkMonthLabel')) $('bkMonthLabel').textContent = `${bkMonth.y}년 ${bkMonth.m + 1}월 · ${rows.length}건`;
+  }
   $('emptyMsg').hidden = rows.length > 0;
 
   $('bkRows').innerHTML = rows
-    .map(
-      (b) => `<tr data-id="${b.id}">
-        <td data-label="접수일">${esc(fmtDate(b.created_at))}</td>
+    .map((b) => {
+      const opts = bookingOpts(b);
+      return `<tr data-id="${b.id}">
+        <td data-label="접수일">${esc(fmtDateShort(b.created_at))}</td>
         <td data-label="계약자">${esc(b.contractor_name || '-')}${phBadge(b)}${surveyIds.has(b.id) ? ' <span class="survey-badge" title="설문 제출됨">📝</span>' : ''}</td>
-        <td data-label="예식일">${esc(fmtDate(b.wedding_date))}</td>
+        <td data-label="예식일">${esc(fmtDateShort(b.wedding_date))}</td>
         <td data-label="예식장">${esc(b.wedding_venue || '-')}</td>
         <td data-label="작가">${esc(staffName(b.assignee_id) || '-')}</td>
-        <td data-label="금액">${esc(won(b.total_price))}</td>
+        <td data-label="옵션">${opts.length ? opts.map((o) => `<span class="bk-opt">${esc(o)}</span>`).join('') : '<span class="muted">-</span>'}</td>
         <td data-label="상태"><span class="badge ${esc(b.status)}">${esc(b.status)}</span></td>
-      </tr>`
-    )
+      </tr>`;
+    })
     .join('');
 
   document.querySelectorAll('#bkRows tr').forEach((tr) =>
@@ -161,6 +177,10 @@ $('filters').addEventListener('click', (e) => {
 
 if ($('bkSearch')) {
   $('bkSearch').addEventListener('input', (e) => { bkSearchTerm = e.target.value.trim(); render(); });
+}
+if ($('bkPrev')) {
+  $('bkPrev').addEventListener('click', () => { if (!bkMonth) return; bkMonth.m--; if (bkMonth.m < 0) { bkMonth.m = 11; bkMonth.y--; } render(); });
+  $('bkNext').addEventListener('click', () => { if (!bkMonth) return; bkMonth.m++; if (bkMonth.m > 11) { bkMonth.m = 0; bkMonth.y++; } render(); });
 }
 
 /* ===== Detail modal ===== */

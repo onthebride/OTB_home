@@ -227,13 +227,12 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
   .bk-table td[data-label="접수일"] { display: none; }
   .bk-table td[data-label="계약자"] { order: 1; flex: 1 1 auto; font-weight: 700; font-size: .98rem; color: var(--ink); }
   .bk-table td[data-label="상태"] { order: 2; flex: 0 0 auto; }
-  .bk-table td[data-label="예식일"] { order: 3; color: var(--ink); }
-  .bk-table td[data-label="예식장"] { order: 4; }
+  .bk-table td[data-label="예식일"] { order: 3; flex: 0 0 100%; color: var(--ink); }
+  .bk-table td[data-label="예식장"] { order: 4; flex: 0 0 100%; }
   .bk-table td[data-label="작가"] { order: 5; }
-  .bk-table td[data-label="금액"] { order: 6; margin-left: auto; }
-  .bk-table td[data-label="예식장"]::before,
-  .bk-table td[data-label="작가"]::before,
-  .bk-table td[data-label="금액"]::before { display: inline; content: "·"; margin-right: 6px; color: var(--line); }
+  .bk-table td[data-label="작가"]::before { content: "작가 "; color: var(--ink-soft); }
+  .bk-table td[data-label="옵션"] { order: 6; flex: 1 1 auto; display: flex; flex-wrap: wrap; gap: 4px; }
+  .bk-table td[data-label="옵션"] .muted { display: none; }
 
   /* 모달 */
   .modal { padding: 0; align-items: flex-end; }
@@ -326,9 +325,14 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .day-ov-asg { margin-left: auto; font-size: .78rem; white-space: nowrap; font-weight: 600; }
 .day-ov-venue { flex-basis: 100%; color: var(--ink-soft); font-size: .84rem; }
 
-.bk-search { margin-bottom: 14px; }
+.bk-search { margin-bottom: 12px; }
 .bk-search input { width: 100%; max-width: 360px; border: 1px solid var(--line); border-radius: 999px; padding: 10px 16px; font-size: .9rem; outline: none; background: #fff; }
 .bk-search input:focus { border-color: var(--gold); }
+.bk-monthnav { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.bk-monthnav .btn-ghost { padding: 5px 13px; }
+.bk-monthnav span { font-weight: 600; font-size: .95rem; }
+.bk-opt { display: inline-block; font-size: .72rem; background: var(--cream); border: 1px solid var(--line); color: var(--ink-soft); border-radius: 4px; padding: 1px 6px; margin: 0 2px 2px 0; white-space: nowrap; }
+td .muted { color: var(--ink-soft); }
 
 /* Toast */
 .toast { position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%) translateY(20px); background: var(--ink); color: #fff; padding: 12px 20px; border-radius: 8px; font-size: .88rem; opacity: 0; pointer-events: none; transition: all .25s ease; z-index: 2000; max-width: 90%; text-align: center; }
