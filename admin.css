@@ -309,6 +309,8 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .cal-ev { font-size: .72rem; background: var(--ink); color: #fff; border-radius: 4px; padding: 2px 5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cal-ev:hover { background: var(--gold-deep); }
 .cal-more { font-size: .7rem; color: var(--ink-soft); padding-left: 2px; }
+.cal-tip { position: absolute; z-index: 2000; background: var(--ink); color: #fff; font-size: .78rem; line-height: 1.45; padding: 7px 11px; border-radius: 6px; max-width: 260px; white-space: pre-line; pointer-events: none; opacity: 0; transition: opacity .12s; box-shadow: 0 8px 24px -10px rgba(0,0,0,.55); }
+.cal-tip.show { opacity: 1; }
 
 .bk-search { margin-bottom: 14px; }
 .bk-search input { width: 100%; max-width: 360px; border: 1px solid var(--line); border-radius: 999px; padding: 10px 16px; font-size: .9rem; outline: none; background: #fff; }

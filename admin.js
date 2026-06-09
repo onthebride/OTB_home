@@ -781,15 +781,26 @@ function renderCalendar() {
         if (b.option_pyebaek) to.push('폐백');
         if (b.option_part2) to.push('2부');
         const tt = (b.wedding_venue || '-') + (to.length ? '\n옵션: ' + to.join(', ') : '');
-        return `<span class="cal-ev" data-id="${b.id}"${col ? ` style="background:${col}"` : ''} title="${esc(tt)}">${esc(kTimeShort(b.wedding_time))} ${esc(b.contractor_name || '')}</span>`;
+        return `<span class="cal-ev" data-id="${b.id}" data-tip="${esc(tt)}"${col ? ` style="background:${col}"` : ''}>${esc(kTimeShort(b.wedding_time))} ${esc(b.contractor_name || '')}</span>`;
       }).join('')}
     </div>`;
   }
   html += '</div>';
   $('calendar').innerHTML = html;
-  $('calendar').querySelectorAll('.cal-ev').forEach((e) =>
-    e.addEventListener('click', () => openDetail(e.dataset.id))
-  );
+  let calTip = document.getElementById('calTip');
+  if (!calTip) { calTip = document.createElement('div'); calTip.id = 'calTip'; calTip.className = 'cal-tip'; document.body.appendChild(calTip); }
+  $('calendar').querySelectorAll('.cal-ev').forEach((e) => {
+    e.addEventListener('click', () => openDetail(e.dataset.id));
+    e.addEventListener('mouseenter', () => {
+      if (!e.dataset.tip) return;
+      calTip.textContent = e.dataset.tip;
+      const r = e.getBoundingClientRect();
+      calTip.style.left = (r.left + window.scrollX) + 'px';
+      calTip.style.top = (r.bottom + window.scrollY + 6) + 'px';
+      calTip.classList.add('show');
+    });
+    e.addEventListener('mouseleave', () => calTip.classList.remove('show'));
+  });
 }
 
 if ($('calPrev')) {
