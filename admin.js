@@ -647,7 +647,6 @@ function renderDashboard() {
       </div>
       <div class="dl-actions">
         <button class="btn-sm dl-paid" data-id="${b.id}" data-pay="${kind}">${kind === 'deposit' ? '계약금 확인' : '잔금 확인'}</button>
-        ${kind === 'deposit' ? `<button class="btn-sm btn-kakao-sm" data-send="${b.id}" data-tpl="A">계약안내</button>` : ''}
       </div>
     </div>`;
   };
