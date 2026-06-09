@@ -593,8 +593,8 @@ function renderDashboard() {
   if (!$('tab-dashboard')) return;
   const today = startOfToday();
 
-  // 🔔 신규 예약
-  const news = allBookings.filter((b) => b.status === '신규')
+  // 🔔 신규 예약 (계약안내 보내기 전)
+  const news = allBookings.filter((b) => b.status === '신규' && !(b.alimtalk_sent && b.alimtalk_sent.A))
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   $('dcNew').textContent = news.length;
   $('listNew').innerHTML = news.length
