@@ -374,6 +374,11 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .md-sel { border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font-size: .85rem; background: #fff; color: var(--ink); }
 .md-sel:focus { outline: none; border-color: var(--gold); }
 
+/* 입금 토글 */
+.pay-st.paid { color: #2f7d4f; font-weight: 600; }
+.pay-toggle { margin-left: 6px; font-size: .72rem; border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 2px 9px; cursor: pointer; color: var(--ink-soft); vertical-align: middle; }
+.pay-toggle:hover { border-color: var(--gold); color: var(--ink); }
+
 /* 캘린더 범례 */
 .cal-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
 .cal-leg { display: inline-flex; align-items: center; gap: 5px; font-size: .76rem; color: var(--ink-soft); }

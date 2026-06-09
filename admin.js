@@ -290,8 +290,8 @@ function renderView(b, flash) {
       ${b.photographer && b.photographer !== '기본' ? field('촬영', b.photographer) : ''}
       ${b.photo_usage_agree ? field('촬영본 사용동의', 'YES') : ''}
       ${field('합계', won(b.total_price))}
-      ${field('계약금', won(10) + ' · ' + (b.deposit_paid ? '입금완료 ✓' : '미입금'))}
-      ${field('잔금', (b.total_price != null ? won(b.total_price - 10) : '-') + ' · ' + (b.balance_paid ? '입금완료 ✓' : '미입금'))}
+      <div><p class="dl">계약금</p><p class="dv">${won(10)} · <span class="pay-st ${b.deposit_paid ? 'paid' : ''}">${b.deposit_paid ? '입금완료 ✓' : '미입금'}</span> <button class="pay-toggle" data-pay="deposit">${b.deposit_paid ? '해제' : '입금확인'}</button></p></div>
+      <div><p class="dl">잔금</p><p class="dv">${b.total_price != null ? won(b.total_price - 10) : '-'} · <span class="pay-st ${b.balance_paid ? 'paid' : ''}">${b.balance_paid ? '입금완료 ✓' : '미입금'}</span> <button class="pay-toggle" data-pay="balance">${b.balance_paid ? '해제' : '입금확인'}</button></p></div>
       <div class="full2"><p class="dl">추가 옵션</p>${optionTags(b)}</div>
       ${b.admin_note ? `<div class="full2">${field('관리자 메모', b.admin_note)}</div>` : ''}
     </div>
@@ -331,6 +331,23 @@ function renderView(b, flash) {
   };
   if ($('mAssignee')) $('mAssignee').addEventListener('change', saveAssignees);
   if ($('mSubAssignee')) $('mSubAssignee').addEventListener('change', saveAssignees);
+
+  // 계약금/잔금 입금 토글 (잘못 누르면 다시 눌러 해제)
+  $('modalCard').querySelectorAll('.pay-toggle').forEach((btn) =>
+    btn.addEventListener('click', async () => {
+      const kind = btn.dataset.pay;
+      const fn = kind === 'balance' ? 'admin_set_balance' : 'admin_set_deposit';
+      const cur = kind === 'balance' ? b.balance_paid : b.deposit_paid;
+      btn.disabled = true;
+      const { data, error } = await sb.rpc(fn, { p_id: b.id, p_paid: !cur });
+      if (error) { btn.disabled = false; alert('처리 실패: ' + error.message); return; }
+      const i = allBookings.findIndex((x) => x.id === b.id);
+      if (i >= 0 && data) allBookings[i] = data;
+      render();
+      renderDashboard();
+      renderView(data || b);
+    })
+  );
   $('modalCard').querySelectorAll('.atk-badge').forEach((btn) =>
     btn.addEventListener('click', async () => {
       const k = btn.dataset.atk;

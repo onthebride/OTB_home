@@ -284,7 +284,10 @@ as $$ declare r public.bookings; begin
   if auth.uid() is null then raise exception 'unauthorized'; end if;
   update public.bookings
      set deposit_paid = coalesce(p_paid,false),
-         status = case when coalesce(p_paid,false) and status = '신규' then '확정' else status end
+         status = case
+           when coalesce(p_paid,false) and status = '신규' then '확정'
+           when not coalesce(p_paid,false) and status = '확정' then '신규'
+           else status end
    where id=p_id returning * into r;
   return r;
 end; $$;
