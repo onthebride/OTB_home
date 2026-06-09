@@ -785,13 +785,32 @@ if ($('schedToggle')) {
   });
 }
 
+const WD = ['일', '월', '화', '수', '목', '금', '토'];
+const wdLabel = (b) => { const d = wDate(b); return d ? WD[d.getDay()] : ''; };
+function bookingOpts(b) {
+  const o = [];
+  if (b.option_album) o.push('앨범');
+  if (b.option_reception) o.push('연회장');
+  if (b.option_pyebaek) o.push('폐백');
+  if (b.option_part2) o.push('2부');
+  if (b.travel_fee) o.push('출장');
+  if (b.photographer === '2인 촬영') o.push('2인');
+  if (b.photographer === '대표지정') o.push('대표지정');
+  return o;
+}
+function schedMonthItems() {
+  if (!calMonth) return [];
+  const { y, m } = calMonth;
+  return allBookings
+    .filter((b) => { const d = wDate(b); return d && d.getFullYear() === y && d.getMonth() === m && notCancelled(b); })
+    .sort((a, b) => (wDate(a) - wDate(b)) || (a.wedding_time || '').localeCompare(b.wedding_time || ''));
+}
+
 function renderSchedule() {
   const wrap = $('schedList');
   if (!wrap || !calMonth) return;
-  const { y, m } = calMonth;
-  const items = allBookings
-    .filter((b) => { const d = wDate(b); return d && d.getFullYear() === y && d.getMonth() === m && notCancelled(b); })
-    .sort((a, b) => (wDate(a) - wDate(b)) || (a.wedding_time || '').localeCompare(b.wedding_time || ''));
+  const items = schedMonthItems();
+  renderSchedTags(items);
 
   if (!items.length) { wrap.innerHTML = '<p class="dash-empty">이 달 예식이 없어요.</p>'; updateSchedCount(); return; }
 
@@ -800,17 +819,55 @@ function renderSchedule() {
 
   wrap.innerHTML = Object.keys(groups).map((k) => `
     <div class="sched-group">
-      <p class="sched-date">${esc(k)} <span>(${groups[k].length})</span></p>
-      ${groups[k].map((b) => `
-        <label class="sched-row" data-id="${b.id}">
+      <p class="sched-date">${esc(k)}${groups[k][0] ? ' (' + wdLabel(groups[k][0]) + ')' : ''} <span>· ${groups[k].length}건</span></p>
+      ${groups[k].map((b) => {
+        const opts = bookingOpts(b);
+        const is2 = b.photographer === '2인 촬영';
+        return `
+        <div class="sched-row" data-id="${b.id}">
           <input type="checkbox" class="sched-cb" value="${b.id}" />
-          <span class="sched-time">${esc(kTimeShort(b.wedding_time)) || '-'}</span>
-          <span class="sched-name">${esc(b.contractor_name || '-')}</span>
-          <span class="sched-venue">${esc(b.wedding_venue || '-')}</span>
-          <span class="sched-asg">${b.assignee_id ? '👤 ' + esc(staffName(b.assignee_id)) : '<em>미배정</em>'}</span>
-        </label>`).join('')}
+          <div class="sched-info">
+            <div class="sched-l1">
+              <span class="sched-time">${esc(kTimeShort(b.wedding_time)) || '-'}</span>
+              <span class="sched-name">${esc(b.contractor_name || '-')}</span>
+              <span class="sched-venue">${esc(b.wedding_venue || '-')}</span>
+            </div>
+            ${opts.length ? `<div class="sched-opts">${opts.map((o) => `<span class="sched-optag">${esc(o)}</span>`).join('')}</div>` : ''}
+          </div>
+          <div class="sched-asg-ctrls">
+            <select class="sched-main" data-id="${b.id}" title="메인작가">${assigneeOptions(b.assignee_id)}</select>
+            ${is2 ? `<select class="sched-sub" data-id="${b.id}" title="서브작가">${assigneeOptions(b.sub_assignee_id)}</select>` : ''}
+          </div>
+        </div>`;
+      }).join('')}
     </div>`).join('');
   bindSchedule();
+}
+
+function renderSchedTags(items) {
+  const el = $('schedTags');
+  if (!el) return;
+  const used = {};
+  items.forEach((b) => { [b.assignee_id, b.sub_assignee_id].forEach((id) => { if (id) used[id] = (used[id] || 0) + 1; }); });
+  const ids = Object.keys(used).sort((a, b) => used[b] - used[a]);
+  const unassigned = items.filter((b) => !b.assignee_id).length;
+  el.innerHTML = (ids.length || unassigned)
+    ? '<span class="sched-tags-label">작가별 선택:</span>' +
+      ids.map((id) => `<button type="button" class="sched-tag" data-staff="${id}"><i style="background:${staffColor(id)}"></i>${esc(staffName(id))} ${used[id]}</button>`).join('') +
+      (unassigned ? `<button type="button" class="sched-tag none" data-staff="none">미배정 ${unassigned}</button>` : '')
+    : '';
+  el.querySelectorAll('.sched-tag').forEach((btn) => btn.addEventListener('click', () => selectByStaff(btn.dataset.staff)));
+}
+
+function selectByStaff(staffId) {
+  const match = (b) => staffId === 'none' ? !b.assignee_id : (b.assignee_id === staffId || b.sub_assignee_id === staffId);
+  document.querySelectorAll('#schedList .sched-cb').forEach((c) => {
+    const b = allBookings.find((x) => x.id === c.value);
+    c.checked = !!(b && match(b));
+  });
+  updateSchedCount();
+  const n = schedChecked().length;
+  toast(n ? `${n}건 선택됨 — [선택 공유] 누르세요` : '해당 작가 일정이 없어요');
 }
 
 function schedChecked() {
@@ -822,6 +879,30 @@ function updateSchedCount() {
 }
 function bindSchedule() {
   document.querySelectorAll('#schedList .sched-cb').forEach((c) => c.addEventListener('change', updateSchedCount));
+  // 정보 영역 클릭 → 체크 토글
+  document.querySelectorAll('#schedList .sched-info').forEach((info) =>
+    info.addEventListener('click', () => {
+      const cb = info.parentElement.querySelector('.sched-cb');
+      cb.checked = !cb.checked; updateSchedCount();
+    })
+  );
+  // 인라인 작가 배정 (메인/서브)
+  document.querySelectorAll('#schedList .sched-main, #schedList .sched-sub').forEach((sel) =>
+    sel.addEventListener('change', async () => {
+      const id = sel.dataset.id;
+      const row = sel.closest('.sched-row');
+      const main = (row.querySelector('.sched-main') || {}).value || null;
+      const subEl = row.querySelector('.sched-sub');
+      const sub = subEl ? (subEl.value || null) : ((allBookings.find((x) => x.id === id) || {}).sub_assignee_id || null);
+      const { error } = await sb.rpc('admin_set_assignees', { p_id: id, p_main: main, p_sub: sub });
+      if (error) { alert('배정 실패: ' + error.message); return; }
+      const b = allBookings.find((x) => x.id === id);
+      if (b) { b.assignee_id = main; b.sub_assignee_id = sub; }
+      renderCalendar(); renderDashboard();
+      renderSchedTags(schedMonthItems());
+      toast('작가 배정 변경됨');
+    })
+  );
   updateSchedCount();
 }
 if ($('schedAll')) {
@@ -840,7 +921,7 @@ if ($('schedAssign')) {
     if (error) { alert('배정 실패: ' + error.message); return; }
     ids.forEach((id) => { const b = allBookings.find((x) => x.id === id); if (b) b.assignee_id = aid; });
     toast(`${ids.length}건 → ${staffName(aid)} 배정 완료`);
-    renderSchedule(); renderCalendar();
+    renderSchedule(); renderCalendar(); renderDashboard();
     if ($('schedAll')) $('schedAll').checked = false;
   });
 }
@@ -850,10 +931,17 @@ if ($('schedShare')) {
     if (!ids.length) { toast('공유할 일정을 선택하세요.'); return; }
     const rows = ids.map((id) => allBookings.find((b) => b.id === id)).filter(Boolean)
       .sort((a, b) => (wDate(a) - wDate(b)) || (a.wedding_time || '').localeCompare(b.wedding_time || ''));
-    const text = rows.map((b) =>
-      `${fmtDate(b.wedding_date)} ${kTimeShort(b.wedding_time)} | ${b.wedding_venue || '-'} | ${b.contractor_name || '-'}${b.assignee_id ? ' | 담당 ' + staffName(b.assignee_id) : ''}`
-    ).join('\n');
-    try { await navigator.clipboard.writeText(text); toast(`${rows.length}건 일정 복사됨! 카톡/문자에 붙여넣기 하세요.`); }
+    const text = '[온더브라이드 촬영 스케줄]\n\n' + rows.map((b) => {
+      const opts = bookingOpts(b);
+      const ln = [];
+      ln.push(`■ ${fmtDate(b.wedding_date)}(${wdLabel(b)}) ${kTimeShort(b.wedding_time)}`);
+      ln.push(`  예식장: ${b.wedding_venue || '-'}`);
+      ln.push(`  신랑 ${b.groom_name || '-'}${b.groom_phone ? ' ' + b.groom_phone : ''} / 신부 ${b.bride_name || '-'}${b.bride_phone ? ' ' + b.bride_phone : ''}`);
+      if (opts.length) ln.push(`  옵션: ${opts.join(', ')}`);
+      ln.push(`  메인작가: ${staffName(b.assignee_id) || '미배정'}${b.photographer === '2인 촬영' ? ' / 서브작가: ' + (staffName(b.sub_assignee_id) || '미배정') : ''}`);
+      return ln.join('\n');
+    }).join('\n\n');
+    try { await navigator.clipboard.writeText(text); toast(`${rows.length}건 전체 스케줄 복사됨! 작가에게 붙여넣기 하세요.`); }
     catch (_) { prompt('아래 내용을 복사하세요:', text); }
   });
 }
