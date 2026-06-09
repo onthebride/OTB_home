@@ -781,7 +781,8 @@ function renderCalendar() {
         if (b.option_pyebaek) to.push('폐백');
         if (b.option_part2) to.push('2부');
         const tt = (b.wedding_venue || '-') + (to.length ? '\n옵션: ' + to.join(', ') : '');
-        return `<span class="cal-ev" data-id="${b.id}" data-tip="${esc(tt)}"${col ? ` style="background:${col}"` : ''}>${esc(kTimeShort(b.wedding_time))} ${esc(b.contractor_name || '')}</span>`;
+        const bg = col || '#b3ada3';
+        return `<span class="cal-ev" data-id="${b.id}" data-tip="${esc(tt)}" style="background:${bg}">${esc(kTimeShort(b.wedding_time))} ${esc(b.contractor_name || '')}</span>`;
       }).join('')}
     </div>`;
   }
