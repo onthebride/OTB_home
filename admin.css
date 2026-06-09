@@ -411,6 +411,16 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .pay-toggle { margin-left: 6px; font-size: .72rem; border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 2px 9px; cursor: pointer; color: var(--ink-soft); vertical-align: middle; }
 .pay-toggle:hover { border-color: var(--gold); color: var(--ink); }
 
+/* 커스텀 옵션 */
+.custom-opts { display: flex; flex-direction: column; gap: 6px; }
+.co-row { display: flex; align-items: center; gap: 6px; }
+.co-row .co-name { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-size: .88rem; }
+.co-row .co-price { width: 70px; border: 1px solid var(--line); border-radius: 6px; padding: 8px 8px; font-size: .88rem; text-align: right; }
+.co-row .co-name:focus, .co-row .co-price:focus { outline: none; border-color: var(--gold); }
+.co-row .co-unit { font-size: .82rem; color: var(--ink-soft); }
+.co-row .co-del { border: none; background: none; color: var(--ink-soft); font-size: 1.2rem; cursor: pointer; line-height: 1; padding: 0 4px; }
+.co-row .co-del:hover { color: #b5462f; }
+
 /* 캘린더 범례 */
 .cal-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
 .cal-leg { display: inline-flex; align-items: center; gap: 5px; font-size: .76rem; color: var(--ink-soft); }

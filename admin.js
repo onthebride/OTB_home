@@ -170,6 +170,7 @@ function optionTags(b) {
   if (b.option_reception) t.push('연회장 인사촬영');
   if (b.option_pyebaek) t.push('폐백촬영');
   if (b.option_part2) t.push('2부 촬영');
+  (Array.isArray(b.custom_options) ? b.custom_options : []).forEach((o) => { if (o && o.name) t.push(o.name + (o.price ? ` (${o.price}만원)` : '')); });
   if (!t.length) return '<span class="dv">없음</span>';
   return '<div class="opt-tags">' + t.map((x) => `<span class="opt-tag">${esc(x)}</span>`).join('') + '</div>';
 }
@@ -434,6 +435,10 @@ function renderEdit(b) {
     </div>
     <label class="eopt" style="margin-top:8px"><input type="checkbox" id="e_usage" data-price="-1" ${ck(b.photo_usage_agree)} /><span>촬영본 사용동의 (YES)</span><b>-1만원</b></label>
 
+    <h5 class="eg">커스텀 옵션 <small>(예전·비표준 옵션)</small></h5>
+    <div id="customOpts" class="custom-opts"></div>
+    <button type="button" class="btn-sm" id="addCustom" style="margin-top:8px">+ 옵션 추가</button>
+
     <h5 class="eg">작가 배정 · 입금</h5>
     <div class="edit-grid">
       <div class="field"><label>메인작가</label><select id="e_assignee">${assigneeOptions(b.assignee_id)}</select></div>
@@ -474,10 +479,14 @@ function renderEdit(b) {
     if (pk) sum += Number(pk.dataset.price) || 0;
     const ph = $('e_photographer').selectedOptions[0];
     if (ph) sum += Number(ph.dataset.price) || 0;
+    document.querySelectorAll('#customOpts .co-price').forEach((el) => (sum += Number(el.value) || 0));
     $('eTotal').textContent = sum.toLocaleString('ko-KR') + '만원';
     return sum;
   };
+  renderCustomOpts(Array.isArray(b.custom_options) ? b.custom_options : []);
+  $('addCustom').addEventListener('click', () => { addCustomRow('', ''); recalcEdit(); });
   $('modalCard').addEventListener('change', recalcEdit);
+  $('modalCard').addEventListener('input', (e) => { if (e.target.classList.contains('co-price')) recalcEdit(); });
   recalcEdit();
 
   $('modalClose').addEventListener('click', closeModal);
@@ -514,6 +523,27 @@ async function cancelBooking(id) {
   renderDashboard();
   renderView(data || b);
   toast(reactivate ? '취소를 해제했어요.' : '예약을 취소 처리했어요.');
+}
+
+function addCustomRow(name, price) {
+  const wrap = $('customOpts');
+  if (!wrap) return;
+  const div = document.createElement('div');
+  div.className = 'co-row';
+  div.innerHTML = `<input type="text" class="co-name" placeholder="옵션명 (예: 플러스)" value="${esc(name || '')}" />
+    <input type="number" class="co-price" placeholder="0" value="${price === '' || price == null ? '' : esc(price)}" /><span class="co-unit">만원</span>
+    <button type="button" class="co-del" aria-label="삭제">×</button>`;
+  div.querySelector('.co-del').addEventListener('click', () => {
+    div.remove();
+    $('modalCard').dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  wrap.appendChild(div);
+}
+function renderCustomOpts(list) {
+  const wrap = $('customOpts');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  list.forEach((o) => addCustomRow(o.name, o.price));
 }
 
 async function saveDetail(id, recalcEdit) {
@@ -553,6 +583,9 @@ async function saveDetail(id, recalcEdit) {
     assignee_id: $('e_assignee') ? $('e_assignee').value : '',
   };
   if ($('e_sub_assignee')) payload.sub_assignee_id = $('e_sub_assignee').value;
+  payload.custom_options = Array.from(document.querySelectorAll('#customOpts .co-row'))
+    .map((r) => ({ name: r.querySelector('.co-name').value.trim(), price: Number(r.querySelector('.co-price').value) || 0 }))
+    .filter((o) => o.name);
   const { data, error } = await sb.rpc('admin_save_booking', { p_id: id, payload });
   btn.disabled = false;
   if (error) {
@@ -833,6 +866,7 @@ function bookingOpts(b) {
   if (b.travel_fee) o.push('출장');
   if (b.photographer === '2인 촬영') o.push('2인');
   if (b.photographer === '대표지정') o.push('대표지정');
+  (Array.isArray(b.custom_options) ? b.custom_options : []).forEach((c) => { if (c && c.name) o.push(c.name); });
   return o;
 }
 function schedMonthItems() {

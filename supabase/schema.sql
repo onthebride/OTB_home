@@ -162,6 +162,7 @@ begin
     total_price       = nullif(payload->>'total_price','')::int,
     deposit_paid      = coalesce((payload->>'deposit_paid')::boolean, deposit_paid),
     balance_paid      = coalesce((payload->>'balance_paid')::boolean, balance_paid),
+    custom_options    = case when payload ? 'custom_options' then coalesce(payload->'custom_options','[]'::jsonb) else custom_options end,
     assignee_id       = case when payload ? 'assignee_id' then nullif(payload->>'assignee_id','')::uuid else assignee_id end,
     sub_assignee_id   = case when payload ? 'sub_assignee_id' then nullif(payload->>'sub_assignee_id','')::uuid else sub_assignee_id end
   where id = p_id
@@ -180,6 +181,7 @@ grant execute on function public.admin_save_booking(uuid, jsonb) to authenticate
 -- 대시보드: 다운로드 링크 저장 + 알림톡 발송 기록 컬럼
 alter table public.bookings add column if not exists download_link text;
 alter table public.bookings add column if not exists alimtalk_sent jsonb not null default '{}'::jsonb;
+alter table public.bookings add column if not exists custom_options jsonb not null default '[]'::jsonb;
 
 create or replace function public.admin_set_download_link(p_id uuid, p_link text)
 returns public.bookings language plpgsql security definer set search_path=public, pg_temp
