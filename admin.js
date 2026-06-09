@@ -826,9 +826,9 @@ function renderSchedule() {
         return `
         <div class="sched-row" data-id="${b.id}">
           <input type="checkbox" class="sched-cb" value="${b.id}" />
-          <div class="sched-info">
-            <span class="sched-time">${esc(kTimeShort(b.wedding_time)) || '-'}</span>
-            <span class="sched-name">${esc(b.contractor_name || '-')}</span>
+          <span class="sched-time">${esc(kTimeShort(b.wedding_time)) || '-'}</span>
+          <span class="sched-name">${esc(b.contractor_name || '-')}</span>
+          <div class="sched-mid">
             <span class="sched-venue">${esc(b.wedding_venue || '-')}</span>
             ${opts.length ? `<span class="sched-opts">${opts.map((o) => `<span class="sched-optag">${esc(o)}</span>`).join('')}</span>` : ''}
           </div>
@@ -877,10 +877,11 @@ function updateSchedCount() {
 }
 function bindSchedule() {
   document.querySelectorAll('#schedList .sched-cb').forEach((c) => c.addEventListener('change', updateSchedCount));
-  // 정보 영역 클릭 → 체크 토글
-  document.querySelectorAll('#schedList .sched-info').forEach((info) =>
-    info.addEventListener('click', () => {
-      const cb = info.parentElement.querySelector('.sched-cb');
+  // 행 클릭 → 체크 토글 (작가 드롭다운/체크박스 클릭은 제외)
+  document.querySelectorAll('#schedList .sched-row').forEach((row) =>
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('.sched-asg-ctrls') || e.target.classList.contains('sched-cb')) return;
+      const cb = row.querySelector('.sched-cb');
       cb.checked = !cb.checked; updateSchedCount();
     })
   );

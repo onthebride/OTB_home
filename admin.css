@@ -334,21 +334,25 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .sched-tag i { width: 10px; height: 10px; border-radius: 3px; }
 .sched-tag.none { color: var(--ink-soft); }
 
-.sched-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 8px; border-bottom: 1px solid var(--line); }
+/* 엑셀처럼 열 정렬: cb | 시간 | 계약자 | 예식장+옵션(채움) | 작가(우측) */
+.sched-row { display: grid; grid-template-columns: 18px 62px 96px 1fr auto; align-items: center; gap: 0 12px; padding: 9px 6px; border-bottom: 1px solid var(--line); cursor: pointer; }
 .sched-row:hover { background: #faf7f2; }
-.sched-row .sched-cb { flex: 0 0 auto; width: 17px; height: 17px; }
-.sched-info { flex: 0 1 auto; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 5px 12px; cursor: pointer; }
-.sched-time { color: var(--gold-deep); font-size: .82rem; font-weight: 600; flex: 0 0 auto; }
-.sched-name { font-weight: 700; flex: 0 0 auto; }
-.sched-venue { color: var(--ink-soft); flex: 0 1 auto; }
-.sched-opts { display: inline-flex; flex-wrap: wrap; gap: 4px; flex: 0 0 auto; }
+.sched-row .sched-cb { width: 17px; height: 17px; }
+.sched-time { color: var(--gold-deep); font-size: .82rem; font-weight: 600; white-space: nowrap; }
+.sched-name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sched-mid { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 5px 10px; }
+.sched-venue { color: var(--ink-soft); }
+.sched-opts { display: inline-flex; flex-wrap: wrap; gap: 4px; }
 .sched-optag { font-size: .7rem; background: var(--cream); border: 1px solid var(--line); color: var(--ink-soft); border-radius: 4px; padding: 1px 6px; white-space: nowrap; }
-.sched-asg-ctrls { flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px; }
+.sched-asg-ctrls { justify-self: end; display: flex; flex-direction: column; gap: 4px; }
 .sched-asg-ctrls select { border: 1px solid var(--line); border-radius: 6px; padding: 5px 7px; font-size: .8rem; background: #fff; max-width: 130px; }
 .sched-asg-ctrls select:focus { outline: none; border-color: var(--gold); }
 
 @media (max-width: 640px) {
-  .sched-asg-ctrls { flex: 1 1 100%; flex-direction: row; }
+  /* 좁아지면 2줄: (시간·계약자·예식장·옵션) / (작가 드롭다운) */
+  .sched-row { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 10px; }
+  .sched-mid { flex: 1 1 auto; }
+  .sched-asg-ctrls { flex: 1 1 100%; flex-direction: row; justify-self: auto; }
   .sched-asg-ctrls select { flex: 1; max-width: none; }
 }
 
