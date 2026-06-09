@@ -827,12 +827,10 @@ function renderSchedule() {
         <div class="sched-row" data-id="${b.id}">
           <input type="checkbox" class="sched-cb" value="${b.id}" />
           <div class="sched-info">
-            <div class="sched-l1">
-              <span class="sched-time">${esc(kTimeShort(b.wedding_time)) || '-'}</span>
-              <span class="sched-name">${esc(b.contractor_name || '-')}</span>
-              <span class="sched-venue">${esc(b.wedding_venue || '-')}</span>
-            </div>
-            ${opts.length ? `<div class="sched-opts">${opts.map((o) => `<span class="sched-optag">${esc(o)}</span>`).join('')}</div>` : ''}
+            <span class="sched-time">${esc(kTimeShort(b.wedding_time)) || '-'}</span>
+            <span class="sched-name">${esc(b.contractor_name || '-')}</span>
+            <span class="sched-venue">${esc(b.wedding_venue || '-')}</span>
+            ${opts.length ? `<span class="sched-opts">${opts.map((o) => `<span class="sched-optag">${esc(o)}</span>`).join('')}</span>` : ''}
           </div>
           <div class="sched-asg-ctrls">
             <select class="sched-main" data-id="${b.id}" title="메인작가">${assigneeOptions(b.assignee_id)}</select>

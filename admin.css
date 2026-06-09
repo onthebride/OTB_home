@@ -334,19 +334,23 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .sched-tag i { width: 10px; height: 10px; border-radius: 3px; }
 .sched-tag.none { color: var(--ink-soft); }
 
-.sched-row { display: flex; align-items: center; gap: 10px; padding: 9px 8px; border-radius: 8px; border-bottom: 1px solid var(--line); }
+.sched-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 8px; border-bottom: 1px solid var(--line); }
 .sched-row:hover { background: #faf7f2; }
 .sched-row .sched-cb { flex: 0 0 auto; width: 17px; height: 17px; }
-.sched-info { flex: 1; min-width: 0; cursor: pointer; }
-.sched-l1 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
-.sched-time { color: var(--gold-deep); font-size: .82rem; font-weight: 600; }
-.sched-name { font-weight: 700; }
-.sched-venue { color: var(--ink-soft); }
-.sched-opts { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-.sched-optag { font-size: .7rem; background: var(--cream); border: 1px solid var(--line); color: var(--ink-soft); border-radius: 4px; padding: 1px 6px; }
+.sched-info { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 5px 12px; cursor: pointer; }
+.sched-time { color: var(--gold-deep); font-size: .82rem; font-weight: 600; flex: 0 0 auto; }
+.sched-name { font-weight: 700; flex: 0 0 auto; }
+.sched-venue { color: var(--ink-soft); flex: 1 1 auto; }
+.sched-opts { display: inline-flex; flex-wrap: wrap; gap: 4px; flex: 0 0 auto; }
+.sched-optag { font-size: .7rem; background: var(--cream); border: 1px solid var(--line); color: var(--ink-soft); border-radius: 4px; padding: 1px 6px; white-space: nowrap; }
 .sched-asg-ctrls { flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px; }
 .sched-asg-ctrls select { border: 1px solid var(--line); border-radius: 6px; padding: 5px 7px; font-size: .8rem; background: #fff; max-width: 130px; }
 .sched-asg-ctrls select:focus { outline: none; border-color: var(--gold); }
+
+@media (max-width: 640px) {
+  .sched-asg-ctrls { flex: 1 1 100%; flex-direction: row; }
+  .sched-asg-ctrls select { flex: 1; max-width: none; }
+}
 
 /* 담당자 관리 */
 .staff-add { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 18px; margin-bottom: 16px; }
