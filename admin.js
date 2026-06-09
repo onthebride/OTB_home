@@ -802,39 +802,56 @@ function renderCalendar() {
   html += '<div class="cal-grid">';
   ['일', '월', '화', '수', '목', '금', '토'].forEach((w) => (html += `<div class="cal-wd">${w}</div>`));
   for (let i = 0; i < startDay; i++) html += '<div class="cal-cell empty"></div>';
+  const CAL_MAX = 4;
   for (let dnum = 1; dnum <= days; dnum++) {
     const items = (byDay[dnum] || []).sort((a, b) => (a.wedding_time || '').localeCompare(b.wedding_time || ''));
     const isToday = today.getFullYear() === y && today.getMonth() === m && today.getDate() === dnum;
+    const shown = items.slice(0, CAL_MAX);
+    const more = items.length - shown.length;
     html += `<div class="cal-cell${isToday ? ' today' : ''}${items.length ? ' has' : ''}">
       <span class="cal-d">${dnum}</span>
-      ${items.map((b) => {
-        const col = staffColor(b.assignee_id);
-        const to = [];
-        if (b.option_reception) to.push('연회장');
-        if (b.option_pyebaek) to.push('폐백');
-        if (b.option_part2) to.push('2부');
-        const tt = (b.wedding_venue || '-') + (to.length ? '\n옵션: ' + to.join(', ') : '');
-        const bg = col || '#b3ada3';
-        return `<span class="cal-ev" data-id="${b.id}" data-tip="${esc(tt)}" style="background:${bg}">${esc(kTimeShort(b.wedding_time))} ${esc(b.contractor_name || '')}</span>`;
+      ${shown.map((b) => {
+        const bg = staffColor(b.assignee_id) || '#b3ada3';
+        return `<span class="cal-ev" data-id="${b.id}" style="background:${bg}">${esc(kTimeShort(b.wedding_time))} ${esc(b.contractor_name || '')}</span>`;
       }).join('')}
+      ${more > 0 ? `<button type="button" class="cal-more" data-day="${dnum}">+${more}건</button>` : ''}
     </div>`;
   }
   html += '</div>';
   $('calendar').innerHTML = html;
-  let calTip = document.getElementById('calTip');
-  if (!calTip) { calTip = document.createElement('div'); calTip.id = 'calTip'; calTip.className = 'cal-tip'; document.body.appendChild(calTip); }
-  $('calendar').querySelectorAll('.cal-ev').forEach((e) => {
-    e.addEventListener('click', () => openDetail(e.dataset.id));
-    e.addEventListener('mouseenter', () => {
-      if (!e.dataset.tip) return;
-      calTip.textContent = e.dataset.tip;
-      const r = e.getBoundingClientRect();
-      calTip.style.left = (r.left + window.scrollX) + 'px';
-      calTip.style.top = (r.bottom + window.scrollY + 6) + 'px';
-      calTip.classList.add('show');
-    });
-    e.addEventListener('mouseleave', () => calTip.classList.remove('show'));
-  });
+  $('calendar').querySelectorAll('.cal-ev').forEach((e) =>
+    e.addEventListener('click', (ev) => { ev.stopPropagation(); openDetail(e.dataset.id); })
+  );
+  $('calendar').querySelectorAll('.cal-more').forEach((btn) =>
+    btn.addEventListener('click', () => { const d = +btn.dataset.day; showDayList(`${y}년 ${m + 1}월 ${d}일`, byDay[d] || []); })
+  );
+}
+
+function showDayList(label, items) {
+  const old = document.getElementById('dayOv');
+  if (old) old.remove();
+  const sorted = items.slice().sort((a, b) => (a.wedding_time || '').localeCompare(b.wedding_time || ''));
+  const ov = document.createElement('div');
+  ov.id = 'dayOv';
+  ov.className = 'day-ov';
+  ov.innerHTML = `<div class="day-ov-bg"></div>
+    <div class="day-ov-card">
+      <div class="day-ov-head"><strong>${esc(label)}</strong> <span class="muted">${sorted.length}건</span><button class="day-ov-x" aria-label="닫기">&times;</button></div>
+      <div class="day-ov-list">${sorted.map((b) => {
+        const bg = staffColor(b.assignee_id) || '#b3ada3';
+        return `<button class="day-ov-item" data-id="${b.id}">
+          <span class="day-ov-time">${esc(kTimeShort(b.wedding_time)) || '-'}</span>
+          <span class="day-ov-name">${esc(b.contractor_name || '-')}${phBadge(b)}</span>
+          <span class="day-ov-venue">${esc(b.wedding_venue || '-')}</span>
+          <span class="day-ov-asg" style="color:${bg}">${b.assignee_id ? '● ' + esc(staffName(b.assignee_id)) : '미배정'}</span>
+        </button>`;
+      }).join('')}</div>
+    </div>`;
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  ov.querySelector('.day-ov-bg').addEventListener('click', close);
+  ov.querySelector('.day-ov-x').addEventListener('click', close);
+  ov.querySelectorAll('.day-ov-item').forEach((it) => it.addEventListener('click', () => { close(); openDetail(it.dataset.id); }));
 }
 
 if ($('calPrev')) {

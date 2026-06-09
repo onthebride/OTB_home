@@ -308,9 +308,23 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .cal-cell.today .cal-d { color: var(--gold-deep); font-weight: 700; }
 .cal-ev { font-size: .72rem; background: var(--ink); color: #fff; border-radius: 4px; padding: 2px 5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cal-ev:hover { background: var(--gold-deep); }
-.cal-more { font-size: .7rem; color: var(--ink-soft); padding-left: 2px; }
-.cal-tip { position: absolute; z-index: 2000; background: var(--ink); color: #fff; font-size: .78rem; line-height: 1.45; padding: 7px 11px; border-radius: 6px; max-width: 260px; white-space: pre-line; pointer-events: none; opacity: 0; transition: opacity .12s; box-shadow: 0 8px 24px -10px rgba(0,0,0,.55); }
-.cal-tip.show { opacity: 1; }
+.cal-more { font-size: .7rem; color: var(--gold-deep); background: none; border: none; cursor: pointer; padding: 1px 2px; text-align: left; font-weight: 600; }
+.cal-more:hover { text-decoration: underline; }
+
+/* 날짜 상세 팝업 */
+.day-ov { position: fixed; inset: 0; z-index: 1500; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.day-ov-bg { position: absolute; inset: 0; background: rgba(30,25,22,.5); }
+.day-ov-card { position: relative; background: var(--paper); border-radius: 12px; width: 100%; max-width: 420px; max-height: 80vh; overflow-y: auto; box-shadow: 0 30px 70px -30px rgba(0,0,0,.5); }
+.day-ov-head { display: flex; align-items: center; gap: 8px; padding: 15px 18px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--paper); }
+.day-ov-head .muted { color: var(--ink-soft); font-size: .85rem; }
+.day-ov-x { margin-left: auto; background: none; border: none; font-size: 1.5rem; color: var(--ink-soft); cursor: pointer; line-height: 1; }
+.day-ov-list { padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.day-ov-item { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; text-align: left; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px 13px; cursor: pointer; transition: all .15s; }
+.day-ov-item:hover { border-color: var(--gold); background: #faf7f2; }
+.day-ov-time { color: var(--gold-deep); font-size: .82rem; font-weight: 600; white-space: nowrap; }
+.day-ov-name { font-weight: 700; }
+.day-ov-asg { margin-left: auto; font-size: .78rem; white-space: nowrap; font-weight: 600; }
+.day-ov-venue { flex-basis: 100%; color: var(--ink-soft); font-size: .84rem; }
 
 .bk-search { margin-bottom: 14px; }
 .bk-search input { width: 100%; max-width: 360px; border: 1px solid var(--line); border-radius: 999px; padding: 10px 16px; font-size: .9rem; outline: none; background: #fff; }
