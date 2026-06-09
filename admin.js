@@ -812,7 +812,7 @@ function renderCalendar() {
       <span class="cal-d">${dnum}</span>
       ${shown.map((b) => {
         const bg = staffColor(b.assignee_id) || '#b3ada3';
-        return `<span class="cal-ev" data-id="${b.id}" style="background:${bg}">${esc(kTimeShort(b.wedding_time))} ${esc(b.contractor_name || '')}</span>`;
+        return `<span class="cal-ev" data-id="${b.id}" style="background:${bg}">${esc((b.wedding_time || '') + ' ' + (b.contractor_name || ''))}</span>`;
       }).join('')}
       ${more > 0 ? `<button type="button" class="cal-more" data-day="${dnum}">+${more}건</button>` : ''}
     </div>`;
