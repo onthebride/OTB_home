@@ -680,14 +680,21 @@ function toast(msg) {
   toast._t = setTimeout(() => el.classList.remove('show'), 2600);
 }
 
-// 알림톡 발송 표시 (솔라피 연동 전: 보냄 표시만, 연동 후 실제 발송+표시)
+// 알림톡 실제 발송 (솔라피)
+const ATK_NAME = { A: '계약안내', B: '한달전', C: '잔금안내', D: '최종안내', E: '링크안내' };
 async function sendAlimtalk(id, tpl) {
-  const { data, error } = await sb.rpc('admin_set_alimtalk', { p_id: id, p_template: tpl, p_on: true });
-  if (error) { alert('처리 실패: ' + error.message); return; }
+  const b = allBookings.find((x) => x.id === id);
+  if (!confirm(`${b ? b.contractor_name + '님께 ' : ''}"${ATK_NAME[tpl] || tpl}" 알림톡을 실제로 발송할까요?`)) return;
+  const { data, error } = await sb.rpc('admin_send_alimtalk', { p_booking_id: id, p_template: tpl });
+  if (error) { alert('발송 실패: ' + error.message); return; }
   const i = allBookings.findIndex((x) => x.id === id);
-  if (i >= 0 && data) allBookings[i] = data;
-  toast('알림톡 "보냄"으로 표시했어요. (실제 자동발송은 솔라피 연동 후)');
+  if (i >= 0) {
+    if (!allBookings[i].alimtalk_sent || typeof allBookings[i].alimtalk_sent !== 'object') allBookings[i].alimtalk_sent = {};
+    allBookings[i].alimtalk_sent[tpl] = new Date().toISOString();
+  }
+  toast(`"${ATK_NAME[tpl] || tpl}" 알림톡 발송 완료 📨`);
   renderDashboard();
+  if (!$('modal').hidden && b) renderView(allBookings[i] || b);
 }
 
 function renderDashboard() {

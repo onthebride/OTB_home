@@ -212,6 +212,109 @@ revoke all on function public.admin_mark_alimtalk(uuid, text) from public, anon;
 grant execute on function public.admin_mark_alimtalk(uuid, text) to authenticated;
 
 -- ============================================
+-- 카카오 알림톡 발송 (솔라피) — 서버측(pg_net + pgcrypto HMAC)
+-- 비밀키는 private.solapi 테이블에만 저장(깃허브/공개 미노출). 함수는 읽기만.
+-- ============================================
+create schema if not exists private;
+create table if not exists private.solapi (key text primary key, val text not null);
+alter table private.solapi enable row level security;  -- public 노출 차단
+
+-- 예식시간 오전/오후 표기
+create or replace function public.fmt_ktime(t text)
+returns text language sql immutable as $$
+  select case when t is null or t = '' then '' else
+    (case when (split_part(t,':',1))::int < 12 then '오전 ' else '오후 ' end)
+    || (case when (split_part(t,':',1))::int % 12 = 0 then 12 else (split_part(t,':',1))::int % 12 end)::text
+    || ':' || lpad(split_part(t,':',2), 2, '0') end
+$$;
+
+-- 상품옵션 텍스트 ([기본상품]/[옵션1]/[옵션2])
+create or replace function public.fmt_alimtalk_options(p_id uuid)
+returns text language plpgsql stable set search_path=public, pg_temp as $$
+declare b public.bookings; base int; g0 text[]; g1 text[]; g2 text[]; co jsonb; res text;
+begin
+  select * into b from public.bookings where id = p_id; if not found then return ''; end if;
+  base := case when b.package = '베이직(구)' then 50 else 55 end;
+  g0 := array[]::text[]; g1 := array[]::text[]; g2 := array[]::text[];
+  if b.package is not null then g0 := array_append(g0, b.package || ' ' || base || '만원'); end if;
+  if b.travel_fee then g0 := array_append(g0, '출장비 5만원'); end if;
+  if b.option_album then g1 := array_append(g1, '앨범 1권 추가 5만원'); end if;
+  if b.option_reception then g1 := array_append(g1, '연회장 인사촬영 5만원'); end if;
+  if b.option_pyebaek then g1 := array_append(g1, '폐백촬영 10만원'); end if;
+  if b.option_part2 then g1 := array_append(g1, '2부 촬영 10만원'); end if;
+  for co in select value from jsonb_array_elements(coalesce(b.custom_options, '[]'::jsonb)) loop
+    g1 := array_append(g1, (co->>'name') || ' ' || coalesce(co->>'price','0') || '만원');
+  end loop;
+  if b.photographer = '2인 촬영' then g2 := array_append(g2, '2인 촬영 25만원'); end if;
+  if b.photographer = '대표지정' then g2 := array_append(g2, '대표지정 35만원'); end if;
+  res := '[기본상품] ' || array_to_string(g0, ', ');
+  if array_length(g1,1) is not null then res := res || E'\n[옵션1] ' || array_to_string(g1, ', '); end if;
+  if array_length(g2,1) is not null then res := res || E'\n[옵션2] ' || array_to_string(g2, ', '); end if;
+  return res;
+end$$;
+
+-- 솔라피 발송 (HMAC 인증 + pg_net)
+create or replace function private.solapi_send(p_to text, p_template_key text, p_vars jsonb)
+returns bigint language plpgsql security definer set search_path=private, public, extensions, pg_temp as $$
+declare k text; s text; pf text; tpl text; dt text; salt text; sig text; hdr text; req bigint;
+begin
+  select val into k from private.solapi where key='api_key';
+  select val into s from private.solapi where key='api_secret';
+  select val into pf from private.solapi where key='pf_id';
+  select val into tpl from private.solapi where key=p_template_key;
+  if k is null or tpl is null then raise exception 'solapi not configured (%)', p_template_key; end if;
+  dt := to_char(now() at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"');
+  salt := encode(gen_random_bytes(32), 'hex');
+  sig := encode(hmac(dt || salt, s, 'sha256'), 'hex');
+  hdr := 'HMAC-SHA256 apiKey=' || k || ', date=' || dt || ', salt=' || salt || ', signature=' || sig;
+  select net.http_post(
+    url := 'https://api.solapi.com/messages/v4/send',
+    body := jsonb_build_object('message', jsonb_build_object(
+      'to', regexp_replace(p_to, '[^0-9]', '', 'g'),
+      'kakaoOptions', jsonb_build_object('pfId', pf, 'templateId', tpl, 'variables', p_vars))),
+    headers := jsonb_build_object('Content-Type','application/json','Authorization',hdr)
+  ) into req;
+  return req;
+end$$;
+
+-- 관리자: 특정 예약에 알림톡 발송 + 발송 기록
+create or replace function public.admin_send_alimtalk(p_booking_id uuid, p_template text)
+returns jsonb language plpgsql security definer set search_path=public, private, extensions, pg_temp as $$
+declare b public.bookings; vars jsonb; req bigint; total int; balance int; sname text; sphone text;
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  select * into b from public.bookings where id = p_booking_id; if not found then raise exception 'booking not found'; end if;
+  if b.contractor_phone is null then raise exception '연락처가 없습니다'; end if;
+  total := coalesce(b.total_price,0); balance := total - 10;
+  select s.name, s.phone into sname, sphone from public.staff s where s.id = b.assignee_id;
+
+  if p_template = 'A' then
+    vars := jsonb_build_object('#{고객명}',coalesce(b.contractor_name,''),'#{예식일}',coalesce(b.wedding_date::text,''),
+      '#{예식시간}',public.fmt_ktime(b.wedding_time),'#{예식장소}',coalesce(b.wedding_venue,''),
+      '#{상품옵션}',public.fmt_alimtalk_options(b.id),'#{총금액}',total::text,'#{계약금}','10');
+  elsif p_template = 'B' then
+    vars := jsonb_build_object('#{고객명}',coalesce(b.contractor_name,''),'#{예식일}',coalesce(b.wedding_date::text,''),
+      '#{예식장소}',coalesce(b.wedding_venue,''),'#{예식시간}',public.fmt_ktime(b.wedding_time));
+  elsif p_template = 'C' then
+    vars := jsonb_build_object('#{예식일}',coalesce(b.wedding_date::text,''),'#{예식장소}',coalesce(b.wedding_venue,''),
+      '#{예식시간}',public.fmt_ktime(b.wedding_time),'#{신부명}',coalesce(b.bride_name,''),'#{신부연락처}',coalesce(b.bride_phone,''),
+      '#{신랑명}',coalesce(b.groom_name,''),'#{신랑연락처}',coalesce(b.groom_phone,''),'#{상품옵션}',public.fmt_alimtalk_options(b.id),
+      '#{잔금}',balance::text,'#{담당작가}',coalesce(sname,'미정'),'#{담당작가연락처}',coalesce(sphone,''));
+  elsif p_template = 'D' then
+    vars := '{}'::jsonb;
+  elsif p_template = 'E' then
+    if b.download_link is null then raise exception '다운로드 링크를 먼저 입력하세요'; end if;
+    vars := jsonb_build_object('#{다운로드링크}', b.download_link);
+  else raise exception 'bad template'; end if;
+
+  req := private.solapi_send(b.contractor_phone, 'tpl_' || p_template, vars);
+  update public.bookings set alimtalk_sent = coalesce(alimtalk_sent,'{}'::jsonb) || jsonb_build_object(p_template, to_jsonb(now())) where id = p_booking_id;
+  return jsonb_build_object('ok', true, 'req', req);
+end$$;
+revoke all on function public.admin_send_alimtalk(uuid, text) from public, anon;
+grant execute on function public.admin_send_alimtalk(uuid, text) to authenticated;
+
+-- ============================================
 -- 담당자(작가) 명단 + 배정 + 입금확인
 -- ============================================
 create table if not exists public.staff (
