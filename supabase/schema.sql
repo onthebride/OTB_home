@@ -294,7 +294,7 @@ begin
   if p_template = 'A' then
     vars := jsonb_build_object('#{고객명}',coalesce(b.contractor_name,''),'#{예식일}',coalesce(b.wedding_date::text,''),
       '#{예식시간}',public.fmt_ktime(b.wedding_time),'#{예식장소}',coalesce(b.wedding_venue,''),
-      '#{상품옵션}',public.fmt_alimtalk_options(b.id),'#{총금액}',total::text,'#{계약금}','10');
+      '#{상품옵션}',public.fmt_alimtalk_options(b.id),'#{총금액}',total::text||'만원','#{계약금}','10만원');
   elsif p_template = 'B' then
     vars := jsonb_build_object('#{고객명}',coalesce(b.contractor_name,''),'#{예식일}',coalesce(b.wedding_date::text,''),
       '#{예식장소}',coalesce(b.wedding_venue,''),'#{예식시간}',public.fmt_ktime(b.wedding_time));
@@ -302,7 +302,7 @@ begin
     vars := jsonb_build_object('#{예식일}',coalesce(b.wedding_date::text,''),'#{예식장소}',coalesce(b.wedding_venue,''),
       '#{예식시간}',public.fmt_ktime(b.wedding_time),'#{신부명}',coalesce(b.bride_name,''),'#{신부연락처}',coalesce(b.bride_phone,''),
       '#{신랑명}',coalesce(b.groom_name,''),'#{신랑연락처}',coalesce(b.groom_phone,''),'#{상품옵션}',public.fmt_alimtalk_options(b.id),
-      '#{잔금}',balance::text,'#{담당작가}',coalesce(sname,'미정'),'#{담당작가연락처}',coalesce(sphone,''));
+      '#{잔금}',balance::text||'만원','#{담당작가}',coalesce(sname,'미정'),'#{담당작가연락처}',coalesce(sphone,''));
   elsif p_template = 'D' then
     vars := '{}'::jsonb;
   elsif p_template = 'E' then
