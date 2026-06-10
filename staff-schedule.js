@@ -4,7 +4,9 @@ const sb = window.supabase && window.OTB_CONFIG
   : null;
 
 const $ = (id) => document.getElementById(id);
-const staffId = new URLSearchParams(location.search).get('s');
+const params = new URLSearchParams(location.search);
+const staffId = params.get('s');
+const bookingId = params.get('b');
 const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const esc = (s) => (s == null ? '' : String(s)).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -59,9 +61,12 @@ function card(w) {
 
 async function init() {
   if (!sb || !staffId || !uuidRe.test(staffId)) { show($('errCard')); return; }
-  const { data, error } = await sb.rpc('staff_schedule', { p_staff_id: staffId });
+  const single = bookingId && uuidRe.test(bookingId);
+  const { data, error } = single
+    ? await sb.rpc('staff_one', { p_booking_id: bookingId, p_staff_id: staffId })
+    : await sb.rpc('staff_schedule', { p_staff_id: staffId });
   if (error || !data) { show($('errCard')); return; }
-  $('greet').innerHTML = `<b>${esc(data.staff_name || '')}</b> 작가님, 배정된 예식입니다.`;
+  $('greet').innerHTML = `<b>${esc(data.staff_name || '')}</b> 작가님, ${single ? '아래 예식을 확인해 주세요.' : '배정된 예식입니다.'}`;
   const list = Array.isArray(data.schedule) ? data.schedule : [];
   $('emptyMsg').hidden = list.length > 0;
   $('schedule').innerHTML = list.map(card).join('');

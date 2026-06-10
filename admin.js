@@ -827,7 +827,7 @@ function bindDashEvents() {
       e.stopPropagation();
       const id = btn.dataset.id;
       const sid = btn.dataset.staff;
-      const url = location.origin + '/staff-schedule?s=' + sid;
+      const url = location.origin + '/staff-schedule?s=' + sid + '&b=' + id;
       try { await navigator.clipboard.writeText(url); } catch (_) { prompt('작가 체크 링크:', url); }
       const { data } = await sb.rpc('admin_mark_check_sent', { p_id: id, p_on: true });
       const i = allBookings.findIndex((x) => x.id === id);

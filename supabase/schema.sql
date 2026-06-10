@@ -378,6 +378,32 @@ end; $$;
 revoke all on function public.staff_schedule(uuid) from public;
 grant execute on function public.staff_schedule(uuid) to anon, authenticated;
 
+-- 작가용: 단일 예식 (anon) — 그 예식 하나만 보여주기
+create or replace function public.staff_one(p_booking_id uuid, p_staff_id uuid)
+returns jsonb language plpgsql security definer set search_path=public, pg_temp
+as $$
+declare st public.staff; b public.bookings;
+begin
+  select * into st from public.staff where id = p_staff_id;
+  if not found then return null; end if;
+  select * into b from public.bookings
+    where id = p_booking_id and (assignee_id = p_staff_id or sub_assignee_id = p_staff_id) and status <> '취소';
+  if not found then return null; end if;
+  return jsonb_build_object('staff_name', st.name, 'schedule', jsonb_build_array(jsonb_build_object(
+    'booking_id', b.id,
+    'role', case when b.assignee_id = p_staff_id then '메인' else '서브' end,
+    'wedding_date', b.wedding_date, 'wedding_time', b.wedding_time, 'wedding_venue', b.wedding_venue,
+    'bride_name', b.bride_name, 'bride_phone', b.bride_phone,
+    'groom_name', b.groom_name, 'groom_phone', b.groom_phone,
+    'option_reception', b.option_reception, 'option_pyebaek', b.option_pyebaek, 'option_part2', b.option_part2,
+    'option_album', b.option_album, 'photographer', b.photographer, 'custom_options', b.custom_options,
+    'chk', (select jsonb_build_object('attend', c.attend, 'arrival', c.arrival, 'options', c.options, 'note', c.note, 'checked_at', c.checked_at)
+            from public.assignment_checks c where c.booking_id = b.id and c.staff_id = p_staff_id)
+  )));
+end; $$;
+revoke all on function public.staff_one(uuid, uuid) from public;
+grant execute on function public.staff_one(uuid, uuid) to anon, authenticated;
+
 -- 작가 체크 제출 (anon) — 본인 배정 예약만
 create or replace function public.submit_assignment_check(payload jsonb)
 returns void language plpgsql security definer set search_path=public, pg_temp
