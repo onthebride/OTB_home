@@ -928,11 +928,12 @@ function renderCalendar() {
     const cnt = items.length;
     const bal = items.filter((b) => !b.balance_paid).length;
     const noAsg = items.filter((b) => !b.assignee_id).length;
+    const subNoAsg = items.filter((b) => b.photographer === '2인 촬영' && !b.sub_assignee_id).length;
     const dots = items.slice(0, 12).map((b) => `<i style="background:${staffColor(b.assignee_id) || '#c9c4bc'}"></i>`).join('');
     html += `<div class="cal-cell${isToday ? ' today' : ''}${cnt ? ' has' : ''}"${cnt ? ` data-day="${dnum}"` : ''}>
       <span class="cal-d">${dnum}</span>
       ${cnt ? `<div class="cal-dots">${dots}</div>
-        <div class="cal-sum"><b>${cnt}건</b>${noAsg ? `<span class="cal-flag asg">미배정 ${noAsg}</span>` : ''}${bal ? `<span class="cal-flag bal">잔금 ${bal}</span>` : ''}</div>` : ''}
+        <div class="cal-sum"><b>${cnt}건</b>${noAsg ? `<span class="cal-flag asg">미배정 ${noAsg}</span>` : ''}${subNoAsg ? `<span class="cal-flag subasg">서브 ${subNoAsg}</span>` : ''}${bal ? `<span class="cal-flag bal">잔금 ${bal}</span>` : ''}</div>` : ''}
     </div>`;
   }
   html += '</div>';
