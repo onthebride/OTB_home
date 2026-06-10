@@ -57,8 +57,8 @@ function card(w) {
       <label class="ss-chk"><input type="checkbox" data-k="options" ${c.options ? 'checked' : ''} /> <span>옵션 · 요청사항 숙지 <em>*</em></span></label>
     </div>
     <div class="ss-foot">
-      <button class="ss-submit" type="button">${done ? '다시 확인' : '확인 완료'}</button>
       <span class="ss-status">${c.checked_at ? '최근 확인: ' + new Date(c.checked_at).toLocaleString('ko-KR') : ''}</span>
+      <button class="ss-submit" type="button">${done ? '다시 확인' : '확인 완료'}</button>
     </div>
   </div>`;
 }

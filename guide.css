@@ -90,7 +90,8 @@
 .ss-chk input { width: 20px; height: 20px; margin-top: 1px; accent-color: var(--gold-deep); flex: 0 0 auto; }
 .ss-note { width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 9px 11px; font-family: var(--sans); font-size: .9rem; resize: vertical; min-height: 44px; }
 .ss-note:focus { outline: none; border-color: var(--gold); }
-.ss-foot { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.ss-foot { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+.ss-foot .ss-status { margin-right: auto; }
 .ss-submit { background: var(--ink); color: #fff; border: none; border-radius: var(--radius); padding: 11px 24px; font-size: .92rem; font-weight: 500; cursor: pointer; }
 .ss-submit:hover { background: var(--gold-deep); }
 .ss-submit:disabled { opacity: .55; }
