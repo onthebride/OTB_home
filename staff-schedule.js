@@ -48,11 +48,10 @@ function card(w) {
       ${w.photographer && w.photographer !== '기본' ? `<div><b>촬영</b> ${esc(w.photographer)}</div>` : ''}
     </div>
     <div class="ss-checks">
-      <label class="ss-chk"><input type="checkbox" data-k="attend" ${c.attend ? 'checked' : ''} /> <span>참석 / 스케줄 확정</span></label>
-      <label class="ss-chk"><input type="checkbox" data-k="arrival" ${c.arrival ? 'checked' : ''} /> <span>도착 시간 숙지 (예식 1시간 30분 전)</span></label>
-      <label class="ss-chk"><input type="checkbox" data-k="options" ${c.options ? 'checked' : ''} /> <span>옵션 · 요청사항 숙지</span></label>
+      <label class="ss-chk"><input type="checkbox" data-k="attend" ${c.attend ? 'checked' : ''} /> <span>참석 / 스케줄 확정 <em>*</em></span></label>
+      <label class="ss-chk"><input type="checkbox" data-k="arrival" ${c.arrival ? 'checked' : ''} /> <span>도착 시간 숙지 (예식 1시간 30분 전) <em>*</em></span></label>
+      <label class="ss-chk"><input type="checkbox" data-k="options" ${c.options ? 'checked' : ''} /> <span>옵션 · 요청사항 숙지 <em>*</em></span></label>
     </div>
-    <textarea class="ss-note" placeholder="변경/문제 사항이 있으면 적어주세요 (선택)">${esc(c.note || '')}</textarea>
     <div class="ss-foot">
       <button class="ss-submit" type="button">${done ? '다시 확인' : '확인 완료'}</button>
       <span class="ss-status">${c.checked_at ? '최근 확인: ' + new Date(c.checked_at).toLocaleString('ko-KR') : ''}</span>
@@ -89,13 +88,17 @@ function bind() {
       const btn = e.currentTarget;
       const bid = el.dataset.bid;
       const get = (k) => el.querySelector(`input[data-k="${k}"]`).checked;
+      if (!(get('attend') && get('arrival') && get('options'))) {
+        alert('3가지 항목을 모두 체크해야 확인이 완료됩니다.');
+        return;
+      }
       btn.disabled = true;
       const { error } = await sb.rpc('submit_assignment_check', {
-        payload: { booking_id: bid, staff_id: staffId, attend: get('attend'), arrival: get('arrival'), options: get('options'), note: el.querySelector('.ss-note').value.trim() },
+        payload: { booking_id: bid, staff_id: staffId, attend: true, arrival: true, options: true },
       });
       btn.disabled = false;
       if (error) { alert('저장 실패: 잠시 후 다시 시도해 주세요.'); return; }
-      const done = get('attend') && get('arrival') && get('options');
+      const done = true;
       el.classList.toggle('done', done);
       el.querySelector('.ss-status').textContent = '방금 확인됨';
       btn.textContent = done ? '다시 확인' : '확인 완료';
