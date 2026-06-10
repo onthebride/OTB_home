@@ -332,6 +332,108 @@ as $$ declare n integer; begin
   return n;
 end; $$;
 
+-- ============================================
+-- 작가 예식 전 스케줄 체크 (작가가 직접 확인)
+-- ============================================
+create table if not exists public.assignment_checks (
+  booking_id  uuid not null references public.bookings(id) on delete cascade,
+  staff_id    uuid not null references public.staff(id) on delete cascade,
+  attend      boolean not null default false,  -- 참석/스케줄 확정
+  arrival     boolean not null default false,  -- 도착 시간 숙지
+  options     boolean not null default false,  -- 옵션·요청사항 숙지
+  note        text,
+  checked_at  timestamptz not null default now(),
+  primary key (booking_id, staff_id)
+);
+alter table public.assignment_checks enable row level security;
+
+-- 작가용: 본인 배정 일정 + 체크 상태 (anon, staff_id 토큰)
+create or replace function public.staff_schedule(p_staff_id uuid)
+returns jsonb language plpgsql security definer set search_path=public, pg_temp
+as $$
+declare st public.staff; arr jsonb;
+begin
+  select * into st from public.staff where id = p_staff_id;
+  if not found then return null; end if;
+  select coalesce(jsonb_agg(x order by (x->>'wedding_date'), (x->>'wedding_time')), '[]'::jsonb) into arr
+  from (
+    select jsonb_build_object(
+      'booking_id', b.id,
+      'role', case when b.assignee_id = p_staff_id then '메인' else '서브' end,
+      'wedding_date', b.wedding_date, 'wedding_time', b.wedding_time, 'wedding_venue', b.wedding_venue,
+      'bride_name', b.bride_name, 'bride_phone', b.bride_phone,
+      'groom_name', b.groom_name, 'groom_phone', b.groom_phone,
+      'option_reception', b.option_reception, 'option_pyebaek', b.option_pyebaek, 'option_part2', b.option_part2,
+      'option_album', b.option_album, 'photographer', b.photographer, 'custom_options', b.custom_options,
+      'chk', (select jsonb_build_object('attend', c.attend, 'arrival', c.arrival, 'options', c.options, 'note', c.note, 'checked_at', c.checked_at)
+              from public.assignment_checks c where c.booking_id = b.id and c.staff_id = p_staff_id)
+    ) as x
+    from public.bookings b
+    where (b.assignee_id = p_staff_id or b.sub_assignee_id = p_staff_id)
+      and b.status <> '취소' and b.wedding_date >= current_date
+  ) t;
+  return jsonb_build_object('staff_name', st.name, 'schedule', arr);
+end; $$;
+revoke all on function public.staff_schedule(uuid) from public;
+grant execute on function public.staff_schedule(uuid) to anon, authenticated;
+
+-- 작가 체크 제출 (anon) — 본인 배정 예약만
+create or replace function public.submit_assignment_check(payload jsonb)
+returns void language plpgsql security definer set search_path=public, pg_temp
+as $$
+declare bid uuid; sid uuid;
+begin
+  bid := nullif(payload->>'booking_id','')::uuid;
+  sid := nullif(payload->>'staff_id','')::uuid;
+  if bid is null or sid is null then raise exception 'bad request'; end if;
+  if not exists(select 1 from public.bookings where id = bid and (assignee_id = sid or sub_assignee_id = sid)) then
+    raise exception 'not assigned';
+  end if;
+  insert into public.assignment_checks (booking_id, staff_id, attend, arrival, options, note, checked_at)
+  values (bid, sid, coalesce((payload->>'attend')::boolean,false), coalesce((payload->>'arrival')::boolean,false),
+          coalesce((payload->>'options')::boolean,false), nullif(payload->>'note',''), now())
+  on conflict (booking_id, staff_id) do update set
+    attend = excluded.attend, arrival = excluded.arrival, options = excluded.options, note = excluded.note, checked_at = now();
+end; $$;
+revoke all on function public.submit_assignment_check(jsonb) from public;
+grant execute on function public.submit_assignment_check(jsonb) to anon, authenticated;
+
+-- 관리자: 예약의 작가 확인 상태
+create or replace function public.admin_booking_checks(p_booking_id uuid)
+returns jsonb language plpgsql security definer set search_path=public, pg_temp
+as $$
+declare res jsonb;
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  select coalesce(jsonb_agg(jsonb_build_object('staff', s.name, 'attend', c.attend, 'arrival', c.arrival, 'options', c.options, 'note', c.note, 'checked_at', c.checked_at)), '[]'::jsonb) into res
+  from public.assignment_checks c join public.staff s on s.id = c.staff_id where c.booking_id = p_booking_id;
+  return res;
+end; $$;
+revoke all on function public.admin_booking_checks(uuid) from public, anon;
+grant execute on function public.admin_booking_checks(uuid) to authenticated;
+
+-- 관리자: 작가 미확인 예약 (다가오는, 배정됐는데 모든 작가 확인 완료가 아님)
+create or replace function public.admin_unconfirmed()
+returns jsonb language plpgsql security definer set search_path=public, pg_temp
+as $$
+declare res jsonb;
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'booking_id', b.id, 'contractor_name', b.contractor_name,
+    'wedding_date', b.wedding_date, 'wedding_time', b.wedding_time, 'wedding_venue', b.wedding_venue,
+    'assignee_id', b.assignee_id, 'sub_assignee_id', b.sub_assignee_id,
+    'main_ok', exists(select 1 from public.assignment_checks c where c.booking_id=b.id and c.staff_id=b.assignee_id and c.attend and c.arrival and c.options),
+    'sub_ok', (b.sub_assignee_id is null) or exists(select 1 from public.assignment_checks c where c.booking_id=b.id and c.staff_id=b.sub_assignee_id and c.attend and c.arrival and c.options)
+  ) order by b.wedding_date, b.wedding_time), '[]'::jsonb) into res
+  from public.bookings b
+  where b.status <> '취소' and b.deposit_paid and b.assignee_id is not null
+    and b.wedding_date >= current_date and b.wedding_date <= current_date + 30;
+  return res;
+end; $$;
+revoke all on function public.admin_unconfirmed() from public, anon;
+grant execute on function public.admin_unconfirmed() to authenticated;
+
 -- 메인/서브 작가 동시 설정 (예약 상세에서)
 create or replace function public.admin_set_assignees(p_id uuid, p_main uuid, p_sub uuid)
 returns public.bookings language plpgsql security definer set search_path=public, pg_temp

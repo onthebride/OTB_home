@@ -443,6 +443,21 @@ td .muted { color: var(--ink-soft); }
 .pay-toggle { margin-left: 6px; font-size: .72rem; border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 2px 9px; cursor: pointer; color: var(--ink-soft); vertical-align: middle; }
 .pay-toggle:hover { border-color: var(--gold); color: var(--ink); }
 
+/* 작가 예식 전 확인 */
+.chk-box { margin-top: 18px; border: 1px solid var(--line); border-radius: 8px; background: #fbfaf7; padding: 14px 16px; }
+.chk-title { font-weight: 700; color: var(--ink); margin-bottom: 10px; }
+.chk-line { padding: 9px 0; border-top: 1px dashed var(--line); }
+.chk-line:first-of-type { border-top: none; }
+.chk-line .chk-role { font-weight: 600; }
+.chk-line .chk-st { margin-left: 8px; font-size: .85rem; }
+.chk-line.ok .chk-st { color: #2f7d4f; }
+.chk-line.partial .chk-st { color: var(--gold-deep); }
+.chk-line.none .chk-st { color: #b5462f; }
+.chk-st small { color: var(--ink-soft); font-weight: 400; }
+.chk-items { font-size: .8rem; color: var(--ink-soft); margin-top: 3px; }
+.chk-note { font-size: .82rem; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 6px 9px; margin-top: 5px; }
+.unconf-who { color: #b5462f; font-weight: 600; }
+
 /* 커스텀 옵션 */
 .custom-opts { display: flex; flex-direction: column; gap: 6px; }
 .co-row { display: flex; align-items: center; gap: 6px; }

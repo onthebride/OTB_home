@@ -20,6 +20,7 @@ let filter = '전체';
 let bkSearchTerm = '';
 let bkMonth = null; // 예약 목록 월별 페이지 {y, m}
 let surveyIds = new Set(); // 설문 제출된 예약 ID
+let allUnconfirmed = []; // 작가 미확인 (admin_unconfirmed)
 let calMonth = null; // 캘린더 현재 월 {y, m}
 let unpaidTab = 'deposit'; // 미입금 탭: deposit | balance
 let allStaff = [];
@@ -92,6 +93,8 @@ async function loadBookings() {
   // 설문 제출 여부
   const sres = await sb.rpc('admin_survey_ids');
   surveyIds = new Set(Array.isArray(sres.data) ? sres.data : []);
+  const ures = await sb.rpc('admin_unconfirmed');
+  allUnconfirmed = Array.isArray(ures.data) ? ures.data : [];
   await loadStaff();
   render();
   renderDashboard();
@@ -214,6 +217,32 @@ async function openDetail(id) {
   }
   const slot = $('surveySlot');
   if (slot && slot.dataset.bid === id) { slot.innerHTML = renderSurvey(surveyData, id); bindSurveyControls(); }
+  // 작가 예식 전 확인 상태
+  if (b.assignee_id) {
+    const cr = await sb.rpc('admin_booking_checks', { p_booking_id: id });
+    const cslot = $('checkSlot');
+    if (cslot && cslot.dataset.bid === id) cslot.innerHTML = renderChecks(b, Array.isArray(cr.data) ? cr.data : []);
+  }
+}
+
+function renderChecks(b, checks) {
+  const byName = {};
+  checks.forEach((c) => { byName[c.staff] = c; });
+  const line = (sid, role) => {
+    if (!sid) return '';
+    const name = staffName(sid);
+    const c = byName[name];
+    const ok = c && c.attend && c.arrival && c.options;
+    const items = c ? `참석 ${c.attend ? '✓' : '✕'} · 도착 ${c.arrival ? '✓' : '✕'} · 옵션 ${c.options ? '✓' : '✕'}` : '';
+    const st = c ? (ok ? '✔ 확인완료' : '△ 일부확인') : '미확인';
+    return `<div class="chk-line ${ok ? 'ok' : c ? 'partial' : 'none'}">
+      <span class="chk-role">${esc(role)} · ${esc(name)}</span>
+      <span class="chk-st">${st}${c && c.checked_at ? ' <small>' + esc(fmtDateTime(c.checked_at)) + '</small>' : ''}</span>
+      ${items ? `<div class="chk-items">${esc(items)}</div>` : ''}
+      ${c && c.note ? `<div class="chk-note">📝 ${esc(c.note)}</div>` : ''}
+    </div>`;
+  };
+  return `<div class="chk-box"><p class="chk-title">🧑‍🎨 작가 예식 전 확인</p>${line(b.assignee_id, '메인작가')}${b.sub_assignee_id ? line(b.sub_assignee_id, '서브작가') : ''}</div>`;
 }
 
 const PROG_ALL = ['신랑신부 동시 입장', '예물교환', '주례말씀', '축사', '축가', '예배식'];
@@ -326,6 +355,7 @@ function renderView(b, flash) {
       ${b.admin_note ? `<div class="full2">${field('관리자 메모', b.admin_note)}</div>` : ''}
     </div>
 
+    ${b.assignee_id ? `<div id="checkSlot" data-bid="${esc(b.id)}"></div>` : ''}
     <div id="surveySlot" data-bid="${esc(b.id)}">${surveyIds.has(b.id) ? '<p class="survey-loading">📝 설문 불러오는 중…</p>' : ''}</div>
 
     <div class="atk-prog">
@@ -756,6 +786,23 @@ function renderDashboard() {
       </div>`).join('')
     : '<p class="dash-empty">모두 처리됐어요 👍</p>';
 
+  // 🧑‍🎨 작가 미확인 (30일 내)
+  const unconf = allUnconfirmed.filter((u) => !u.main_ok || !u.sub_ok);
+  if ($('dcUnconf')) $('dcUnconf').textContent = unconf.length;
+  if ($('listUnconf')) $('listUnconf').innerHTML = unconf.length
+    ? unconf.slice(0, 40).map((u) => {
+      const who = [];
+      if (!u.main_ok && u.assignee_id) who.push('메인 ' + staffName(u.assignee_id));
+      if (!u.sub_ok && u.sub_assignee_id) who.push('서브 ' + staffName(u.sub_assignee_id));
+      return `<div class="dl-item" data-id="${u.booking_id}">
+        <div class="dl-main">
+          <span class="dl-name">${esc(u.contractor_name || '-')}</span>
+          <span class="dl-meta">${esc(fmtDate(u.wedding_date))} ${esc(kTimeShort(u.wedding_time))} · ${esc(u.wedding_venue || '-')} · <span class="unconf-who">${esc(who.join(', ') || '미확인')}</span></span>
+        </div>
+      </div>`;
+    }).join('')
+    : '<p class="dash-empty">모두 확인됐어요 👍</p>';
+
   bindDashEvents();
   renderCalendar();
   renderSchedule();
@@ -1076,9 +1123,18 @@ function renderStaff() {
       <input type="text" class="st-phone" data-id="${s.id}" value="${esc(s.phone || '')}" placeholder="연락처" />
       <label class="st-active"><input type="checkbox" class="st-rep" data-id="${s.id}" ${s.is_rep ? 'checked' : ''} /> 대표</label>
       <label class="st-active"><input type="checkbox" class="st-act" data-id="${s.id}" ${s.active ? 'checked' : ''} /> 활성</label>
+      <button class="btn-sm st-link" data-id="${s.id}">체크링크</button>
       <button class="btn-sm st-save" data-id="${s.id}">저장</button>
       <button class="btn-sm st-del" data-id="${s.id}">삭제</button>
     </div>`).join('');
+
+  $('staffList').querySelectorAll('.st-link').forEach((btn) =>
+    btn.addEventListener('click', async () => {
+      const url = location.origin + '/staff-schedule?s=' + btn.dataset.id;
+      try { await navigator.clipboard.writeText(url); const t = btn.textContent; btn.textContent = '복사됨!'; setTimeout(() => { btn.textContent = t; }, 1500); }
+      catch (_) { prompt('작가에게 보낼 체크 링크:', url); }
+    })
+  );
 
   $('staffList').querySelectorAll('.st-save').forEach((btn) =>
     btn.addEventListener('click', async () => {

@@ -68,6 +68,31 @@
 }
 .g-contact b { color: var(--ink); }
 
+/* 작가 스케줄 확인 */
+.ss-guide { font-size: .88rem; color: var(--ink-soft); background: #faf4ea; border: 1px solid #ecdcc3; border-radius: 6px; padding: 12px 14px; margin: 4px 0 18px; line-height: 1.6; }
+.ss-guide b { color: var(--gold-deep); }
+.sv-empty { text-align: center; color: var(--ink-soft); padding: 30px; }
+.ss-card { border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 14px; background: #fff; }
+.ss-card.done { border-color: #9cc7ad; background: #f4faf6; }
+.ss-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+.ss-date { font-family: var(--kserif); font-weight: 600; font-size: 1.08rem; }
+.ss-role { font-size: .72rem; font-weight: 600; border-radius: 999px; padding: 2px 9px; }
+.ss-role.main { background: var(--ink); color: #fff; }
+.ss-role.sub { background: #e3edf5; color: #2c6b9b; }
+.ss-doneflag { margin-left: auto; font-size: .78rem; font-weight: 700; color: #2f7d4f; }
+.ss-info { font-size: .9rem; color: var(--ink-soft); display: grid; gap: 5px; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.ss-info b { color: var(--ink); font-weight: 600; margin-right: 6px; }
+.ss-checks { display: grid; gap: 8px; margin: 14px 0; }
+.ss-chk { display: flex; align-items: flex-start; gap: 9px; font-size: .92rem; cursor: pointer; }
+.ss-chk input { width: 20px; height: 20px; margin-top: 1px; accent-color: var(--gold-deep); flex: 0 0 auto; }
+.ss-note { width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 9px 11px; font-family: var(--sans); font-size: .9rem; resize: vertical; min-height: 44px; }
+.ss-note:focus { outline: none; border-color: var(--gold); }
+.ss-foot { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.ss-submit { background: var(--ink); color: #fff; border: none; border-radius: var(--radius); padding: 11px 24px; font-size: .92rem; font-weight: 500; cursor: pointer; }
+.ss-submit:hover { background: var(--gold-deep); }
+.ss-submit:disabled { opacity: .55; }
+.ss-status { font-size: .78rem; color: var(--ink-soft); }
+
 html { scroll-behavior: smooth; }
 .sv-sec[id] { scroll-margin-top: 16px; }
 
