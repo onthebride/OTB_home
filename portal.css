@@ -1,0 +1,138 @@
+:root {
+  --ink: #2b2724;
+  --ink-soft: #6b635c;
+  --paper: #fffdfa;
+  --line: #e7ded3;
+  --gold: #b08d57;
+  --gold-deep: #97743f;
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  color: var(--ink);
+  background: #f6f1ea;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+.pt-header { text-align: center; padding: 22px 16px 6px; }
+.pt-logo { height: 30px; opacity: .9; }
+.pt-wrap { max-width: 560px; margin: 0 auto; padding: 16px 16px 40px; }
+.pt-footer { text-align: center; color: var(--ink-soft); font-size: .72rem; letter-spacing: .2em; padding: 24px 0 40px; }
+
+.pt-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 20px;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.02);
+}
+.pt-msg { text-align: center; padding: 40px 24px; }
+.pt-msg h1 { font-family: 'Noto Serif KR', serif; font-size: 1.2rem; margin-bottom: 10px; }
+.pt-msg p { color: var(--ink-soft); font-size: .92rem; }
+
+.pt-intro { text-align: center; padding: 14px 0 22px; }
+.pt-eyebrow { letter-spacing: .4em; font-size: .68rem; color: var(--gold-deep); font-weight: 500; }
+.pt-title { font-family: 'Noto Serif KR', serif; font-size: 1.5rem; font-weight: 600; margin: 6px 0 8px; }
+.pt-greet { color: var(--ink-soft); font-size: .96rem; }
+.pt-greet b { color: var(--ink); }
+
+.pt-h { font-family: 'Noto Serif KR', serif; font-size: 1.06rem; font-weight: 600; margin-bottom: 14px; }
+.pt-sub { color: var(--ink-soft); font-size: .9rem; margin-bottom: 14px; }
+.pt-sub b { color: var(--gold-deep); }
+.pt-note { color: var(--ink-soft); font-size: .82rem; margin-top: 12px; line-height: 1.6; }
+
+/* 예약 정보 */
+.pt-info { display: grid; grid-template-columns: 84px 1fr; gap: 9px 12px; }
+.pt-info dt { color: var(--ink-soft); font-size: .88rem; }
+.pt-info dd { font-size: .92rem; font-weight: 500; }
+.pt-badge { display: inline-block; font-size: .74rem; font-weight: 600; border-radius: 6px; padding: 2px 8px; }
+.pt-badge.ok { color: #2f7d4f; background: #e7f3ec; }
+.pt-badge.wait { color: #b5462f; background: #f7e0da; }
+
+/* 상품 / 금액 */
+.pt-options {
+  font-family: 'Noto Sans KR', sans-serif;
+  white-space: pre-wrap; word-break: break-word;
+  background: #faf7f2; border: 1px solid var(--line); border-radius: 8px;
+  padding: 14px 16px; font-size: .9rem; line-height: 1.7;
+}
+.pt-amounts { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px; }
+.pt-amount-row { display: flex; justify-content: space-between; font-size: .92rem; padding: 4px 0; }
+.pt-amount-row .lbl { color: var(--ink-soft); }
+.pt-amount-row.total { font-weight: 700; font-size: 1rem; border-top: 1px solid var(--line); margin-top: 6px; padding-top: 10px; }
+
+/* 계좌 */
+.pt-account { background: #faf4ea; border: 1px solid #ecdcc3; border-radius: 8px; padding: 16px; text-align: center; }
+.pt-account .bank { font-size: .86rem; color: var(--ink-soft); }
+.pt-account .acc { font-size: 1.15rem; font-weight: 700; letter-spacing: .02em; margin: 4px 0; font-family: 'Noto Sans KR', sans-serif; }
+.pt-account .holder { font-size: .86rem; color: var(--ink-soft); }
+.pt-copy { margin-top: 10px; font-size: .82rem; color: var(--gold-deep); background: #fff; border: 1px solid #ecdcc3; border-radius: 7px; padding: 7px 14px; cursor: pointer; }
+.pt-copy:active { background: #faf4ea; }
+
+/* 진행 단계 */
+.pt-steps { list-style: none; counter-reset: step; }
+.pt-steps li { position: relative; padding: 0 0 18px 34px; }
+.pt-steps li:before {
+  counter-increment: step; content: counter(step);
+  position: absolute; left: 0; top: 0;
+  width: 24px; height: 24px; border-radius: 999px;
+  background: var(--gold); color: #fff; font-size: .8rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.pt-steps li:after {
+  content: ''; position: absolute; left: 11.5px; top: 26px; bottom: 2px;
+  width: 1px; background: var(--line);
+}
+.pt-steps li:last-child { padding-bottom: 0; }
+.pt-steps li:last-child:after { display: none; }
+.pt-steps .st { font-weight: 600; font-size: .94rem; }
+.pt-steps .sd { color: var(--ink-soft); font-size: .85rem; margin-top: 2px; }
+
+/* 버튼 */
+.pt-btn {
+  display: inline-block; text-align: center;
+  background: var(--ink); color: #fff; text-decoration: none;
+  border: none; border-radius: 8px; padding: 12px 22px;
+  font-size: .94rem; font-weight: 500; cursor: pointer; font-family: inherit;
+}
+.pt-btn:active { opacity: .85; }
+.pt-btn.gold { background: var(--gold-deep); }
+.pt-btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+.pt-btn.full { display: block; width: 100%; }
+.pt-btn[disabled] { background: #cfc8bf; cursor: default; }
+
+/* 이벤트 */
+.pt-event { border: 1px solid var(--line); border-radius: 9px; padding: 16px; margin-top: 14px; }
+.pt-event-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.pt-event-no { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: var(--gold); font-weight: 600; }
+.pt-event-head h3 { font-size: 1rem; font-weight: 700; }
+.pt-event-desc { color: var(--ink-soft); font-size: .86rem; margin-bottom: 12px; }
+
+.pt-state {
+  border-radius: 8px; padding: 12px 14px; font-size: .9rem;
+  background: #faf7f2; border: 1px solid var(--line);
+}
+.pt-state.good { background: #e7f3ec; border-color: #c7e3d2; color: #2f7d4f; }
+.pt-state.wait { background: #faf4ea; border-color: #ecdcc3; color: var(--gold-deep); }
+.pt-state b { color: inherit; }
+
+.pt-form { display: grid; gap: 10px; }
+.pt-field label { display: block; font-size: .82rem; color: var(--ink-soft); margin-bottom: 5px; }
+.pt-field input, .pt-field select {
+  width: 100%; border: 1px solid var(--line); border-radius: 8px;
+  padding: 11px 12px; font-size: .92rem; font-family: inherit; color: var(--ink);
+  background: #fff;
+}
+.pt-field input:focus, .pt-field select:focus { outline: none; border-color: var(--gold); }
+.pt-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pt-status { font-size: .84rem; color: var(--gold-deep); min-height: 1em; }
+.pt-status.err { color: #b5462f; }
+.pt-confirm-actions { display: flex; gap: 8px; margin-top: 10px; }
+.pt-confirm-actions .pt-btn { flex: 1; }
+
+@media (max-width: 420px) {
+  .pt-row2 { grid-template-columns: 1fr; }
+  .pt-info { grid-template-columns: 76px 1fr; }
+}

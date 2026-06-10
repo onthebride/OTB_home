@@ -986,3 +986,214 @@ begin
 end; $$;
 revoke all on function public.survey_view(uuid) from public;
 grant execute on function public.survey_view(uuid) to anon, authenticated;
+
+-- ============================================
+-- 예약 전용 포털 (내 예약 확인하기) + 이벤트(짝꿍/후기)
+-- 접근은 예약 UUID(추측 어려운 링크)를 자격증명으로 사용 — survey 와 동일 모델.
+-- ============================================
+
+-- 짝꿍 이벤트: 두 예약을 짝으로 연결 (예약당 1회만)
+create table if not exists public.event_buddy (
+  id            uuid primary key default gen_random_uuid(),
+  requester_id  uuid not null references public.bookings(id) on delete cascade,  -- A(등록한 쪽)
+  partner_id    uuid references public.bookings(id) on delete set null,          -- B(매칭된 예약)
+  partner_name  text,                 -- A가 입력한 상대 계약자명
+  partner_date  date,                 -- A가 입력한 상대 예식일
+  reward        text,                 -- '할인' | '앨범'
+  status        text not null default 'waiting',  -- waiting(B확인대기) | matched(승인대기) | approved | canceled
+  created_at    timestamptz not null default now(),
+  confirmed_at  timestamptz,
+  approved_at   timestamptz
+);
+create index if not exists idx_buddy_requester on public.event_buddy(requester_id);
+create index if not exists idx_buddy_partner on public.event_buddy(partner_id);
+alter table public.event_buddy enable row level security;
+
+-- 후기 이벤트: 예약당 1건 (승인 전이면 수정 가능)
+create table if not exists public.event_review (
+  id           uuid primary key default gen_random_uuid(),
+  booking_id   uuid not null unique references public.bookings(id) on delete cascade,
+  link         text not null,
+  reward       text,                  -- '할인' | '앨범'
+  status       text not null default 'pending',  -- pending | approved | rejected
+  created_at   timestamptz not null default now(),
+  approved_at  timestamptz
+);
+alter table public.event_review enable row level security;
+
+-- 포털 표시용: 예약 + 상품/옵션 + 입금 + 설문여부 + 이벤트 상태 (anon, UUID 자격)
+create or replace function public.portal_booking_info(p_booking_id uuid)
+returns jsonb language plpgsql security definer set search_path=public, pg_temp as $$
+declare b public.bookings; bd public.event_buddy; rv public.event_review;
+  has_s boolean; total int; buddy jsonb; pname text;
+begin
+  select * into b from public.bookings where id = p_booking_id;
+  if not found then return null; end if;
+  select exists(select 1 from public.surveys where booking_id = p_booking_id) into has_s;
+  total := coalesce(b.total_price, 0);
+
+  -- 짝꿍 상태 (활성 1건)
+  select * into bd from public.event_buddy
+   where status in ('waiting','matched','approved')
+     and (requester_id = p_booking_id or partner_id = p_booking_id)
+   order by created_at desc limit 1;
+  if not found then
+    buddy := jsonb_build_object('state','none');
+  elsif bd.requester_id = p_booking_id then
+    select contractor_name into pname from public.bookings where id = bd.partner_id;
+    buddy := jsonb_build_object('state',
+      case bd.status when 'waiting' then 'sent_waiting' when 'matched' then 'matched' else 'approved' end,
+      'partner_name', coalesce(pname, bd.partner_name), 'reward', bd.reward, 'id', bd.id);
+  else  -- partner_id = me
+    select contractor_name into pname from public.bookings where id = bd.requester_id;
+    buddy := jsonb_build_object('state',
+      case bd.status when 'waiting' then 'incoming_confirm' when 'matched' then 'matched' else 'approved' end,
+      'partner_name', pname, 'reward', bd.reward, 'id', bd.id);
+  end if;
+
+  select * into rv from public.event_review where booking_id = p_booking_id;
+
+  return jsonb_build_object(
+    'contractor_name', b.contractor_name,
+    'wedding_date', b.wedding_date,
+    'wedding_time', public.fmt_ktime(b.wedding_time),
+    'wedding_venue', b.wedding_venue,
+    'package', b.package,
+    'options_text', public.fmt_alimtalk_options(b.id),
+    'total_price', total,
+    'deposit', 10,
+    'balance', total - 10,
+    'deposit_paid', coalesce(b.deposit_paid, false),
+    'balance_paid', coalesce(b.balance_paid, false),
+    'status', b.status,
+    'survey_done', has_s,
+    'buddy', buddy,
+    'review', case when rv.id is null then null else
+      jsonb_build_object('link', rv.link, 'reward', rv.reward, 'status', rv.status) end
+  );
+end$$;
+revoke all on function public.portal_booking_info(uuid) from public;
+grant execute on function public.portal_booking_info(uuid) to anon, authenticated;
+
+-- 짝꿍 등록 (A가 상대 예식일+계약자명으로) — anon
+create or replace function public.buddy_register(p_requester uuid, p_partner_name text, p_partner_date date, p_reward text)
+returns jsonb language plpgsql security definer set search_path=public, pg_temp as $$
+declare pid uuid; cnt int;
+begin
+  if not exists(select 1 from public.bookings where id = p_requester) then raise exception 'booking not found'; end if;
+  -- 본인이 이미 짝꿍 참여중인지
+  if exists(select 1 from public.event_buddy where status in ('waiting','matched','approved')
+            and (requester_id = p_requester or partner_id = p_requester)) then
+    raise exception '이미 짝꿍 이벤트에 참여 중입니다';
+  end if;
+  -- 상대 예약 찾기 (예식일 + 계약자명)
+  select count(*) into cnt from public.bookings where wedding_date = p_partner_date and contractor_name = p_partner_name;
+  if cnt = 0 then raise exception '상대 예약을 찾을 수 없어요. 예식일과 계약자명을 확인해주세요'; end if;
+  if cnt > 1 then raise exception '동일 정보의 예약이 여러 건이라 자동 매칭이 어려워요. 관리자에게 문의해주세요'; end if;
+  select id into pid from public.bookings where wedding_date = p_partner_date and contractor_name = p_partner_name limit 1;
+  if pid = p_requester then raise exception '본인은 짝꿍이 될 수 없어요'; end if;
+  -- 상대가 이미 참여중인지
+  if exists(select 1 from public.event_buddy where status in ('waiting','matched','approved')
+            and (requester_id = pid or partner_id = pid)) then
+    raise exception '이미 짝꿍 이벤트를 참여하신 고객입니다';
+  end if;
+  insert into public.event_buddy(requester_id, partner_id, partner_name, partner_date, reward, status)
+    values (p_requester, pid, p_partner_name, p_partner_date, nullif(p_reward,''), 'waiting');
+  return jsonb_build_object('ok', true);
+end$$;
+revoke all on function public.buddy_register(uuid, text, date, text) from public;
+grant execute on function public.buddy_register(uuid, text, date, text) to anon, authenticated;
+
+-- 짝꿍 확인/거절 (B가) — anon. p_booking 으로 본인=partner 확인
+create or replace function public.buddy_confirm(p_buddy_id uuid, p_booking uuid, p_accept boolean)
+returns jsonb language plpgsql security definer set search_path=public, pg_temp as $$
+declare bd public.event_buddy;
+begin
+  select * into bd from public.event_buddy where id = p_buddy_id;
+  if not found then raise exception '짝꿍 정보를 찾을 수 없어요'; end if;
+  if bd.partner_id is distinct from p_booking then raise exception 'unauthorized'; end if;
+  if bd.status <> 'waiting' then raise exception '이미 처리된 짝꿍이에요'; end if;
+  if p_accept then
+    update public.event_buddy set status='matched', confirmed_at=now() where id = p_buddy_id;
+  else
+    update public.event_buddy set status='canceled' where id = p_buddy_id;
+  end if;
+  return jsonb_build_object('ok', true);
+end$$;
+revoke all on function public.buddy_confirm(uuid, uuid, boolean) from public;
+grant execute on function public.buddy_confirm(uuid, uuid, boolean) to anon, authenticated;
+
+-- 후기 등록/수정 (승인 전이면 덮어쓰기) — anon
+create or replace function public.review_register(p_booking uuid, p_link text, p_reward text)
+returns jsonb language plpgsql security definer set search_path=public, pg_temp as $$
+begin
+  if not exists(select 1 from public.bookings where id = p_booking) then raise exception 'booking not found'; end if;
+  if p_link is null or length(trim(p_link)) = 0 then raise exception '후기 링크를 입력해주세요'; end if;
+  insert into public.event_review(booking_id, link, reward, status)
+    values (p_booking, p_link, nullif(p_reward,''), 'pending')
+  on conflict (booking_id) do update set
+    link   = case when public.event_review.status = 'approved' then public.event_review.link   else excluded.link   end,
+    reward = case when public.event_review.status = 'approved' then public.event_review.reward else excluded.reward end,
+    status = case when public.event_review.status = 'approved' then 'approved' else 'pending' end;
+  return jsonb_build_object('ok', true);
+end$$;
+revoke all on function public.review_register(uuid, text, text) from public;
+grant execute on function public.review_register(uuid, text, text) to anon, authenticated;
+
+-- 관리자: 이벤트 승인 대기/이력 목록
+create or replace function public.admin_event_list()
+returns jsonb language plpgsql security definer set search_path=public, pg_temp as $$
+declare buddies jsonb; reviews jsonb;
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'id', eb.id, 'status', eb.status, 'reward', eb.reward,
+    'a_name', ba.contractor_name, 'a_date', ba.wedding_date,
+    'b_name', bb.contractor_name, 'b_date', bb.wedding_date,
+    'created_at', eb.created_at, 'confirmed_at', eb.confirmed_at, 'approved_at', eb.approved_at)
+    order by eb.created_at desc), '[]'::jsonb) into buddies
+  from public.event_buddy eb
+  left join public.bookings ba on ba.id = eb.requester_id
+  left join public.bookings bb on bb.id = eb.partner_id
+  where eb.status in ('matched','approved');
+
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'id', er.id, 'booking_id', er.booking_id, 'name', bk.contractor_name,
+    'link', er.link, 'reward', er.reward, 'status', er.status, 'created_at', er.created_at)
+    order by er.created_at desc), '[]'::jsonb) into reviews
+  from public.event_review er left join public.bookings bk on bk.id = er.booking_id;
+
+  return jsonb_build_object('buddies', buddies, 'reviews', reviews);
+end$$;
+revoke all on function public.admin_event_list() from public, anon;
+grant execute on function public.admin_event_list() to authenticated;
+
+-- 관리자: 짝꿍 승인/취소
+create or replace function public.admin_buddy_set(p_id uuid, p_action text)
+returns jsonb language plpgsql security definer set search_path=public, pg_temp as $$
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  if p_action = 'approve' then
+    update public.event_buddy set status='approved', approved_at=now() where id = p_id;
+  elsif p_action = 'cancel' then
+    update public.event_buddy set status='canceled' where id = p_id;
+  else raise exception 'bad action'; end if;
+  return jsonb_build_object('ok', true);
+end$$;
+revoke all on function public.admin_buddy_set(uuid, text) from public, anon;
+grant execute on function public.admin_buddy_set(uuid, text) to authenticated;
+
+-- 관리자: 후기 승인/반려
+create or replace function public.admin_review_set(p_id uuid, p_action text)
+returns jsonb language plpgsql security definer set search_path=public, pg_temp as $$
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  if p_action = 'approve' then
+    update public.event_review set status='approved', approved_at=now() where id = p_id;
+  elsif p_action = 'reject' then
+    update public.event_review set status='rejected' where id = p_id;
+  else raise exception 'bad action'; end if;
+  return jsonb_build_object('ok', true);
+end$$;
+revoke all on function public.admin_review_set(uuid, text) from public, anon;
+grant execute on function public.admin_review_set(uuid, text) to authenticated;

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>온더브라이드 · 내 예약 확인</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="portal.css" />
+</head>
+<body>
+  <header class="pt-header">
+    <img src="assets/logo-black.png" alt="온더브라이드" class="pt-logo" />
+  </header>
+
+  <main class="pt-wrap">
+    <!-- 잘못된 접근 -->
+    <section class="pt-card pt-msg" id="errCard" hidden>
+      <h1>예약 링크를 확인해 주세요</h1>
+      <p>카카오톡으로 보내드린 <b>내 예약 확인 링크</b>를 통해 접속해 주세요.<br>문제가 계속되면 채팅으로 문의 부탁드립니다 🤍</p>
+    </section>
+
+    <!-- 로딩 -->
+    <section class="pt-card pt-msg" id="loadCard">
+      <p>불러오는 중입니다…</p>
+    </section>
+
+    <!-- 본문 -->
+    <div id="portalMain" hidden>
+      <!-- 인사 -->
+      <section class="pt-intro">
+        <p class="pt-eyebrow">ONTHEBRIDE</p>
+        <h1 class="pt-title">내 예약 확인</h1>
+        <p class="pt-greet" id="greet"></p>
+      </section>
+
+      <!-- 예약 정보 -->
+      <section class="pt-card">
+        <h2 class="pt-h">📋 예약 정보</h2>
+        <dl class="pt-info" id="infoList"></dl>
+      </section>
+
+      <!-- 상품 / 옵션 -->
+      <section class="pt-card">
+        <h2 class="pt-h">🎁 신청 상품 · 옵션</h2>
+        <pre class="pt-options" id="optionsBox"></pre>
+        <div class="pt-amounts" id="amountBox"></div>
+      </section>
+
+      <!-- 계좌 안내 -->
+      <section class="pt-card">
+        <h2 class="pt-h">🏦 입금 계좌 안내</h2>
+        <div class="pt-account" id="accountBox"></div>
+        <p class="pt-note">계약금 입금이 확인되면 예약이 확정됩니다. 입금자명이 예약자와 다를 경우 채팅으로 알려주세요 🤍</p>
+      </section>
+
+      <!-- 진행 안내 -->
+      <section class="pt-card">
+        <h2 class="pt-h">🗓️ 앞으로 진행 안내</h2>
+        <ol class="pt-steps" id="stepsBox"></ol>
+      </section>
+
+      <!-- 설문 -->
+      <section class="pt-card">
+        <h2 class="pt-h">📝 예식 전 설문</h2>
+        <p class="pt-sub" id="surveyDesc">촬영 전 꼭 필요한 내용을 미리 알려주세요. 정성껏 준비하겠습니다.</p>
+        <a class="pt-btn" id="surveyBtn" href="#">설문 작성하기</a>
+      </section>
+
+      <!-- 이벤트 -->
+      <section class="pt-card">
+        <h2 class="pt-h">🎉 진행 중인 이벤트</h2>
+        <p class="pt-sub">짝꿍 · 후기 이벤트에 참여하시면 <b>1만원 할인 또는 앨범 1권</b>이 추가돼요. (이벤트별 1회, 최대 앨범 2권)</p>
+
+        <!-- 짝꿍 -->
+        <div class="pt-event" id="buddyBox">
+          <div class="pt-event-head"><span class="pt-event-no">01</span><h3>짝꿍 이벤트</h3></div>
+          <p class="pt-event-desc">아직 예식이 끝나지 않은 예비 신랑신부님과 짝꿍을 맺어보세요!</p>
+          <div id="buddyBody"></div>
+        </div>
+
+        <!-- 후기 -->
+        <div class="pt-event" id="reviewBox">
+          <div class="pt-event-head"><span class="pt-event-no">02</span><h3>후기 이벤트</h3></div>
+          <p class="pt-event-desc">계약후기·촬영후기를 블로그/웨딩카페/SNS에 올리고 링크를 등록해 주세요!</p>
+          <div id="reviewBody"></div>
+        </div>
+      </section>
+
+      <p class="pt-foot">궁금한 점은 언제든 카카오톡 채널로 문의 주세요 😊</p>
+    </div>
+  </main>
+
+  <footer class="pt-footer">© ONTHEBRIDE</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="portal.js"></script>
+</body>
+</html>
