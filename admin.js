@@ -223,17 +223,17 @@ async function openDetail(id) {
     const cslot = $('checkSlot');
     if (cslot && cslot.dataset.bid === id) {
       cslot.innerHTML = renderChecks(b, Array.isArray(cr.data) ? cr.data : []);
-      cslot.querySelectorAll('.chk-link').forEach((btn) => btn.addEventListener('click', () => copyCheckLink(btn.dataset.bid, btn.dataset.staff, btn.dataset.role)));
+      cslot.querySelectorAll('.chk-link').forEach((btn) => btn.addEventListener('click', () => copyCheckLink(btn.dataset.bid, btn.dataset.staff, btn.dataset.role, btn.dataset.role)));
     }
   }
 }
 
-async function copyCheckLink(bid, sid, roleLabel) {
+async function copyCheckLink(bid, sid, roleLabel, role) {
   if (!sid) { toast('먼저 작가를 배정하세요.'); return; }
   const lr = await sb.rpc('admin_make_check_link', { p_booking_id: bid, p_staff_id: sid });
   const url = lr.data ? location.origin + '/c?k=' + lr.data : location.origin + '/staff-schedule?s=' + sid + '&b=' + bid;
   try { await navigator.clipboard.writeText(url); } catch (_) { prompt('작가 체크 링크 (복사):', url); }
-  const { data } = await sb.rpc('admin_mark_check_sent', { p_id: bid, p_on: true });
+  const { data } = await sb.rpc('admin_mark_check_sent', { p_id: bid, p_on: true, p_role: String(role || '').includes('서브') ? '서브' : '메인' });
   const i = allBookings.findIndex((x) => x.id === bid);
   if (i >= 0 && data) allBookings[i] = data;
   const ures = await sb.rpc('admin_unconfirmed');
@@ -758,7 +758,10 @@ function renderDashboard() {
       const dleft = Math.round((d - today) / 86400000);
       const dtag = dleft === 0 ? '오늘' : 'D-' + dleft;
       const asg = b.assignee_id ? ` · 담당 ${esc(staffName(b.assignee_id))}` : '';
-      const sent = !!b.check_sent_at;
+      const mainSent = !!b.check_sent_at;
+      const subSent = !!b.sub_check_sent_at;
+      const needsSub = !!b.sub_assignee_id;
+      const allSent = mainSent && (!needsSub || subSent);
       return `
       <div class="dl-item soon" data-id="${b.id}">
         <div class="dl-main">
@@ -767,9 +770,9 @@ function renderDashboard() {
         </div>
         <div class="dl-actions">
           ${b.assignee_id
-            ? `<button class="btn-sm chk-send" data-id="${b.id}" data-staff="${b.assignee_id}" data-role="메인">${sent ? '메인 재전송' : '메인 체크'}</button>
-               ${b.sub_assignee_id ? `<button class="btn-sm chk-send" data-id="${b.id}" data-staff="${b.sub_assignee_id}" data-role="서브">서브 체크</button>` : ''}
-               ${sent ? '<span class="chk-sentflag">보냄 ✓</span>' : ''}`
+            ? `<button class="btn-sm chk-send" data-id="${b.id}" data-staff="${b.assignee_id}" data-role="메인">${mainSent ? '메인 재전송' : '메인 체크'}</button>
+               ${needsSub ? `<button class="btn-sm chk-send" data-id="${b.id}" data-staff="${b.sub_assignee_id}" data-role="서브">${subSent ? '서브 재전송' : '서브 체크'}</button>` : ''}
+               ${allSent ? '<span class="chk-sentflag">보냄 ✓</span>' : ''}`
             : '<span class="dl-na">작가 미배정</span>'}
         </div>
       </div>`;
@@ -859,7 +862,7 @@ function bindDashEvents() {
   );
   // 작가 체크 링크 전송(복사 + 보냄 표시)
   document.querySelectorAll('#tab-dashboard .chk-send').forEach((btn) =>
-    btn.addEventListener('click', (e) => { e.stopPropagation(); copyCheckLink(btn.dataset.id, btn.dataset.staff, `${btn.dataset.role} 작가(${staffName(btn.dataset.staff)})`); })
+    btn.addEventListener('click', (e) => { e.stopPropagation(); copyCheckLink(btn.dataset.id, btn.dataset.staff, `${btn.dataset.role} 작가(${staffName(btn.dataset.staff)})`, btn.dataset.role); })
   );
   // 항목(이름/메타) 클릭 → 상세
   document.querySelectorAll('#tab-dashboard .dl-main').forEach((m) =>
