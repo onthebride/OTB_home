@@ -305,8 +305,16 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .cal-cell { min-height: 92px; min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 5px; background: #fff; display: flex; flex-direction: column; gap: 3px; overflow: hidden; }
 .cal-cell.empty { background: transparent; border: none; }
 .cal-cell.today { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
-.cal-cell.has { background: #fdfbf7; }
+.cal-cell.has { background: #fdfbf7; cursor: pointer; }
+.cal-cell.has:hover { background: #f6efe4; }
 .cal-d { font-size: .78rem; color: var(--ink-soft); }
+.cal-dots { display: flex; flex-wrap: wrap; gap: 3px; margin: 3px 0 2px; }
+.cal-dots i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.cal-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 5px; font-size: .72rem; color: var(--ink-soft); margin-top: auto; }
+.cal-sum b { color: var(--ink); font-size: .78rem; }
+.cal-flag { font-size: .64rem; padding: 1px 4px; border-radius: 3px; white-space: nowrap; line-height: 1.3; }
+.cal-flag.asg { background: #efe9e0; color: #7a6f60; }
+.cal-flag.bal { background: #f7e0da; color: #b5462f; }
 .cal-cell.today .cal-d { color: var(--gold-deep); font-weight: 700; }
 .cal-ev { font-size: .72rem; background: var(--ink); color: #fff; border-radius: 4px; padding: 2px 5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cal-ev:hover { background: var(--gold-deep); }
@@ -351,9 +359,11 @@ td .muted { color: var(--ink-soft); }
 .sched-all { font-size: .85rem; display: flex; align-items: center; gap: 5px; cursor: pointer; }
 .sched-bar select { border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; font-size: .85rem; }
 .sched-selcount { font-size: .82rem; color: var(--gold-deep); margin-left: auto; }
-.sched-group { margin-bottom: 14px; }
-.sched-date { font-weight: 700; font-size: .9rem; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dashed var(--line); }
+.sched-group { margin-bottom: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); overflow: hidden; }
+.sched-date { font-weight: 700; font-size: .9rem; margin: 0; padding: 11px 14px; background: var(--cream); border-bottom: 1px solid var(--line); }
 .sched-date span { color: var(--ink-soft); font-weight: 400; font-size: .8rem; }
+.sched-group .sched-row { padding-left: 14px; padding-right: 14px; }
+.sched-group .sched-row:last-child { border-bottom: none; }
 .sched-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px; }
 .sched-tags-label { font-size: .8rem; color: var(--ink-soft); margin-right: 2px; }
 .sched-tag { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 12px; font-size: .82rem; cursor: pointer; color: var(--ink); transition: all .15s; }

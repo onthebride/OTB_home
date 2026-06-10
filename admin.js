@@ -822,28 +822,23 @@ function renderCalendar() {
   html += '<div class="cal-grid">';
   ['일', '월', '화', '수', '목', '금', '토'].forEach((w) => (html += `<div class="cal-wd">${w}</div>`));
   for (let i = 0; i < startDay; i++) html += '<div class="cal-cell empty"></div>';
-  const CAL_MAX = 4;
   for (let dnum = 1; dnum <= days; dnum++) {
     const items = (byDay[dnum] || []).sort((a, b) => (a.wedding_time || '').localeCompare(b.wedding_time || ''));
     const isToday = today.getFullYear() === y && today.getMonth() === m && today.getDate() === dnum;
-    const shown = items.slice(0, CAL_MAX);
-    const more = items.length - shown.length;
-    html += `<div class="cal-cell${isToday ? ' today' : ''}${items.length ? ' has' : ''}">
+    const cnt = items.length;
+    const bal = items.filter((b) => !b.balance_paid).length;
+    const noAsg = items.filter((b) => !b.assignee_id).length;
+    const dots = items.slice(0, 12).map((b) => `<i style="background:${staffColor(b.assignee_id) || '#c9c4bc'}"></i>`).join('');
+    html += `<div class="cal-cell${isToday ? ' today' : ''}${cnt ? ' has' : ''}"${cnt ? ` data-day="${dnum}"` : ''}>
       <span class="cal-d">${dnum}</span>
-      ${shown.map((b) => {
-        const bg = staffColor(b.assignee_id) || '#b3ada3';
-        return `<span class="cal-ev" data-id="${b.id}" style="background:${bg}">${esc((b.wedding_time || '') + ' ' + (b.contractor_name || ''))}</span>`;
-      }).join('')}
-      ${more > 0 ? `<button type="button" class="cal-more" data-day="${dnum}">+${more}건</button>` : ''}
+      ${cnt ? `<div class="cal-dots">${dots}</div>
+        <div class="cal-sum"><b>${cnt}건</b>${noAsg ? `<span class="cal-flag asg">미배정 ${noAsg}</span>` : ''}${bal ? `<span class="cal-flag bal">잔금 ${bal}</span>` : ''}</div>` : ''}
     </div>`;
   }
   html += '</div>';
   $('calendar').innerHTML = html;
-  $('calendar').querySelectorAll('.cal-ev').forEach((e) =>
-    e.addEventListener('click', (ev) => { ev.stopPropagation(); openDetail(e.dataset.id); })
-  );
-  $('calendar').querySelectorAll('.cal-more').forEach((btn) =>
-    btn.addEventListener('click', () => { const d = +btn.dataset.day; showDayList(`${y}년 ${m + 1}월 ${d}일`, byDay[d] || []); })
+  $('calendar').querySelectorAll('.cal-cell.has').forEach((c) =>
+    c.addEventListener('click', () => { const d = +c.dataset.day; showDayList(`${y}년 ${m + 1}월 ${d}일`, byDay[d] || []); })
   );
 }
 
