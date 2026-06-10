@@ -182,6 +182,7 @@ grant execute on function public.admin_save_booking(uuid, jsonb) to authenticate
 alter table public.bookings add column if not exists download_link text;
 alter table public.bookings add column if not exists alimtalk_sent jsonb not null default '{}'::jsonb;
 alter table public.bookings add column if not exists custom_options jsonb not null default '[]'::jsonb;
+alter table public.bookings add column if not exists check_sent_at timestamptz;
 
 create or replace function public.admin_set_download_link(p_id uuid, p_link text)
 returns public.bookings language plpgsql security definer set search_path=public, pg_temp
@@ -428,10 +429,23 @@ begin
   ) order by b.wedding_date, b.wedding_time), '[]'::jsonb) into res
   from public.bookings b
   where b.status <> '취소' and b.deposit_paid and b.assignee_id is not null
+    and b.check_sent_at is not null
     and b.wedding_date >= current_date and b.wedding_date <= current_date + 30;
   return res;
 end; $$;
 revoke all on function public.admin_unconfirmed() from public, anon;
+
+-- 작가 체크 링크 보냄 표시
+create or replace function public.admin_mark_check_sent(p_id uuid, p_on boolean)
+returns public.bookings language plpgsql security definer set search_path=public, pg_temp
+as $$ declare r public.bookings; begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  update public.bookings set check_sent_at = case when coalesce(p_on,true) then now() else null end
+   where id = p_id returning * into r;
+  return r;
+end; $$;
+revoke all on function public.admin_mark_check_sent(uuid, boolean) from public, anon;
+grant execute on function public.admin_mark_check_sent(uuid, boolean) to authenticated;
 grant execute on function public.admin_unconfirmed() to authenticated;
 
 -- 메인/서브 작가 동시 설정 (예약 상세에서)

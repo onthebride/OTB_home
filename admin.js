@@ -722,11 +722,19 @@ function renderDashboard() {
       const dleft = Math.round((d - today) / 86400000);
       const dtag = dleft === 0 ? '오늘' : 'D-' + dleft;
       const asg = b.assignee_id ? ` · 담당 ${esc(staffName(b.assignee_id))}` : '';
+      const sent = !!b.check_sent_at;
       return `
       <div class="dl-item soon" data-id="${b.id}">
         <div class="dl-main">
           <span class="dl-name">${esc(b.contractor_name || '-')}${phBadge(b)} <span class="dday">${dtag}</span></span>
           <span class="dl-meta">${esc(fmtDate(b.wedding_date))} ${esc(kTimeShort(b.wedding_time))} · ${esc(b.wedding_venue || '-')}${asg}</span>
+        </div>
+        <div class="dl-actions">
+          ${b.assignee_id
+            ? `<button class="btn-sm chk-send" data-id="${b.id}" data-staff="${b.assignee_id}" data-role="메인">${sent ? '메인 재전송' : '메인 체크'}</button>
+               ${b.sub_assignee_id ? `<button class="btn-sm chk-send" data-id="${b.id}" data-staff="${b.sub_assignee_id}" data-role="서브">서브 체크</button>` : ''}
+               ${sent ? '<span class="chk-sentflag">보냄 ✓</span>' : ''}`
+            : '<span class="dl-na">작가 미배정</span>'}
         </div>
       </div>`;
     }).join('')
@@ -812,6 +820,23 @@ function bindDashEvents() {
   // 미입금 탭(계약금/잔금)
   document.querySelectorAll('#listUnpaid .upt').forEach((btn) =>
     btn.addEventListener('click', () => { unpaidTab = btn.dataset.upt; renderDashboard(); })
+  );
+  // 작가 체크 링크 전송(복사 + 보냄 표시)
+  document.querySelectorAll('#tab-dashboard .chk-send').forEach((btn) =>
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const sid = btn.dataset.staff;
+      const url = location.origin + '/staff-schedule?s=' + sid;
+      try { await navigator.clipboard.writeText(url); } catch (_) { prompt('작가 체크 링크:', url); }
+      const { data } = await sb.rpc('admin_mark_check_sent', { p_id: id, p_on: true });
+      const i = allBookings.findIndex((x) => x.id === id);
+      if (i >= 0 && data) allBookings[i] = data;
+      const ures = await sb.rpc('admin_unconfirmed');
+      allUnconfirmed = Array.isArray(ures.data) ? ures.data : [];
+      toast(`${btn.dataset.role} 작가(${staffName(sid)}) 체크 링크 복사됨 · 보냄 표시`);
+      renderDashboard();
+    })
   );
   // 항목(이름/메타) 클릭 → 상세
   document.querySelectorAll('#tab-dashboard .dl-main').forEach((m) =>
@@ -1123,18 +1148,9 @@ function renderStaff() {
       <input type="text" class="st-phone" data-id="${s.id}" value="${esc(s.phone || '')}" placeholder="연락처" />
       <label class="st-active"><input type="checkbox" class="st-rep" data-id="${s.id}" ${s.is_rep ? 'checked' : ''} /> 대표</label>
       <label class="st-active"><input type="checkbox" class="st-act" data-id="${s.id}" ${s.active ? 'checked' : ''} /> 활성</label>
-      <button class="btn-sm st-link" data-id="${s.id}">체크링크</button>
       <button class="btn-sm st-save" data-id="${s.id}">저장</button>
       <button class="btn-sm st-del" data-id="${s.id}">삭제</button>
     </div>`).join('');
-
-  $('staffList').querySelectorAll('.st-link').forEach((btn) =>
-    btn.addEventListener('click', async () => {
-      const url = location.origin + '/staff-schedule?s=' + btn.dataset.id;
-      try { await navigator.clipboard.writeText(url); const t = btn.textContent; btn.textContent = '복사됨!'; setTimeout(() => { btn.textContent = t; }, 1500); }
-      catch (_) { prompt('작가에게 보낼 체크 링크:', url); }
-    })
-  );
 
   $('staffList').querySelectorAll('.st-save').forEach((btn) =>
     btn.addEventListener('click', async () => {
