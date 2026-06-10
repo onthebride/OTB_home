@@ -803,18 +803,19 @@ function renderDashboard() {
       </div>
     </div>`;
   };
-  const unpaidTotal = depUnpaid.length + balUnpaid.length;
-  $('dcUnpaid').textContent = unpaidTotal;
-  const upCard = $('card-unpaid');
-  if (upCard) upCard.classList.toggle('alert', unpaidTotal > 0);
-  const activeUnpaid = unpaidTab === 'balance' ? balUnpaid : depUnpaid;
+  $('dcUnpaid').textContent = depUnpaid.length + balUnpaid.length;
+  // 선택 탭이 비어 있고 다른 탭에 미입금이 있으면 그 탭을 우선 표시
+  let activeTab = unpaidTab;
+  if (activeTab === 'deposit' && depUnpaid.length === 0 && balUnpaid.length > 0) activeTab = 'balance';
+  else if (activeTab === 'balance' && balUnpaid.length === 0 && depUnpaid.length > 0) activeTab = 'deposit';
+  const activeUnpaid = activeTab === 'balance' ? balUnpaid : depUnpaid;
   $('listUnpaid').innerHTML =
     `<div class="unpaid-tabs">
-      <button class="upt${unpaidTab === 'deposit' ? ' active' : ''}" data-upt="deposit">계약금 ${depUnpaid.length}</button>
-      <button class="upt${unpaidTab === 'balance' ? ' active' : ''}" data-upt="balance">잔금 ${balUnpaid.length}</button>
+      <button class="upt${activeTab === 'deposit' ? ' active' : ''}" data-upt="deposit">계약금 ${depUnpaid.length}</button>
+      <button class="upt${activeTab === 'balance' ? ' active' : ''}" data-upt="balance">잔금 ${balUnpaid.length}</button>
     </div>` +
     (activeUnpaid.length
-      ? activeUnpaid.slice(0, 40).map((b) => unpaidItem(b, unpaidTab)).join('')
+      ? activeUnpaid.slice(0, 40).map((b) => unpaidItem(b, activeTab)).join('')
       : '<p class="dash-empty sm">없음</p>');
 
   // ⬇️ 다운로드 링크 필요 (예식 지남 + E 미발송)
