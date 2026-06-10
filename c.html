@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>온더브라이드 · 작가 스케줄 확인</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="survey.css" />
+  <link rel="stylesheet" href="guide.css" />
+</head>
+<body>
+  <header class="sv-header">
+    <img src="assets/logo-black.png" alt="온더브라이드" class="sv-logo" />
+  </header>
+
+  <main class="sv-wrap">
+    <section class="sv-card sv-msg" id="errCard" hidden>
+      <h1>링크를 확인해 주세요</h1>
+      <p>확인 링크가 올바르지 않아요. 온더브라이드에 문의해 주세요.</p>
+    </section>
+
+    <section class="sv-card sv-msg" id="loadCard"><p>불러오는 중입니다…</p></section>
+
+    <article class="sv-card" id="mainCard" hidden>
+      <div class="sv-intro">
+        <p class="sv-eyebrow">PHOTOGRAPHER</p>
+        <h1 class="sv-title">예식 전 스케줄 확인</h1>
+        <p class="sv-greet" id="greet"></p>
+      </div>
+      <p class="ss-guide">아래 예식을 확인하시고, <b>3가지 체크 후 “확인 완료”</b>를 눌러주세요. 변경/문제 사항은 메모에 적어주세요.</p>
+      <div id="schedule"></div>
+      <p class="sv-empty" id="emptyMsg" hidden>배정된 예식이 없습니다.</p>
+    </article>
+  </main>
+
+  <footer class="sv-footer">© ONTHEBRIDE</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="staff-schedule.js"></script>
+</body>
+</html>

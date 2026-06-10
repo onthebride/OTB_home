@@ -378,6 +378,47 @@ end; $$;
 revoke all on function public.staff_schedule(uuid) from public;
 grant execute on function public.staff_schedule(uuid) to anon, authenticated;
 
+-- 단축 링크 (긴 UUID 링크 → 짧은 코드)
+create table if not exists public.short_links (
+  code        text primary key,
+  target_type text not null,
+  booking_id  uuid references public.bookings(id) on delete cascade,
+  staff_id    uuid references public.staff(id) on delete cascade,
+  created_at  timestamptz not null default now()
+);
+alter table public.short_links enable row level security;
+
+create or replace function public.admin_make_check_link(p_booking_id uuid, p_staff_id uuid)
+returns text language plpgsql security definer set search_path=public, pg_temp
+as $$
+declare c text;
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  select code into c from public.short_links where booking_id = p_booking_id and staff_id = p_staff_id and target_type = 'check' limit 1;
+  if c is not null then return c; end if;
+  loop
+    c := substr(replace(gen_random_uuid()::text, '-', ''), 1, 6);
+    begin
+      insert into public.short_links (code, target_type, booking_id, staff_id) values (c, 'check', p_booking_id, p_staff_id);
+      return c;
+    exception when unique_violation then end;
+  end loop;
+end; $$;
+revoke all on function public.admin_make_check_link(uuid, uuid) from public, anon;
+grant execute on function public.admin_make_check_link(uuid, uuid) to authenticated;
+
+create or replace function public.resolve_link(p_code text)
+returns jsonb language plpgsql security definer set search_path=public, pg_temp
+as $$
+declare res jsonb;
+begin
+  select jsonb_build_object('target_type', target_type, 'booking_id', booking_id, 'staff_id', staff_id)
+    into res from public.short_links where code = p_code;
+  return res;
+end; $$;
+revoke all on function public.resolve_link(text) from public;
+grant execute on function public.resolve_link(text) to anon, authenticated;
+
 -- 작가용: 단일 예식 (anon) — 그 예식 하나만 보여주기
 create or replace function public.staff_one(p_booking_id uuid, p_staff_id uuid)
 returns jsonb language plpgsql security definer set search_path=public, pg_temp

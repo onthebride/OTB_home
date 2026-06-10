@@ -5,8 +5,9 @@ const sb = window.supabase && window.OTB_CONFIG
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
-const staffId = params.get('s');
-const bookingId = params.get('b');
+let staffId = params.get('s');
+let bookingId = params.get('b');
+const shortCode = params.get('k');
 const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const esc = (s) => (s == null ? '' : String(s)).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -60,7 +61,15 @@ function card(w) {
 }
 
 async function init() {
-  if (!sb || !staffId || !uuidRe.test(staffId)) { show($('errCard')); return; }
+  if (!sb) { show($('errCard')); return; }
+  // 단축 코드면 먼저 풀어서 staffId/bookingId 채우기
+  if (shortCode && !staffId) {
+    const { data } = await sb.rpc('resolve_link', { p_code: shortCode });
+    if (!data || !data.staff_id) { show($('errCard')); return; }
+    staffId = data.staff_id;
+    bookingId = data.booking_id;
+  }
+  if (!staffId || !uuidRe.test(staffId)) { show($('errCard')); return; }
   const single = bookingId && uuidRe.test(bookingId);
   const { data, error } = single
     ? await sb.rpc('staff_one', { p_booking_id: bookingId, p_staff_id: staffId })
