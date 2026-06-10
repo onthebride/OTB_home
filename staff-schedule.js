@@ -41,11 +41,15 @@ function card(w) {
       ${done ? '<span class="ss-doneflag">확인완료 ✓</span>' : ''}
     </div>
     <div class="ss-info">
-      <div><b>예식장</b> ${esc(w.wedding_venue || '-')}</div>
-      <div><b>신랑</b> ${esc(w.groom_name || '-')} ${esc(w.groom_phone || '')}</div>
-      <div><b>신부</b> ${esc(w.bride_name || '-')} ${esc(w.bride_phone || '')}</div>
-      ${o.length ? `<div><b>옵션</b> ${esc(o.join(', '))}</div>` : ''}
-      ${w.photographer && w.photographer !== '기본' ? `<div><b>촬영</b> ${esc(w.photographer)}</div>` : ''}
+      <div class="ss-grp">
+        <div class="ss-row"><b>예식장</b> : ${esc(w.wedding_venue || '-')}</div>
+      </div>
+      <div class="ss-grp">
+        <div class="ss-row"><b>신랑</b> : ${esc(w.groom_name || '-')}${w.groom_phone ? ' 📞 ' + esc(w.groom_phone) : ''}</div>
+        <div class="ss-row"><b>신부</b> : ${esc(w.bride_name || '-')}${w.bride_phone ? ' 📞 ' + esc(w.bride_phone) : ''}</div>
+      </div>
+      ${o.length ? `<div class="ss-grp"><div class="ss-row"><b>옵션</b> : ${esc(o.join(', '))}</div></div>` : ''}
+      ${w.photographer && w.photographer !== '기본' ? `<div class="ss-grp"><div class="ss-row"><b>촬영</b> : ${esc(w.photographer)}</div></div>` : ''}
     </div>
     <div class="ss-checks">
       <label class="ss-chk"><input type="checkbox" data-k="attend" ${c.attend ? 'checked' : ''} /> <span>참석 / 스케줄 확정 <em>*</em></span></label>

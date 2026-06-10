@@ -80,9 +80,10 @@
 .ss-role.main { background: var(--ink); color: #fff; }
 .ss-role.sub { background: #e3edf5; color: #2c6b9b; }
 .ss-doneflag { margin-left: auto; font-size: .78rem; font-weight: 700; color: #2f7d4f; }
-.ss-info { font-size: .94rem; color: var(--ink); display: grid; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.ss-info > div { display: flex; flex-direction: column; gap: 2px; }
-.ss-info b { color: var(--ink-soft); font-weight: 600; font-size: .76rem; letter-spacing: .02em; }
+.ss-info { color: var(--ink); display: grid; gap: 14px; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.ss-grp { display: grid; gap: 4px; }
+.ss-row { font-size: .94rem; line-height: 1.5; word-break: break-word; }
+.ss-row b { color: var(--ink-soft); font-weight: 600; }
 .ss-checks { display: grid; gap: 10px; margin: 16px 0; }
 .ss-chk { display: flex; align-items: flex-start; gap: 9px; font-size: .92rem; cursor: pointer; }
 .ss-chk em { color: #c0392b; font-style: normal; }
