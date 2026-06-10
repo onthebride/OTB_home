@@ -52,13 +52,22 @@ body {
 .pt-badge.wait { color: #b5462f; background: #f7e0da; }
 
 /* 상품 / 금액 */
-.pt-options {
-  font-family: 'Noto Sans KR', sans-serif;
-  white-space: pre-wrap; word-break: break-word;
-  background: #faf7f2; border: 1px solid var(--line); border-radius: 8px;
-  padding: 14px 16px; font-size: .9rem; line-height: 1.7;
-}
-.pt-amounts { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px; }
+.pt-product { background: #faf7f2; border: 1px solid var(--line); border-radius: 9px; padding: 16px; }
+.pt-product-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.pt-product-name { font-size: 1.02rem; font-weight: 700; }
+.pt-product-price { font-size: 1rem; font-weight: 700; color: var(--gold-deep); white-space: nowrap; }
+.pt-product-desc { list-style: none; margin-top: 10px; display: grid; gap: 5px; }
+.pt-product-desc li { position: relative; padding-left: 15px; font-size: .85rem; color: var(--ink-soft); line-height: 1.55; }
+.pt-product-desc li:before { content: '·'; position: absolute; left: 4px; color: var(--gold); font-weight: 700; }
+
+.pt-optgroup-label { font-size: .82rem; color: var(--ink-soft); margin: 16px 0 8px; font-weight: 500; }
+.pt-opt-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.pt-opt-row:last-child { border-bottom: none; }
+.pt-opt-info .nm { font-size: .92rem; font-weight: 500; }
+.pt-opt-info .ds { font-size: .8rem; color: var(--ink-soft); margin-top: 1px; }
+.pt-opt-price { font-size: .92rem; font-weight: 600; color: var(--gold-deep); white-space: nowrap; }
+
+.pt-amounts { margin-top: 16px; border-top: 1px dashed var(--line); padding-top: 12px; }
 .pt-amount-row { display: flex; justify-content: space-between; font-size: .92rem; padding: 4px 0; }
 .pt-amount-row .lbl { color: var(--ink-soft); }
 .pt-amount-row.total { font-weight: 700; font-size: 1rem; border-top: 1px solid var(--line); margin-top: 6px; padding-top: 10px; }

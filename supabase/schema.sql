@@ -1021,6 +1021,31 @@ create table if not exists public.event_review (
 );
 alter table public.event_review enable row level security;
 
+-- 상품/옵션을 구조화 배열로 (포털 예쁜 표시용) — [{group,name,price}]
+create or replace function public.booking_options_struct(p_id uuid)
+returns jsonb language plpgsql stable set search_path=public, pg_temp as $$
+declare b public.bookings; base int; items jsonb := '[]'::jsonb; co jsonb;
+begin
+  select * into b from public.bookings where id = p_id; if not found then return '[]'::jsonb; end if;
+  base := case when b.package = '베이직(구)' then 50 else 55 end;
+  if b.package is not null then
+    items := items || jsonb_build_object('group','상품','name', replace(b.package,'(데이터형)',''), 'price', base);
+  end if;
+  if b.travel_fee then items := items || jsonb_build_object('group','상품','name','출장비','price',5); end if;
+  if b.option_album then items := items || jsonb_build_object('group','옵션','name','앨범 1권 추가','price',5); end if;
+  if b.option_reception then items := items || jsonb_build_object('group','옵션','name','연회장 인사촬영','price',5); end if;
+  if b.option_pyebaek then items := items || jsonb_build_object('group','옵션','name','폐백촬영','price',10); end if;
+  if b.option_part2 then items := items || jsonb_build_object('group','옵션','name','2부 촬영','price',10); end if;
+  for co in select value from jsonb_array_elements(coalesce(b.custom_options, '[]'::jsonb)) loop
+    items := items || jsonb_build_object('group','옵션','name', co->>'name', 'price', coalesce((co->>'price')::int, 0));
+  end loop;
+  if b.photographer = '2인 촬영' then items := items || jsonb_build_object('group','옵션','name','2인 촬영','price',25); end if;
+  if b.rep_designation then items := items || jsonb_build_object('group','옵션','name','대표지정','price',35); end if;
+  return items;
+end$$;
+revoke all on function public.booking_options_struct(uuid) from public;
+grant execute on function public.booking_options_struct(uuid) to anon, authenticated;
+
 -- 포털 표시용: 예약 + 상품/옵션 + 입금 + 설문여부 + 이벤트 상태 (anon, UUID 자격)
 create or replace function public.portal_booking_info(p_booking_id uuid)
 returns jsonb language plpgsql security definer set search_path=public, pg_temp as $$
@@ -1060,6 +1085,7 @@ begin
     'wedding_venue', b.wedding_venue,
     'package', b.package,
     'options_text', public.fmt_alimtalk_options(b.id),
+    'items', public.booking_options_struct(b.id),
     'total_price', total,
     'deposit', 10,
     'balance', total - 10,

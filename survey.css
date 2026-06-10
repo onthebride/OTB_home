@@ -22,10 +22,18 @@ body {
 img { display: block; max-width: 100%; }
 
 .sv-header {
+  position: relative;
   text-align: center;
   padding: 30px 20px 6px;
 }
 .sv-logo { height: 30px; margin: 0 auto; opacity: .92; }
+.sv-back {
+  position: absolute; left: 16px; top: 30px;
+  font-size: .85rem; color: var(--gold-deep); text-decoration: none;
+  background: #fff; border: 1px solid var(--line); border-radius: 7px; padding: 6px 11px;
+}
+.sv-back:active { background: #faf4ea; }
+@media (max-width: 520px) { .sv-back { position: static; display: inline-block; margin-bottom: 12px; } }
 
 .sv-wrap {
   max-width: 720px;

@@ -19,6 +19,10 @@ const show = (el) => {
 
 const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// 포털에서 왔으면 '내 예약 확인' 돌아가기 링크 노출
+const svBack = $('svBack');
+if (svBack && bookingId && uuidRe.test(bookingId)) { svBack.href = `portal?b=${bookingId}`; svBack.hidden = false; }
+
 /* ===== 레퍼런스 사진 (base64, 최대 5장) ===== */
 const MAX_REFS = 5;
 let refs = []; // [{ url: objectURL(미리보기), blob }]

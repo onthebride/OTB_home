@@ -9,8 +9,26 @@ const params = new URLSearchParams(location.search);
 const bookingId = params.get('b');
 const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// TODO: 실제 입금 계좌로 교체 (관리자 확인 후)
-const ACCOUNT = { bank: '국민은행', number: '000000-00-000000', holder: '온더브라이드' };
+const ACCOUNT = { bank: '카카오뱅크', number: '3333-01-3327565', holder: '김병훈' };
+
+// 상품/옵션 설명 카탈로그 (상품 변경 시 여기만 고치면 됨)
+const PRODUCT_DESC = {
+  '베이직': ['예식 1시간 30분 전, 신부대기실부터 원판촬영까지', '40장 디테일 보정', '원본 제공'],
+  '스페셜': ['예식 1시간 30분 전, 신부대기실부터 원판촬영까지', '40장 디테일 보정', '원본 제공', '앨범 1권 포함'],
+};
+const OPTION_DESC = {
+  '폐백촬영': '환복 후 기념사진 · 폐백 진행 장면 촬영',
+  '연회장 인사촬영': '연회장에서 하객 인사 촬영 (최대 30분)',
+  '2부 촬영': '2부 행사 현장 촬영',
+  '2인 촬영': '작가 2명이 동시에 촬영',
+  '대표지정': '대표 작가 지정 촬영',
+  '앨범 1권 추가': '추가 앨범 제작 1권',
+  '출장비': '촬영 출장 비용',
+};
+const productDesc = (name) => {
+  const key = Object.keys(PRODUCT_DESC).find((k) => String(name).startsWith(k));
+  return key ? PRODUCT_DESC[key] : [];
+};
 
 const loadCard = $('loadCard');
 const errCard = $('errCard');
@@ -34,6 +52,11 @@ const DEMO_INFO = {
   contractor_name: '홍길동', wedding_date: '2026-09-12', wedding_time: '오후 1:30',
   wedding_venue: '아펠가모 선릉', package: '베이직(데이터형)',
   options_text: '베이직 (55)\n\n옵션1\n폐백촬영 (10)\n\n옵션2\n2인 촬영 (25)',
+  items: [
+    { group: '상품', name: '베이직', price: 55 },
+    { group: '옵션', name: '폐백촬영', price: 10 },
+    { group: '옵션', name: '2인 촬영', price: 25 },
+  ],
   total_price: 90, deposit: 10, balance: 80, deposit_paid: false, balance_paid: false,
   status: '신규', survey_done: false, buddy: { state: 'none' }, review: null,
 };
@@ -61,8 +84,28 @@ function render() {
     <dt>예식장</dt><dd>${esc(info.wedding_venue || '-')}</dd>
     <dt>예약상태</dt><dd>${statusBadge}</dd>`;
 
-  // 상품 / 옵션
-  $('optionsBox').textContent = info.options_text || (info.package || '-');
+  // 상품 / 옵션 (구조화)
+  const items = Array.isArray(info.items) ? info.items : [];
+  const products = items.filter((it) => it.group === '상품');
+  const options = items.filter((it) => it.group === '옵션');
+  const mainName = (products[0] && products[0].name) || info.package || '상품';
+  const descLis = productDesc(mainName).map((d) => `<li>${esc(d)}</li>`).join('');
+  // 베이직/스페셜 본상품 + (출장비 등 '상품'그룹 부가)
+  const productExtra = products.slice(1).map((p) =>
+    `<div class="pt-opt-row"><div class="pt-opt-info"><span class="nm">${esc(p.name)}</span></div><span class="pt-opt-price">${won(p.price)}</span></div>`).join('');
+  $('productBox').innerHTML = `
+    <div class="pt-product">
+      <div class="pt-product-top"><span class="pt-product-name">${esc(mainName)}</span><span class="pt-product-price">${won(products[0] ? products[0].price : null)}</span></div>
+      ${descLis ? `<ul class="pt-product-desc">${descLis}</ul>` : ''}
+    </div>
+    ${productExtra ? `<div class="pt-optgroup-label">포함</div>${productExtra}` : ''}`;
+  $('optionsWrap').innerHTML = options.length
+    ? `<div class="pt-optgroup-label">추가 옵션</div>` + options.map((o) => {
+        const ds = OPTION_DESC[o.name] ? `<span class="ds">${esc(OPTION_DESC[o.name])}</span>` : '';
+        return `<div class="pt-opt-row"><div class="pt-opt-info"><span class="nm">${esc(o.name)}</span>${ds}</div><span class="pt-opt-price">${won(o.price)}</span></div>`;
+      }).join('')
+    : '';
+
   const depBadge = info.deposit_paid ? '<span class="pt-badge ok">입금완료</span>' : '<span class="pt-badge wait">입금 전</span>';
   const balBadge = info.balance_paid ? '<span class="pt-badge ok">입금완료</span>' : '<span class="pt-badge wait">입금 전</span>';
   $('amountBox').innerHTML = `
