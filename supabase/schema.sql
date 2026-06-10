@@ -313,12 +313,88 @@ begin
     vars := jsonb_build_object('#{다운로드링크}', b.download_link);
   else raise exception 'bad template'; end if;
 
-  req := private.solapi_send(b.contractor_phone, 'tpl_' || p_template, vars);
+  req := private.alimtalk_dispatch(p_booking_id, p_template, b.contractor_phone, vars);
   update public.bookings set alimtalk_sent = coalesce(alimtalk_sent,'{}'::jsonb) || jsonb_build_object(p_template, to_jsonb(now())) where id = p_booking_id;
   return jsonb_build_object('ok', true, 'req', req);
 end$$;
 revoke all on function public.admin_send_alimtalk(uuid, text) from public, anon;
 grant execute on function public.admin_send_alimtalk(uuid, text) to authenticated;
+
+-- ============================================
+-- 알림톡 발송 안정화: outbox 기록 + 1분 뒤 재시도 (pg_cron)
+-- 발송은 pg_net(net.http_post) 비동기 → 1분 뒤 응답 확인해 실패면 재발송.
+-- HTTP 2xx 만 성공 처리(200인데 미전달은 중복발송 위험으로 재시도 안 함).
+-- ============================================
+create table if not exists private.alimtalk_outbox (
+  id              bigserial primary key,
+  booking_id      uuid,
+  template        text not null,        -- A~E
+  phone           text not null,
+  vars            jsonb not null default '{}'::jsonb,
+  req_id          bigint,               -- 최근 pg_net 요청 id
+  status          text not null default 'sent',  -- sent | delivered | gaveup
+  attempts        int  not null default 1,
+  created_at      timestamptz not null default now(),
+  last_attempt_at timestamptz not null default now(),
+  checked_at      timestamptz
+);
+create index if not exists idx_outbox_pending on private.alimtalk_outbox(status, last_attempt_at);
+
+-- 발송 + outbox 기록 (solapi_send 래퍼)
+create or replace function private.alimtalk_dispatch(p_booking_id uuid, p_template text, p_to text, p_vars jsonb)
+returns bigint language plpgsql security definer set search_path=private, public, extensions, pg_temp as $$
+declare req bigint;
+begin
+  req := private.solapi_send(p_to, 'tpl_' || p_template, p_vars);
+  insert into private.alimtalk_outbox(booking_id, template, phone, vars, req_id)
+    values (p_booking_id, p_template, p_to, p_vars, req);
+  return req;
+end$$;
+
+-- 1분 지난 발송 건의 pg_net 응답을 확인 → 실패면 재발송(최대 3회), 성공이면 delivered
+create or replace function private.alimtalk_retry_due()
+returns int language plpgsql security definer set search_path=private, public, extensions, pg_temp as $$
+declare r record; resp record; ok boolean; n int := 0; newreq bigint;
+begin
+  for r in
+    select * from private.alimtalk_outbox
+    where status = 'sent' and last_attempt_at < now() - interval '1 minute'
+    order by id limit 100
+  loop
+    select status_code, error_msg, timed_out into resp from net._http_response where id = r.req_id;
+    if found then
+      ok := (resp.status_code between 200 and 299) and coalesce(resp.timed_out, false) = false and resp.error_msg is null;
+    else
+      ok := false;  -- 1분 지나도 응답 없음 → 실패로 간주
+    end if;
+
+    if ok then
+      update private.alimtalk_outbox set status = 'delivered', checked_at = now() where id = r.id;
+    elsif r.attempts >= 3 then
+      update private.alimtalk_outbox set status = 'gaveup', checked_at = now() where id = r.id;
+    else
+      newreq := private.solapi_send(r.phone, 'tpl_' || r.template, r.vars);
+      update private.alimtalk_outbox
+        set req_id = newreq, attempts = attempts + 1, last_attempt_at = now(), checked_at = now()
+        where id = r.id;
+      n := n + 1;
+    end if;
+  end loop;
+  return n;
+end$$;
+
+-- 매분 재시도 cron 등록 (pg_cron 있을 때만)
+do $cron$
+begin
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    if exists (select 1 from cron.job where jobname = 'otb-alimtalk-retry') then
+      perform cron.unschedule('otb-alimtalk-retry');
+    end if;
+    perform cron.schedule('otb-alimtalk-retry', '* * * * *', 'select private.alimtalk_retry_due();');
+  else
+    raise notice 'pg_cron 미설치 — Supabase 대시보드에서 pg_cron 활성화 후 이 스크립트 재실행 필요';
+  end if;
+end$cron$;
 
 -- ============================================
 -- 담당자(작가) 명단 + 배정 + 입금확인
