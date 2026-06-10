@@ -803,7 +803,10 @@ function renderDashboard() {
       </div>
     </div>`;
   };
-  $('dcUnpaid').textContent = depUnpaid.length + balUnpaid.length;
+  const unpaidTotal = depUnpaid.length + balUnpaid.length;
+  $('dcUnpaid').textContent = unpaidTotal;
+  const upCard = $('card-unpaid');
+  if (upCard) upCard.classList.toggle('alert', unpaidTotal > 0);
   const activeUnpaid = unpaidTab === 'balance' ? balUnpaid : depUnpaid;
   $('listUnpaid').innerHTML =
     `<div class="unpaid-tabs">
