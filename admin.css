@@ -286,6 +286,9 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .dl-meta { display: block; color: var(--ink-soft); font-size: .8rem; margin-top: 2px; }
 .dday { font-size: .72rem; color: var(--gold-deep); font-weight: 700; margin-left: 4px; }
 .dl-actions { margin-top: 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+/* 신규 예약: 계약안내 전송 버튼을 이름과 같은 높이로 오른쪽 배치 */
+#listNew .dl-item { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+#listNew .dl-actions { margin-top: 0; flex-shrink: 0; }
 .chk-sentflag { font-size: .72rem; color: #2f7d4f; font-weight: 600; }
 .dl-na { font-size: .8rem; color: var(--ink-soft); }
 .dl-dlrow { margin-top: 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
