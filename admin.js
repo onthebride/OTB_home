@@ -206,18 +206,27 @@ async function openDetail(id) {
   if (!b) return;
   $('modal').hidden = false;
   renderView(b);
-  // 설문이 있으면 비동기로 불러와 상세에 주입
+  // 설문: 작성됐으면 내용, 아니면 고객 설문 링크 복사 바
+  let surveyData = null;
   if (surveyIds.has(id)) {
     const { data } = await sb.rpc('admin_survey_get', { p_booking_id: id });
-    // 모달이 여전히 같은 예약을 보고 있을 때만 주입
-    const slot = $('surveySlot');
-    if (data && slot && slot.dataset.bid === id) { slot.innerHTML = renderSurvey(data); bindSurveyControls(); }
+    surveyData = data;
   }
+  const slot = $('surveySlot');
+  if (slot && slot.dataset.bid === id) { slot.innerHTML = renderSurvey(surveyData, id); bindSurveyControls(); }
 }
 
 const PROG_ALL = ['신랑신부 동시 입장', '예물교환', '주례말씀', '축사', '축가', '예배식'];
 
-function renderSurvey(s) {
+function renderSurvey(s, bid) {
+  const customerUrl = location.origin + '/survey?b=' + bid;
+  if (!s) {
+    return `<div class="survey-box">
+      <div class="survey-bar">
+        <span class="survey-none">📝 설문 미작성</span>
+        <button type="button" class="survey-share" data-url="${esc(customerUrl)}">고객 설문 링크 복사</button>
+      </div></div>`;
+  }
   const row = (label, value) =>
     value ? `<div class="sv-row"><span class="sv-l">${esc(label)}</span><span class="sv-v">${esc(value)}</span></div>` : '';
   const yn = (v) => (v ? '예' : '');
@@ -227,14 +236,15 @@ function renderSurvey(s) {
     ? `<div class="sv-row col"><span class="sv-l">레퍼런스 (${refs.length})</span>
         <div class="sv-refs">${refs.map((u, i) => `<img src="${esc(u)}" data-i="${i}" alt="레퍼런스" />`).join('')}</div></div>`
     : '';
-  const shareUrl = location.origin + '/survey-view?b=' + s.booking_id;
+  const shareUrl = location.origin + '/survey-view?b=' + bid;
   return `
     <div class="survey-box">
       <div class="survey-bar">
         <button type="button" class="survey-toggle" id="svToggle" aria-expanded="false">
           📝 예식 전 설문 <small>${esc(fmtDateTime(s.updated_at))} 작성</small> <span class="sv-caret">▾</span>
         </button>
-        <button type="button" class="survey-share" id="svShare" data-url="${esc(shareUrl)}">작가 공유 링크 복사</button>
+        <button type="button" class="survey-share" data-url="${esc(customerUrl)}">고객 링크</button>
+        <button type="button" class="survey-share" data-url="${esc(shareUrl)}">작가 공유</button>
       </div>
       <div class="survey-detail" id="svDetail" hidden>
         ${row('안내사항 확인', yn(s.agree_check))}
@@ -265,8 +275,7 @@ function bindSurveyControls() {
       if (caret) caret.textContent = open ? '▴' : '▾';
     });
   }
-  const share = $('svShare');
-  if (share) {
+  document.querySelectorAll('#surveySlot .survey-share').forEach((share) => {
     share.addEventListener('click', async () => {
       const url = share.dataset.url;
       try {
@@ -276,10 +285,10 @@ function bindSurveyControls() {
         share.classList.add('copied');
         setTimeout(() => { share.textContent = t; share.classList.remove('copied'); }, 1600);
       } catch (_) {
-        prompt('작가에게 보낼 링크를 복사하세요:', url);
+        prompt('아래 링크를 복사하세요:', url);
       }
     });
-  }
+  });
 }
 
 // 읽기 전용 보기 (한눈에) — "수정" 누르면 편집 모드로
