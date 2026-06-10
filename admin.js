@@ -954,12 +954,18 @@ function showDayList(label, items) {
     <div class="day-ov-card">
       <div class="day-ov-head"><strong>${esc(label)}</strong> <span class="muted">${sorted.length}건</span><button class="day-ov-x" aria-label="닫기">&times;</button></div>
       <div class="day-ov-list">${sorted.map((b) => {
-        const bg = staffColor(b.assignee_id) || '#b3ada3';
+        const main = b.assignee_id
+          ? `<span class="dchip ok" style="color:${staffColor(b.assignee_id)}">● ${esc(staffName(b.assignee_id))}</span>`
+          : '<span class="dchip warn">메인 미배정</span>';
+        const sub = b.photographer === '2인 촬영'
+          ? (b.sub_assignee_id ? `<span class="dchip ok" style="color:${staffColor(b.sub_assignee_id)}">● ${esc(staffName(b.sub_assignee_id))}</span>` : '<span class="dchip warn">서브 미배정</span>')
+          : '';
+        const balf = !b.balance_paid ? '<span class="dchip bal">잔금 미입금</span>' : '';
         return `<button class="day-ov-item" data-id="${b.id}">
           <span class="day-ov-time">${esc(kTimeShort(b.wedding_time)) || '-'}</span>
           <span class="day-ov-name">${esc(b.contractor_name || '-')}${phBadge(b)}</span>
           <span class="day-ov-venue">${esc(b.wedding_venue || '-')}</span>
-          <span class="day-ov-asg" style="color:${bg}">${b.assignee_id ? '● ' + esc(staffName(b.assignee_id)) : '미배정'}</span>
+          <span class="day-ov-status">${main}${sub}${balf}</span>
         </button>`;
       }).join('')}</div>
     </div>`;
