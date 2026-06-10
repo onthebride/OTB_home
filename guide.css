@@ -76,9 +76,9 @@
 .ss-card.done { border-color: #9cc7ad; background: #f4faf6; }
 .ss-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
 .ss-date { font-family: var(--kserif); font-weight: 600; font-size: 1.08rem; }
-.ss-role { font-size: .72rem; font-weight: 600; border-radius: 999px; padding: 2px 9px; }
+.ss-role { font-size: .86rem; font-weight: 800; border-radius: 999px; padding: 4px 13px; letter-spacing: .01em; }
 .ss-role.main { background: var(--ink); color: #fff; }
-.ss-role.sub { background: #e3edf5; color: #2c6b9b; }
+.ss-role.sub { background: #2c6b9b; color: #fff; box-shadow: 0 1px 4px rgba(44,107,155,.35); }
 .ss-doneflag { margin-left: auto; font-size: .78rem; font-weight: 700; color: #2f7d4f; }
 .ss-info { color: var(--ink); display: grid; gap: 14px; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .ss-grp { display: grid; gap: 4px; }
