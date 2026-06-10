@@ -236,20 +236,20 @@ begin
   select * into b from public.bookings where id = p_id; if not found then return ''; end if;
   base := case when b.package = '베이직(구)' then 50 else 55 end;
   g0 := array[]::text[]; g1 := array[]::text[]; g2 := array[]::text[];
-  if b.package is not null then g0 := array_append(g0, b.package || ' ' || base || '만원'); end if;
-  if b.travel_fee then g0 := array_append(g0, '출장비 5만원'); end if;
-  if b.option_album then g1 := array_append(g1, '앨범 1권 추가 5만원'); end if;
-  if b.option_reception then g1 := array_append(g1, '연회장 인사촬영 5만원'); end if;
-  if b.option_pyebaek then g1 := array_append(g1, '폐백촬영 10만원'); end if;
-  if b.option_part2 then g1 := array_append(g1, '2부 촬영 10만원'); end if;
+  if b.package is not null then g0 := array_append(g0, replace(b.package, '(데이터형)', '') || ' (' || base || ')'); end if;
+  if b.travel_fee then g0 := array_append(g0, '출장비 (5)'); end if;
+  if b.option_album then g1 := array_append(g1, '앨범 1권 추가 (5)'); end if;
+  if b.option_reception then g1 := array_append(g1, '연회장 인사촬영 (5)'); end if;
+  if b.option_pyebaek then g1 := array_append(g1, '폐백촬영 (10)'); end if;
+  if b.option_part2 then g1 := array_append(g1, '2부 촬영 (10)'); end if;
   for co in select value from jsonb_array_elements(coalesce(b.custom_options, '[]'::jsonb)) loop
-    g1 := array_append(g1, (co->>'name') || ' ' || coalesce(co->>'price','0') || '만원');
+    g1 := array_append(g1, (co->>'name') || ' (' || coalesce(co->>'price','0') || ')');
   end loop;
-  if b.photographer = '2인 촬영' then g2 := array_append(g2, '2인 촬영 25만원'); end if;
-  if b.photographer = '대표지정' then g2 := array_append(g2, '대표지정 35만원'); end if;
-  res := '[기본상품] ' || array_to_string(g0, ', ');
-  if array_length(g1,1) is not null then res := res || E'\n[옵션1] ' || array_to_string(g1, ', '); end if;
-  if array_length(g2,1) is not null then res := res || E'\n[옵션2] ' || array_to_string(g2, ', '); end if;
+  if b.photographer = '2인 촬영' then g2 := array_append(g2, '2인 촬영 (25)'); end if;
+  if b.photographer = '대표지정' then g2 := array_append(g2, '대표지정 (35)'); end if;
+  res := array_to_string(g0, E'\n');
+  if array_length(g1,1) is not null then res := res || E'\n\n옵션1\n' || array_to_string(g1, E'\n'); end if;
+  if array_length(g2,1) is not null then res := res || E'\n\n옵션2\n' || array_to_string(g2, E'\n'); end if;
   return res;
 end$$;
 
