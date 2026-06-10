@@ -64,7 +64,7 @@ begin
     groom_name, groom_phone, bride_name, bride_phone,
     package, travel_fee,
     option_album, option_reception, option_pyebaek, option_part2,
-    photographer, photo_usage_agree, total_price
+    photographer, rep_designation, photo_usage_agree, total_price
   ) values (
     coalesce((payload->>'agree_available')::boolean, false),
     coalesce((payload->>'agree_terms')::boolean, false),
@@ -78,6 +78,7 @@ begin
     coalesce((payload->>'option_pyebaek')::boolean, false),
     coalesce((payload->>'option_part2')::boolean, false),
     coalesce(nullif(payload->>'photographer',''), '기본'),
+    coalesce((payload->>'rep_designation')::boolean, false),
     coalesce((payload->>'photo_usage_agree')::boolean, false),
     nullif(payload->>'total_price','')::int
   ) returning id into new_id;
@@ -156,6 +157,7 @@ begin
     option_pyebaek    = coalesce((payload->>'option_pyebaek')::boolean, false),
     option_part2      = coalesce((payload->>'option_part2')::boolean, false),
     photographer      = coalesce(nullif(payload->>'photographer',''), '기본'),
+    rep_designation   = coalesce((payload->>'rep_designation')::boolean, false),
     photo_usage_agree = coalesce((payload->>'photo_usage_agree')::boolean, false),
     agree_available   = coalesce((payload->>'agree_available')::boolean, false),
     agree_terms       = coalesce((payload->>'agree_terms')::boolean, false),
@@ -183,6 +185,7 @@ alter table public.bookings add column if not exists download_link text;
 alter table public.bookings add column if not exists alimtalk_sent jsonb not null default '{}'::jsonb;
 alter table public.bookings add column if not exists custom_options jsonb not null default '[]'::jsonb;
 alter table public.bookings add column if not exists check_sent_at timestamptz;
+alter table public.bookings add column if not exists rep_designation boolean not null default false;  -- 대표지정 (2인 촬영과 별도)
 
 create or replace function public.admin_set_download_link(p_id uuid, p_link text)
 returns public.bookings language plpgsql security definer set search_path=public, pg_temp
@@ -246,7 +249,7 @@ begin
     g1 := array_append(g1, (co->>'name') || ' (' || coalesce(co->>'price','0') || ')');
   end loop;
   if b.photographer = '2인 촬영' then g2 := array_append(g2, '2인 촬영 (25)'); end if;
-  if b.photographer = '대표지정' then g2 := array_append(g2, '대표지정 (35)'); end if;
+  if b.rep_designation then g2 := array_append(g2, '대표지정 (35)'); end if;
   res := array_to_string(g0, E'\n');
   if array_length(g1,1) is not null then res := res || E'\n\n옵션1\n' || array_to_string(g1, E'\n'); end if;
   if array_length(g2,1) is not null then res := res || E'\n\n옵션2\n' || array_to_string(g2, E'\n'); end if;
@@ -334,7 +337,7 @@ returns trigger language plpgsql security definer set search_path=public, pg_tem
 as $$
 declare rep uuid;
 begin
-  if new.photographer = '대표지정' and new.assignee_id is null then
+  if new.rep_designation and new.assignee_id is null then
     select id into rep from public.staff where is_rep = true and active = true order by created_at limit 1;
     if rep is not null then new.assignee_id := rep; end if;
   end if;
@@ -468,7 +471,7 @@ begin
       'bride_name', b.bride_name, 'bride_phone', b.bride_phone,
       'groom_name', b.groom_name, 'groom_phone', b.groom_phone,
       'option_reception', b.option_reception, 'option_pyebaek', b.option_pyebaek, 'option_part2', b.option_part2,
-      'option_album', b.option_album, 'photographer', b.photographer, 'custom_options', b.custom_options,
+      'option_album', b.option_album, 'photographer', b.photographer, 'rep_designation', b.rep_designation, 'custom_options', b.custom_options,
       'chk', (select jsonb_build_object('attend', c.attend, 'arrival', c.arrival, 'options', c.options, 'note', c.note, 'checked_at', c.checked_at)
               from public.assignment_checks c where c.booking_id = b.id and c.staff_id = p_staff_id)
     ) as x
@@ -540,7 +543,7 @@ begin
     'bride_name', b.bride_name, 'bride_phone', b.bride_phone,
     'groom_name', b.groom_name, 'groom_phone', b.groom_phone,
     'option_reception', b.option_reception, 'option_pyebaek', b.option_pyebaek, 'option_part2', b.option_part2,
-    'option_album', b.option_album, 'photographer', b.photographer, 'custom_options', b.custom_options,
+    'option_album', b.option_album, 'photographer', b.photographer, 'rep_designation', b.rep_designation, 'custom_options', b.custom_options,
     'chk', (select jsonb_build_object('attend', c.attend, 'arrival', c.arrival, 'options', c.options, 'note', c.note, 'checked_at', c.checked_at)
             from public.assignment_checks c where c.booking_id = b.id and c.staff_id = p_staff_id)
   )));
@@ -878,7 +881,7 @@ begin
       'wedding_date', b.wedding_date, 'wedding_time', b.wedding_time, 'wedding_venue', b.wedding_venue,
       'option_reception', b.option_reception, 'option_pyebaek', b.option_pyebaek,
       'option_part2', b.option_part2, 'option_album', b.option_album,
-      'travel_fee', b.travel_fee, 'photographer', b.photographer);
+      'travel_fee', b.travel_fee, 'photographer', b.photographer, 'rep_designation', b.rep_designation);
   end if;
   select coalesce(jsonb_agg(data_url order by sort), '[]'::jsonb) into refs
     from public.survey_refs where booking_id = p_booking_id;
@@ -890,7 +893,7 @@ begin
     'wedding_date', b.wedding_date, 'wedding_time', b.wedding_time, 'wedding_venue', b.wedding_venue,
     'option_reception', b.option_reception, 'option_pyebaek', b.option_pyebaek,
     'option_part2', b.option_part2, 'option_album', b.option_album,
-    'travel_fee', b.travel_fee, 'photographer', b.photographer,
+    'travel_fee', b.travel_fee, 'photographer', b.photographer, 'rep_designation', b.rep_designation,
     'priority', s.priority, 'prop_ring', s.prop_ring, 'bride_room_req', s.bride_room_req,
     'prog_items', s.prog_items, 'bridal_focus', s.bridal_focus,
     'wonpan_first', s.wonpan_first, 'wonpan_light', s.wonpan_light,

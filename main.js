@@ -301,6 +301,7 @@ if (bookingForm) {
       option_pyebaek: checked('f_option_pyebaek'),
       option_part2: checked('f_option_part2'),
       photographer: radioVal('photographer') || '기본',
+      rep_designation: checked('f_rep'),
       photo_usage_agree: radioVal('usage') === 'yes',
       total_price: calcTotal(),
     };
@@ -333,7 +334,7 @@ if (bookingForm) {
       if (row.option_pyebaek) items.push('폐백촬영 (10)');
       if (row.option_part2) items.push('2부 촬영 (10)');
       if (row.photographer === '2인 촬영') items.push('2인 촬영 (25)');
-      if (row.photographer === '대표지정') items.push('대표지정 (35)');
+      if (row.rep_designation) items.push('대표지정 (35)');
 
       const body = [
         '* 온더브라이드 계약안내서 *',

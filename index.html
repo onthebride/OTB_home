@@ -421,11 +421,13 @@
       <!-- 옵션 2 -->
       <fieldset class="bk-group">
         <legend>옵션 2 · 작가 선택 <small>(선택)</small></legend>
-        <p class="opt-hint">필수 아님!</p>
+        <p class="opt-hint">기본/2인 중 하나 + 대표지정은 추가로 선택 가능</p>
         <ul class="opt-list">
           <li class="opt"><label class="check"><input type="radio" name="photographer" value="기본" data-price="0" checked /> <span class="opt-name">기본 (1인 촬영)</span></label><span class="opt-price">+0원</span></li>
           <li class="opt"><label class="check"><input type="radio" name="photographer" value="2인 촬영" data-price="25" /> <span class="opt-name">2인 촬영</span></label><span class="opt-price">+25만원</span></li>
-          <li class="opt"><label class="check"><input type="radio" name="photographer" value="대표지정" data-price="35" /> <span class="opt-name">대표지정</span></label><span class="opt-price">+35만원</span></li>
+        </ul>
+        <ul class="opt-list" style="margin-top:10px">
+          <li class="opt"><label class="check"><input type="checkbox" id="f_rep" data-price="35" /> <span class="opt-name">대표지정</span></label><span class="opt-price">+35만원</span></li>
         </ul>
         <ul class="opt-notes">
           <li>선택 안 하셔도 되며, 선택을 안 하시면 대표 포함 모든 작가분들 중 랜덤 배정됩니다.</li>

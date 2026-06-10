@@ -28,8 +28,8 @@ let staffMap = {};
 const ATK_TPLS = [['A', '계약안내'], ['B', '한달 전'], ['C', '잔금안내'], ['D', '최종안내'], ['E', '링크안내']];
 const notCancelled = (b) => b.status !== '취소';
 const phBadge = (b) =>
-  b.photographer === '대표지정' ? ' <span class="ph-badge rep">대표지정</span>'
-    : b.photographer === '2인 촬영' ? ' <span class="ph-badge two">2인촬영</span>' : '';
+  (b.rep_designation ? ' <span class="ph-badge rep">대표지정</span>' : '')
+  + (b.photographer === '2인 촬영' ? ' <span class="ph-badge two">2인촬영</span>' : '');
 const STAFF_COLORS = ['#b08d57', '#6b8e9b', '#9b6b8e', '#7d9b6b', '#9b7d6b', '#6b6b9b', '#b5727a', '#5fa3a3', '#a38b5f', '#8a6ba3'];
 function staffColor(id) {
   if (!id) return null;
@@ -346,7 +346,8 @@ function renderView(b, flash) {
       ${field('신부님', (b.bride_name || '') + ' / ' + (b.bride_phone || ''))}
       ${field('상품', b.package)}
       ${b.travel_fee ? field('출장비', '있음 (50,000원)') : ''}
-      ${b.photographer && b.photographer !== '기본' ? field('촬영', b.photographer) : ''}
+      ${b.photographer === '2인 촬영' ? field('촬영', '2인 촬영') : ''}
+      ${b.rep_designation ? field('대표지정', '예') : ''}
       ${b.photo_usage_agree ? field('촬영본 사용동의', 'YES') : ''}
       ${field('합계', won(b.total_price))}
       <div><p class="dl">계약금</p><p class="dv">${won(10)} · <span class="pay-st ${b.deposit_paid ? 'paid' : ''}">${b.deposit_paid ? '입금완료 ✓' : '미입금'}</span> <button class="pay-toggle" data-pay="deposit">${b.deposit_paid ? '해제' : '입금확인'}</button></p></div>
@@ -489,9 +490,9 @@ function renderEdit(b) {
       <select id="e_photographer">
         <option value="기본" data-price="0" ${sl(b.photographer, '기본')}>기본 (1인 촬영)</option>
         <option value="2인 촬영" data-price="25" ${sl(b.photographer, '2인 촬영')}>2인 촬영 (+25만원)</option>
-        <option value="대표지정" data-price="35" ${sl(b.photographer, '대표지정')}>대표지정 (+35만원)</option>
       </select>
     </div>
+    <label class="eopt" style="margin-top:8px"><input type="checkbox" id="e_rep" data-price="35" ${ck(b.rep_designation)} /><span>대표지정</span><b>+35만원</b></label>
     <label class="eopt" style="margin-top:8px"><input type="checkbox" id="e_usage" data-price="-1" ${ck(b.photo_usage_agree)} /><span>촬영본 사용동의 (YES)</span><b>-1만원</b></label>
 
     <h5 class="eg">커스텀 옵션 <small>(예전·비표준 옵션)</small></h5>
@@ -633,6 +634,7 @@ async function saveDetail(id, recalcEdit) {
     option_pyebaek: cc('e_option_pyebaek'),
     option_part2: cc('e_option_part2'),
     photographer: $('e_photographer').value,
+    rep_designation: cc('e_rep'),
     photo_usage_agree: cc('e_usage'),
     agree_available: cc('e_agree_available'),
     agree_terms: cc('e_agree_terms'),
@@ -988,7 +990,7 @@ function bookingOpts(b) {
   if (b.option_part2) o.push('2부');
   if (b.travel_fee) o.push('출장');
   if (b.photographer === '2인 촬영') o.push('2인');
-  if (b.photographer === '대표지정') o.push('대표지정');
+  if (b.rep_designation) o.push('대표지정');
   (Array.isArray(b.custom_options) ? b.custom_options : []).forEach((c) => { if (c && c.name) o.push(c.name); });
   return o;
 }

@@ -49,7 +49,7 @@ function card(w) {
         <div class="ss-row"><b>신부</b> : ${esc(w.bride_name || '-')}${w.bride_phone ? ' 📞 ' + esc(w.bride_phone) : ''}</div>
       </div>
       ${o.length ? `<div class="ss-grp"><div class="ss-row"><b>옵션</b> : ${esc(o.join(', '))}</div></div>` : ''}
-      ${w.photographer && w.photographer !== '기본' ? `<div class="ss-grp"><div class="ss-row"><b>촬영</b> : ${esc(w.photographer)}</div></div>` : ''}
+      ${(w.photographer === '2인 촬영' || w.rep_designation) ? `<div class="ss-grp"><div class="ss-row"><b>촬영</b> : ${esc([w.photographer === '2인 촬영' ? '2인 촬영' : '', w.rep_designation ? '대표지정' : ''].filter(Boolean).join(', '))}</div></div>` : ''}
     </div>
     <div class="ss-checks">
       <label class="ss-chk"><input type="checkbox" data-k="attend" ${c.attend ? 'checked' : ''} /> <span>참석 / 스케줄 확정 <em>*</em></span></label>

@@ -32,7 +32,8 @@ function renderWeddingInfo(d) {
   if (d.option_pyebaek) opts.push('폐백촬영');
   if (d.option_part2) opts.push('2부 촬영');
   if (d.option_album) opts.push('앨범 1권 추가');
-  if (d.photographer && d.photographer !== '기본') opts.push(d.photographer);
+  if (d.photographer === '2인 촬영') opts.push('2인 촬영');
+  if (d.rep_designation) opts.push('대표지정');
   if (d.travel_fee) opts.push('출장');
   const optText = opts.length ? opts.join(', ') : '없음';
 
