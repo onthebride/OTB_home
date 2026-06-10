@@ -221,8 +221,25 @@ async function openDetail(id) {
   if (b.assignee_id) {
     const cr = await sb.rpc('admin_booking_checks', { p_booking_id: id });
     const cslot = $('checkSlot');
-    if (cslot && cslot.dataset.bid === id) cslot.innerHTML = renderChecks(b, Array.isArray(cr.data) ? cr.data : []);
+    if (cslot && cslot.dataset.bid === id) {
+      cslot.innerHTML = renderChecks(b, Array.isArray(cr.data) ? cr.data : []);
+      cslot.querySelectorAll('.chk-link').forEach((btn) => btn.addEventListener('click', () => copyCheckLink(btn.dataset.bid, btn.dataset.staff, btn.dataset.role)));
+    }
   }
+}
+
+async function copyCheckLink(bid, sid, roleLabel) {
+  if (!sid) { toast('먼저 작가를 배정하세요.'); return; }
+  const lr = await sb.rpc('admin_make_check_link', { p_booking_id: bid, p_staff_id: sid });
+  const url = lr.data ? location.origin + '/c?k=' + lr.data : location.origin + '/staff-schedule?s=' + sid + '&b=' + bid;
+  try { await navigator.clipboard.writeText(url); } catch (_) { prompt('작가 체크 링크 (복사):', url); }
+  const { data } = await sb.rpc('admin_mark_check_sent', { p_id: bid, p_on: true });
+  const i = allBookings.findIndex((x) => x.id === bid);
+  if (i >= 0 && data) allBookings[i] = data;
+  const ures = await sb.rpc('admin_unconfirmed');
+  allUnconfirmed = Array.isArray(ures.data) ? ures.data : [];
+  toast(`${roleLabel} 체크 링크 복사됨 · 보냄 표시`);
+  renderDashboard();
 }
 
 function renderChecks(b, checks) {
@@ -236,8 +253,11 @@ function renderChecks(b, checks) {
     const items = c ? `참석 ${c.attend ? '✓' : '✕'} · 도착 ${c.arrival ? '✓' : '✕'} · 옵션 ${c.options ? '✓' : '✕'}` : '';
     const st = c ? (ok ? '✔ 확인완료' : '△ 일부확인') : '미확인';
     return `<div class="chk-line ${ok ? 'ok' : c ? 'partial' : 'none'}">
-      <span class="chk-role">${esc(role)} · ${esc(name)}</span>
-      <span class="chk-st">${st}${c && c.checked_at ? ' <small>' + esc(fmtDateTime(c.checked_at)) + '</small>' : ''}</span>
+      <div class="chk-head">
+        <span class="chk-role">${esc(role)} · ${esc(name)}</span>
+        <span class="chk-st">${st}${c && c.checked_at ? ' <small>' + esc(fmtDateTime(c.checked_at)) + '</small>' : ''}</span>
+        <button class="btn-sm chk-link" data-bid="${esc(b.id)}" data-staff="${esc(sid)}" data-role="${esc(role)}">${ok ? '재전송' : '체크 링크'}</button>
+      </div>
       ${items ? `<div class="chk-items">${esc(items)}</div>` : ''}
       ${c && c.note ? `<div class="chk-note">📝 ${esc(c.note)}</div>` : ''}
     </div>`;
@@ -839,23 +859,7 @@ function bindDashEvents() {
   );
   // 작가 체크 링크 전송(복사 + 보냄 표시)
   document.querySelectorAll('#tab-dashboard .chk-send').forEach((btn) =>
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const id = btn.dataset.id;
-      const sid = btn.dataset.staff;
-      btn.disabled = true;
-      const lr = await sb.rpc('admin_make_check_link', { p_booking_id: id, p_staff_id: sid });
-      btn.disabled = false;
-      const url = lr.data ? location.origin + '/c?k=' + lr.data : location.origin + '/staff-schedule?s=' + sid + '&b=' + id;
-      try { await navigator.clipboard.writeText(url); } catch (_) { prompt('작가 체크 링크:', url); }
-      const { data } = await sb.rpc('admin_mark_check_sent', { p_id: id, p_on: true });
-      const i = allBookings.findIndex((x) => x.id === id);
-      if (i >= 0 && data) allBookings[i] = data;
-      const ures = await sb.rpc('admin_unconfirmed');
-      allUnconfirmed = Array.isArray(ures.data) ? ures.data : [];
-      toast(`${btn.dataset.role} 작가(${staffName(sid)}) 체크 링크 복사됨 · 보냄 표시`);
-      renderDashboard();
-    })
+    btn.addEventListener('click', (e) => { e.stopPropagation(); copyCheckLink(btn.dataset.id, btn.dataset.staff, `${btn.dataset.role} 작가(${staffName(btn.dataset.staff)})`); })
   );
   // 항목(이름/메타) 클릭 → 상세
   document.querySelectorAll('#tab-dashboard .dl-main').forEach((m) =>
