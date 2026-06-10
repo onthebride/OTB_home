@@ -360,11 +360,14 @@ function renderView(b, flash) {
     <div id="surveySlot" data-bid="${esc(b.id)}">${surveyIds.has(b.id) ? '<p class="survey-loading">📝 설문 불러오는 중…</p>' : ''}</div>
 
     <div class="atk-prog">
-      <p class="dl">알림톡 진행 <small>(눌러서 보냄/취소 표시 · 실제 자동발송은 솔라피 연동 후)</small></p>
-      <div class="atk-badges">
+      <p class="dl">알림톡 발송 <small>([발송]=실제 전송 · 배지=보냄 수동표시(클릭 토글))</small></p>
+      <div class="atk-rows">
         ${ATK_TPLS.map(([k, label]) => {
           const on = b.alimtalk_sent && b.alimtalk_sent[k];
-          return `<button class="atk-badge${on ? ' on' : ''}" data-atk="${k}">${esc(k)}. ${esc(label)}${on ? ' ✓' : ''}</button>`;
+          return `<div class="atk-row">
+            <button class="atk-send" data-send-atk="${k}">발송</button>
+            <button class="atk-badge${on ? ' on' : ''}" data-atk="${k}">${esc(k)}. ${esc(label)}${on ? ' ✓' : ''}</button>
+          </div>`;
         }).join('')}
       </div>
     </div>
@@ -421,6 +424,10 @@ function renderView(b, flash) {
       renderDashboard();
       renderView(data || b);
     })
+  );
+  // 알림톡 실제 발송
+  $('modalCard').querySelectorAll('.atk-send').forEach((btn) =>
+    btn.addEventListener('click', () => sendAlimtalk(b.id, btn.dataset.sendAtk))
   );
 
   // 레퍼런스 사진 클릭 → 크게 보기
