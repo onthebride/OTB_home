@@ -977,7 +977,7 @@ function showDayList(label, items) {
   const close = () => ov.remove();
   ov.querySelector('.day-ov-bg').addEventListener('click', close);
   ov.querySelector('.day-ov-x').addEventListener('click', close);
-  ov.querySelectorAll('.day-ov-item').forEach((it) => it.addEventListener('click', () => { close(); openDetail(it.dataset.id); }));
+  ov.querySelectorAll('.day-ov-item').forEach((it) => it.addEventListener('click', () => openDetail(it.dataset.id)));
 }
 
 if ($('calPrev')) {
