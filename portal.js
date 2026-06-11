@@ -194,7 +194,8 @@ function renderDownload() {
     <li>원본은 작업 여부와 상관없이 <b>14개월 이후</b> 사전 안내 없이 서버에서 삭제됩니다.</li>
   </ul>`;
   const selectLink = `<a class="pt-btn ghost full" href="select-guide" target="_blank" rel="noopener" style="margin-top:10px">📖 셀렉 안내 보기</a>`;
-  if (info.download_ready && info.download_link) {
+  const ready = !!(info.download_ready && info.download_link);
+  if (ready) {
     box.innerHTML = `
       <p class="pt-sub">촬영본 원본파일이 준비됐어요! 아래에서 다운로드하세요. 🤍</p>
       <a class="pt-btn full" href="${esc(info.download_link)}" target="_blank" rel="noopener">원본파일 다운로드</a>
@@ -202,12 +203,15 @@ function renderDownload() {
   } else if (info.balance_paid) {
     box.innerHTML = `<div class="pt-locked">
       <span class="pt-lock-ico">🎞️</span>
-      <p>촬영 후 원본이 준비되면<br>이곳에서 바로 받으실 수 있어요.</p></div>${notes}${selectLink}`;
+      <p>촬영 후 원본이 준비되면<br>이곳에서 바로 받으실 수 있어요.</p></div>${selectLink}`;
   } else {
     box.innerHTML = `<div class="pt-locked">
       <span class="pt-lock-ico">🔒</span>
       <p><b>잔금 입금이 확인되면</b> 원본 다운로드가 열려요.</p></div>${selectLink}`;
   }
+  // 링크 올라오면 다운로드 박스를 최상단으로
+  const card = document.getElementById('downloadCard');
+  if (card) card.classList.toggle('dl-top', ready);
 }
 
 /* ===== 짝꿍 ===== */
