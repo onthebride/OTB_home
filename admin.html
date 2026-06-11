@@ -38,6 +38,7 @@
     <div class="dash-body">
       <div class="dash-tabs">
         <button class="dtab active" data-tab="dashboard">대시보드</button>
+        <button class="dtab" data-tab="calendar">캘린더</button>
         <button class="dtab" data-tab="bookings">예약</button>
         <button class="dtab" data-tab="staff">작가관리</button>
         <button class="dtab" data-tab="gallery">갤러리</button>
@@ -76,12 +77,28 @@
           <div class="dash-card-head">
             <h3>📆 예식 캘린더</h3>
             <div class="cal-nav">
-              <button class="btn-ghost" id="calPrev">‹</button>
-              <span id="calLabel"></span>
-              <button class="btn-ghost" id="calNext">›</button>
+              <button class="btn-ghost cal-prev">‹</button>
+              <span class="cal-label"></span>
+              <button class="btn-ghost cal-next">›</button>
+              <button class="btn-sm cal-today">오늘</button>
             </div>
           </div>
-          <div class="calendar" id="calendar"></div>
+          <div class="calendar cal-mount"></div>
+        </div>
+      </div>
+
+      <div id="tab-calendar" hidden>
+        <div class="dash-card cal-card">
+          <div class="dash-card-head">
+            <h3>📆 예식 캘린더</h3>
+            <div class="cal-nav">
+              <button class="btn-ghost cal-prev">‹</button>
+              <span class="cal-label"></span>
+              <button class="btn-ghost cal-next">›</button>
+              <button class="btn-sm cal-today">오늘</button>
+            </div>
+          </div>
+          <div class="calendar cal-mount"></div>
         </div>
 
         <div class="dash-card sched-card">

@@ -1045,7 +1045,7 @@ function bindDashEvents() {
 function renderCalendar() {
   if (!calMonth) { const t = new Date(); calMonth = { y: t.getFullYear(), m: t.getMonth() }; }
   const { y, m } = calMonth;
-  $('calLabel').textContent = `${y}년 ${m + 1}월`;
+  document.querySelectorAll('.cal-label').forEach((el) => (el.textContent = `${y}년 ${m + 1}월`));
   const startDay = new Date(y, m, 1).getDay();
   const days = new Date(y, m + 1, 0).getDate();
   const today = startOfToday();
@@ -1076,10 +1076,12 @@ function renderCalendar() {
     </div>`;
   }
   html += '</div>';
-  $('calendar').innerHTML = html;
-  $('calendar').querySelectorAll('.cal-cell.has').forEach((c) =>
-    c.addEventListener('click', () => { const d = +c.dataset.day; showDayList(`${y}년 ${m + 1}월 ${d}일`, byDay[d] || []); })
-  );
+  document.querySelectorAll('.cal-mount').forEach((mount) => {
+    mount.innerHTML = html;
+    mount.querySelectorAll('.cal-cell.has').forEach((c) =>
+      c.addEventListener('click', () => { const d = +c.dataset.day; showDayList(`${y}년 ${m + 1}월 ${d}일`, byDay[d] || []); })
+    );
+  });
 }
 
 function showDayList(label, items) {
@@ -1115,10 +1117,13 @@ function showDayList(label, items) {
   ov.querySelectorAll('.day-ov-item').forEach((it) => it.addEventListener('click', () => openDetail(it.dataset.id)));
 }
 
-if ($('calPrev')) {
-  $('calPrev').addEventListener('click', () => { calMonth.m--; if (calMonth.m < 0) { calMonth.m = 11; calMonth.y--; } renderCalendar(); renderSchedule(); });
-  $('calNext').addEventListener('click', () => { calMonth.m++; if (calMonth.m > 11) { calMonth.m = 0; calMonth.y++; } renderCalendar(); renderSchedule(); });
-}
+function ensureCalMonth() { if (!calMonth) { const t = new Date(); calMonth = { y: t.getFullYear(), m: t.getMonth() }; } }
+document.querySelectorAll('.cal-prev').forEach((b) =>
+  b.addEventListener('click', () => { ensureCalMonth(); calMonth.m--; if (calMonth.m < 0) { calMonth.m = 11; calMonth.y--; } renderCalendar(); renderSchedule(); }));
+document.querySelectorAll('.cal-next').forEach((b) =>
+  b.addEventListener('click', () => { ensureCalMonth(); calMonth.m++; if (calMonth.m > 11) { calMonth.m = 0; calMonth.y++; } renderCalendar(); renderSchedule(); }));
+document.querySelectorAll('.cal-today').forEach((b) =>
+  b.addEventListener('click', () => { const t = new Date(); calMonth = { y: t.getFullYear(), m: t.getMonth() }; renderCalendar(); renderSchedule(); }));
 
 /* ===== 월별 일정 · 담당자 배정 ===== */
 if ($('schedToggle')) {
@@ -1371,11 +1376,13 @@ if (dashTabs) {
     document.querySelectorAll('.dtab').forEach((x) => x.classList.toggle('active', x === t));
     const tab = t.dataset.tab;
     $('tab-dashboard').hidden = tab !== 'dashboard';
+    $('tab-calendar').hidden = tab !== 'calendar';
     $('tab-bookings').hidden = tab !== 'bookings';
     $('tab-staff').hidden = tab !== 'staff';
     $('tab-gallery').hidden = tab !== 'gallery';
     $('tab-events').hidden = tab !== 'events';
     if (tab === 'dashboard') renderDashboard();
+    if (tab === 'calendar') { renderCalendar(); renderSchedule(); }
     if (tab === 'staff') renderStaff();
     if (tab === 'gallery') loadGallery();
     if (tab === 'events') loadEvents();
