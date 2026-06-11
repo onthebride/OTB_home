@@ -57,9 +57,12 @@ const DEMO_INFO = {
     { group: '옵션', name: '폐백촬영', price: 10 },
     { group: '옵션', name: '2인 촬영', price: 25 },
   ],
-  total_price: 90, effective_total: 90, discount: 0, event_rewards: [],
-  deposit: 10, balance: 80, deposit_paid: false, balance_paid: false,
-  status: '신규', survey_done: false, buddy: { state: 'none' }, review: null,
+  total_price: 90, effective_total: 89, discount: 1,
+  event_rewards: [{ type: '짝꿍', reward: '할인' }, { type: '후기', reward: '앨범' }],
+  deposit: 10, balance: 79, deposit_paid: false, balance_paid: false,
+  status: '신규', survey_done: false,
+  buddy: { state: 'approved', partner_name: '김철수', reward: '할인', my_role: 'requester', id: 'demo' },
+  review: { link: 'https://blog.naver.com/example', reward: '앨범', status: 'approved' },
 };
 
 const rewardSelect = (id, val) => `<select id="${id}" class="pt-reward-sel">
