@@ -16,6 +16,9 @@ const fmtDateTime = (s) =>
   s ? new Date(s).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }) : '-';
 
 let allBookings = [];
+let eventDiscounts = {}; // {booking_id: 승인된 할인 만원}
+const evDc = (b) => Number(eventDiscounts[b.id]) || 0;
+const effBalance = (b) => (b.total_price != null ? b.total_price - 10 - evDc(b) : null);
 let filter = '전체';
 let bkSearchTerm = '';
 let bkMonth = null; // 예약 목록 월별 페이지 {y, m}
@@ -95,6 +98,8 @@ async function loadBookings() {
   surveyIds = new Set(Array.isArray(sres.data) ? sres.data : []);
   const ures = await sb.rpc('admin_unconfirmed');
   allUnconfirmed = Array.isArray(ures.data) ? ures.data : [];
+  const dres = await sb.rpc('admin_event_discounts');
+  eventDiscounts = (dres.data && typeof dres.data === 'object') ? dres.data : {};
   await loadStaff();
   render();
   renderDashboard();
@@ -397,7 +402,8 @@ function renderView(b, flash) {
       ${b.photo_usage_agree ? field('촬영본 사용동의', 'YES') : ''}
       ${field('합계', won(b.total_price))}
       <div><p class="dl">계약금</p><p class="dv">${won(10)} · <span class="pay-st ${b.deposit_paid ? 'paid' : ''}">${b.deposit_paid ? '입금완료 ✓' : '미입금'}</span> <button class="pay-toggle" data-pay="deposit">${b.deposit_paid ? '해제' : '입금확인'}</button></p></div>
-      <div><p class="dl">잔금</p><p class="dv">${b.total_price != null ? won(b.total_price - 10) : '-'} · <span class="pay-st ${b.balance_paid ? 'paid' : ''}">${b.balance_paid ? '입금완료 ✓' : '미입금'}</span> <button class="pay-toggle" data-pay="balance">${b.balance_paid ? '해제' : '입금확인'}</button></p></div>
+      ${evDc(b) > 0 ? `<div><p class="dl">이벤트 할인</p><p class="dv" style="color:#2f7d4f;font-weight:600">−${evDc(b)}만원</p></div>` : ''}
+      <div><p class="dl">잔금${evDc(b) > 0 ? ' <small style="color:#2f7d4f">(할인적용)</small>' : ''}</p><p class="dv">${effBalance(b) != null ? won(effBalance(b)) : '-'} · <span class="pay-st ${b.balance_paid ? 'paid' : ''}">${b.balance_paid ? '입금완료 ✓' : '미입금'}</span> <button class="pay-toggle" data-pay="balance">${b.balance_paid ? '해제' : '입금확인'}</button></p></div>
       ${b.admin_note ? `<div class="full2">${field('관리자 메모', b.admin_note)}</div>` : ''}
     </div>
 
@@ -863,7 +869,7 @@ function renderDashboard() {
   const balUnpaid = allBookings.filter((b) => b.alimtalk_sent && b.alimtalk_sent.C && !b.balance_paid && notCancelled(b)).sort(byDate);
   const nowMs = Date.now();
   const unpaidItem = (b, kind) => {
-    const amt = kind === 'deposit' ? won(10) : (b.total_price != null ? won(b.total_price - 10) : '-');
+    const amt = kind === 'deposit' ? won(10) : (effBalance(b) != null ? won(effBalance(b)) : '-');
     const sent = b.alimtalk_sent && b.alimtalk_sent[kind === 'deposit' ? 'A' : 'C'];
     const days = sent ? Math.floor((nowMs - new Date(sent).getTime()) / 86400000) : 0;
     const overdue = days >= 5;
@@ -1421,7 +1427,11 @@ async function eventAction(kind, id, action) {
   if (error) { alert('처리 실패: ' + error.message); return; }
   const labels = { approve: '승인했어요', cancel: '취소했어요', reject: '반려했어요' };
   toast(labels[action] || '처리 완료');
+  // 할인(승인된 '할인' 혜택)이 바뀔 수 있으니 갱신 후 대시보드 반영
+  const dres = await sb.rpc('admin_event_discounts');
+  eventDiscounts = (dres.data && typeof dres.data === 'object') ? dres.data : {};
   loadEvents();
+  renderDashboard();
 }
 
 let glQueue = []; // [{ file, url }] — 하나씩 누적

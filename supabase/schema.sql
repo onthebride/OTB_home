@@ -1275,3 +1275,23 @@ begin
 end$$;
 revoke all on function public.admin_review_set(uuid, text) from public, anon;
 grant execute on function public.admin_review_set(uuid, text) to authenticated;
+
+-- 관리자: 예약별 승인된 '할인' 혜택 합계 (만원) — {booking_id: 할인만원}
+create or replace function public.admin_event_discounts()
+returns jsonb language plpgsql security definer set search_path=public, pg_temp as $$
+declare res jsonb;
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  with d as (
+    select requester_id as booking_id, 1 as dc from public.event_buddy where status='approved' and reward='할인'
+    union all
+    select partner_id as booking_id, 1 from public.event_buddy where status='approved' and partner_reward='할인'
+    union all
+    select booking_id, 1 from public.event_review where status='approved' and reward='할인'
+  )
+  select coalesce(jsonb_object_agg(booking_id, dsum), '{}'::jsonb) into res
+  from (select booking_id, sum(dc) as dsum from d where booking_id is not null group by booking_id) t;
+  return res;
+end$$;
+revoke all on function public.admin_event_discounts() from public, anon;
+grant execute on function public.admin_event_discounts() to authenticated;
