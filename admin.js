@@ -419,6 +419,17 @@ function renderView(b, flash) {
       </div>
     </div>
 
+    <div class="dl-detail-box">
+      <p class="dl">📁 촬영본 원본 링크 ${(b.alimtalk_sent && b.alimtalk_sent.E) ? '<span class="dl-esent">· E 발송됨 ✓</span>' : ''}</p>
+      ${b.balance_paid
+        ? `<div class="dl-dlrow">
+             <input type="text" class="dl-link-d" placeholder="다운로드 링크 붙여넣기" value="${esc(b.download_link || '')}" />
+             <button class="btn-sm" id="dlSaveD" data-id="${esc(b.id)}">저장</button>
+           </div>`
+        : `<span class="dl-blocked-msg">🔒 잔금 입금 확인 후 입력 가능</span>`}
+      ${b.download_link ? `<a class="dl-open-d" href="${esc(b.download_link)}" target="_blank" rel="noopener">현재 링크 열기 ↗</a>` : ''}
+    </div>
+
     <div class="atk-prog">
       <p class="dl">알림톡 발송 <small>([발송]=실제 전송 · 배지=보냄 수동표시(클릭 토글))</small></p>
       <div class="atk-rows">
@@ -497,6 +508,20 @@ function renderView(b, flash) {
     navigator.clipboard?.writeText(url);
     cpBtn.textContent = '복사됨 ✓';
     setTimeout(() => (cpBtn.textContent = '링크 복사'), 1500);
+  });
+
+  // 촬영본 원본 링크 저장 (상세)
+  const dlSaveD = $('dlSaveD');
+  if (dlSaveD) dlSaveD.addEventListener('click', async () => {
+    const inp = $('modalCard').querySelector('.dl-link-d');
+    dlSaveD.disabled = true;
+    const { data, error } = await sb.rpc('admin_set_download_link', { p_id: b.id, p_link: inp.value.trim() });
+    if (error) { dlSaveD.disabled = false; alert('저장 실패: ' + error.message); return; }
+    const i = allBookings.findIndex((x) => x.id === b.id);
+    if (i >= 0 && data) allBookings[i] = data;
+    toast('다운로드 링크를 저장했어요.');
+    renderDashboard();
+    renderView(allBookings[i] || b);
   });
 
   // 이벤트 참여내역 (짝꿍/후기) 비동기 로드

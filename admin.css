@@ -546,3 +546,8 @@ td .muted { color: var(--ink-soft); }
 
 .dl-blocked { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .dl-blocked-msg { font-size: .84rem; color: #b5462f; }
+
+.dl-detail-box { background: #faf7f2; border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin: 14px 0; }
+.dl-detail-box .dl { margin-bottom: 8px; }
+.dl-esent { color: #2f7d4f; font-weight: 600; font-size: .82rem; }
+.dl-open-d { display: inline-block; margin-top: 8px; font-size: .85rem; color: var(--gold-deep); }
