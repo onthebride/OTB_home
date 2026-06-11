@@ -517,3 +517,25 @@ td .muted { color: var(--ink-soft); }
 .ev-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
 .ev-approve { background: var(--gold-deep); color: #fff; border-color: var(--gold-deep); }
 .ev-approve:hover { background: var(--gold); border-color: var(--gold); }
+
+/* ===== 예약 상세: 상품·옵션 합본 / 이벤트 참여 / 포털 링크 ===== */
+.po-list { display: grid; gap: 6px; }
+.po-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.po-row:last-child { border-bottom: none; }
+.po-nm { font-size: .92rem; }
+.po-pr { font-size: .9rem; font-weight: 600; color: var(--gold-deep); white-space: nowrap; }
+
+.ev-detail { background: #faf7f2; border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin: 16px 0; }
+.ev-detail .dl { margin-bottom: 8px; }
+.evd-row { display: flex; gap: 10px; padding: 4px 0; font-size: .9rem; }
+.evd-k { flex-shrink: 0; width: 42px; color: var(--ink-soft); font-weight: 600; }
+.evd-v { min-width: 0; }
+.evd-none { color: var(--ink-soft); }
+.evd-wait { color: #b5462f; font-weight: 600; }
+.evd-ok { color: #2f7d4f; font-weight: 600; }
+.evd-link { color: var(--gold-deep); text-decoration: underline; }
+
+.portal-link { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; background: #faf4ea; border: 1px solid #ecdcc3; border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.portal-link .dl { margin: 0; }
+.portal-link-actions { display: flex; gap: 6px; }
+.portal-link-actions .btn-sm { text-decoration: none; }
