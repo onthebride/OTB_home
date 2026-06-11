@@ -108,8 +108,8 @@ body {
 }
 .pt-steps li:last-child { padding-bottom: 0; }
 .pt-steps li:last-child:after { display: none; }
-.pt-steps .st { font-weight: 600; font-size: .94rem; }
-.pt-steps .sd { color: var(--ink-soft); font-size: .85rem; margin-top: 2px; }
+.pt-steps .st { display: block; font-weight: 600; font-size: .94rem; }
+.pt-steps .sd { display: block; color: var(--ink-soft); font-size: .85rem; margin-top: 3px; line-height: 1.55; }
 
 /* 버튼 */
 .pt-btn {
