@@ -63,8 +63,8 @@ body {
 .pt-optgroup-label { font-size: .82rem; color: var(--ink-soft); margin: 16px 0 8px; font-weight: 500; }
 .pt-opt-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); }
 .pt-opt-row:last-child { border-bottom: none; }
-.pt-opt-info .nm { font-size: .92rem; font-weight: 500; }
-.pt-opt-info .ds { font-size: .8rem; color: var(--ink-soft); margin-top: 1px; }
+.pt-opt-info .nm { display: block; font-size: .92rem; font-weight: 500; }
+.pt-opt-info .ds { display: block; font-size: .8rem; color: var(--ink-soft); margin-top: 3px; line-height: 1.5; }
 .pt-opt-price { font-size: .92rem; font-weight: 600; color: var(--gold-deep); white-space: nowrap; }
 
 .pt-amounts { margin-top: 16px; border-top: 1px dashed var(--line); padding-top: 12px; }
@@ -140,6 +140,16 @@ body {
 .pt-status.err { color: #b5462f; }
 .pt-confirm-actions { display: flex; gap: 8px; margin-top: 10px; }
 .pt-confirm-actions .pt-btn { flex: 1; }
+
+/* 카카오톡 채널 문의 */
+.pt-contact { text-align: center; }
+.pt-contact .pt-sub { margin-bottom: 16px; }
+.pt-kakao {
+  display: block; width: 100%; text-align: center; text-decoration: none;
+  background: #FEE500; color: #181600; font-weight: 600; font-size: .96rem;
+  border-radius: 8px; padding: 13px 22px;
+}
+.pt-kakao:active { opacity: .85; }
 
 @media (max-width: 420px) {
   .pt-row2 { grid-template-columns: 1fr; }
