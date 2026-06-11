@@ -62,6 +62,7 @@ const DEMO_INFO = {
   deposit: 10, balance: 79, deposit_paid: false, balance_paid: false,
   download_ready: false, download_link: null,
   status: '신규', survey_done: false,
+  photographer: { reveal: false },
   buddy: { state: 'approved', partner_name: '김철수', reward: '할인', my_role: 'requester', id: 'demo' },
   review: { link: 'https://blog.naver.com/example', reward: '앨범', status: 'approved' },
 };
@@ -88,10 +89,23 @@ function render() {
   const statusBadge = info.status === '확정'
     ? '<span class="pt-badge ok">확정</span>'
     : `<span class="pt-badge wait">${esc(info.status || '신규')}</span>`;
+  // 담당 작가 (예식 일주일 전부터 공개)
+  const ph = info.photographer || {};
+  let photogHtml;
+  if (!ph.reveal) {
+    photogHtml = '<span class="pt-photog-soon">예식 일주일 전 공개</span>';
+  } else if (ph.main_name) {
+    const sub = ph.sub_name ? ` · 서브 ${esc(ph.sub_name)}` : '';
+    const tel = ph.main_phone ? ` <a class="pt-photog-tel" href="tel:${esc(ph.main_phone)}">${esc(ph.main_phone)}</a>` : '';
+    photogHtml = `${esc(ph.main_name)}${sub}${tel}`;
+  } else {
+    photogHtml = '<span class="pt-photog-soon">배정 중</span>';
+  }
   $('infoList').innerHTML = `
     <dt>예식일</dt><dd>${esc(fmtDate(info.wedding_date))}</dd>
     <dt>예식시간</dt><dd>${esc(info.wedding_time || '-')}</dd>
     <dt>예식장</dt><dd>${esc(info.wedding_venue || '-')}</dd>
+    <dt>담당작가</dt><dd>${photogHtml}</dd>
     <dt>예약상태</dt><dd>${statusBadge}</dd>`;
 
   // 상품 / 옵션 (구조화)
