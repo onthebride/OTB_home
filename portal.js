@@ -60,6 +60,7 @@ const DEMO_INFO = {
   total_price: 90, effective_total: 89, discount: 1,
   event_rewards: [{ type: '짝꿍', reward: '할인' }, { type: '후기', reward: '앨범' }],
   deposit: 10, balance: 79, deposit_paid: false, balance_paid: false,
+  download_ready: false, download_link: null,
   status: '신규', survey_done: false,
   buddy: { state: 'approved', partner_name: '김철수', reward: '할인', my_role: 'requester', id: 'demo' },
   review: { link: 'https://blog.naver.com/example', reward: '앨범', status: 'approved' },
@@ -164,8 +165,28 @@ function render() {
     surveyBtn.classList.add('ghost');
   }
 
+  renderDownload();
   renderBuddy();
   renderReview();
+}
+
+/* ===== 원본파일 다운로드 (잔금 입금 확인 시 활성화) ===== */
+function renderDownload() {
+  const box = $('downloadBox');
+  if (info.download_ready && info.download_link) {
+    box.innerHTML = `
+      <p class="pt-sub">촬영본 원본파일이 준비됐어요! 아래에서 다운로드하세요. 🤍</p>
+      <a class="pt-btn full" href="${esc(info.download_link)}" target="_blank" rel="noopener">원본파일 다운로드</a>
+      <p class="pt-note">※ 링크는 30일간 유지됩니다. 기간 내 꼭 받아주세요. (이후 USB 구매로 받으실 수 있어요)</p>`;
+  } else if (info.balance_paid) {
+    box.innerHTML = `<div class="pt-locked">
+      <span class="pt-lock-ico">🎞️</span>
+      <p>촬영 후 원본이 준비되면<br>이곳에서 바로 받으실 수 있어요.</p></div>`;
+  } else {
+    box.innerHTML = `<div class="pt-locked">
+      <span class="pt-lock-ico">🔒</span>
+      <p><b>잔금 입금이 확인되면</b> 원본 다운로드가 열려요.</p></div>`;
+  }
 }
 
 /* ===== 짝꿍 ===== */

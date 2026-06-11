@@ -153,6 +153,12 @@ body {
 .pt-confirm-actions { display: flex; gap: 8px; margin-top: 10px; }
 .pt-confirm-actions .pt-btn { flex: 1; }
 
+/* 원본파일 다운로드 잠금 상태 */
+.pt-locked { text-align: center; padding: 20px 16px; background: #faf7f2; border: 1px dashed var(--line); border-radius: 9px; color: var(--ink-soft); }
+.pt-lock-ico { font-size: 1.6rem; display: block; margin-bottom: 8px; }
+.pt-locked p { font-size: .9rem; line-height: 1.55; }
+.pt-locked b { color: var(--gold-deep); }
+
 /* 카카오톡 채널 문의 */
 .pt-contact { text-align: center; }
 .pt-contact .pt-sub { margin-bottom: 16px; }

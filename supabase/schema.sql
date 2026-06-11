@@ -1110,6 +1110,9 @@ begin
     'balance', eff_total - 10,
     'deposit_paid', coalesce(b.deposit_paid, false),
     'balance_paid', coalesce(b.balance_paid, false),
+    -- 원본 다운로드: 잔금 입금 확인 시에만 링크 노출(서버측 게이트)
+    'download_ready', (coalesce(b.balance_paid, false) and b.download_link is not null),
+    'download_link', case when coalesce(b.balance_paid, false) then b.download_link else null end,
     'status', b.status,
     'survey_done', has_s,
     'buddy', buddy || jsonb_build_object('my_role', my_role),
