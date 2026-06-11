@@ -914,18 +914,26 @@ function renderDashboard() {
     .sort((a, b) => wDate(b) - wDate(a));
   $('dcDownload').textContent = needDl.length;
   $('listDownload').innerHTML = needDl.length
-    ? needDl.slice(0, 40).map((b) => `
+    ? needDl.slice(0, 40).map((b) => {
+        const dlrow = b.balance_paid
+          ? `<div class="dl-dlrow">
+               <input type="text" class="dl-link" data-id="${b.id}" placeholder="다운로드 링크 붙여넣기" value="${esc(b.download_link || '')}" />
+               <button class="btn-sm dl-save" data-id="${b.id}">저장</button>
+               <button class="btn-sm btn-kakao-sm" data-send="${b.id}" data-tpl="E">카톡 전송</button>
+             </div>`
+          : `<div class="dl-dlrow dl-blocked">
+               <span class="dl-blocked-msg">🔒 잔금 입금 확인 후 링크 입력 가능</span>
+               <button class="btn-sm dl-paid" data-id="${b.id}" data-pay="balance">잔금 확인</button>
+             </div>`;
+        return `
       <div class="dl-item dl-download" data-id="${b.id}">
         <div class="dl-main">
           <span class="dl-name">${esc(b.contractor_name || '-')}${phBadge(b)}</span>
           <span class="dl-meta">${esc(fmtDate(b.wedding_date))} · ${esc(b.wedding_venue || '-')}</span>
         </div>
-        <div class="dl-dlrow">
-          <input type="text" class="dl-link" data-id="${b.id}" placeholder="다운로드 링크 붙여넣기" value="${esc(b.download_link || '')}" />
-          <button class="btn-sm dl-save" data-id="${b.id}">저장</button>
-          <button class="btn-sm btn-kakao-sm" data-send="${b.id}" data-tpl="E">카톡 전송</button>
-        </div>
-      </div>`).join('')
+        ${dlrow}
+      </div>`;
+      }).join('')
     : '<p class="dash-empty">모두 처리됐어요 👍</p>';
 
   // 🧑‍🎨 작가 미확인 (30일 내)
