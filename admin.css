@@ -47,6 +47,7 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .dtab { background: none; border: none; padding: 12px 20px; cursor: pointer; font-family: var(--sans); font-size: .98rem; color: var(--ink-soft); border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .dtab:hover { color: var(--ink); }
 .dtab.active { color: var(--gold-deep); border-bottom-color: var(--gold-deep); font-weight: 500; }
+.dtab-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; margin-left: 5px; padding: 0 5px; border-radius: 999px; background: #b5462f; color: #fff; font-size: .7rem; font-weight: 700; vertical-align: middle; }
 
 /* Gallery management */
 .gl-upload { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 24px; margin-bottom: 24px; }
@@ -496,3 +497,23 @@ td .muted { color: var(--ink-soft); }
   .sched-name { flex-basis: auto; }
   .sched-venue { flex-basis: 100%; }
 }
+
+/* ===== 이벤트 탭 (짝꿍 / 후기) ===== */
+.ev-section { margin-bottom: 26px; }
+.ev-h { font-size: 1rem; font-weight: 700; margin-bottom: 12px; }
+.ev-h small { font-weight: 400; color: var(--ink-soft); font-size: .78rem; }
+.ev-list { display: grid; gap: 10px; }
+.ev-item { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; border: 1px solid var(--line); border-radius: 9px; padding: 13px 15px; background: #fff; }
+.ev-item.pending { border-color: var(--gold); background: #fdf8f0; }
+.ev-main { min-width: 0; }
+.ev-pair { font-size: .95rem; font-weight: 600; line-height: 1.5; }
+.ev-pair small { font-weight: 400; color: var(--ink-soft); font-size: .82rem; }
+.ev-amp { color: var(--gold-deep); margin: 0 4px; }
+.ev-meta { font-size: .84rem; color: var(--ink-soft); margin-top: 4px; word-break: break-all; }
+.ev-wait { color: #b5462f; }
+.ev-done { color: #2f7d4f; font-weight: 600; }
+.ev-reject { color: #b5462f; font-weight: 600; }
+.ev-link { color: var(--gold-deep); text-decoration: underline; }
+.ev-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+.ev-approve { background: var(--gold-deep); color: #fff; border-color: var(--gold-deep); }
+.ev-approve:hover { background: var(--gold); border-color: var(--gold); }

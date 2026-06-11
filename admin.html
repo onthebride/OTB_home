@@ -41,6 +41,7 @@
         <button class="dtab" data-tab="bookings">예약</button>
         <button class="dtab" data-tab="staff">작가관리</button>
         <button class="dtab" data-tab="gallery">갤러리</button>
+        <button class="dtab" data-tab="events">이벤트<span class="dtab-badge" id="evBadge" hidden>0</span></button>
       </div>
 
       <div id="tab-dashboard">
@@ -162,6 +163,17 @@
         <div class="gl-grid" id="glGrid"></div>
         <div class="gl-pager" id="glPager"></div>
         <p class="empty" id="glEmpty" hidden>등록된 사진이 없습니다.</p>
+      </div>
+
+      <div id="tab-events" hidden>
+        <div class="ev-section">
+          <h3 class="ev-h">🤝 짝꿍 이벤트 <small>(매칭 완료 → 승인 대기)</small></h3>
+          <div class="ev-list" id="evBuddyList"></div>
+        </div>
+        <div class="ev-section">
+          <h3 class="ev-h">✍️ 후기 이벤트</h3>
+          <div class="ev-list" id="evReviewList"></div>
+        </div>
       </div>
     </div>
     <footer class="dash-foot">© ONTHEBRIDE · 관리자</footer>

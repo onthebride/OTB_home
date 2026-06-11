@@ -98,6 +98,13 @@ async function loadBookings() {
   await loadStaff();
   render();
   renderDashboard();
+  refreshEventBadge();
+}
+
+// 시작 시(및 변경 후) 이벤트 승인대기 배지 갱신
+async function refreshEventBadge() {
+  const { data, error } = await sb.rpc('admin_event_list');
+  if (!error && data) updateEventBadge(data);
 }
 
 async function loadStaff() {
@@ -1246,10 +1253,103 @@ if (dashTabs) {
     $('tab-bookings').hidden = tab !== 'bookings';
     $('tab-staff').hidden = tab !== 'staff';
     $('tab-gallery').hidden = tab !== 'gallery';
+    $('tab-events').hidden = tab !== 'events';
     if (tab === 'dashboard') renderDashboard();
     if (tab === 'staff') renderStaff();
     if (tab === 'gallery') loadGallery();
+    if (tab === 'events') loadEvents();
   });
+}
+
+/* ===== 이벤트 (짝꿍 / 후기) ===== */
+async function loadEvents() {
+  const buddyList = $('evBuddyList'), reviewList = $('evReviewList');
+  buddyList.innerHTML = '<p class="empty">불러오는 중…</p>';
+  reviewList.innerHTML = '';
+  const { data, error } = await sb.rpc('admin_event_list');
+  if (error) { buddyList.innerHTML = `<p class="empty">불러오기 실패: ${esc(error.message)}</p>`; return; }
+  renderBuddyList(data.buddies || []);
+  renderReviewList(data.reviews || []);
+  updateEventBadge(data);
+}
+
+function updateEventBadge(data) {
+  const pend = (data.buddies || []).filter((b) => b.status === 'matched').length
+             + (data.reviews || []).filter((r) => r.status === 'pending').length;
+  const el = $('evBadge');
+  if (!el) return;
+  el.textContent = pend;
+  el.hidden = pend === 0;
+}
+
+const EV_REWARD = (r) => (r === '앨범' ? '앨범 1권' : r === '할인' ? '1만원 할인' : (r || '-'));
+
+function renderBuddyList(list) {
+  const wrap = $('evBuddyList');
+  if (!list.length) { wrap.innerHTML = '<p class="empty">짝꿍 신청이 없어요.</p>'; return; }
+  wrap.innerHTML = list.map((b) => {
+    const pending = b.status === 'matched';
+    const a = `${esc(b.a_name || '-')} <small>(${esc(fmtDate(b.a_date))})</small>`;
+    const p = `${esc(b.b_name || '-')} <small>(${esc(fmtDate(b.b_date))})</small>`;
+    return `
+    <div class="ev-item${pending ? ' pending' : ''}">
+      <div class="ev-main">
+        <div class="ev-pair">${a} <span class="ev-amp">↔</span> ${p}</div>
+        <div class="ev-meta">혜택 ${esc(EV_REWARD(b.reward))} · ${pending ? '<b class="ev-wait">승인 대기</b>' : '<span class="ev-done">승인 완료 ✓</span>'}</div>
+      </div>
+      <div class="ev-actions">
+        ${pending
+          ? `<button class="btn-sm ev-approve" data-kind="buddy" data-id="${b.id}">승인</button>
+             <button class="btn-sm od-cancel ev-cancel" data-kind="buddy" data-id="${b.id}">취소</button>`
+          : `<button class="btn-sm od-cancel ev-cancel" data-kind="buddy" data-id="${b.id}">취소</button>`}
+      </div>
+    </div>`;
+  }).join('');
+  bindEventActions();
+}
+
+function renderReviewList(list) {
+  const wrap = $('evReviewList');
+  if (!list.length) { wrap.innerHTML = '<p class="empty">후기 등록이 없어요.</p>'; return; }
+  wrap.innerHTML = list.map((r) => {
+    const pending = r.status === 'pending';
+    const st = r.status === 'approved' ? '<span class="ev-done">승인 완료 ✓</span>'
+      : r.status === 'rejected' ? '<span class="ev-reject">반려됨</span>'
+      : '<b class="ev-wait">승인 대기</b>';
+    return `
+    <div class="ev-item${pending ? ' pending' : ''}">
+      <div class="ev-main">
+        <div class="ev-pair">${esc(r.name || '-')}</div>
+        <div class="ev-meta"><a href="${esc(r.link)}" target="_blank" rel="noopener" class="ev-link">${esc(r.link)}</a></div>
+        <div class="ev-meta">혜택 ${esc(EV_REWARD(r.reward))} · ${st}</div>
+      </div>
+      <div class="ev-actions">
+        ${pending
+          ? `<button class="btn-sm ev-approve" data-kind="review" data-id="${r.id}">승인</button>
+             <button class="btn-sm od-cancel ev-reject" data-kind="review" data-id="${r.id}">반려</button>`
+          : `<button class="btn-sm ev-approve" data-kind="review" data-id="${r.id}">승인</button>`}
+      </div>
+    </div>`;
+  }).join('');
+  bindEventActions();
+}
+
+function bindEventActions() {
+  document.querySelectorAll('#tab-events .ev-approve').forEach((btn) =>
+    btn.addEventListener('click', () => eventAction(btn.dataset.kind, btn.dataset.id, 'approve')));
+  document.querySelectorAll('#tab-events .ev-cancel').forEach((btn) =>
+    btn.addEventListener('click', () => eventAction(btn.dataset.kind, btn.dataset.id, 'cancel')));
+  document.querySelectorAll('#tab-events .ev-reject').forEach((btn) =>
+    btn.addEventListener('click', () => eventAction(btn.dataset.kind, btn.dataset.id, 'reject')));
+}
+
+async function eventAction(kind, id, action) {
+  const rpc = kind === 'buddy' ? 'admin_buddy_set' : 'admin_review_set';
+  const { error } = await sb.rpc(rpc, { p_id: id, p_action: action });
+  if (error) { alert('처리 실패: ' + error.message); return; }
+  const labels = { approve: '승인했어요', cancel: '취소했어요', reject: '반려했어요' };
+  toast(labels[action] || '처리 완료');
+  loadEvents();
 }
 
 let glQueue = []; // [{ file, url }] — 하나씩 누적
