@@ -423,11 +423,11 @@ function renderView(b, flash) {
       <p class="dl">📁 촬영본 원본 링크 ${(b.alimtalk_sent && b.alimtalk_sent.E) ? '<span class="dl-esent">· E 발송됨 ✓</span>' : ''}</p>
       ${b.balance_paid
         ? `<div class="dl-dlrow">
-             <input type="text" class="dl-link-d" placeholder="다운로드 링크 붙여넣기" value="${esc(b.download_link || '')}" />
-             <button class="btn-sm" id="dlSaveD" data-id="${esc(b.id)}">저장</button>
-           </div>`
+             <input type="text" class="dl-link dl-link-d" placeholder="다운로드 링크 붙여넣기" value="${esc(b.download_link || '')}" />
+             <button class="btn-sm dl-save-btn" id="dlSaveD" data-id="${esc(b.id)}">저장</button>
+           </div>
+           ${b.download_link ? `<a class="dl-open-d" href="${esc(b.download_link)}" target="_blank" rel="noopener">현재 링크 열기 ↗</a>` : '<span class="dl-empty-hint">아직 등록된 링크가 없어요</span>'}`
         : `<span class="dl-blocked-msg">🔒 잔금 입금 확인 후 입력 가능</span>`}
-      ${b.download_link ? `<a class="dl-open-d" href="${esc(b.download_link)}" target="_blank" rel="noopener">현재 링크 열기 ↗</a>` : ''}
     </div>
 
     <div class="atk-prog">

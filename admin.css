@@ -547,7 +547,13 @@ td .muted { color: var(--ink-soft); }
 .dl-blocked { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .dl-blocked-msg { font-size: .84rem; color: #b5462f; }
 
-.dl-detail-box { background: #faf7f2; border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin: 14px 0; }
-.dl-detail-box .dl { margin-bottom: 8px; }
+.dl-detail-box { background: #faf7f2; border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin: 14px 0; }
+.dl-detail-box .dl { margin-bottom: 10px; font-weight: 600; }
+.dl-detail-box .dl-dlrow { margin-top: 0; gap: 8px; }
+.dl-detail-box .dl-link { background: #fff; padding: 9px 12px; font-size: .85rem; border-radius: 8px; }
+.dl-detail-box .dl-save-btn { background: var(--ink); color: #fff; border-color: var(--ink); white-space: nowrap; }
+.dl-detail-box .dl-save-btn:hover { background: var(--gold-deep); border-color: var(--gold-deep); }
 .dl-esent { color: #2f7d4f; font-weight: 600; font-size: .82rem; }
-.dl-open-d { display: inline-block; margin-top: 8px; font-size: .85rem; color: var(--gold-deep); }
+.dl-open-d { display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; font-size: .82rem; color: var(--gold-deep); text-decoration: none; background: #fff; border: 1px solid #ecdcc3; border-radius: 7px; padding: 6px 12px; }
+.dl-open-d:hover { background: #faf4ea; }
+.dl-empty-hint { display: inline-block; margin-top: 10px; font-size: .82rem; color: var(--ink-soft); }
