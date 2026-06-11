@@ -908,8 +908,9 @@ function renderDashboard() {
       ? activeUnpaid.slice(0, 40).map((b) => unpaidItem(b, activeTab)).join('')
       : '<p class="dash-empty sm">없음</p>');
 
-  // ⬇️ 다운로드 링크 필요 (예식 지남 + E 미발송)
-  const needDl = allBookings.filter((b) => { const d = wDate(b); return d && d < today && !(b.alimtalk_sent && b.alimtalk_sent.E) && notCancelled(b); })
+  // ⬇️ 다운로드 링크 필요 (예식 당일·이후 + E 미발송)
+  const endToday = new Date(today); endToday.setHours(23, 59, 59, 999);
+  const needDl = allBookings.filter((b) => { const d = wDate(b); return d && d <= endToday && !(b.alimtalk_sent && b.alimtalk_sent.E) && notCancelled(b); })
     .sort((a, b) => wDate(b) - wDate(a));
   $('dcDownload').textContent = needDl.length;
   $('listDownload').innerHTML = needDl.length
