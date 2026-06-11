@@ -1295,7 +1295,8 @@ function renderBuddyList(list) {
     <div class="ev-item${pending ? ' pending' : ''}">
       <div class="ev-main">
         <div class="ev-pair">${a} <span class="ev-amp">↔</span> ${p}</div>
-        <div class="ev-meta">혜택 ${esc(EV_REWARD(b.reward))} · ${pending ? '<b class="ev-wait">승인 대기</b>' : '<span class="ev-done">승인 완료 ✓</span>'}</div>
+        <div class="ev-meta">혜택 — ${esc(b.a_name || 'A')}: ${esc(EV_REWARD(b.a_reward))} / ${esc(b.b_name || 'B')}: ${esc(EV_REWARD(b.b_reward))}</div>
+        <div class="ev-meta">${pending ? '<b class="ev-wait">승인 대기</b>' : '<span class="ev-done">승인 완료 ✓</span>'}</div>
       </div>
       <div class="ev-actions">
         ${pending

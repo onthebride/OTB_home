@@ -57,9 +57,15 @@ const DEMO_INFO = {
     { group: '옵션', name: '폐백촬영', price: 10 },
     { group: '옵션', name: '2인 촬영', price: 25 },
   ],
-  total_price: 90, deposit: 10, balance: 80, deposit_paid: false, balance_paid: false,
+  total_price: 90, effective_total: 90, discount: 0, event_rewards: [],
+  deposit: 10, balance: 80, deposit_paid: false, balance_paid: false,
   status: '신규', survey_done: false, buddy: { state: 'none' }, review: null,
 };
+
+const rewardSelect = (id, val) => `<select id="${id}" class="pt-reward-sel">
+  <option value="할인"${val === '할인' ? ' selected' : ''}>1만원 할인</option>
+  <option value="앨범"${val === '앨범' ? ' selected' : ''}>앨범 1권</option>
+</select>`;
 
 async function load() {
   if (isDemo) { info = DEMO_INFO; render(); show(portalMain); return; }
@@ -99,19 +105,30 @@ function render() {
       ${descLis ? `<ul class="pt-product-desc">${descLis}</ul>` : ''}
     </div>
     ${productExtra ? `<div class="pt-optgroup-label">포함</div>${productExtra}` : ''}`;
-  $('optionsWrap').innerHTML = options.length
-    ? `<div class="pt-optgroup-label">추가 옵션</div>` + options.map((o) => {
-        const ds = OPTION_DESC[o.name] ? `<span class="ds">${esc(OPTION_DESC[o.name])}</span>` : '';
-        return `<div class="pt-opt-row"><div class="pt-opt-info"><span class="nm">${esc(o.name)}</span>${ds}</div><span class="pt-opt-price">${won(o.price)}</span></div>`;
-      }).join('')
-    : '';
+  const optRows = options.map((o) => {
+    const ds = OPTION_DESC[o.name] ? `<span class="ds">${esc(OPTION_DESC[o.name])}</span>` : '';
+    return `<div class="pt-opt-row"><div class="pt-opt-info"><span class="nm">${esc(o.name)}</span>${ds}</div><span class="pt-opt-price">${won(o.price)}</span></div>`;
+  }).join('');
+  // 승인된 이벤트 혜택을 옵션처럼 표시 (할인=−n만원, 앨범=무료)
+  const rewards = Array.isArray(info.event_rewards) ? info.event_rewards : [];
+  const rewardRows = rewards.map((r) => {
+    const isDc = r.reward === '할인';
+    const nm = `${esc(r.type)} 이벤트 ${isDc ? '할인' : '앨범 1권'}`;
+    const price = isDc ? '−1만원' : '무료';
+    return `<div class="pt-opt-row"><div class="pt-opt-info"><span class="nm">🎉 ${nm}</span></div><span class="pt-opt-price ${isDc ? 'minus' : 'free'}">${price}</span></div>`;
+  }).join('');
+  $('optionsWrap').innerHTML =
+    (options.length ? `<div class="pt-optgroup-label">추가 옵션</div>${optRows}` : '') +
+    (rewardRows ? `<div class="pt-optgroup-label">이벤트 혜택</div>${rewardRows}` : '');
 
   const depBadge = info.deposit_paid ? '<span class="pt-badge ok">입금완료</span>' : '<span class="pt-badge wait">입금 전</span>';
   const balBadge = info.balance_paid ? '<span class="pt-badge ok">입금완료</span>' : '<span class="pt-badge wait">입금 전</span>';
+  const discount = info.discount || 0;
   $('amountBox').innerHTML = `
     <div class="pt-amount-row"><span class="lbl">계약금</span><span>${won(info.deposit)} ${depBadge}</span></div>
     <div class="pt-amount-row"><span class="lbl">잔금</span><span>${won(info.balance)} ${balBadge}</span></div>
-    <div class="pt-amount-row total"><span class="lbl">총 금액</span><span>${won(info.total_price)}</span></div>`;
+    ${discount > 0 ? `<div class="pt-amount-row"><span class="lbl">이벤트 할인</span><span class="pt-discount">−${discount}만원</span></div>` : ''}
+    <div class="pt-amount-row total"><span class="lbl">총 금액</span><span>${won(info.effective_total != null ? info.effective_total : info.total_price)}</span></div>`;
 
   // 계좌
   $('accountBox').innerHTML = `
@@ -152,22 +169,28 @@ function render() {
 function renderBuddy() {
   const b = info.buddy || { state: 'none' };
   const box = $('buddyBody');
+  // 내 혜택 선택 줄 (승인 후에도 변경 가능)
+  const rewardRow = `<div class="pt-reward-row"><span class="pt-reward-lbl">내 혜택</span>${rewardSelect('bd_reward_sel', b.reward)}</div>`;
   if (b.state === 'sent_waiting') {
-    box.innerHTML = `<div class="pt-state wait"><b>${esc(b.partner_name || '상대')}</b>님께 짝꿍 신청을 보냈어요.<br>상대가 확인하면 매칭됩니다.</div>`;
+    box.innerHTML = `<div class="pt-state wait"><b>${esc(b.partner_name || '상대')}</b>님께 짝꿍 신청을 보냈어요.<br>상대가 확인하면 매칭됩니다.</div>${rewardRow}`;
+    bindBuddyReward();
   } else if (b.state === 'incoming_confirm') {
     box.innerHTML = `
-      <div class="pt-state"><b>${esc(b.partner_name || '상대')}</b>님이 회원님을 짝꿍으로 등록했어요!<br>맞으면 아래에서 확인해 주세요.</div>
+      <div class="pt-state"><b>${esc(b.partner_name || '상대')}</b>님이 회원님을 짝꿍으로 등록했어요!<br>맞으면 받을 혜택을 고르고 확인해 주세요.</div>
+      <div class="pt-reward-row"><span class="pt-reward-lbl">받을 혜택</span>${rewardSelect('bd_confirm_reward', b.reward)}</div>
       <div class="pt-confirm-actions">
         <button type="button" class="pt-btn" id="buddyYes">맞아요, 확인</button>
         <button type="button" class="pt-btn ghost" id="buddyNo">아니에요</button>
       </div>
       <p class="pt-status" id="buddyConfirmStatus"></p>`;
-    $('buddyYes').addEventListener('click', () => confirmBuddy(b.id, true));
+    $('buddyYes').addEventListener('click', () => confirmBuddy(b.id, true, $('bd_confirm_reward').value));
     $('buddyNo').addEventListener('click', () => confirmBuddy(b.id, false));
   } else if (b.state === 'matched') {
-    box.innerHTML = `<div class="pt-state wait">짝꿍 매칭 완료! <b>관리자 승인</b>을 기다리고 있어요.</div>`;
+    box.innerHTML = `<div class="pt-state wait">짝꿍 매칭 완료! <b>관리자 승인</b>을 기다리고 있어요.</div>${rewardRow}`;
+    bindBuddyReward();
   } else if (b.state === 'approved') {
-    box.innerHTML = `<div class="pt-state good">🎉 짝꿍 이벤트 참여 완료! (${esc(b.reward || '보상 선택')})</div>`;
+    box.innerHTML = `<div class="pt-state good">🎉 짝꿍 이벤트 참여 완료!</div>${rewardRow}`;
+    bindBuddyReward();
   } else {
     // none → 등록 폼
     box.innerHTML = `
@@ -199,10 +222,21 @@ async function registerBuddy() {
   await reload();
 }
 
-async function confirmBuddy(id, accept) {
+function bindBuddyReward() {
+  const sel = $('bd_reward_sel');
+  if (sel) sel.addEventListener('change', () => setBuddyReward(sel.value));
+}
+
+async function setBuddyReward(reward) {
+  const { error } = await sb.rpc('buddy_set_reward', { p_booking: bookingId, p_reward: reward });
+  if (error) { alert('혜택 변경 실패: ' + error.message); return; }
+  await reload();
+}
+
+async function confirmBuddy(id, accept, reward) {
   const st = $('buddyConfirmStatus');
   st.className = 'pt-status'; st.textContent = '처리 중…';
-  const { error } = await sb.rpc('buddy_confirm', { p_buddy_id: id, p_booking: bookingId, p_accept: accept });
+  const { error } = await sb.rpc('buddy_confirm', { p_buddy_id: id, p_booking: bookingId, p_accept: accept, p_reward: reward || null });
   if (error) { st.className = 'pt-status err'; st.textContent = error.message.replace(/^.*?:\s*/, ''); return; }
   await reload();
 }
@@ -212,7 +246,9 @@ function renderReview() {
   const r = info.review;
   const box = $('reviewBody');
   if (r && r.status === 'approved') {
-    box.innerHTML = `<div class="pt-state good">🎉 후기 이벤트 참여 완료! (${esc(r.reward || '보상 선택')})</div>`;
+    box.innerHTML = `<div class="pt-state good">🎉 후기 이벤트 참여 완료!</div>
+      <div class="pt-reward-row"><span class="pt-reward-lbl">내 혜택</span>${rewardSelect('rv_reward_sel', r.reward)}</div>`;
+    $('rv_reward_sel').addEventListener('change', () => setReviewReward($('rv_reward_sel').value));
     return;
   }
   const pending = r && r.status === 'pending';
@@ -243,6 +279,12 @@ async function registerReview() {
   $('rv_submit').disabled = true; st.textContent = '등록 중…';
   const { error } = await sb.rpc('review_register', { p_booking: bookingId, p_link: link, p_reward: reward });
   if (error) { st.className = 'pt-status err'; st.textContent = error.message.replace(/^.*?:\s*/, ''); $('rv_submit').disabled = false; return; }
+  await reload();
+}
+
+async function setReviewReward(reward) {
+  const { error } = await sb.rpc('review_set_reward', { p_booking: bookingId, p_reward: reward });
+  if (error) { alert('혜택 변경 실패: ' + error.message); return; }
   await reload();
 }
 

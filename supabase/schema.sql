@@ -999,12 +999,14 @@ create table if not exists public.event_buddy (
   partner_id    uuid references public.bookings(id) on delete set null,          -- B(매칭된 예약)
   partner_name  text,                 -- A가 입력한 상대 계약자명
   partner_date  date,                 -- A가 입력한 상대 예식일
-  reward        text,                 -- '할인' | '앨범'
+  reward        text,                 -- A(requester)의 혜택 '할인' | '앨범'
   status        text not null default 'waiting',  -- waiting(B확인대기) | matched(승인대기) | approved | canceled
   created_at    timestamptz not null default now(),
   confirmed_at  timestamptz,
   approved_at   timestamptz
 );
+-- 혜택은 사람별(A·B 각자 선택). reward=A(requester), partner_reward=B
+alter table public.event_buddy add column if not exists partner_reward text;
 create index if not exists idx_buddy_requester on public.event_buddy(requester_id);
 create index if not exists idx_buddy_partner on public.event_buddy(partner_id);
 alter table public.event_buddy enable row level security;
@@ -1051,6 +1053,7 @@ create or replace function public.portal_booking_info(p_booking_id uuid)
 returns jsonb language plpgsql security definer set search_path=public, pg_temp as $$
 declare b public.bookings; bd public.event_buddy; rv public.event_review;
   has_s boolean; total int; buddy jsonb; pname text;
+  my_reward text; my_role text; rewards jsonb := '[]'::jsonb; discount int := 0; eff_total int;
 begin
   select * into b from public.bookings where id = p_booking_id;
   if not found then return null; end if;
@@ -1066,17 +1069,30 @@ begin
     buddy := jsonb_build_object('state','none');
   elsif bd.requester_id = p_booking_id then
     select contractor_name into pname from public.bookings where id = bd.partner_id;
+    my_role := 'requester'; my_reward := bd.reward;
     buddy := jsonb_build_object('state',
       case bd.status when 'waiting' then 'sent_waiting' when 'matched' then 'matched' else 'approved' end,
-      'partner_name', coalesce(pname, bd.partner_name), 'reward', bd.reward, 'id', bd.id);
+      'partner_name', coalesce(pname, bd.partner_name), 'reward', my_reward, 'id', bd.id);
   else  -- partner_id = me
     select contractor_name into pname from public.bookings where id = bd.requester_id;
+    my_role := 'partner'; my_reward := bd.partner_reward;
     buddy := jsonb_build_object('state',
       case bd.status when 'waiting' then 'incoming_confirm' when 'matched' then 'matched' else 'approved' end,
-      'partner_name', pname, 'reward', bd.reward, 'id', bd.id);
+      'partner_name', pname, 'reward', my_reward, 'id', bd.id);
   end if;
 
   select * into rv from public.event_review where booking_id = p_booking_id;
+
+  -- 승인된 이벤트 혜택만 금액/옵션에 반영
+  if bd.id is not null and bd.status = 'approved' and my_reward is not null then
+    rewards := rewards || jsonb_build_object('type','짝꿍','reward', my_reward);
+    if my_reward = '할인' then discount := discount + 1; end if;
+  end if;
+  if rv.id is not null and rv.status = 'approved' and rv.reward is not null then
+    rewards := rewards || jsonb_build_object('type','후기','reward', rv.reward);
+    if rv.reward = '할인' then discount := discount + 1; end if;
+  end if;
+  eff_total := total - discount;
 
   return jsonb_build_object(
     'contractor_name', b.contractor_name,
@@ -1087,13 +1103,16 @@ begin
     'options_text', public.fmt_alimtalk_options(b.id),
     'items', public.booking_options_struct(b.id),
     'total_price', total,
+    'event_rewards', rewards,
+    'discount', discount,
+    'effective_total', eff_total,
     'deposit', 10,
-    'balance', total - 10,
+    'balance', eff_total - 10,
     'deposit_paid', coalesce(b.deposit_paid, false),
     'balance_paid', coalesce(b.balance_paid, false),
     'status', b.status,
     'survey_done', has_s,
-    'buddy', buddy,
+    'buddy', buddy || jsonb_build_object('my_role', my_role),
     'review', case when rv.id is null then null else
       jsonb_build_object('link', rv.link, 'reward', rv.reward, 'status', rv.status) end
   );
@@ -1130,8 +1149,8 @@ end$$;
 revoke all on function public.buddy_register(uuid, text, date, text) from public;
 grant execute on function public.buddy_register(uuid, text, date, text) to anon, authenticated;
 
--- 짝꿍 확인/거절 (B가) — anon. p_booking 으로 본인=partner 확인
-create or replace function public.buddy_confirm(p_buddy_id uuid, p_booking uuid, p_accept boolean)
+-- 짝꿍 확인/거절 (B가) — anon. p_booking 으로 본인=partner 확인. p_reward=B 혜택
+create or replace function public.buddy_confirm(p_buddy_id uuid, p_booking uuid, p_accept boolean, p_reward text default null)
 returns jsonb language plpgsql security definer set search_path=public, pg_temp as $$
 declare bd public.event_buddy;
 begin
@@ -1140,14 +1159,47 @@ begin
   if bd.partner_id is distinct from p_booking then raise exception 'unauthorized'; end if;
   if bd.status <> 'waiting' then raise exception '이미 처리된 짝꿍이에요'; end if;
   if p_accept then
-    update public.event_buddy set status='matched', confirmed_at=now() where id = p_buddy_id;
+    update public.event_buddy set status='matched', confirmed_at=now(),
+      partner_reward = coalesce(nullif(p_reward,''), partner_reward) where id = p_buddy_id;
   else
     update public.event_buddy set status='canceled' where id = p_buddy_id;
   end if;
   return jsonb_build_object('ok', true);
 end$$;
-revoke all on function public.buddy_confirm(uuid, uuid, boolean) from public;
-grant execute on function public.buddy_confirm(uuid, uuid, boolean) to anon, authenticated;
+revoke all on function public.buddy_confirm(uuid, uuid, boolean, text) from public;
+grant execute on function public.buddy_confirm(uuid, uuid, boolean, text) to anon, authenticated;
+
+-- 짝꿍 혜택 변경 (본인 것만, 승인 후에도 가능) — anon
+create or replace function public.buddy_set_reward(p_booking uuid, p_reward text)
+returns jsonb language plpgsql security definer set search_path=public, pg_temp as $$
+declare bd public.event_buddy;
+begin
+  if p_reward not in ('할인','앨범') then raise exception 'bad reward'; end if;
+  select * into bd from public.event_buddy
+   where status in ('waiting','matched','approved') and (requester_id = p_booking or partner_id = p_booking)
+   order by created_at desc limit 1;
+  if not found then raise exception '짝꿍 참여 내역이 없어요'; end if;
+  if bd.requester_id = p_booking then
+    update public.event_buddy set reward = p_reward where id = bd.id;
+  else
+    update public.event_buddy set partner_reward = p_reward where id = bd.id;
+  end if;
+  return jsonb_build_object('ok', true);
+end$$;
+revoke all on function public.buddy_set_reward(uuid, text) from public;
+grant execute on function public.buddy_set_reward(uuid, text) to anon, authenticated;
+
+-- 후기 혜택 변경 (승인 후에도 가능) — anon
+create or replace function public.review_set_reward(p_booking uuid, p_reward text)
+returns jsonb language plpgsql security definer set search_path=public, pg_temp as $$
+begin
+  if p_reward not in ('할인','앨범') then raise exception 'bad reward'; end if;
+  update public.event_review set reward = p_reward where booking_id = p_booking;
+  if not found then raise exception '후기 참여 내역이 없어요'; end if;
+  return jsonb_build_object('ok', true);
+end$$;
+revoke all on function public.review_set_reward(uuid, text) from public;
+grant execute on function public.review_set_reward(uuid, text) to anon, authenticated;
 
 -- 후기 등록/수정 (승인 전이면 덮어쓰기) — anon
 create or replace function public.review_register(p_booking uuid, p_link text, p_reward text)
@@ -1173,9 +1225,9 @@ declare buddies jsonb; reviews jsonb;
 begin
   if auth.uid() is null then raise exception 'unauthorized'; end if;
   select coalesce(jsonb_agg(jsonb_build_object(
-    'id', eb.id, 'status', eb.status, 'reward', eb.reward,
-    'a_name', ba.contractor_name, 'a_date', ba.wedding_date,
-    'b_name', bb.contractor_name, 'b_date', bb.wedding_date,
+    'id', eb.id, 'status', eb.status,
+    'a_name', ba.contractor_name, 'a_date', ba.wedding_date, 'a_reward', eb.reward,
+    'b_name', bb.contractor_name, 'b_date', bb.wedding_date, 'b_reward', eb.partner_reward,
     'created_at', eb.created_at, 'confirmed_at', eb.confirmed_at, 'approved_at', eb.approved_at)
     order by eb.created_at desc), '[]'::jsonb) into buddies
   from public.event_buddy eb

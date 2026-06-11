@@ -71,6 +71,18 @@ body {
 .pt-amount-row { display: flex; justify-content: space-between; font-size: .92rem; padding: 4px 0; }
 .pt-amount-row .lbl { color: var(--ink-soft); }
 .pt-amount-row.total { font-weight: 700; font-size: 1rem; border-top: 1px solid var(--line); margin-top: 6px; padding-top: 10px; }
+.pt-discount { color: #2f7d4f; font-weight: 600; }
+.pt-opt-price.minus { color: #2f7d4f; }
+.pt-opt-price.free { color: var(--gold-deep); }
+
+/* 혜택 선택 줄 */
+.pt-reward-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.pt-reward-lbl { font-size: .86rem; color: var(--ink-soft); white-space: nowrap; }
+.pt-reward-sel {
+  flex: 1; border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px;
+  font-size: .9rem; font-family: inherit; color: var(--ink); background: #fff;
+}
+.pt-reward-sel:focus { outline: none; border-color: var(--gold); }
 
 /* 계좌 */
 .pt-account { background: #faf4ea; border: 1px solid #ecdcc3; border-radius: 8px; padding: 16px; text-align: center; }
