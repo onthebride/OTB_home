@@ -541,3 +541,5 @@ td .muted { color: var(--ink-soft); }
 .portal-link-actions .btn-sm { text-decoration: none; }
 
 .btn-sm.muted { color: var(--ink-soft); border-color: var(--line); opacity: .85; }
+
+#listUpcoming .dl-actions .sv-copy { margin-left: auto; }
