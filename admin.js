@@ -808,6 +808,13 @@ async function sendAlimtalk(id, tpl) {
   if (!$('modal').hidden && b) renderView(allBookings[i] || b);
 }
 
+// 작가 공유용 설문(읽기전용) 링크 복사
+function copySurveyShare(id) {
+  const url = location.origin + '/survey-view?b=' + id;
+  if (navigator.clipboard) navigator.clipboard.writeText(url);
+  toast(surveyIds.has(id) ? '작가 공유용 설문 링크를 복사했어요 📋' : '설문 링크 복사 — 아직 고객이 설문 미작성 상태예요');
+}
+
 function renderDashboard() {
   if (!$('tab-dashboard')) return;
   const today = startOfToday();
@@ -856,6 +863,7 @@ function renderDashboard() {
                ${needsSub ? `<button class="btn-sm chk-send" data-id="${b.id}" data-staff="${b.sub_assignee_id}" data-role="서브">${subSent ? '서브 재전송' : '서브 체크'}</button>` : ''}
                ${allSent ? '<span class="chk-sentflag">보냄 ✓</span>' : ''}`
             : '<span class="dl-na">작가 미배정</span>'}
+          <button class="btn-sm sv-copy${surveyIds.has(b.id) ? '' : ' muted'}" data-id="${b.id}">${surveyIds.has(b.id) ? '설문 복사' : '설문 복사(미작성)'}</button>
         </div>
       </div>`;
     }).join('')
@@ -949,6 +957,10 @@ function bindDashEvents() {
   // 작가 체크 링크 전송(복사 + 보냄 표시)
   document.querySelectorAll('#tab-dashboard .chk-send').forEach((btn) =>
     btn.addEventListener('click', (e) => { e.stopPropagation(); copyCheckLink(btn.dataset.id, btn.dataset.staff, `${btn.dataset.role} 작가(${staffName(btn.dataset.staff)})`, btn.dataset.role); })
+  );
+  // 작가 공유용 설문 링크 복사
+  document.querySelectorAll('#tab-dashboard .sv-copy').forEach((btn) =>
+    btn.addEventListener('click', (e) => { e.stopPropagation(); copySurveyShare(btn.dataset.id); })
   );
   // 항목(이름/메타) 클릭 → 상세
   document.querySelectorAll('#tab-dashboard .dl-main').forEach((m) =>

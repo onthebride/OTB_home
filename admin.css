@@ -539,3 +539,5 @@ td .muted { color: var(--ink-soft); }
 .portal-link .dl { margin: 0; }
 .portal-link-actions { display: flex; gap: 6px; }
 .portal-link-actions .btn-sm { text-decoration: none; }
+
+.btn-sm.muted { color: var(--ink-soft); border-color: var(--line); opacity: .85; }
