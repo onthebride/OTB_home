@@ -51,7 +51,6 @@ const isDemo = params.get('demo') === '1';
 const DEMO_INFO = {
   contractor_name: '홍길동', wedding_date: '2026-09-12', wedding_time: '오후 1:30',
   wedding_venue: '아펠가모 선릉', package: '베이직(데이터형)',
-  options_text: '베이직 (55)\n\n옵션1\n폐백촬영 (10)\n\n옵션2\n2인 촬영 (25)',
   items: [
     { group: '상품', name: '베이직', price: 55 },
     { group: '옵션', name: '폐백촬영', price: 10 },

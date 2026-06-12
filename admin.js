@@ -199,17 +199,6 @@ if ($('bkPrev')) {
 }
 
 /* ===== Detail modal ===== */
-function optionTags(b) {
-  const t = [];
-  if (b.option_album) t.push('앨범 1권 추가');
-  if (b.option_reception) t.push('연회장 인사촬영');
-  if (b.option_pyebaek) t.push('폐백촬영');
-  if (b.option_part2) t.push('2부 촬영');
-  (Array.isArray(b.custom_options) ? b.custom_options : []).forEach((o) => { if (o && o.name) t.push(o.name + (o.price ? ` (${o.price}만원)` : '')); });
-  if (!t.length) return '<span class="dv">없음</span>';
-  return '<div class="opt-tags">' + t.map((x) => `<span class="opt-tag">${esc(x)}</span>`).join('') + '</div>';
-}
-
 // 상품 + 옵션을 한 카테고리로 (가격 분리표시)
 function productOptions(b) {
   const rows = [];

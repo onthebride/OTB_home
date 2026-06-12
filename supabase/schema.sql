@@ -200,20 +200,8 @@ end; $$;
 revoke all on function public.admin_set_download_link(uuid, text) from public, anon;
 grant execute on function public.admin_set_download_link(uuid, text) to authenticated;
 
--- 알림톡 발송 기록 (실제 발송 시 호출) — alimtalk_sent에 {템플릿: 시각} 누적
-create or replace function public.admin_mark_alimtalk(p_id uuid, p_template text)
-returns public.bookings language plpgsql security definer set search_path=public, pg_temp
-as $$
-declare r public.bookings;
-begin
-  if auth.uid() is null then raise exception 'unauthorized'; end if;
-  update public.bookings
-     set alimtalk_sent = coalesce(alimtalk_sent,'{}'::jsonb) || jsonb_build_object(p_template, to_jsonb(now()))
-   where id = p_id returning * into r;
-  return r;
-end; $$;
-revoke all on function public.admin_mark_alimtalk(uuid, text) from public, anon;
-grant execute on function public.admin_mark_alimtalk(uuid, text) to authenticated;
+-- (제거됨) admin_mark_alimtalk → admin_set_alimtalk 로 대체되어 미사용
+drop function if exists public.admin_mark_alimtalk(uuid, text);
 
 -- ============================================
 -- 카카오 알림톡 발송 (솔라피) — 서버측(pg_net + pgcrypto HMAC)
@@ -232,30 +220,8 @@ returns text language sql immutable as $$
     || ':' || lpad(split_part(t,':',2), 2, '0') end
 $$;
 
--- 상품옵션 텍스트 ([기본상품]/[옵션1]/[옵션2])
-create or replace function public.fmt_alimtalk_options(p_id uuid)
-returns text language plpgsql stable set search_path=public, pg_temp as $$
-declare b public.bookings; base int; g0 text[]; g1 text[]; g2 text[]; co jsonb; res text;
-begin
-  select * into b from public.bookings where id = p_id; if not found then return ''; end if;
-  base := case when b.package = '베이직(구)' then 50 else 55 end;
-  g0 := array[]::text[]; g1 := array[]::text[]; g2 := array[]::text[];
-  if b.package is not null then g0 := array_append(g0, replace(b.package, '(데이터형)', '') || ' (' || base || ')'); end if;
-  if b.travel_fee then g0 := array_append(g0, '출장비 (5)'); end if;
-  if b.option_album then g1 := array_append(g1, '앨범 1권 추가 (5)'); end if;
-  if b.option_reception then g1 := array_append(g1, '연회장 인사촬영 (5)'); end if;
-  if b.option_pyebaek then g1 := array_append(g1, '폐백촬영 (10)'); end if;
-  if b.option_part2 then g1 := array_append(g1, '2부 촬영 (10)'); end if;
-  for co in select value from jsonb_array_elements(coalesce(b.custom_options, '[]'::jsonb)) loop
-    g1 := array_append(g1, (co->>'name') || ' (' || coalesce(co->>'price','0') || ')');
-  end loop;
-  if b.photographer = '2인 촬영' then g2 := array_append(g2, '2인 촬영 (25)'); end if;
-  if b.rep_designation then g2 := array_append(g2, '대표지정 (35)'); end if;
-  res := array_to_string(g0, E'\n');
-  if array_length(g1,1) is not null then res := res || E'\n\n옵션1\n' || array_to_string(g1, E'\n'); end if;
-  if array_length(g2,1) is not null then res := res || E'\n\n옵션2\n' || array_to_string(g2, E'\n'); end if;
-  return res;
-end$$;
+-- (제거됨) fmt_alimtalk_options → 포털은 booking_options_struct(구조화) 사용, 알림톡 신템플릿은 미사용
+drop function if exists public.fmt_alimtalk_options(uuid);
 
 -- 솔라피 발송 (HMAC 인증 + pg_net)
 create or replace function private.solapi_send(p_to text, p_template_key text, p_vars jsonb)
@@ -1092,7 +1058,6 @@ begin
     'wedding_time', public.fmt_ktime(b.wedding_time),
     'wedding_venue', b.wedding_venue,
     'package', b.package,
-    'options_text', public.fmt_alimtalk_options(b.id),
     'items', public.booking_options_struct(b.id),
     'total_price', total,
     'event_rewards', rewards,
