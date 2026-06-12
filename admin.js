@@ -1648,6 +1648,11 @@ function renderGalleryTags() {
   );
 }
 
+const imgThumb = (url, w) =>
+  url && url.includes('/object/public/')
+    ? url.replace('/object/public/', '/render/image/public/') + `?width=${w}&quality=72`
+    : url;
+
 function renderGalleryGrid() {
   // 그리드 (페이지네이션 20장)
   const list = glVisible();
@@ -1655,7 +1660,7 @@ function renderGalleryGrid() {
   const grid = $('glGrid');
   grid.innerHTML = list
     .slice(start, start + GL_PER)
-    .map((g) => `<div class="gl-item"><img src="${esc(g.image_url)}" alt="" /><div class="gl-meta"><input class="gl-venue-edit" data-id="${esc(g.id)}" value="${esc(g.venue || '')}" placeholder="장소 태그" /><button class="gl-del" data-id="${esc(g.id)}" data-path="${esc(g.image_path)}">삭제</button></div></div>`)
+    .map((g) => `<div class="gl-item"><img src="${esc(imgThumb(g.image_url, 400))}" alt="" loading="lazy" decoding="async" /><div class="gl-meta"><input class="gl-venue-edit" data-id="${esc(g.id)}" value="${esc(g.venue || '')}" placeholder="장소 태그" /><button class="gl-del" data-id="${esc(g.id)}" data-path="${esc(g.image_path)}">삭제</button></div></div>`)
     .join('');
   grid.querySelectorAll('.gl-del').forEach((b) =>
     b.addEventListener('click', () => deleteGalleryItem(b.dataset.id, b.dataset.path))

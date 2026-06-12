@@ -514,12 +514,17 @@ if (inquiryForm) {
     html += `<button class="gpg nav" data-p="${page + 1}"${page === pages ? ' disabled' : ''}>›</button>`;
     pagerEl.innerHTML = html;
   };
+  // 썸네일: Supabase 이미지 변환으로 작게 받아 빠르게 (원본 1400px → 폭 지정 리사이즈)
+  const thumb = (url, w) =>
+    url && url.includes('/object/public/')
+      ? url.replace('/object/public/', '/render/image/public/') + `?width=${w}&quality=72`
+      : url;
   const renderGrid = () => {
     const list = visible();
     const start = (page - 1) * PER;
     grid.innerHTML = list
       .slice(start, start + PER)
-      .map((p, i) => `<button class="gthumb" data-i="${start + i}"><img src="${esc(p.image_url)}" alt="${esc(p.venue || '')}" loading="lazy" /></button>`)
+      .map((p, i) => `<button class="gthumb" data-i="${start + i}"><img src="${esc(thumb(p.image_url, 600))}" alt="${esc(p.venue || '')}" loading="lazy" decoding="async" /></button>`)
       .join('');
     renderPager(list.length);
   };
@@ -565,7 +570,7 @@ if (inquiryForm) {
   let curIdx = 0;
   const show = (i) => {
     curIdx = (i + curList.length) % curList.length;
-    lbImg.src = curList[curIdx].image_url;
+    lbImg.src = thumb(curList[curIdx].image_url, 1280);
     lbVenue.textContent = curList[curIdx].venue || '';
   };
   const open = (i) => { curList = visible(); show(i); lb.hidden = false; document.body.style.overflow = 'hidden'; };
