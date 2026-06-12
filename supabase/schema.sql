@@ -284,34 +284,17 @@ end$$;
 -- 관리자: 특정 예약에 알림톡 발송 + 발송 기록
 create or replace function public.admin_send_alimtalk(p_booking_id uuid, p_template text)
 returns jsonb language plpgsql security definer set search_path=public, private, extensions, pg_temp as $$
-declare b public.bookings; vars jsonb; req bigint; total int; balance int; sname text; sphone text;
+declare b public.bookings; vars jsonb; req bigint;
 begin
   if auth.uid() is null then raise exception 'unauthorized'; end if;
   select * into b from public.bookings where id = p_booking_id; if not found then raise exception 'booking not found'; end if;
   if b.contractor_phone is null then raise exception '연락처가 없습니다'; end if;
-  total := coalesce(b.total_price,0); balance := total - 10;
-  select s.name, s.phone into sname, sphone from public.staff s where s.id = b.assignee_id;
+  if p_template not in ('A','B','C','D','E') then raise exception 'bad template'; end if;
+  -- E(촬영본 안내)는 다운로드 링크 입력 후에만
+  if p_template = 'E' and b.download_link is null then raise exception '다운로드 링크를 먼저 입력하세요'; end if;
 
-  if p_template = 'A' then
-    vars := jsonb_build_object('#{고객명}',coalesce(b.contractor_name,''),'#{예식일}',coalesce(b.wedding_date::text,''),
-      '#{예식시간}',public.fmt_ktime(b.wedding_time),'#{예식장소}',coalesce(b.wedding_venue,''),
-      '#{신랑명}',coalesce(b.groom_name,''),'#{신랑연락처}',coalesce(b.groom_phone,''),
-      '#{신부명}',coalesce(b.bride_name,''),'#{신부연락처}',coalesce(b.bride_phone,''),
-      '#{상품옵션}',public.fmt_alimtalk_options(b.id),'#{총금액}',total::text||'만원','#{계약금}','10만원');
-  elsif p_template = 'B' then
-    vars := jsonb_build_object('#{고객명}',coalesce(b.contractor_name,''),'#{예식일}',coalesce(b.wedding_date::text,''),
-      '#{예식장소}',coalesce(b.wedding_venue,''),'#{예식시간}',public.fmt_ktime(b.wedding_time));
-  elsif p_template = 'C' then
-    vars := jsonb_build_object('#{예식일}',coalesce(b.wedding_date::text,''),'#{예식장소}',coalesce(b.wedding_venue,''),
-      '#{예식시간}',public.fmt_ktime(b.wedding_time),'#{신부명}',coalesce(b.bride_name,''),'#{신부연락처}',coalesce(b.bride_phone,''),
-      '#{신랑명}',coalesce(b.groom_name,''),'#{신랑연락처}',coalesce(b.groom_phone,''),'#{상품옵션}',public.fmt_alimtalk_options(b.id),
-      '#{잔금}',balance::text||'만원','#{담당작가}',coalesce(sname,'미정'),'#{담당작가연락처}',coalesce(sphone,''));
-  elsif p_template = 'D' then
-    vars := '{}'::jsonb;
-  elsif p_template = 'E' then
-    if b.download_link is null then raise exception '다운로드 링크를 먼저 입력하세요'; end if;
-    vars := jsonb_build_object('#{다운로드링크}', b.download_link);
-  else raise exception 'bad template'; end if;
+  -- 모든 템플릿 공통: 고객명 + 예약ID(버튼 링크 …/portal?b=#{예약ID})
+  vars := jsonb_build_object('#{고객명}', coalesce(b.contractor_name,''), '#{예약ID}', b.id::text);
 
   req := private.alimtalk_dispatch(p_booking_id, p_template, b.contractor_phone, vars);
   update public.bookings set alimtalk_sent = coalesce(alimtalk_sent,'{}'::jsonb) || jsonb_build_object(p_template, to_jsonb(now())) where id = p_booking_id;
