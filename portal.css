@@ -151,7 +151,9 @@ body {
   background: #fff;
 }
 .pt-field input:focus, .pt-field select:focus { outline: none; border-color: var(--gold); }
-.pt-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pt-row2 { display: grid; grid-template-columns: 1fr; gap: 10px; }
+/* 날짜 입력이 모바일에서 비어 보이지 않게 최소 높이·정렬 보정 */
+.pt-field input[type="date"] { min-height: 44px; -webkit-appearance: none; appearance: none; line-height: 1.2; }
 .pt-status { font-size: .84rem; color: var(--gold-deep); min-height: 1em; }
 .pt-status.err { color: #b5462f; }
 .pt-confirm-actions { display: flex; gap: 8px; margin-top: 10px; }
