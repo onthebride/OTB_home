@@ -197,9 +197,19 @@ function renderDownload() {
   const ready = !!(info.download_ready && info.download_link);
   if (ready) {
     box.innerHTML = `
-      <p class="pt-sub">촬영본 원본파일이 준비됐어요! 아래에서 다운로드하세요. 🤍</p>
+      <p class="pt-sub">촬영본 원본파일이 준비됐어요! 🤍 PC에서 받으시려면 아래 링크를 복사해 PC 브라우저에 붙여넣어 주세요.</p>
       <a class="pt-btn full" href="${esc(info.download_link)}" target="_blank" rel="noopener">원본파일 다운로드</a>
+      <div class="pt-dl-url">
+        <input type="text" class="pt-dl-urlinput" readonly value="${esc(info.download_link)}" />
+        <button type="button" class="pt-dl-copy" id="dlCopyBtn">복사</button>
+      </div>
       ${notes}${selectLink}`;
+    const cb = $('dlCopyBtn');
+    if (cb) cb.addEventListener('click', () => {
+      navigator.clipboard?.writeText(info.download_link);
+      cb.textContent = '복사됨 ✓';
+      setTimeout(() => (cb.textContent = '복사'), 1500);
+    });
   } else if (info.balance_paid) {
     box.innerHTML = `<div class="pt-locked">
       <span class="pt-lock-ico">🎞️</span>

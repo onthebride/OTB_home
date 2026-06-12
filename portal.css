@@ -164,6 +164,12 @@ body {
 .pt-intro { order: -5; }
 #downloadCard.dl-top { order: -4; border-color: var(--gold); box-shadow: 0 2px 10px -4px rgba(176,141,87,.4); }
 
+/* 원본 다운로드 링크(주소 복사 — PC에서 받기용) */
+.pt-dl-url { display: flex; gap: 8px; margin-top: 10px; }
+.pt-dl-urlinput { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: .82rem; color: var(--ink-soft); background: #fff; }
+.pt-dl-copy { flex-shrink: 0; border: 1px solid var(--gold-deep); background: #fff; color: var(--gold-deep); border-radius: 8px; padding: 0 16px; font-size: .85rem; font-weight: 600; cursor: pointer; }
+.pt-dl-copy:active { background: #faf4ea; }
+
 /* 원본 다운로드 안내문 */
 .pt-dl-notes { margin: 14px 0 4px; display: grid; gap: 7px; }
 .pt-dl-notes li { position: relative; padding-left: 14px; font-size: .84rem; color: var(--ink-soft); line-height: 1.55; list-style: none; }
