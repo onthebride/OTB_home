@@ -579,6 +579,15 @@ if (inquiryForm) {
   document.getElementById('lbBackdrop').addEventListener('click', close);
   document.getElementById('lbPrev').addEventListener('click', () => show(curIdx - 1));
   document.getElementById('lbNext').addEventListener('click', () => show(curIdx + 1));
+  // 모바일: 라이트박스 좌우 스와이프로 이전/다음 사진
+  let lbTx = 0, lbTy = 0;
+  lb.addEventListener('touchstart', (e) => { lbTx = e.changedTouches[0].clientX; lbTy = e.changedTouches[0].clientY; }, { passive: true });
+  lb.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - lbTx;
+    const dy = e.changedTouches[0].clientY - lbTy;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    if (dx < 0) show(curIdx + 1); else show(curIdx - 1);
+  }, { passive: true });
   document.addEventListener('keydown', (e) => {
     if (lb.hidden) return;
     if (e.key === 'Escape') close();
