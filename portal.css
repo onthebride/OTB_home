@@ -52,6 +52,8 @@ body {
 .pt-badge.wait { color: #b5462f; background: #f7e0da; }
 .pt-photog-soon { color: var(--ink-soft); font-size: .85rem; font-style: italic; }
 .pt-photog-tel { color: var(--gold-deep); text-decoration: none; font-weight: 500; }
+.pt-photog-line { display: block; line-height: 1.5; }
+.pt-photog-line b { color: var(--ink-soft); font-weight: 600; font-size: .8rem; margin-right: 5px; }
 
 /* 상품 / 금액 */
 .pt-product { background: #faf7f2; border: 1px solid var(--line); border-radius: 9px; padding: 16px; }

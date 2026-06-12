@@ -1037,7 +1037,7 @@ returns jsonb language plpgsql security definer set search_path=public, pg_temp 
 declare b public.bookings; bd public.event_buddy; rv public.event_review;
   has_s boolean; total int; buddy jsonb; pname text;
   my_reward text; my_role text; rewards jsonb := '[]'::jsonb; discount int := 0; eff_total int;
-  photog jsonb; reveal boolean; pm_name text; pm_phone text; ps_name text;
+  photog jsonb; reveal boolean; pm_name text; pm_phone text; ps_name text; ps_phone text;
 begin
   select * into b from public.bookings where id = p_booking_id;
   if not found then return null; end if;
@@ -1047,9 +1047,9 @@ begin
   reveal := b.wedding_date is not null and b.wedding_date <= (current_date + 7);
   if reveal then
     select name, phone into pm_name, pm_phone from public.staff where id = b.assignee_id;
-    select name into ps_name from public.staff where id = b.sub_assignee_id;
+    select name, phone into ps_name, ps_phone from public.staff where id = b.sub_assignee_id;
   end if;
-  photog := jsonb_build_object('reveal', reveal, 'main_name', pm_name, 'main_phone', pm_phone, 'sub_name', ps_name);
+  photog := jsonb_build_object('reveal', reveal, 'main_name', pm_name, 'main_phone', pm_phone, 'sub_name', ps_name, 'sub_phone', ps_phone);
   total := coalesce(b.total_price, 0);
 
   -- 짝꿍 상태 (활성 1건)
