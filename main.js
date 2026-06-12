@@ -574,7 +574,7 @@ if (inquiryForm) {
   let curIdx = 0;
   const show = (i) => {
     curIdx = (i + curList.length) % curList.length;
-    lbImg.src = thumb(curList[curIdx].image_url, 1280);
+    lbImg.src = curList[curIdx].image_url; // 확대보기는 원본(고화질)
     lbVenue.textContent = curList[curIdx].venue || '';
   };
   const open = (i) => { curList = visible(); show(i); lb.hidden = false; document.body.style.overflow = 'hidden'; };
