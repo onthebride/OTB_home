@@ -237,7 +237,8 @@ a { color: inherit; text-decoration: none; }
 .gallery-empty { text-align: center; color: var(--ink-soft); padding: 40px 0; }
 
 /* Gallery pagination */
-.gallery-pager { display: flex; justify-content: center; gap: 6px; margin-top: 32px; }
+.gallery-pager { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; margin-top: 32px; }
+.gpg-dots { color: var(--ink-soft); padding: 0 2px; align-self: center; }
 .gpg { min-width: 38px; height: 38px; padding: 0 6px; border: 1px solid var(--line); background: var(--paper); color: var(--ink-soft); border-radius: 4px; cursor: pointer; font-family: var(--sans); font-size: .92rem; transition: all .2s; }
 .gpg:hover:not(:disabled) { border-color: var(--gold); color: var(--gold-deep); }
 .gpg.active { background: var(--ink); color: #fff; border-color: var(--ink); }

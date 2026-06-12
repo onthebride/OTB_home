@@ -503,8 +503,14 @@ if (inquiryForm) {
   const renderPager = (total) => {
     const pages = Math.ceil(total / PER);
     if (pages <= 1) { pagerEl.innerHTML = ''; return; }
+    const WIN = 2; // 현재 페이지 좌우로 보여줄 개수
+    const btn = (i) => `<button class="gpg${i === page ? ' active' : ''}" data-p="${i}">${i}</button>`;
     let html = `<button class="gpg nav" data-p="${page - 1}"${page === 1 ? ' disabled' : ''}>‹</button>`;
-    for (let i = 1; i <= pages; i++) html += `<button class="gpg${i === page ? ' active' : ''}" data-p="${i}">${i}</button>`;
+    const from = Math.max(1, page - WIN);
+    const to = Math.min(pages, page + WIN);
+    if (from > 1) { html += btn(1); if (from > 2) html += '<span class="gpg-dots">…</span>'; }
+    for (let i = from; i <= to; i++) html += btn(i);
+    if (to < pages) { if (to < pages - 1) html += '<span class="gpg-dots">…</span>'; html += btn(pages); }
     html += `<button class="gpg nav" data-p="${page + 1}"${page === pages ? ' disabled' : ''}>›</button>`;
     pagerEl.innerHTML = html;
   };
