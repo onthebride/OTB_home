@@ -23,6 +23,10 @@ if (toTop) {
   toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 }
 
+// 로고 클릭 → 부드럽게 맨 위로
+const brandLink = document.querySelector('.brand');
+if (brandLink) brandLink.addEventListener('click', (e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+
 // Mobile menu toggle
 const toggle = document.querySelector('.nav-toggle');
 const menu = document.querySelector('.nav-menu');
