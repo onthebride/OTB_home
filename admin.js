@@ -796,6 +796,21 @@ const kTimeShort = (t) => {
   return (hh < 12 ? '오전' : '오후') + (hh % 12 === 0 ? 12 : hh % 12) + ':' + String(mm).padStart(2, '0');
 };
 
+// 목록을 예식 날짜별로 묶어 날짜 헤더 삽입
+const dateGroupLabel = (dstr) => {
+  if (!dstr) return '날짜 미정';
+  const d = new Date(dstr);
+  return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}. (${WD[d.getDay()]})`;
+};
+function groupByDate(items, renderItem) {
+  let last = null, out = '';
+  for (const b of items) {
+    if (b.wedding_date !== last) { out += `<div class="dl-datehdr">${esc(dateGroupLabel(b.wedding_date))}</div>`; last = b.wedding_date; }
+    out += renderItem(b);
+  }
+  return out;
+}
+
 function toast(msg) {
   let el = $('toast');
   if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; document.body.appendChild(el); }
@@ -856,7 +871,7 @@ function renderDashboard() {
     .sort((a, b) => wDate(a) - wDate(b));
   $('dcUpcoming').textContent = upcoming.length;
   $('listUpcoming').innerHTML = upcoming.length
-    ? upcoming.map((b) => {
+    ? groupByDate(upcoming, (b) => {
       const d = wDate(b);
       const dleft = Math.round((d - today) / 86400000);
       const dtag = dleft === 0 ? '오늘' : 'D-' + dleft;
@@ -880,7 +895,7 @@ function renderDashboard() {
           <button class="btn-sm sv-copy${surveyIds.has(b.id) ? '' : ' muted'}" data-id="${b.id}">${surveyIds.has(b.id) ? '설문 복사' : '설문 복사(미작성)'}</button>
         </div>
       </div>`;
-    }).join('')
+    })
     : '<p class="dash-empty">2주 내 예식이 없어요.</p>';
 
   // 💳 미입금 (계약금 / 잔금)
@@ -928,7 +943,7 @@ function renderDashboard() {
     .sort((a, b) => wDate(b) - wDate(a));
   $('dcDownload').textContent = needDl.length;
   $('listDownload').innerHTML = needDl.length
-    ? needDl.slice(0, 40).map((b) => {
+    ? groupByDate(needDl.slice(0, 40), (b) => {
         const dlrow = b.balance_paid
           ? `<div class="dl-dlrow">
                <input type="text" class="dl-link" data-id="${b.id}" placeholder="다운로드 링크 붙여넣기" value="${esc(b.download_link || '')}" />
@@ -947,7 +962,7 @@ function renderDashboard() {
         </div>
         ${dlrow}
       </div>`;
-      }).join('')
+      })
     : '<p class="dash-empty">모두 처리됐어요 👍</p>';
 
   // 🧑‍🎨 작가 미확인 (30일 내)
