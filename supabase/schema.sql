@@ -1256,3 +1256,26 @@ begin
 end$$;
 revoke all on function public.admin_event_discounts() from public, anon;
 grant execute on function public.admin_event_discounts() to authenticated;
+
+-- 관리자: 알림톡 발송 실패(gaveup) 중, 이후 같은 예약+템플릿으로 성공(delivered)되지 않은 것만
+create or replace function public.admin_alimtalk_failures()
+returns jsonb language plpgsql security definer set search_path=public, private, pg_temp as $$
+declare res jsonb;
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'booking_id', o.booking_id, 'template', o.template, 'name', b.contractor_name,
+    'wedding_date', b.wedding_date, 'failed_at', o.last_attempt_at) order by o.last_attempt_at desc), '[]'::jsonb)
+  into res
+  from private.alimtalk_outbox o
+  join public.bookings b on b.id = o.booking_id
+  where o.status = 'gaveup'
+    and b.status <> '취소'
+    and not exists (
+      select 1 from private.alimtalk_outbox o2
+      where o2.booking_id = o.booking_id and o2.template = o.template
+        and o2.status = 'delivered' and o2.created_at > o.created_at);
+  return res;
+end$$;
+revoke all on function public.admin_alimtalk_failures() from public, anon;
+grant execute on function public.admin_alimtalk_failures() to authenticated;

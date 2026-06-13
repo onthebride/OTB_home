@@ -24,6 +24,7 @@ let bkSearchTerm = '';
 let bkMonth = null; // 예약 목록 월별 페이지 {y, m}
 let surveyIds = new Set(); // 설문 제출된 예약 ID
 let allUnconfirmed = []; // 작가 미확인 (admin_unconfirmed)
+let alimtalkFails = []; // 알림톡 발송 실패 (admin_alimtalk_failures)
 let calMonth = null; // 캘린더 현재 월 {y, m}
 let unpaidTab = 'deposit'; // 미입금 탭: deposit | balance
 let allStaff = [];
@@ -100,6 +101,8 @@ async function loadBookings() {
   allUnconfirmed = Array.isArray(ures.data) ? ures.data : [];
   const dres = await sb.rpc('admin_event_discounts');
   eventDiscounts = (dres.data && typeof dres.data === 'object') ? dres.data : {};
+  const fres = await sb.rpc('admin_alimtalk_failures');
+  alimtalkFails = Array.isArray(fres.data) ? fres.data : [];
   await loadStaff();
   render();
   renderDashboard();
@@ -860,8 +863,43 @@ function copySurveyShare(id) {
   toast(surveyIds.has(id) ? '작가 공유용 설문 링크를 복사했어요 📋' : '설문 링크 복사 — 아직 고객이 설문 미작성 상태예요');
 }
 
+const ATK_FAIL_NAME = { A: '계약안내', B: '한달전', C: '일주일전·잔금', D: '이틀전', E: '촬영본 안내' };
+function renderAtkFail() {
+  const card = $('card-atkfail');
+  if (!card) return;
+  const fails = alimtalkFails || [];
+  card.hidden = fails.length === 0;
+  $('dcAtkFail').textContent = fails.length;
+  if (!fails.length) { $('listAtkFail').innerHTML = ''; return; }
+  $('listAtkFail').innerHTML = fails.map((f) => `
+    <div class="dl-item overdue" data-id="${f.booking_id}">
+      <div class="dl-main">
+        <span class="dl-name">${esc(f.name || '-')} <span class="od-badge">${esc(ATK_FAIL_NAME[f.template] || f.template)} 실패</span></span>
+        <span class="dl-meta">${esc(fmtDate(f.wedding_date))} · 발송 실패 (재시도 후에도 안 됨)</span>
+      </div>
+      <div class="dl-actions">
+        <button class="btn-sm btn-kakao-sm atk-resend" data-id="${f.booking_id}" data-tpl="${f.template}">다시 보내기</button>
+      </div>
+    </div>`).join('');
+  $('listAtkFail').querySelectorAll('.atk-resend').forEach((btn) =>
+    btn.addEventListener('click', (e) => { e.stopPropagation(); resendFailed(btn.dataset.id, btn.dataset.tpl); }));
+  $('listAtkFail').querySelectorAll('.dl-main').forEach((m) =>
+    m.addEventListener('click', () => openDetail(m.closest('.dl-item').dataset.id)));
+}
+
+async function resendFailed(id, tpl) {
+  const b = allBookings.find((x) => x.id === id);
+  if (!confirm(`${b ? b.contractor_name + '님께 ' : ''}"${ATK_FAIL_NAME[tpl] || tpl}" 알림톡을 다시 보낼까요?`)) return;
+  const { error } = await sb.rpc('admin_send_alimtalk', { p_booking_id: id, p_template: tpl });
+  if (error) { alert('재발송 실패: ' + error.message); return; }
+  alimtalkFails = alimtalkFails.filter((f) => !(f.booking_id === id && f.template === tpl));
+  toast('다시 보냈어요. (1분 뒤 결과 자동 확인)');
+  renderAtkFail();
+}
+
 function renderDashboard() {
   if (!$('tab-dashboard')) return;
+  renderAtkFail();
   const today = startOfToday();
 
   // 🔔 신규 예약 (계약안내 보내기 전)

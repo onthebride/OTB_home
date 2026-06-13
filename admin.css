@@ -564,3 +564,6 @@ td .muted { color: var(--ink-soft); }
 .dl-datehdr:first-child { margin-top: 0; }
 
 .chk-confirmed { font-size: .72rem; color: #fff; background: #2f7d4f; border-radius: 6px; padding: 2px 8px; font-weight: 600; }
+
+#card-atkfail { grid-column: 1 / -1; border-color: #d9b3aa; background: #fcf3f1; }
+#card-atkfail .dash-count { background: #b5462f; }
