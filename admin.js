@@ -870,6 +870,9 @@ function renderDashboard() {
   const upcoming = allBookings.filter((b) => { const d = wDate(b); return d && d >= today && d <= in14 && b.status === '확정'; })
     .sort((a, b) => wDate(a) - wDate(b));
   $('dcUpcoming').textContent = upcoming.length;
+  // 작가 확인 여부 맵 (admin_unconfirmed: main_ok/sub_ok)
+  const confMap = {};
+  allUnconfirmed.forEach((u) => { confMap[u.booking_id] = u; });
   $('listUpcoming').innerHTML = upcoming.length
     ? groupByDate(upcoming, (b) => {
       const d = wDate(b);
@@ -880,6 +883,11 @@ function renderDashboard() {
       const subSent = !!b.sub_check_sent_at;
       const needsSub = !!b.sub_assignee_id;
       const allSent = mainSent && (!needsSub || subSent);
+      const conf = confMap[b.id];
+      const allConfirmed = conf && conf.main_ok && (!needsSub || conf.sub_ok);
+      const statusFlag = allConfirmed
+        ? '<span class="chk-confirmed">작가 확인 ✓</span>'
+        : (allSent ? '<span class="chk-sentflag">보냄 ✓</span>' : '');
       return `
       <div class="dl-item soon" data-id="${b.id}">
         <div class="dl-main">
@@ -890,7 +898,7 @@ function renderDashboard() {
           ${b.assignee_id
             ? `<button class="btn-sm chk-send" data-id="${b.id}" data-staff="${b.assignee_id}" data-role="메인">${mainSent ? '메인 재전송' : '메인 체크'}</button>
                ${needsSub ? `<button class="btn-sm chk-send" data-id="${b.id}" data-staff="${b.sub_assignee_id}" data-role="서브">${subSent ? '서브 재전송' : '서브 체크'}</button>` : ''}
-               ${allSent ? '<span class="chk-sentflag">보냄 ✓</span>' : ''}`
+               ${statusFlag}`
             : '<span class="dl-na">작가 미배정</span>'}
           <button class="btn-sm sv-copy${surveyIds.has(b.id) ? '' : ' muted'}" data-id="${b.id}">${surveyIds.has(b.id) ? '설문 복사' : '설문 복사(미작성)'}</button>
         </div>
