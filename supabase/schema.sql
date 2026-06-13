@@ -300,10 +300,12 @@ begin
   return req;
 end$$;
 
--- 1분 지난 발송 건의 pg_net 응답을 확인 → 실패면 재발송(최대 3회), 성공이면 delivered
+-- 1분 지난 발송 건의 pg_net 응답 확인.
+-- 중복발송 방지 원칙: '확실한 실패'(응답이 왔는데 2xx 아님 = 솔라피 미접수, 안 나감)에만 재발송.
+-- 응답이 아직 없으면(지연/대기) 재발송하지 않고 대기. 15분 넘게 응답 없으면 재발송 없이 실패표시(수동 확인).
 create or replace function private.alimtalk_retry_due()
 returns int language plpgsql security definer set search_path=private, public, extensions, pg_temp as $$
-declare r record; resp record; ok boolean; n int := 0; newreq bigint;
+declare r record; resp record; ok boolean; confirmed_fail boolean; n int := 0; newreq bigint;
 begin
   for r in
     select * from private.alimtalk_outbox
@@ -313,20 +315,29 @@ begin
     select status_code, error_msg, timed_out into resp from net._http_response where id = r.req_id;
     if found then
       ok := (resp.status_code between 200 and 299) and coalesce(resp.timed_out, false) = false and resp.error_msg is null;
+      confirmed_fail := not ok;  -- 응답 왔는데 2xx 아님 = 확실한 실패(발송 안 됨)
     else
-      ok := false;  -- 1분 지나도 응답 없음 → 실패로 간주
+      ok := false; confirmed_fail := false;  -- 응답 없음 = 지연/대기 (실패 단정 안 함)
     end if;
 
     if ok then
       update private.alimtalk_outbox set status = 'delivered', checked_at = now() where id = r.id;
-    elsif r.attempts >= 3 then
-      update private.alimtalk_outbox set status = 'gaveup', checked_at = now() where id = r.id;
+    elsif confirmed_fail then
+      if r.attempts >= 3 then
+        update private.alimtalk_outbox set status = 'gaveup', checked_at = now() where id = r.id;
+      else
+        newreq := private.solapi_send(r.phone, 'tpl_' || r.template, r.vars);
+        update private.alimtalk_outbox
+          set req_id = newreq, attempts = attempts + 1, last_attempt_at = now(), checked_at = now()
+          where id = r.id;
+        n := n + 1;
+      end if;
     else
-      newreq := private.solapi_send(r.phone, 'tpl_' || r.template, r.vars);
-      update private.alimtalk_outbox
-        set req_id = newreq, attempts = attempts + 1, last_attempt_at = now(), checked_at = now()
-        where id = r.id;
-      n := n + 1;
+      -- 응답 없음(지연): 15분까지 대기 후에도 없으면 재발송 없이 실패표시(중복 방지, 수동 확인용)
+      if r.created_at < now() - interval '15 minutes' then
+        update private.alimtalk_outbox set status = 'gaveup', checked_at = now() where id = r.id;
+      end if;
+      -- 그 외엔 그대로 두고 다음 분에 재확인
     end if;
   end loop;
   return n;
