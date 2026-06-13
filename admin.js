@@ -251,18 +251,34 @@ async function openDetail(id) {
   }
 }
 
-async function copyCheckLink(bid, sid, roleLabel, role) {
+function copyCheckLink(bid, sid, roleLabel, role) {
   if (!sid) { toast('먼저 작가를 배정하세요.'); return; }
-  const lr = await sb.rpc('admin_make_check_link', { p_booking_id: bid, p_staff_id: sid });
-  const url = lr.data ? location.origin + '/c?k=' + lr.data : location.origin + '/staff-schedule?s=' + sid + '&b=' + bid;
-  try { await navigator.clipboard.writeText(url); } catch (_) { prompt('작가 체크 링크 (복사):', url); }
-  const { data } = await sb.rpc('admin_mark_check_sent', { p_id: bid, p_on: true, p_role: String(role || '').includes('서브') ? '서브' : '메인' });
-  const i = allBookings.findIndex((x) => x.id === bid);
-  if (i >= 0 && data) allBookings[i] = data;
-  const ures = await sb.rpc('admin_unconfirmed');
-  allUnconfirmed = Array.isArray(ures.data) ? ures.data : [];
-  toast(`${roleLabel} 체크 링크 복사됨 · 보냄 표시`);
-  renderDashboard();
+  const buildUrl = async () => {
+    const lr = await sb.rpc('admin_make_check_link', { p_booking_id: bid, p_staff_id: sid });
+    return lr.data ? location.origin + '/c?k=' + lr.data : location.origin + '/staff-schedule?s=' + sid + '&b=' + bid;
+  };
+  const finish = async (url) => {
+    const { data } = await sb.rpc('admin_mark_check_sent', { p_id: bid, p_on: true, p_role: String(role || '').includes('서브') ? '서브' : '메인' });
+    const i = allBookings.findIndex((x) => x.id === bid);
+    if (i >= 0 && data) allBookings[i] = data;
+    const ures = await sb.rpc('admin_unconfirmed');
+    allUnconfirmed = Array.isArray(ures.data) ? ures.data : [];
+    toast(`${roleLabel} 체크 링크 복사됨 · 보냄 표시`);
+    renderDashboard();
+  };
+  // iOS 포함: 사용자 제스처 안에서 비동기 URL을 클립보드에 (ClipboardItem + Promise). 실패 시 writeText 폴백.
+  if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+    let u;
+    navigator.clipboard.write([
+      new ClipboardItem({ 'text/plain': buildUrl().then((url) => { u = url; return new Blob([url], { type: 'text/plain' }); }) }),
+    ]).then(() => finish(u)).catch(async () => {
+      const url = u || await buildUrl();
+      try { await navigator.clipboard.writeText(url); } catch (_) {}
+      finish(url);
+    });
+  } else {
+    buildUrl().then(async (url) => { try { await navigator.clipboard.writeText(url); } catch (_) {} finish(url); });
+  }
 }
 
 function renderChecks(b, checks) {
