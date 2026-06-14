@@ -26,6 +26,7 @@ let surveyIds = new Set(); // 설문 제출된 예약 ID
 let allUnconfirmed = []; // 작가 미확인 (admin_unconfirmed)
 let alimtalkFails = []; // 알림톡 발송 실패 (admin_alimtalk_failures)
 let calMonth = null; // 캘린더 현재 월 {y, m}
+let dayOvKey = null; // 캘린더 날짜 팝업 열린 날 {y, m, d}
 let unpaidTab = 'deposit'; // 미입금 탭: deposit | balance
 let allStaff = [];
 let staffMap = {};
@@ -1150,15 +1151,30 @@ function renderCalendar() {
   document.querySelectorAll('.cal-mount').forEach((mount) => {
     mount.innerHTML = html;
     mount.querySelectorAll('.cal-cell.has').forEach((c) =>
-      c.addEventListener('click', () => { const d = +c.dataset.day; showDayList(`${y}년 ${m + 1}월 ${d}일`, byDay[d] || []); })
+      c.addEventListener('click', () => showDayList(y, m, +c.dataset.day))
     );
   });
+  renderDayOv(); // 열려있는 날짜 팝업도 현재 데이터로 갱신
 }
 
-function showDayList(label, items) {
+// 특정 날짜의 (확정·미취소) 예약을 시간순으로
+function dayItems(y, m, d) {
+  return allBookings.filter((b) => {
+    const dt = wDate(b);
+    return dt && dt.getFullYear() === y && dt.getMonth() === m && dt.getDate() === d && notCancelled(b) && b.deposit_paid;
+  }).sort((a, b) => (a.wedding_time || '').localeCompare(b.wedding_time || ''));
+}
+function showDayList(y, m, d) { dayOvKey = { y, m, d }; renderDayOv(); }
+
+function closeDayOv() { dayOvKey = null; const o = document.getElementById('dayOv'); if (o) o.remove(); }
+function renderDayOv() {
+  if (!dayOvKey) return;
+  const { y, m, d } = dayOvKey;
+  const sorted = dayItems(y, m, d);
   const old = document.getElementById('dayOv');
+  if (sorted.length === 0) { closeDayOv(); return; } // 그날 예약이 다 없어지면 팝업 닫기
+  const label = `${y}년 ${m + 1}월 ${d}일`;
   if (old) old.remove();
-  const sorted = items.slice().sort((a, b) => (a.wedding_time || '').localeCompare(b.wedding_time || ''));
   const ov = document.createElement('div');
   ov.id = 'dayOv';
   ov.className = 'day-ov';
@@ -1182,9 +1198,8 @@ function showDayList(label, items) {
       }).join('')}</div>
     </div>`;
   document.body.appendChild(ov);
-  const close = () => ov.remove();
-  ov.querySelector('.day-ov-bg').addEventListener('click', close);
-  ov.querySelector('.day-ov-x').addEventListener('click', close);
+  ov.querySelector('.day-ov-bg').addEventListener('click', closeDayOv);
+  ov.querySelector('.day-ov-x').addEventListener('click', closeDayOv);
   ov.querySelectorAll('.day-ov-item').forEach((it) => it.addEventListener('click', () => openDetail(it.dataset.id)));
 }
 
