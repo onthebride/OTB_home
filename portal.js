@@ -213,11 +213,11 @@ function renderDownload() {
   } else if (info.balance_paid) {
     box.innerHTML = `<div class="pt-locked">
       <span class="pt-lock-ico">🎞️</span>
-      <p>촬영 후 원본이 준비되면<br>이곳에서 바로 받으실 수 있어요.</p></div>${selectLink}`;
+      <p>촬영 후 원본이 준비되면<br>이곳에서 바로 받으실 수 있어요.</p></div>`;
   } else {
     box.innerHTML = `<div class="pt-locked">
       <span class="pt-lock-ico">🔒</span>
-      <p><b>잔금 입금이 확인되면</b> 원본 다운로드가 열려요.</p></div>${selectLink}`;
+      <p><b>잔금 입금이 확인되면</b> 원본 다운로드가 열려요.</p></div>`;
   }
   // 링크 올라오면 다운로드 박스를 최상단으로
   const card = document.getElementById('downloadCard');
