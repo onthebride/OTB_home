@@ -259,7 +259,10 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 }
 
 /* ===== Dashboard ===== */
-.dash-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px; }
+.dash-cards { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
+.dash-col-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.dash-col-right { flex: 1; min-width: 0; }
+#card-atkfail { margin-bottom: 16px; }
 .dash-card-head h3 small { font-weight: 400; color: var(--ink-soft); font-size: .76rem; }
 .dl-sub { font-size: .8rem; font-weight: 700; color: var(--ink-soft); margin: 12px 0 6px; }
 .dl-sub:first-child { margin-top: 0; }
@@ -275,8 +278,7 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 #card-download .dash-count { background: var(--gold-deep); }
 .dash-list { display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto; }
 .dash-list.tall { max-height: 680px; }
-/* 다가오는 예식 + 다운로드 링크 통합 박스 (전체폭, 길게) */
-#card-schedule { grid-column: 1 / -1; }
+/* 다가오는 예식 + 다운로드 링크 통합 박스 (오른쪽 세로 컬럼) */
 .sched-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--line); margin: -2px 0 14px; }
 .sched-tabs .stab { background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 8px 4px 12px; cursor: pointer; font-family: var(--sans); font-size: 1rem; font-weight: 700; color: var(--ink-soft); display: inline-flex; align-items: center; gap: 6px; }
 .sched-tabs .stab small { font-weight: 400; font-size: .76rem; }
@@ -500,7 +502,8 @@ td .muted { color: var(--ink-soft); }
 .cal-leg i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
 
 @media (max-width: 760px) {
-  .dash-cards { grid-template-columns: 1fr; }
+  .dash-cards { flex-direction: column; }
+  .dash-col-left, .dash-col-right { width: 100%; }
   .cal-cell { min-height: 64px; }
   .cal-ev { font-size: .64rem; }
   .sched-name { flex-basis: auto; }
