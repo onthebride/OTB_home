@@ -1454,6 +1454,19 @@ if ($('stAddBtn')) {
 }
 
 /* ===== Gallery management ===== */
+// 다가오는 예식 / 다운로드 링크 — 한 박스 안 탭 전환
+const schedTabs = document.querySelector('.sched-tabs');
+if (schedTabs) {
+  schedTabs.addEventListener('click', (e) => {
+    const t = e.target.closest('.stab');
+    if (!t) return;
+    const which = t.dataset.stab;
+    schedTabs.querySelectorAll('.stab').forEach((x) => x.classList.toggle('active', x === t));
+    $('listUpcoming').hidden = which !== 'upcoming';
+    $('listDownload').hidden = which !== 'download';
+  });
+}
+
 const dashTabs = document.querySelector('.dash-tabs');
 if (dashTabs) {
   dashTabs.addEventListener('click', (e) => {

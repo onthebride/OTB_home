@@ -274,6 +274,15 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .dash-count { background: var(--ink); color: #fff; border-radius: 999px; min-width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: .78rem; padding: 0 8px; }
 #card-download .dash-count { background: var(--gold-deep); }
 .dash-list { display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto; }
+.dash-list.tall { max-height: 680px; }
+/* 다가오는 예식 + 다운로드 링크 통합 박스 (전체폭, 길게) */
+#card-schedule { grid-column: 1 / -1; }
+.sched-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--line); margin: -2px 0 14px; }
+.sched-tabs .stab { background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 8px 4px 12px; cursor: pointer; font-family: var(--sans); font-size: 1rem; font-weight: 700; color: var(--ink-soft); display: inline-flex; align-items: center; gap: 6px; }
+.sched-tabs .stab small { font-weight: 400; font-size: .76rem; }
+.sched-tabs .stab:hover { color: var(--ink); }
+.sched-tabs .stab.active { color: var(--ink); border-bottom-color: var(--gold-deep); }
+.sched-tabs .stab .dash-count { margin-left: 2px; }
 .dash-empty { color: var(--ink-soft); font-size: .86rem; padding: 14px 4px; }
 
 .dl-item { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: #fff; }
