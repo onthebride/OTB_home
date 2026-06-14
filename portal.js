@@ -193,7 +193,7 @@ function renderDownload() {
     <li>다운로드가 안 되시면 USB 구매로 받으셔야 합니다! (10만원)</li>
     <li>원본은 작업 여부와 상관없이 <b>14개월 이후</b> 사전 안내 없이 서버에서 삭제됩니다.</li>
   </ul>`;
-  const selectLink = `<a class="pt-btn ghost full" href="select-guide" target="_blank" rel="noopener" style="margin-top:10px">📖 셀렉 안내 보기</a>`;
+  const selectLink = `<a class="pt-btn ghost full" href="select-guide?b=${esc(bookingId || '')}" style="margin-top:10px">📖 셀렉 안내 보기</a>`;
   const ready = !!(info.download_ready && info.download_link);
   if (ready) {
     box.innerHTML = `

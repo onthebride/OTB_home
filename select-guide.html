@@ -13,6 +13,7 @@
 </head>
 <body>
   <header class="sv-header">
+    <a class="sv-back" id="guideBack" href="#" hidden>← 내 예약 확인</a>
     <img src="assets/logo-black.png" alt="온더브라이드" class="sv-logo" />
   </header>
 
@@ -219,5 +220,13 @@
   </main>
 
   <footer class="sv-footer">© ONTHEBRIDE</footer>
+  <script>
+    (function () {
+      var b = new URLSearchParams(location.search).get('b');
+      var re = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      var el = document.getElementById('guideBack');
+      if (el && b && re.test(b)) { el.href = 'portal?b=' + b; el.hidden = false; }
+    })();
+  </script>
 </body>
 </html>
