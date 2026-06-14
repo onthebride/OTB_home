@@ -51,6 +51,15 @@
             <div class="dash-card-head"><h3>⚠️ 알림톡 발송 실패</h3><span class="dash-count" id="dcAtkFail">0</span></div>
             <div class="dash-list" id="listAtkFail"></div>
           </div>
+          <div class="dash-card sched-tab-card" id="card-schedule">
+            <div class="sched-tabs">
+              <button class="stab active" data-stab="upcoming">📅 다가오는 예식 <small>(2주)</small> <span class="dash-count" id="dcUpcoming">0</span></button>
+              <button class="stab" data-stab="download">⬇️ 다운로드 링크 필요 <span class="dash-count" id="dcDownload">0</span></button>
+            </div>
+            <div class="dash-list tall" id="listUpcoming"></div>
+            <div class="dash-list tall" id="listDownload" hidden></div>
+          </div>
+
           <div class="dash-card" id="card-new">
             <div class="dash-card-head"><h3>🔔 신규 예약</h3><span class="dash-count" id="dcNew">0</span></div>
             <div class="dash-list" id="listNew"></div>
@@ -59,15 +68,6 @@
           <div class="dash-card" id="card-unpaid">
             <div class="dash-card-head"><h3>💳 미입금</h3><span class="dash-count" id="dcUnpaid">0</span></div>
             <div class="dash-list" id="listUnpaid"></div>
-          </div>
-
-          <div class="dash-card sched-tab-card" id="card-schedule">
-            <div class="sched-tabs">
-              <button class="stab active" data-stab="upcoming">📅 다가오는 예식 <small>(2주)</small> <span class="dash-count" id="dcUpcoming">0</span></button>
-              <button class="stab" data-stab="download">⬇️ 다운로드 링크 필요 <span class="dash-count" id="dcDownload">0</span></button>
-            </div>
-            <div class="dash-list tall" id="listUpcoming"></div>
-            <div class="dash-list tall" id="listDownload" hidden></div>
           </div>
 
           <div class="dash-card" id="card-unconfirmed">
