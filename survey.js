@@ -81,6 +81,7 @@ async function addRefFiles(files) {
 async function uploadRefs() {
   const urls = [];
   for (let i = 0; i < refs.length; i++) {
+    if (refs[i].existing) { urls.push(refs[i].url); continue; } // 기존 업로드본은 그대로 유지
     const path = `refs/${bookingId}/${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}.jpg`;
     const up = await sb.storage.from('gallery').upload(path, refs[i].blob, { contentType: 'image/jpeg', upsert: false });
     if (up.error) throw up.error;
@@ -142,9 +143,34 @@ async function loadBooking() {
   if (data.wedding_date) $('s_date').value = String(data.wedding_date).slice(0, 10);
   if (data.wedding_venue) $('s_venue').value = data.wedding_venue;
   if (data.contractor_email) $('s_email').value = data.contractor_email;
-  if (data.already) $('reNote').hidden = false;
+  if (data.already) { $('reNote').hidden = false; await prefillExisting(); }
 
   show(form);
+}
+
+// 이미 제출한 설문이면 이전 답변을 폼에 채워줌 (수정용)
+async function prefillExisting() {
+  const { data: s } = await sb.rpc('survey_view', { p_booking_id: bookingId });
+  if (!s || !s.has_survey) return;
+  // 촬영 우선순위 (단일)
+  if (s.priority) {
+    const r = document.querySelector(`input[name="priority"][value="${CSS.escape(s.priority)}"]`);
+    if (r) r.checked = true;
+  }
+  // 본식 진행항목 (복수)
+  const prog = Array.isArray(s.prog_items) ? s.prog_items : [];
+  document.querySelectorAll('input[name="prog"]').forEach((c) => { c.checked = prog.includes(c.value); });
+  // 체크박스 / 텍스트
+  if ($('s_prop_ring')) $('s_prop_ring').checked = !!s.prop_ring;
+  if ($('s_bride_room')) $('s_bride_room').value = s.bride_room_req || '';
+  if ($('s_focus')) $('s_focus').value = s.bridal_focus || '';
+  if ($('s_wonpan_first')) $('s_wonpan_first').checked = !!s.wonpan_first;
+  if ($('s_wonpan_nolight')) $('s_wonpan_nolight').checked = s.wonpan_light === '미사용';
+  if ($('s_etc')) $('s_etc').value = s.etc_req || '';
+  // 레퍼런스 사진 (기존 업로드된 것)
+  const existing = Array.isArray(s.refs) ? s.refs : [];
+  refs = existing.slice(0, MAX_REFS).map((u) => ({ url: u, existing: true }));
+  renderRefs();
 }
 
 function escapeHtml(s) {
