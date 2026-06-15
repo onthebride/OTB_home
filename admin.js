@@ -53,6 +53,7 @@ const showDash = (email) => {
   $('dashView').hidden = false;
   $('dashUser').textContent = email || '';
   loadBookings();
+  initPush();
 };
 
 // onAuthStateChange fires INITIAL_SESSION on load (handling the initial view)
@@ -1814,4 +1815,50 @@ async function deleteGalleryItem(id, path) {
   const pages = Math.max(1, Math.ceil(glVisible().length / GL_PER));
   if (glPage > pages) glPage = pages;
   renderGalleryAdmin();
+}
+
+/* ===== 웹 푸시 알림 (신규 예약) ===== */
+const VAPID_PUBLIC = 'BDjeNAkhopFDs4C3z86ghAoaCMOIVD36HtS7LLr1MXoeZQelIYxJ63BUK7Ec52TGF0PVw-67C1sDWioXjv-lDbA';
+function urlB64ToUint8(b64) {
+  const pad = '='.repeat((4 - (b64.length % 4)) % 4);
+  const base = (b64 + pad).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base); const arr = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr;
+}
+let swReg = null;
+async function initPush() {
+  const btn = document.getElementById('notifyBtn');
+  if (!btn) return;
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return; // 미지원
+  try {
+    swReg = await navigator.serviceWorker.register('sw.js', { scope: '/' });
+  } catch (e) { console.warn('SW 등록 실패', e); return; }
+  const sub = await swReg.pushManager.getSubscription();
+  if (sub && Notification.permission === 'granted') { await saveSub(sub); return; } // 이미 구독됨
+  btn.hidden = false;
+  btn.addEventListener('click', enablePush);
+}
+async function enablePush() {
+  const btn = document.getElementById('notifyBtn');
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { alert('알림이 거부됐어요. 브라우저/홈화면 앱 설정에서 알림을 허용해 주세요.'); return; }
+    const sub = await swReg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8(VAPID_PUBLIC) });
+    await saveSub(sub);
+    btn.textContent = '🔔 알림 켜짐 ✓';
+    setTimeout(() => { btn.hidden = true; }, 1500);
+    toast('신규 예약 알림이 켜졌어요.');
+  } catch (e) {
+    console.error(e);
+    alert('알림 켜기에 실패했어요. 아이폰은 먼저 이 페이지를 홈 화면에 추가한 뒤, 그 앱에서 켜야 해요.');
+  }
+}
+async function saveSub(sub) {
+  const j = sub.toJSON();
+  await sb.rpc('save_push_subscription', {
+    p_endpoint: j.endpoint,
+    p_p256dh: j.keys && j.keys.p256dh,
+    p_auth: j.keys && j.keys.auth,
+  });
 }

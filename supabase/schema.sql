@@ -1290,3 +1290,26 @@ begin
 end$$;
 revoke all on function public.admin_alimtalk_failures() from public, anon;
 grant execute on function public.admin_alimtalk_failures() to authenticated;
+
+-- ============================================
+-- 웹 푸시 알림 (신규 예약) — 구독 저장
+-- ============================================
+create table if not exists public.push_subscriptions (
+  endpoint   text primary key,
+  p256dh     text not null,
+  auth       text not null,
+  created_at timestamptz not null default now()
+);
+alter table public.push_subscriptions enable row level security;
+
+create or replace function public.save_push_subscription(p_endpoint text, p_p256dh text, p_auth text)
+returns void language plpgsql security definer set search_path=public, pg_temp as $$
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  if p_endpoint is null or p_p256dh is null or p_auth is null then raise exception 'bad subscription'; end if;
+  insert into public.push_subscriptions(endpoint, p256dh, auth)
+    values (p_endpoint, p_p256dh, p_auth)
+  on conflict (endpoint) do update set p256dh = excluded.p256dh, auth = excluded.auth;
+end$$;
+revoke all on function public.save_push_subscription(text, text, text) from public, anon;
+grant execute on function public.save_push_subscription(text, text, text) to authenticated;
