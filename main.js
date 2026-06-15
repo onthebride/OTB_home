@@ -260,10 +260,9 @@ if (bookingForm) {
   bookingForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    // 2차: 이미 접수됐으면 카카오톡 채팅창으로 연결
+    // 2차: 이미 접수됐으면 카카오톡 채팅창으로 바로 연결
     if (bookingDone) {
-      setStatus('카카오톡 채팅창으로 이동합니다…', '');
-      setTimeout(() => { window.location.href = KAKAO_CHAT; }, 2000);
+      window.location.href = KAKAO_CHAT;
       return;
     }
 
