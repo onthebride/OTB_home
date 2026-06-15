@@ -249,6 +249,8 @@ const radioVal = (name) => {
 if (bookingForm) {
   const statusEl = document.getElementById('bkStatus');
   const submitBtn = bookingForm.querySelector('.bk-submit');
+  const KAKAO_CHAT = 'http://pf.kakao.com/_pxeNAn/chat';
+  let bookingDone = false; // 1차 제출 완료 여부
 
   const setStatus = (msg, type) => {
     statusEl.textContent = msg;
@@ -257,6 +259,13 @@ if (bookingForm) {
 
   bookingForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    // 2차: 이미 접수됐으면 카카오톡 채팅창으로 연결
+    if (bookingDone) {
+      setStatus('카카오톡 채팅창으로 이동합니다…', '');
+      setTimeout(() => { window.location.href = KAKAO_CHAT; }, 2000);
+      return;
+    }
 
     // required fields
     const required = [
@@ -393,7 +402,9 @@ if (bookingForm) {
     if (fpDate) fpDate.clear();
     tpReset();
     document.getElementById('bkTotal').textContent = calcTotal().toLocaleString('ko-KR') + '만원';
-    setStatus('예약 신청이 접수되었습니다! 확인 후 빠르게 연락드리겠습니다. 감사합니다 🤍', 'success');
+    bookingDone = true;
+    submitBtn.textContent = '카카오톡 채팅 열기 →';
+    setStatus('예약 신청이 접수되었습니다! 🤍\n카카오톡 채팅으로 예식 날짜와 성함을 보내주세요. 확인하셨으면 아래 버튼을 한 번 더 눌러주세요.', 'success');
   });
 }
 

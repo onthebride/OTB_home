@@ -477,7 +477,7 @@ input.readonly { background: var(--cream); color: var(--ink-soft); cursor: not-a
 .bk-total strong { font-family: var(--serif); font-size: 2rem; font-weight: 600; color: var(--gold-deep); }
 .bk-submit { margin-top: 4px; }
 .bk-disclaimer { text-align: center; font-size: .85rem; color: var(--ink-soft); margin-top: 18px; }
-.bk-status { text-align: center; font-size: .95rem; margin-top: 16px; min-height: 1.2em; }
+.bk-status { text-align: center; font-size: .95rem; margin-top: 16px; min-height: 1.2em; white-space: pre-line; line-height: 1.6; }
 .bk-status.success { color: #2f7d4f; font-weight: 500; }
 .bk-status.error { color: #c0392b; font-weight: 500; }
 
