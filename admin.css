@@ -224,7 +224,7 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 
 @media (max-width: 600px) {
   .detail-grid { grid-template-columns: 1fr; gap: 12px 16px; }
-  .dash-body { padding: 14px 14px 60px; }
+  .dash-body { padding: 14px 14px 60px; overflow-x: hidden; }
   .sv-l { flex-basis: 84px; }
 
   /* 헤더 */
@@ -235,9 +235,10 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
   .dash-user { display: none; }
   .btn-ghost { padding: 7px 12px; font-size: .85rem; }
 
-  /* 탭: 가로 스크롤 */
-  .dash-tabs { gap: 2px; overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
-  .dtab { padding: 11px 14px; font-size: .92rem; white-space: nowrap; }
+  /* 탭: 스크롤 없이 한 줄에 균등 배치 */
+  .dash-tabs { gap: 0; overflow: visible; flex-wrap: nowrap; }
+  .dtab { flex: 1 1 0; min-width: 0; padding: 11px 2px; font-size: .82rem; white-space: nowrap; text-align: center; }
+  .sched-tabs { flex-wrap: wrap; }
 
   /* 모달 */
   .modal { padding: 0; align-items: flex-end; }
