@@ -1313,3 +1313,40 @@ begin
 end$$;
 revoke all on function public.save_push_subscription(text, text, text) from public, anon;
 grant execute on function public.save_push_subscription(text, text, text) to authenticated;
+
+-- ============================================
+-- 알림톡 자동발송 (B 30일전 / C 7일전 / D 전날) — 매일 cron
+-- '오늘부터 도달 시점'만: wedding_date = 오늘+N 인 날에만 발송.
+-- 이미 체크/발송된 템플릿(alimtalk_sent->tpl 존재)은 건너뜀. 확정(입금)·미취소·연락처 있는 건만.
+-- ============================================
+create or replace function private.alimtalk_send_scheduled()
+returns int language plpgsql security definer set search_path=private, public, extensions, pg_temp as $$
+declare r record; n int := 0; vars jsonb; req bigint;
+begin
+  for r in
+    select b.id, b.contractor_name, b.contractor_phone, x.tpl
+    from public.bookings b
+    cross join (values ('B', (current_date + 30)), ('C', (current_date + 7)), ('D', (current_date + 1))) as x(tpl, dday)
+    where b.status <> '취소' and coalesce(b.deposit_paid,false)
+      and b.wedding_date = x.dday
+      and b.contractor_phone is not null
+      and (coalesce(b.alimtalk_sent,'{}'::jsonb) -> x.tpl) is null
+  loop
+    vars := jsonb_build_object('#{고객명}', coalesce(r.contractor_name,''), '#{예약ID}', r.id::text);
+    req := private.alimtalk_dispatch(r.id, r.tpl, r.contractor_phone, vars);
+    update public.bookings set alimtalk_sent = coalesce(alimtalk_sent,'{}'::jsonb) || jsonb_build_object(r.tpl, to_jsonb(now())) where id = r.id;
+    n := n + 1;
+  end loop;
+  return n;
+end$$;
+
+-- 자동발송 매일 cron (오전 10시 KST = 01:00 UTC). pg_cron 있을 때만.
+do $cron2$
+begin
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    if exists (select 1 from cron.job where jobname = 'otb-alimtalk-daily') then
+      perform cron.unschedule('otb-alimtalk-daily');
+    end if;
+    perform cron.schedule('otb-alimtalk-daily', '0 1 * * *', 'select private.alimtalk_send_scheduled();');
+  end if;
+end$cron2$;
