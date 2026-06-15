@@ -238,7 +238,7 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
   /* 탭: 스크롤 없이 한 줄에 균등 배치 */
   .dash-tabs { gap: 0; overflow: visible; flex-wrap: nowrap; }
   .dtab { flex: 1 1 0; min-width: 0; padding: 11px 2px; font-size: .82rem; white-space: nowrap; text-align: center; }
-  .sched-tabs { flex-wrap: wrap; }
+  .sched-tabs { flex-wrap: nowrap; }
 
   /* 모달 */
   .modal { padding: 0; align-items: flex-end; }
@@ -510,7 +510,7 @@ td .muted { color: var(--ink-soft); }
   .dash-col-right { display: block; }
   .dash-col-right .dash-card { flex: none; width: 100%; }
   .dash-list.tall { flex: none; max-height: 70vh; }
-  .sched-tabs { flex-wrap: wrap; }
+  .sched-tabs { flex-wrap: nowrap; }
   .sched-tabs .stab { font-size: .92rem; padding: 8px 2px 10px; }
   .cal-cell { min-height: 64px; }
   .cal-ev { font-size: .64rem; }
