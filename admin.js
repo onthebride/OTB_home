@@ -1265,13 +1265,23 @@ function schedMonthItems() {
     .sort((a, b) => (wDate(a) - wDate(b)) || (a.wedding_time || '').localeCompare(b.wedding_time || ''));
 }
 
+let schedFilter = 'all'; // 'all' | 'none' | staffId
+function setSchedFilter(s) { schedFilter = s; renderSchedule(); }
+function schedMatch(b) {
+  if (schedFilter === 'all') return true;
+  if (schedFilter === 'none') return !b.assignee_id;
+  return b.assignee_id === schedFilter || b.sub_assignee_id === schedFilter;
+}
+
 function renderSchedule() {
   const wrap = $('schedList');
   if (!wrap || !calMonth) return;
-  const items = schedMonthItems();
-  renderSchedTags(items);
+  const all = schedMonthItems();
+  renderSchedTags(all);
 
-  if (!items.length) { wrap.innerHTML = '<p class="dash-empty">이 달 예식이 없어요.</p>'; updateSchedCount(); return; }
+  if (!all.length) { wrap.innerHTML = '<p class="dash-empty">이 달 예식이 없어요.</p>'; updateSchedCount(); return; }
+  const items = all.filter(schedMatch);
+  if (!items.length) { wrap.innerHTML = '<p class="dash-empty">해당 작가 일정이 없어요.</p>'; updateSchedCount(); return; }
 
   const groups = {};
   items.forEach((b) => { const k = fmtDate(b.wedding_date); (groups[k] = groups[k] || []).push(b); });
@@ -1310,23 +1320,13 @@ function renderSchedTags(items) {
   items.forEach((b) => { [b.assignee_id, b.sub_assignee_id].forEach((id) => { if (id) used[id] = (used[id] || 0) + 1; }); });
   const ids = Object.keys(used).sort((a, b) => used[b] - used[a]);
   const unassigned = items.filter((b) => !b.assignee_id).length;
-  el.innerHTML = (ids.length || unassigned)
-    ? '<span class="sched-tags-label">작가별 선택:</span>' +
-      ids.map((id) => `<button type="button" class="sched-tag" data-staff="${id}"><i style="background:${staffColor(id)}"></i>${esc(staffName(id))} ${used[id]}</button>`).join('') +
-      (unassigned ? `<button type="button" class="sched-tag none" data-staff="none">미배정 ${unassigned}</button>` : '')
-    : '';
-  el.querySelectorAll('.sched-tag').forEach((btn) => btn.addEventListener('click', () => selectByStaff(btn.dataset.staff)));
-}
-
-function selectByStaff(staffId) {
-  const match = (b) => staffId === 'none' ? !b.assignee_id : (b.assignee_id === staffId || b.sub_assignee_id === staffId);
-  document.querySelectorAll('#schedList .sched-cb').forEach((c) => {
-    const b = allBookings.find((x) => x.id === c.value);
-    c.checked = !!(b && match(b));
-  });
-  updateSchedCount();
-  const n = schedChecked().length;
-  toast(n ? `${n}건 선택됨 — [선택 공유] 누르세요` : '해당 작가 일정이 없어요');
+  const on = (s) => (schedFilter === s ? ' active' : '');
+  el.innerHTML =
+    '<span class="sched-tags-label">작가별 보기:</span>' +
+    `<button type="button" class="sched-tag${on('all')}" data-staff="all">전체 ${items.length}</button>` +
+    ids.map((id) => `<button type="button" class="sched-tag${on(id)}" data-staff="${id}"><i style="background:${staffColor(id)}"></i>${esc(staffName(id))} ${used[id]}</button>`).join('') +
+    (unassigned ? `<button type="button" class="sched-tag none${on('none')}" data-staff="none">미배정 ${unassigned}</button>` : '');
+  el.querySelectorAll('.sched-tag').forEach((btn) => btn.addEventListener('click', () => setSchedFilter(btn.dataset.staff)));
 }
 
 function schedChecked() {

@@ -396,6 +396,8 @@ td .muted { color: var(--ink-soft); }
 .sched-tag:hover { border-color: var(--gold); }
 .sched-tag i { width: 10px; height: 10px; border-radius: 3px; }
 .sched-tag.none { color: var(--ink-soft); }
+.sched-tag.active { background: var(--ink); color: #fff; border-color: var(--ink); font-weight: 500; }
+.sched-tag.active i { box-shadow: 0 0 0 1.5px #fff; }
 
 /* 엑셀처럼 열 정렬: cb | 시간 | 계약자 | 예식장+옵션(채움) | 작가(우측) */
 .sched-row { display: grid; grid-template-columns: 18px 62px 96px 1fr auto; align-items: center; gap: 0 12px; padding: 9px 6px; border-bottom: 1px solid var(--line); cursor: pointer; }
