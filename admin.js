@@ -209,7 +209,7 @@ function productOptions(b) {
   const rows = [];
   const base = b.package === '베이직(구)' ? 50 : 55;
   if (b.package) rows.push({ name: String(b.package).replace('(데이터형)', ''), price: base });
-  if (b.travel_fee) rows.push({ name: '출장비', price: 5 });
+  if (b.travel_fee) rows.push({ name: '출장비', price: b.photographer === '2인 촬영' ? 10 : 5 });
   if (b.option_album) rows.push({ name: '앨범 1권 추가', price: 5 });
   if (b.option_reception) rows.push({ name: '연회장 인사촬영', price: 5 });
   if (b.option_pyebaek) rows.push({ name: '폐백촬영', price: 10 });
@@ -694,6 +694,8 @@ function renderEdit(b) {
     if (pk) sum += Number(pk.dataset.price) || 0;
     const ph = $('e_photographer').selectedOptions[0];
     if (ph) sum += Number(ph.dataset.price) || 0;
+    // 2인 촬영 + 출장비 → 출장비 1인당(+5)
+    if ($('e_travel') && $('e_travel').checked && $('e_photographer').value === '2인 촬영') sum += 5;
     document.querySelectorAll('#customOpts .co-price').forEach((el) => (sum += Number(el.value) || 0));
     $('eTotal').textContent = sum.toLocaleString('ko-KR') + '만원';
     return sum;

@@ -215,6 +215,10 @@ const calcTotal = () => {
   bookingForm
     .querySelectorAll('input[data-price]:checked')
     .forEach((el) => (sum += Number(el.dataset.price) || 0));
+  // 2인 촬영이면 출장비는 1인당 적용 → +5 (출장비 10만원)
+  const tv = bookingForm.querySelector('#f_travel');
+  const two = (bookingForm.querySelector('input[name="photographer"]:checked') || {}).value === '2인 촬영';
+  if (tv && tv.checked && two) sum += 5;
   return sum;
 };
 if (bookingForm) {
@@ -340,7 +344,7 @@ if (bookingForm) {
       };
       const items = [];
       if (row.basic) items.push('베이직(데이터형) (55)');
-      if (row.travel_fee) items.push('출장비 (5)');
+      if (row.travel_fee) items.push(row.photographer === '2인 촬영' ? '출장비 (10)' : '출장비 (5)');
       if (row.option_album) items.push('앨범 1권 추가 (5)');
       if (row.option_reception) items.push('연회장 인사촬영 (5)');
       if (row.option_pyebaek) items.push('폐백촬영 (10)');

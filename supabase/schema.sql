@@ -993,7 +993,7 @@ begin
   if b.package is not null then
     items := items || jsonb_build_object('group','상품','name', replace(b.package,'(데이터형)',''), 'price', base);
   end if;
-  if b.travel_fee then items := items || jsonb_build_object('group','상품','name','출장비','price',5); end if;
+  if b.travel_fee then items := items || jsonb_build_object('group','상품','name','출장비','price', case when b.photographer = '2인 촬영' then 10 else 5 end); end if;
   if b.option_album then items := items || jsonb_build_object('group','옵션','name','앨범 1권 추가','price',5); end if;
   if b.option_reception then items := items || jsonb_build_object('group','옵션','name','연회장 인사촬영','price',5); end if;
   if b.option_pyebaek then items := items || jsonb_build_object('group','옵션','name','폐백촬영','price',10); end if;
