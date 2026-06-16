@@ -29,10 +29,14 @@ function opts(w) {
   return o;
 }
 
+function pkgLabel(p) { return (String(p || '').replace(/\s*\(.*\)\s*/, '') || '베이직'); }
+
 function card(w) {
   const c = w.chk || {};
   const done = c.attend && c.arrival && c.options;
   const o = opts(w);
+  const isSub = w.role === '서브';
+  const product = isSub ? '서브촬영' : pkgLabel(w.package);
   return `
   <div class="ss-card${done ? ' done' : ''}" data-bid="${w.booking_id}">
     <div class="ss-head">
@@ -42,6 +46,7 @@ function card(w) {
     </div>
     <div class="ss-info">
       <div class="ss-grp">
+        <div class="ss-row"><b>상품</b> : ${esc(product)}</div>
         <div class="ss-row"><b>예식장</b> : ${esc(w.wedding_venue || '-')}</div>
       </div>
       <div class="ss-grp">

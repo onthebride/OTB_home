@@ -511,6 +511,7 @@ begin
       'groom_name', b.groom_name, 'groom_phone', b.groom_phone,
       'option_reception', b.option_reception, 'option_pyebaek', b.option_pyebaek, 'option_part2', b.option_part2,
       'option_album', b.option_album, 'photographer', b.photographer, 'rep_designation', b.rep_designation, 'custom_options', b.custom_options,
+      'package', b.package,
       'chk', (select jsonb_build_object('attend', c.attend, 'arrival', c.arrival, 'options', c.options, 'note', c.note, 'checked_at', c.checked_at)
               from public.assignment_checks c where c.booking_id = b.id and c.staff_id = p_staff_id)
     ) as x
@@ -583,6 +584,7 @@ begin
     'groom_name', b.groom_name, 'groom_phone', b.groom_phone,
     'option_reception', b.option_reception, 'option_pyebaek', b.option_pyebaek, 'option_part2', b.option_part2,
     'option_album', b.option_album, 'photographer', b.photographer, 'rep_designation', b.rep_designation, 'custom_options', b.custom_options,
+    'package', b.package,
     'chk', (select jsonb_build_object('attend', c.attend, 'arrival', c.arrival, 'options', c.options, 'note', c.note, 'checked_at', c.checked_at)
             from public.assignment_checks c where c.booking_id = b.id and c.staff_id = p_staff_id)
   )));
