@@ -676,6 +676,35 @@ as $$ declare r public.bookings; begin
   return r;
 end; $$;
 
+-- 일괄 배정: 역할(main/sub) 지정. sub면 서브 슬롯에만 들어감.
+create or replace function public.admin_assign_role(p_ids uuid[], p_assignee uuid, p_role text)
+returns integer language plpgsql security definer set search_path=public, pg_temp
+as $$ declare n integer; begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  if p_role = 'sub' then
+    update public.bookings set sub_assignee_id = p_assignee where id = any(p_ids);
+  else
+    update public.bookings set assignee_id = p_assignee where id = any(p_ids);
+  end if;
+  get diagnostics n = row_count;
+  return n;
+end; $$;
+
+-- 직전 배정 되돌리기: [{id, main, sub}] 스냅샷으로 복원
+create or replace function public.admin_restore_assignees(p_rows jsonb)
+returns integer language plpgsql security definer set search_path=public, pg_temp
+as $$ declare n integer := 0; e jsonb; begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  for e in select * from jsonb_array_elements(p_rows) loop
+    update public.bookings
+      set assignee_id = nullif(e->>'main','')::uuid,
+          sub_assignee_id = nullif(e->>'sub','')::uuid
+      where id = (e->>'id')::uuid;
+    n := n + 1;
+  end loop;
+  return n;
+end; $$;
+
 revoke all on function public.admin_staff_list() from public, anon;
 revoke all on function public.admin_staff_add(text, text) from public, anon;
 revoke all on function public.admin_staff_update(uuid, text, text, boolean, boolean) from public, anon;
@@ -686,6 +715,8 @@ revoke all on function public.admin_delete_booking(uuid) from public, anon;
 revoke all on function public.admin_set_alimtalk(uuid, text, boolean) from public, anon;
 revoke all on function public.admin_assign(uuid[], uuid) from public, anon;
 revoke all on function public.admin_set_assignees(uuid, uuid, uuid) from public, anon;
+revoke all on function public.admin_assign_role(uuid[], uuid, text) from public, anon;
+revoke all on function public.admin_restore_assignees(jsonb) from public, anon;
 grant execute on function public.admin_staff_list() to authenticated;
 grant execute on function public.admin_staff_add(text, text) to authenticated;
 grant execute on function public.admin_staff_update(uuid, text, text, boolean, boolean) to authenticated;
@@ -696,6 +727,8 @@ grant execute on function public.admin_delete_booking(uuid) to authenticated;
 grant execute on function public.admin_set_alimtalk(uuid, text, boolean) to authenticated;
 grant execute on function public.admin_assign(uuid[], uuid) to authenticated;
 grant execute on function public.admin_set_assignees(uuid, uuid, uuid) to authenticated;
+grant execute on function public.admin_assign_role(uuid[], uuid, text) to authenticated;
+grant execute on function public.admin_restore_assignees(jsonb) to authenticated;
 
 -- ============================================
 -- 갤러리 (자체 갤러리: Storage 업로드 + 태그 + 라이트박스)

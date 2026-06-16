@@ -1371,18 +1371,35 @@ if ($('schedAll')) {
     updateSchedCount();
   });
 }
-if ($('schedAssign')) {
-  $('schedAssign').addEventListener('click', async () => {
-    const ids = schedChecked();
-    const aid = $('schedAssignee').value;
-    if (!ids.length) { toast('배정할 일정을 선택하세요.'); return; }
-    if (!aid) { toast('담당자를 선택하세요.'); return; }
-    const { error } = await sb.rpc('admin_assign', { p_ids: ids, p_assignee: aid });
-    if (error) { alert('배정 실패: ' + error.message); return; }
-    ids.forEach((id) => { const b = allBookings.find((x) => x.id === id); if (b) b.assignee_id = aid; });
-    toast(`${ids.length}건 → ${staffName(aid)} 배정 완료`);
+let lastAssign = null; // 직전 배정 스냅샷 [{id, main, sub}]
+function updateUndoBtn() { if ($('schedUndo')) $('schedUndo').hidden = !lastAssign; }
+async function bulkAssign(role) {
+  const ids = schedChecked();
+  const aid = $('schedAssignee').value;
+  if (!ids.length) { toast('배정할 일정을 선택하세요.'); return; }
+  if (!aid) { toast('담당자를 선택하세요.'); return; }
+  // 되돌리기용 직전 상태 스냅샷
+  lastAssign = ids.map((id) => { const b = allBookings.find((x) => x.id === id) || {}; return { id, main: b.assignee_id || '', sub: b.sub_assignee_id || '' }; });
+  const { error } = await sb.rpc('admin_assign_role', { p_ids: ids, p_assignee: aid, p_role: role });
+  if (error) { lastAssign = null; alert('배정 실패: ' + error.message); return; }
+  ids.forEach((id) => { const b = allBookings.find((x) => x.id === id); if (b) { if (role === 'sub') b.sub_assignee_id = aid; else b.assignee_id = aid; } });
+  toast(`${ids.length}건 → ${staffName(aid)} ${role === 'sub' ? '서브' : '메인'} 배정 완료`);
+  updateUndoBtn();
+  renderSchedule(); renderCalendar(); renderDashboard();
+  if ($('schedAll')) $('schedAll').checked = false;
+}
+if ($('schedAssignMain')) $('schedAssignMain').addEventListener('click', () => bulkAssign('main'));
+if ($('schedAssignSub')) $('schedAssignSub').addEventListener('click', () => bulkAssign('sub'));
+if ($('schedUndo')) {
+  $('schedUndo').addEventListener('click', async () => {
+    if (!lastAssign || !lastAssign.length) { toast('되돌릴 배정이 없어요.'); return; }
+    const snap = lastAssign;
+    const { error } = await sb.rpc('admin_restore_assignees', { p_rows: snap });
+    if (error) { alert('되돌리기 실패: ' + error.message); return; }
+    snap.forEach((s) => { const b = allBookings.find((x) => x.id === s.id); if (b) { b.assignee_id = s.main || null; b.sub_assignee_id = s.sub || null; } });
+    lastAssign = null; updateUndoBtn();
+    toast(`${snap.length}건 직전 배정으로 되돌림`);
     renderSchedule(); renderCalendar(); renderDashboard();
-    if ($('schedAll')) $('schedAll').checked = false;
   });
 }
 if ($('schedShare')) {

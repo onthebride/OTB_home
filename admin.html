@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="admin.css?v=20260616e" />
+  <link rel="stylesheet" href="admin.css?v=20260616f" />
 </head>
 <body>
 
@@ -124,8 +124,10 @@
             <div class="sched-bar">
               <label class="sched-all"><input type="checkbox" id="schedAll" /> 전체선택</label>
               <select id="schedAssignee"><option value="">담당자 선택…</option></select>
-              <button class="btn-sm dl-save" id="schedAssign">선택 배정</button>
+              <button class="btn-sm dl-save" id="schedAssignMain">메인 배정</button>
+              <button class="btn-sm dl-save" id="schedAssignSub">서브 배정</button>
               <button class="btn-sm" id="schedShare">선택 공유(복사)</button>
+              <button class="btn-sm sched-undo" id="schedUndo" hidden>↩ 직전 배정 되돌리기</button>
               <span class="sched-selcount" id="schedSelCount"></span>
             </div>
             <div id="schedList"></div>
@@ -218,6 +220,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=20260616e"></script>
+  <script src="admin.js?v=20260616f"></script>
 </body>
 </html>
