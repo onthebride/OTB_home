@@ -1304,8 +1304,11 @@ function renderSchedule() {
             ${opts.length ? `<span class="sched-opts">${opts.map((o) => `<span class="sched-optag">${esc(o)}</span>`).join('')}</span>` : ''}
           </div>
           <div class="sched-asg-ctrls">
-            <select class="sched-main" data-id="${b.id}" title="메인작가">${assigneeOptions(b.assignee_id)}</select>
-            ${is2 ? `<select class="sched-sub" data-id="${b.id}" title="서브작가">${assigneeOptions(b.sub_assignee_id)}</select>` : ''}
+            <div class="sched-sels">
+              <select class="sched-main" data-id="${b.id}" title="메인작가">${assigneeOptions(b.assignee_id)}</select>
+              ${is2 ? `<select class="sched-sub" data-id="${b.id}" title="서브작가">${assigneeOptions(b.sub_assignee_id)}</select>` : ''}
+            </div>
+            <button type="button" class="sched-copy1" data-id="${b.id}" title="이 예식 스케줄 복사">📋</button>
           </div>
         </div>`;
       }).join('')}
@@ -1344,6 +1347,15 @@ function bindSchedule() {
       if (e.target.closest('.sched-asg-ctrls') || e.target.classList.contains('sched-cb')) return;
       const cb = row.querySelector('.sched-cb');
       cb.checked = !cb.checked; updateSchedCount();
+    })
+  );
+  // 개별 스케줄 복사
+  document.querySelectorAll('#schedList .sched-copy1').forEach((btn) =>
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const b = allBookings.find((x) => x.id === btn.dataset.id);
+      if (!b) return;
+      copySchedText(schedShareText([b]), `${b.contractor_name || ''} 스케줄 복사됨!`);
     })
   );
   // 인라인 작가 배정 (메인/서브)
@@ -1402,33 +1414,38 @@ if ($('schedUndo')) {
     renderSchedule(); renderCalendar(); renderDashboard();
   });
 }
+function schedShareText(rows) {
+  const fmtDot = (s) => (s ? String(s).slice(0, 10).replace(/-/g, '.') : '-');
+  const pkg = (b) => ((b.package || '').replace(/\s*\(.*\)\s*/, '') || '베이직');
+  return rows.map((b) => {
+    const opts = bookingOpts(b);
+    return [
+      `* 예식날짜 : ${fmtDot(b.wedding_date)}`,
+      `* 예식장소 : ${b.wedding_venue || '-'}`,
+      `* 예식시간 : ${b.wedding_time || '-'}`,
+      '',
+      `* 신부님 성함 : ${b.bride_name || '-'}`,
+      `* 신부님 연락처 : ${b.bride_phone || '-'}`,
+      '',
+      `* 신랑님 성함 : ${b.groom_name || '-'}`,
+      `* 신랑님 연락처 : ${b.groom_phone || '-'}`,
+      '',
+      `* 상품 : ${pkg(b)}`,
+      `* 옵션 : ${opts.length ? opts.join(', ') : '없음'}`,
+    ].join('\n');
+  }).join('\n\n━━━━━━━━━━\n\n');
+}
+async function copySchedText(text, okMsg) {
+  try { await navigator.clipboard.writeText(text); toast(okMsg); }
+  catch (_) { prompt('아래 내용을 복사하세요:', text); }
+}
 if ($('schedShare')) {
   $('schedShare').addEventListener('click', async () => {
     const ids = schedChecked();
     if (!ids.length) { toast('공유할 일정을 선택하세요.'); return; }
     const rows = ids.map((id) => allBookings.find((b) => b.id === id)).filter(Boolean)
       .sort((a, b) => (wDate(a) - wDate(b)) || (a.wedding_time || '').localeCompare(b.wedding_time || ''));
-    const fmtDot = (s) => (s ? String(s).slice(0, 10).replace(/-/g, '.') : '-');
-    const pkg = (b) => ((b.package || '').replace(/\s*\(.*\)\s*/, '') || '베이직');
-    const text = rows.map((b) => {
-      const opts = bookingOpts(b);
-      return [
-        `* 예식날짜 : ${fmtDot(b.wedding_date)}`,
-        `* 예식장소 : ${b.wedding_venue || '-'}`,
-        `* 예식시간 : ${b.wedding_time || '-'}`,
-        '',
-        `* 신부님 성함 : ${b.bride_name || '-'}`,
-        `* 신부님 연락처 : ${b.bride_phone || '-'}`,
-        '',
-        `* 신랑님 성함 : ${b.groom_name || '-'}`,
-        `* 신랑님 연락처 : ${b.groom_phone || '-'}`,
-        '',
-        `* 상품 : ${pkg(b)}`,
-        `* 옵션 : ${opts.length ? opts.join(', ') : '없음'}`,
-      ].join('\n');
-    }).join('\n\n━━━━━━━━━━\n\n');
-    try { await navigator.clipboard.writeText(text); toast(`${rows.length}건 스케줄 복사됨! 작가에게 붙여넣기 하세요.`); }
-    catch (_) { prompt('아래 내용을 복사하세요:', text); }
+    await copySchedText(schedShareText(rows), `${rows.length}건 스케줄 복사됨! 작가에게 붙여넣기 하세요.`);
   });
 }
 
