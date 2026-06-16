@@ -42,6 +42,11 @@ function staffColor(id) {
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
   return STAFF_COLORS[h % STAFF_COLORS.length];
 }
+function tint(hex, a) { // 작가 색을 옅은 배경(rgba)으로
+  if (!hex || hex[0] !== '#') return 'transparent';
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+}
 
 /* ===== Auth views ===== */
 const showLogin = () => {
@@ -1278,8 +1283,9 @@ function renderSchedule() {
         const opts = bookingOpts(b);
         const is2 = b.photographer === '2인 촬영';
         const assigned = b.assignee_id && (!is2 || b.sub_assignee_id); // 배정 완료(2인은 서브까지)
+        const bg = assigned ? ` style="background:${tint(staffColor(b.assignee_id), 0.16)}"` : '';
         return `
-        <div class="sched-row${assigned ? ' assigned' : ''}" data-id="${b.id}">
+        <div class="sched-row${assigned ? ' assigned' : ''}" data-id="${b.id}"${bg}>
           <input type="checkbox" class="sched-cb" value="${b.id}" />
           <span class="sched-time">${esc(kTimeShort(b.wedding_time)) || '-'}</span>
           <span class="sched-name">${esc(b.contractor_name || '-')}</span>

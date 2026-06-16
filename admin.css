@@ -596,6 +596,5 @@ td .muted { color: var(--ink-soft); }
 .evd-reward:focus { outline: none; border-color: var(--gold); }
 .evd-ctx { font-size: .8rem; color: var(--ink-soft); }
 
-/* 배정 완료된 일정 행은 톤다운 (미배정이 눈에 띄게) */
-.sched-row.assigned { opacity: .48; }
-.sched-row.assigned:hover { opacity: 1; }
+/* 배정 완료된 일정 행은 담당 작가 색으로 옅게 (미배정이 눈에 띄게, 배경은 인라인 rgba) */
+.sched-row.assigned .sched-name { color: var(--muted, #888); }
