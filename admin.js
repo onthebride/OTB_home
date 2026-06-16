@@ -1277,8 +1277,9 @@ function renderSchedule() {
       ${groups[k].map((b) => {
         const opts = bookingOpts(b);
         const is2 = b.photographer === '2인 촬영';
+        const assigned = b.assignee_id && (!is2 || b.sub_assignee_id); // 배정 완료(2인은 서브까지)
         return `
-        <div class="sched-row" data-id="${b.id}">
+        <div class="sched-row${assigned ? ' assigned' : ''}" data-id="${b.id}">
           <input type="checkbox" class="sched-cb" value="${b.id}" />
           <span class="sched-time">${esc(kTimeShort(b.wedding_time)) || '-'}</span>
           <span class="sched-name">${esc(b.contractor_name || '-')}</span>

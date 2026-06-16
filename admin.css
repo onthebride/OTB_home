@@ -595,3 +595,7 @@ td .muted { color: var(--ink-soft); }
 .evd-reward { border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font-size: .82rem; font-family: var(--sans); color: var(--ink); background: #fff; }
 .evd-reward:focus { outline: none; border-color: var(--gold); }
 .evd-ctx { font-size: .8rem; color: var(--ink-soft); }
+
+/* 배정 완료된 일정 행은 톤다운 (미배정이 눈에 띄게) */
+.sched-row.assigned { opacity: .48; }
+.sched-row.assigned:hover { opacity: 1; }
