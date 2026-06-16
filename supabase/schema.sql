@@ -1350,3 +1350,53 @@ begin
     perform cron.schedule('otb-alimtalk-daily', '0 1 * * *', 'select private.alimtalk_send_scheduled();');
   end if;
 end$cron2$;
+
+-- ============================================
+-- 관리자: 이벤트 참여 수동 설정 (지난 일정 짝꿍 등 자동흐름 밖의 건 처리용)
+-- ============================================
+-- 짝꿍 참여 on/off + 혜택. 기존 활성 건 있으면 그 건의 이 예약 측 혜택·승인 갱신, 없으면 상대 없이 새로 생성.
+create or replace function public.admin_set_buddy(p_booking uuid, p_on boolean, p_reward text)
+returns jsonb language plpgsql security definer set search_path=public, pg_temp as $$
+declare bid uuid;
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  if p_on then
+    if p_reward not in ('할인','앨범') then raise exception 'bad reward'; end if;
+    select id into bid from public.event_buddy
+      where status in ('waiting','matched','approved') and (requester_id = p_booking or partner_id = p_booking)
+      order by created_at desc limit 1;
+    if bid is not null then
+      update public.event_buddy set status = 'approved', approved_at = now(),
+        reward = case when requester_id = p_booking then p_reward else reward end,
+        partner_reward = case when partner_id = p_booking then p_reward else partner_reward end
+      where id = bid;
+    else
+      insert into public.event_buddy(requester_id, partner_id, reward, status, approved_at)
+        values (p_booking, null, p_reward, 'approved', now());
+    end if;
+  else
+    update public.event_buddy set status = 'canceled'
+      where status in ('waiting','matched','approved') and (requester_id = p_booking or partner_id = p_booking);
+  end if;
+  return jsonb_build_object('ok', true);
+end$$;
+revoke all on function public.admin_set_buddy(uuid, boolean, text) from public, anon;
+grant execute on function public.admin_set_buddy(uuid, boolean, text) to authenticated;
+
+-- 후기 참여 on/off + 혜택
+create or replace function public.admin_set_review(p_booking uuid, p_on boolean, p_reward text)
+returns jsonb language plpgsql security definer set search_path=public, pg_temp as $$
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  if p_on then
+    if p_reward not in ('할인','앨범') then raise exception 'bad reward'; end if;
+    insert into public.event_review(booking_id, link, reward, status)
+      values (p_booking, '(관리자 처리)', p_reward, 'approved')
+    on conflict (booking_id) do update set reward = p_reward, status = 'approved';
+  else
+    delete from public.event_review where booking_id = p_booking;
+  end if;
+  return jsonb_build_object('ok', true);
+end$$;
+revoke all on function public.admin_set_review(uuid, boolean, text) from public, anon;
+grant execute on function public.admin_set_review(uuid, boolean, text) to authenticated;

@@ -543,7 +543,7 @@ function renderView(b, flash) {
   });
 }
 
-// 예약 상세에 이벤트 참여내역(짝꿍/후기) 표시
+// 예약 상세: 이벤트 참여 관리자 직접 체크(참여 토글 + 혜택)
 async function loadEventSlot(b) {
   const slot = document.getElementById('eventSlot');
   if (!slot) return;
@@ -551,26 +551,43 @@ async function loadEventSlot(b) {
   if (!data) { slot.innerHTML = ''; return; }
   const bd = data.buddy || { state: 'none' };
   const rv = data.review;
-  const rw = (r) => (r === '앨범' ? '앨범 1권' : r === '할인' ? '1만원 할인' : '미선택');
-  const buddyMap = {
-    none: '<span class="evd-none">참여 없음</span>',
-    sent_waiting: `<b>${esc(bd.partner_name || '상대')}</b>님께 신청 · <span class="evd-wait">상대 확인 대기</span> · 혜택 ${esc(rw(bd.reward))}`,
-    incoming_confirm: `<b>${esc(bd.partner_name || '상대')}</b>님이 등록 · <span class="evd-wait">고객 확인 대기</span>`,
-    matched: `<b>${esc(bd.partner_name || '상대')}</b>님과 매칭 · <span class="evd-wait">승인 대기</span> · 혜택 ${esc(rw(bd.reward))}`,
-    approved: `<b>${esc(bd.partner_name || '상대')}</b>님과 <span class="evd-ok">승인 완료 ✓</span> · 혜택 ${esc(rw(bd.reward))}`,
-  };
-  let reviewTxt = '<span class="evd-none">참여 없음</span>';
-  if (rv) {
-    const stt = rv.status === 'approved' ? '<span class="evd-ok">승인 완료 ✓</span>'
-      : rv.status === 'rejected' ? '<span class="evd-wait">반려됨</span>' : '<span class="evd-wait">승인 대기</span>';
-    reviewTxt = `${stt} · 혜택 ${esc(rw(rv.reward))} · <a href="${esc(rv.link)}" target="_blank" rel="noopener" class="evd-link">후기 링크</a>`;
-  }
+  const buddyApproved = bd.state === 'approved';
+  const reviewApproved = !!(rv && rv.status === 'approved');
+  const rewardSel = (id, val) =>
+    `<select class="evd-reward" id="${id}"><option value="할인"${val === '할인' ? ' selected' : ''}>1만원 할인</option><option value="앨범"${val === '앨범' ? ' selected' : ''}>앨범 1권</option></select>`;
+  const stateTxt = { sent_waiting: '상대 확인 대기', incoming_confirm: '고객 확인 대기', matched: '고객 확인됨 · 승인 대기' };
+  const buddyCtx = (bd.state && bd.state !== 'none' && !buddyApproved)
+    ? `<span class="evd-ctx">${bd.partner_name ? esc(bd.partner_name) + '님 · ' : ''}${stateTxt[bd.state] || ''}</span>` : '';
+  const reviewCtx = (rv && rv.status !== 'approved' && rv.link && rv.link !== '(관리자 처리)')
+    ? `<span class="evd-ctx"><a href="${esc(rv.link)}" target="_blank" rel="noopener" class="evd-link">후기 링크</a></span>` : '';
   slot.innerHTML = `
     <div class="ev-detail">
-      <p class="dl">🎉 이벤트 참여</p>
-      <div class="evd-row"><span class="evd-k">짝꿍</span><span class="evd-v">${buddyMap[bd.state] || buddyMap.none}</span></div>
-      <div class="evd-row"><span class="evd-k">후기</span><span class="evd-v">${reviewTxt}</span></div>
+      <p class="dl">🎉 이벤트 참여 <small>(관리자 직접 체크 — 할인은 잔금에 반영)</small></p>
+      <div class="evd-ctrl">
+        <label class="evd-chk"><input type="checkbox" id="evBuddyOn" ${buddyApproved ? 'checked' : ''}/> 짝꿍 참여</label>
+        ${rewardSel('evBuddyReward', bd.reward)}
+        ${buddyCtx}
+      </div>
+      <div class="evd-ctrl">
+        <label class="evd-chk"><input type="checkbox" id="evReviewOn" ${reviewApproved ? 'checked' : ''}/> 후기 참여</label>
+        ${rewardSel('evReviewReward', rv && rv.reward)}
+        ${reviewCtx}
+      </div>
     </div>`;
+  const afterEv = async (res) => {
+    if (res && res.error) { alert('처리 실패: ' + res.error.message); return; }
+    const dres = await sb.rpc('admin_event_discounts');
+    eventDiscounts = (dres.data && typeof dres.data === 'object') ? dres.data : {};
+    toast('이벤트 참여를 저장했어요.');
+    renderDashboard();
+    renderView(b);
+  };
+  const applyBuddy = () => sb.rpc('admin_set_buddy', { p_booking: b.id, p_on: $('evBuddyOn').checked, p_reward: $('evBuddyReward').value }).then(afterEv);
+  const applyReview = () => sb.rpc('admin_set_review', { p_booking: b.id, p_on: $('evReviewOn').checked, p_reward: $('evReviewReward').value }).then(afterEv);
+  $('evBuddyOn').addEventListener('change', applyBuddy);
+  $('evBuddyReward').addEventListener('change', () => { if ($('evBuddyOn').checked) applyBuddy(); });
+  $('evReviewOn').addEventListener('change', applyReview);
+  $('evReviewReward').addEventListener('change', () => { if ($('evReviewOn').checked) applyReview(); });
 }
 
 // 편집 모드

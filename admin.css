@@ -587,3 +587,11 @@ td .muted { color: var(--ink-soft); }
 
 #card-atkfail { grid-column: 1 / -1; border-color: #d9b3aa; background: #fcf3f1; }
 #card-atkfail .dash-count { background: #b5462f; }
+
+/* 예약 상세 이벤트 참여 — 관리자 직접 체크 */
+.evd-ctrl { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; padding: 7px 0; }
+.evd-chk { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: .9rem; cursor: pointer; white-space: nowrap; }
+.evd-chk input { width: 16px; height: 16px; accent-color: var(--gold-deep); }
+.evd-reward { border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font-size: .82rem; font-family: var(--sans); color: var(--ink); background: #fff; }
+.evd-reward:focus { outline: none; border-color: var(--gold); }
+.evd-ctx { font-size: .8rem; color: var(--ink-soft); }
