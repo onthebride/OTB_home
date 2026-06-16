@@ -313,13 +313,7 @@ const PROG_ALL = ['신랑신부 동시 입장', '예물교환', '주례말씀', 
 
 function renderSurvey(s, bid) {
   const customerUrl = location.origin + '/survey?b=' + bid;
-  if (!s) {
-    return `<div class="survey-box">
-      <div class="survey-bar">
-        <span class="survey-none">📝 설문 미작성</span>
-        <button type="button" class="survey-share" data-url="${esc(customerUrl)}">고객 설문 링크 복사</button>
-      </div></div>`;
-  }
+  if (!s) return ''; // 설문 미작성 박스는 표시 안 함 (설문은 고객 포털에 통합됨)
   const row = (label, value) =>
     value ? `<div class="sv-row"><span class="sv-l">${esc(label)}</span><span class="sv-v">${esc(value)}</span></div>` : '';
   const yn = (v) => (v ? '예' : '');
