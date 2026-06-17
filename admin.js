@@ -416,8 +416,8 @@ function renderView(b, flash) {
       ${b.admin_note ? `<div class="full2">${field('관리자 메모', b.admin_note)}</div>` : ''}
     </div>
 
-    ${b.assignee_id ? `<div id="checkSlot" data-bid="${esc(b.id)}"></div>` : ''}
-    <div id="eventSlot" data-bid="${esc(b.id)}"></div>
+    ${b.assignee_id ? `<div id="checkSlot" data-bid="${esc(b.id)}">${renderChecks(b, [])}</div>` : ''}
+    <div id="eventSlot" data-bid="${esc(b.id)}">${eventSlotHtml(null)}</div>
     <div id="surveySlot" data-bid="${esc(b.id)}">${surveyIds.has(b.id) ? '<p class="survey-loading">📝 설문 불러오는 중…</p>' : ''}</div>
 
     <div class="portal-link">
@@ -533,7 +533,10 @@ function renderView(b, flash) {
     renderView(allBookings[i] || b);
   });
 
-  // 이벤트 참여내역 (짝꿍/후기) 비동기 로드
+  // 작가 확인 박스: 즉시 표시된 골격에 버튼 바인딩(상태는 openDetail에서 비동기 갱신)
+  const cslot0 = $('checkSlot');
+  if (cslot0) cslot0.querySelectorAll('.chk-link').forEach((btn) => btn.addEventListener('click', () => copyCheckLink(btn.dataset.bid, btn.dataset.staff, btn.dataset.role, btn.dataset.role)));
+  // 이벤트 참여 박스: 골격은 즉시 보이고, 실제 상태·바인딩은 비동기 갱신
   loadEventSlot(b);
 
   // 레퍼런스 사진 클릭 → 크게 보기
@@ -548,14 +551,10 @@ function renderView(b, flash) {
   });
 }
 
-// 예약 상세: 이벤트 참여 관리자 직접 체크(참여 토글 + 혜택)
-async function loadEventSlot(b) {
-  const slot = document.getElementById('eventSlot');
-  if (!slot) return;
-  const { data } = await sb.rpc('portal_booking_info', { p_booking_id: b.id });
-  if (!data) { slot.innerHTML = ''; return; }
-  const bd = data.buddy || { state: 'none' };
-  const rv = data.review;
+// 이벤트 참여 박스 HTML (data=null이면 기본 골격 — 즉시 표시용)
+function eventSlotHtml(data) {
+  const bd = (data && data.buddy) || { state: 'none' };
+  const rv = data && data.review;
   const buddyApproved = bd.state === 'approved';
   const reviewApproved = !!(rv && rv.status === 'approved');
   const rewardSel = (id, val) =>
@@ -565,7 +564,7 @@ async function loadEventSlot(b) {
     ? `<span class="evd-ctx">${bd.partner_name ? esc(bd.partner_name) + '님 · ' : ''}${stateTxt[bd.state] || ''}</span>` : '';
   const reviewCtx = (rv && rv.status !== 'approved' && rv.link && rv.link !== '(관리자 처리)')
     ? `<span class="evd-ctx"><a href="${esc(rv.link)}" target="_blank" rel="noopener" class="evd-link">후기 링크</a></span>` : '';
-  slot.innerHTML = `
+  return `
     <div class="ev-detail">
       <p class="dl">🎉 이벤트 참여 <small>(관리자 직접 체크 — 할인은 잔금에 반영)</small></p>
       <div class="evd-ctrl">
@@ -579,6 +578,20 @@ async function loadEventSlot(b) {
         ${reviewCtx}
       </div>
     </div>`;
+}
+
+// 예약 상세: 이벤트 참여 관리자 직접 체크(참여 토글 + 혜택)
+async function loadEventSlot(b) {
+  const slot = document.getElementById('eventSlot');
+  if (!slot) return;
+  const { data } = await sb.rpc('portal_booking_info', { p_booking_id: b.id });
+  if (slot.dataset.bid !== b.id) return; // 그 사이 다른 예약 열면 무시
+  slot.innerHTML = eventSlotHtml(data);
+  bindEventSlot(b);
+}
+
+function bindEventSlot(b) {
+  if (!document.getElementById('evBuddyOn')) return;
   const afterEv = async (res) => {
     if (res && res.error) { alert('처리 실패: ' + res.error.message); return; }
     const dres = await sb.rpc('admin_event_discounts');
