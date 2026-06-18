@@ -576,6 +576,9 @@ td .muted { color: var(--ink-soft); }
 
 .btn-sm.muted { color: var(--ink-soft); border-color: var(--line); opacity: .85; }
 
+.dl-toprow { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.dl-asg { flex: none; font-size: .8rem; font-weight: 700; white-space: nowrap; }
+.dl-asg.none { color: var(--ink-soft); font-weight: 500; }
 #listUpcoming .dl-actions { flex-direction: column; align-items: stretch; gap: 8px; }
 #listUpcoming .chk-rolerow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 #listUpcoming .dl-actions .sv-copy { align-self: flex-end; margin-left: 0; }

@@ -978,7 +978,9 @@ function renderDashboard() {
       const d = wDate(b);
       const dleft = Math.round((d - today) / 86400000);
       const dtag = dleft === 0 ? '오늘' : 'D-' + dleft;
-      const asg = b.assignee_id ? ` · 담당 ${esc(staffName(b.assignee_id))}` : '';
+      const asgBadge = b.assignee_id
+        ? `<span class="dl-asg" style="color:${staffColor(b.assignee_id)}">● ${esc(staffName(b.assignee_id))}</span>`
+        : '<span class="dl-asg none">미배정</span>';
       const mainSent = !!b.check_sent_at;
       const subSent = !!b.sub_check_sent_at;
       const needsSub = !!b.sub_assignee_id;
@@ -991,8 +993,11 @@ function renderDashboard() {
       return `
       <div class="dl-item soon" data-id="${b.id}">
         <div class="dl-main">
-          <span class="dl-name">${esc(b.contractor_name || '-')}${phBadge(b)} <span class="dday">${dtag}</span></span>
-          <span class="dl-meta">${esc(fmtDate(b.wedding_date))} ${esc(kTimeShort(b.wedding_time))} · ${esc(b.wedding_venue || '-')}${asg}</span>
+          <div class="dl-toprow">
+            <span class="dl-name">${esc(b.contractor_name || '-')}${phBadge(b)} <span class="dday">${dtag}</span></span>
+            ${asgBadge}
+          </div>
+          <span class="dl-meta">${esc(fmtDate(b.wedding_date))} ${esc(kTimeShort(b.wedding_time))} · ${esc(b.wedding_venue || '-')}</span>
         </div>
         <div class="dl-actions">
           ${b.assignee_id
