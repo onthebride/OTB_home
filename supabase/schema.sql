@@ -255,7 +255,7 @@ begin
   if auth.uid() is null then raise exception 'unauthorized'; end if;
   select * into b from public.bookings where id = p_booking_id; if not found then raise exception 'booking not found'; end if;
   if b.contractor_phone is null then raise exception '연락처가 없습니다'; end if;
-  if p_template not in ('A','B','C','D','E') then raise exception 'bad template'; end if;
+  if p_template not in ('A','B','C','D','E','F') then raise exception 'bad template'; end if;
   -- E(촬영본 안내)는 다운로드 링크 입력 후에만
   if p_template = 'E' and b.download_link is null then raise exception '다운로드 링크를 먼저 입력하세요'; end if;
 
@@ -281,13 +281,18 @@ create table if not exists private.alimtalk_outbox (
   phone           text not null,
   vars            jsonb not null default '{}'::jsonb,
   req_id          bigint,               -- 최근 pg_net 요청 id
-  status          text not null default 'sent',  -- sent | delivered | gaveup
+  status          text not null default 'sent',  -- sent | delivered(접수) | completed(전달확인) | failed(전달실패) | gaveup(접수실패)
   attempts        int  not null default 1,
   created_at      timestamptz not null default now(),
   last_attempt_at timestamptz not null default now(),
   checked_at      timestamptz
 );
 create index if not exists idx_outbox_pending on private.alimtalk_outbox(status, last_attempt_at);
+-- 최종 전달결과 추적(솔라피 발송결과 조회용): 접수(delivered) → 조회 → completed | failed
+alter table private.alimtalk_outbox add column if not exists message_id        text;
+alter table private.alimtalk_outbox add column if not exists report_req_id     bigint;
+alter table private.alimtalk_outbox add column if not exists report_checked_at timestamptz;
+alter table private.alimtalk_outbox add column if not exists fail_code         text;
 
 -- 발송 + outbox 기록 (solapi_send 래퍼)
 create or replace function private.alimtalk_dispatch(p_booking_id uuid, p_template text, p_to text, p_vars jsonb)
@@ -312,7 +317,7 @@ begin
     where status = 'sent' and last_attempt_at < now() - interval '1 minute'
     order by id limit 100
   loop
-    select status_code, error_msg, timed_out into resp from net._http_response where id = r.req_id;
+    select status_code, error_msg, timed_out, content into resp from net._http_response where id = r.req_id;
     if found then
       ok := (resp.status_code between 200 and 299) and coalesce(resp.timed_out, false) = false and resp.error_msg is null;
       confirmed_fail := not ok;  -- 응답 왔는데 2xx 아님 = 확실한 실패(발송 안 됨)
@@ -321,7 +326,9 @@ begin
     end if;
 
     if ok then
-      update private.alimtalk_outbox set status = 'delivered', checked_at = now() where id = r.id;
+      update private.alimtalk_outbox set status = 'delivered', checked_at = now(),
+        message_id = coalesce(message_id, case when left(resp.content,1)='{' then (resp.content::jsonb)->>'messageId' end)
+        where id = r.id;
     elsif confirmed_fail then
       if r.attempts >= 3 then
         update private.alimtalk_outbox set status = 'gaveup', checked_at = now() where id = r.id;
@@ -343,6 +350,65 @@ begin
   return n;
 end$$;
 
+-- ============================================
+-- 솔라피 발송결과(최종 전달) 조회: 접수(delivered)된 건의 실제 전달 성공/실패 확인.
+-- statusCode '4000'=전달완료, '2000'/'3000'=진행중, 그 외=전달실패(예: 3104 카톡미사용자).
+-- 2단계: (A) 직전 조회요청 응답 수집→completed/failed 판정, (B) 미확인 접수건 조회요청 발사.
+-- ============================================
+create or replace function private.alimtalk_check_delivery()
+returns int language plpgsql security definer set search_path=private, public, extensions, pg_temp as $$
+declare r record; resp record; sc text; n int := 0; req bigint;
+  k text; s text; dt text; salt text; sig text; hdr text;
+begin
+  select val into k from private.solapi where key='api_key';
+  select val into s from private.solapi where key='api_secret';
+  if k is null or s is null then return 0; end if;
+
+  -- (A) 조회 응답 수집
+  for r in
+    select id, message_id, report_req_id from private.alimtalk_outbox
+    where status='delivered' and report_req_id is not null order by id limit 100
+  loop
+    select status_code, content into resp from net._http_response where id = r.report_req_id;
+    if not found then
+      continue;  -- 아직 응답 없음 → 다음 사이클
+    end if;
+    if resp.status_code between 200 and 299 and left(resp.content,1)='{' then
+      sc := (resp.content::jsonb) #>> array['messageList', r.message_id, 'statusCode'];
+      if sc = '4000' then
+        update private.alimtalk_outbox set status='completed', report_checked_at=now(), report_req_id=null where id=r.id;
+      elsif sc is null or sc in ('2000','3000') then
+        update private.alimtalk_outbox set report_req_id=null where id=r.id;  -- 진행중 → 재조회
+      else
+        update private.alimtalk_outbox set status='failed', fail_code=sc, report_checked_at=now(), report_req_id=null where id=r.id;
+        n := n + 1;
+      end if;
+    else
+      update private.alimtalk_outbox set report_req_id=null where id=r.id;  -- 비정상 응답 → 재조회
+    end if;
+  end loop;
+
+  -- (B) 미확인 접수건 조회요청 발사 (접수 2분 경과, 3일 이내)
+  for r in
+    select id, message_id from private.alimtalk_outbox
+    where status='delivered' and message_id is not null and report_req_id is null and report_checked_at is null
+      and created_at < now() - interval '2 minutes' and created_at > now() - interval '3 days'
+    order by id limit 50
+  loop
+    dt := to_char(now() at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"');
+    salt := encode(gen_random_bytes(32), 'hex');
+    sig := encode(hmac(dt || salt, s, 'sha256'), 'hex');
+    hdr := 'HMAC-SHA256 apiKey=' || k || ', date=' || dt || ', salt=' || salt || ', signature=' || sig;
+    select net.http_get(
+      url := 'https://api.solapi.com/messages/v4/list?messageId=' || r.message_id,
+      headers := jsonb_build_object('Authorization', hdr)
+    ) into req;
+    update private.alimtalk_outbox set report_req_id = req where id = r.id;
+  end loop;
+
+  return n;
+end$$;
+
 -- 매분 재시도 cron 등록 (pg_cron 있을 때만)
 do $cron$
 begin
@@ -355,6 +421,17 @@ begin
     raise notice 'pg_cron 미설치 — Supabase 대시보드에서 pg_cron 활성화 후 이 스크립트 재실행 필요';
   end if;
 end$cron$;
+
+-- 발송결과(전달) 조회 cron: 3분마다 (pg_cron 있을 때만)
+do $cron3$
+begin
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    if exists (select 1 from cron.job where jobname = 'otb-alimtalk-report') then
+      perform cron.unschedule('otb-alimtalk-report');
+    end if;
+    perform cron.schedule('otb-alimtalk-report', '*/3 * * * *', 'select private.alimtalk_check_delivery();');
+  end if;
+end$cron3$;
 
 -- ============================================
 -- 담당자(작가) 명단 + 배정 + 입금확인
@@ -1311,16 +1388,17 @@ begin
   if auth.uid() is null then raise exception 'unauthorized'; end if;
   select coalesce(jsonb_agg(jsonb_build_object(
     'booking_id', o.booking_id, 'template', o.template, 'name', b.contractor_name,
-    'wedding_date', b.wedding_date, 'failed_at', o.last_attempt_at) order by o.last_attempt_at desc), '[]'::jsonb)
+    'wedding_date', b.wedding_date, 'kind', o.status, 'fail_code', o.fail_code,
+    'failed_at', coalesce(o.report_checked_at, o.last_attempt_at)) order by coalesce(o.report_checked_at, o.last_attempt_at) desc), '[]'::jsonb)
   into res
   from private.alimtalk_outbox o
   join public.bookings b on b.id = o.booking_id
-  where o.status = 'gaveup'
+  where o.status in ('gaveup','failed')
     and b.status <> '취소'
     and not exists (
       select 1 from private.alimtalk_outbox o2
       where o2.booking_id = o.booking_id and o2.template = o.template
-        and o2.status = 'delivered' and o2.created_at > o.created_at);
+        and o2.status in ('delivered','completed') and o2.created_at > o.created_at);
   return res;
 end$$;
 revoke all on function public.admin_alimtalk_failures() from public, anon;

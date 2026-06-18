@@ -909,7 +909,9 @@ function copySurveyShare(id) {
   toast(surveyIds.has(id) ? '작가 공유용 설문 링크를 복사했어요 📋' : '설문 링크 복사 — 아직 고객이 설문 미작성 상태예요');
 }
 
-const ATK_FAIL_NAME = { A: '계약안내', B: '한달전', C: '일주일전·잔금', D: '이틀전', E: '촬영본 안내' };
+const ATK_FAIL_NAME = { A: '계약안내', B: '한달전', C: '일주일전·잔금', D: '전날', E: '촬영본 안내', F: '입금확인' };
+const ATK_FAILCODE = { '3101': '발신프로필 오류', '3102': '카카오채널 친구 아님', '3103': '템플릿 불일치', '3104': '카카오톡 미사용자(번호 오류 등)', '3105': '미등록 템플릿', '3106': '메시지 타입 오류', '3107': '비활성/수신차단', '3108': '발송가능시간 외(08~20시)' };
+const atkFailReason = (code) => (code ? (ATK_FAILCODE[code] || ('전달실패 코드 ' + code)) : '전달 실패');
 function renderAtkFail() {
   const card = $('card-atkfail');
   if (!card) return;
@@ -920,8 +922,8 @@ function renderAtkFail() {
   $('listAtkFail').innerHTML = fails.map((f) => `
     <div class="dl-item overdue" data-id="${f.booking_id}">
       <div class="dl-main">
-        <span class="dl-name">${esc(f.name || '-')} <span class="od-badge">${esc(ATK_FAIL_NAME[f.template] || f.template)} 실패</span></span>
-        <span class="dl-meta">${esc(fmtDate(f.wedding_date))} · 발송 실패 (재시도 후에도 안 됨)</span>
+        <span class="dl-name">${esc(f.name || '-')} <span class="od-badge">${esc(ATK_FAIL_NAME[f.template] || f.template)} ${f.kind === 'failed' ? '전달실패' : '발송실패'}</span></span>
+        <span class="dl-meta">${esc(fmtDate(f.wedding_date))} · ${f.kind === 'failed' ? '❌ ' + esc(atkFailReason(f.fail_code)) : '발송 실패 (재시도 후에도 안 됨)'}</span>
       </div>
       <div class="dl-actions">
         <button class="btn-sm btn-kakao-sm atk-resend" data-id="${f.booking_id}" data-tpl="${f.template}">다시 보내기</button>
