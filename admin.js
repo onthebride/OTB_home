@@ -926,11 +926,17 @@ function renderAtkFail() {
         <span class="dl-meta">${esc(fmtDate(f.wedding_date))} · ${f.kind === 'failed' ? '❌ ' + esc(atkFailReason(f.fail_code)) : '발송 실패 (재시도 후에도 안 됨)'}</span>
       </div>
       <div class="dl-actions">
+        <button class="btn-sm atk-copytext" data-id="${f.booking_id}" data-tpl="${f.template}">📋 내용 복사</button>
         <button class="btn-sm btn-kakao-sm atk-resend" data-id="${f.booking_id}" data-tpl="${f.template}">다시 보내기</button>
+        <button class="btn-sm atk-dismiss" data-id="${f.booking_id}" data-tpl="${f.template}">✓ 확인</button>
       </div>
     </div>`).join('');
   $('listAtkFail').querySelectorAll('.atk-resend').forEach((btn) =>
     btn.addEventListener('click', (e) => { e.stopPropagation(); resendFailed(btn.dataset.id, btn.dataset.tpl); }));
+  $('listAtkFail').querySelectorAll('.atk-copytext').forEach((btn) =>
+    btn.addEventListener('click', (e) => { e.stopPropagation(); copyFailText(btn.dataset.id, btn.dataset.tpl); }));
+  $('listAtkFail').querySelectorAll('.atk-dismiss').forEach((btn) =>
+    btn.addEventListener('click', (e) => { e.stopPropagation(); dismissFail(btn.dataset.id, btn.dataset.tpl); }));
   $('listAtkFail').querySelectorAll('.dl-main').forEach((m) =>
     m.addEventListener('click', () => openDetail(m.closest('.dl-item').dataset.id)));
 }
@@ -942,6 +948,25 @@ async function resendFailed(id, tpl) {
   if (error) { alert('재발송 실패: ' + error.message); return; }
   alimtalkFails = alimtalkFails.filter((f) => !(f.booking_id === id && f.template === tpl));
   toast('다시 보냈어요. (1분 뒤 결과 자동 확인)');
+  renderAtkFail();
+}
+
+// 실패 건 메시지 본문 복사 (수동 발송용) — 본문 + 내 예약 확인 링크
+function copyFailText(id, tpl) {
+  const f = (alimtalkFails || []).find((x) => x.booking_id === id && x.template === tpl);
+  const portal = location.origin + '/portal?b=' + id;
+  const body = (f && f.text) ? f.text : '';
+  const text = (body ? body + '\n\n' : '') + '▶ 내 예약 확인하기\n' + portal;
+  copySchedText(text, '메시지 내용을 복사했어요 — 고객에게 직접 보내세요 📋');
+}
+
+// 실패 알림 '확인'(숨김) 처리
+async function dismissFail(id, tpl) {
+  if (!confirm('이 실패 알림을 확인 처리하고 목록에서 숨길까요?')) return;
+  const { error } = await sb.rpc('admin_dismiss_alimtalk_fail', { p_booking_id: id, p_template: tpl });
+  if (error) { alert('처리 실패: ' + error.message); return; }
+  alimtalkFails = (alimtalkFails || []).filter((x) => !(x.booking_id === id && x.template === tpl));
+  toast('확인 처리했어요. 목록에서 숨김.');
   renderAtkFail();
 }
 

@@ -293,6 +293,8 @@ alter table private.alimtalk_outbox add column if not exists message_id        t
 alter table private.alimtalk_outbox add column if not exists report_req_id     bigint;
 alter table private.alimtalk_outbox add column if not exists report_checked_at timestamptz;
 alter table private.alimtalk_outbox add column if not exists fail_code         text;
+alter table private.alimtalk_outbox add column if not exists dismissed         boolean not null default false;  -- 관리자가 '확인' 처리하면 대쉬보드에서 숨김
+alter table private.alimtalk_outbox add column if not exists rendered_text     text;  -- 실패 시 수동 발송용 메시지 본문(솔라피 리포트의 text)
 
 -- 발송 + outbox 기록 (solapi_send 래퍼)
 create or replace function private.alimtalk_dispatch(p_booking_id uuid, p_template text, p_to text, p_vars jsonb)
@@ -380,7 +382,9 @@ begin
       elsif sc is null or sc in ('2000','3000') then
         update private.alimtalk_outbox set report_req_id=null where id=r.id;  -- 진행중 → 재조회
       else
-        update private.alimtalk_outbox set status='failed', fail_code=sc, report_checked_at=now(), report_req_id=null where id=r.id;
+        update private.alimtalk_outbox set status='failed', fail_code=sc,
+          rendered_text = (resp.content::jsonb) #>> array['messageList', r.message_id, 'text'],
+          report_checked_at=now(), report_req_id=null where id=r.id;
         n := n + 1;
       end if;
     else
@@ -1388,12 +1392,13 @@ begin
   if auth.uid() is null then raise exception 'unauthorized'; end if;
   select coalesce(jsonb_agg(jsonb_build_object(
     'booking_id', o.booking_id, 'template', o.template, 'name', b.contractor_name,
-    'wedding_date', b.wedding_date, 'kind', o.status, 'fail_code', o.fail_code,
+    'wedding_date', b.wedding_date, 'kind', o.status, 'fail_code', o.fail_code, 'text', o.rendered_text,
     'failed_at', coalesce(o.report_checked_at, o.last_attempt_at)) order by coalesce(o.report_checked_at, o.last_attempt_at) desc), '[]'::jsonb)
   into res
   from private.alimtalk_outbox o
   join public.bookings b on b.id = o.booking_id
   where o.status in ('gaveup','failed')
+    and not o.dismissed
     and b.status <> '취소'
     and not exists (
       select 1 from private.alimtalk_outbox o2
@@ -1403,6 +1408,17 @@ begin
 end$$;
 revoke all on function public.admin_alimtalk_failures() from public, anon;
 grant execute on function public.admin_alimtalk_failures() to authenticated;
+
+-- 관리자: 실패 알림 '확인'(숨김) 처리
+create or replace function public.admin_dismiss_alimtalk_fail(p_booking_id uuid, p_template text)
+returns void language plpgsql security definer set search_path=public, private, pg_temp as $$
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  update private.alimtalk_outbox set dismissed = true
+    where booking_id = p_booking_id and template = p_template and status in ('failed','gaveup');
+end$$;
+revoke all on function public.admin_dismiss_alimtalk_fail(uuid, text) from public, anon;
+grant execute on function public.admin_dismiss_alimtalk_fail(uuid, text) to authenticated;
 
 -- ============================================
 -- 웹 푸시 알림 (신규 예약) — 구독 저장
