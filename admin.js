@@ -1292,6 +1292,7 @@ function schedMonthItems() {
 }
 
 let schedFilter = 'all'; // 'all' | 'none' | staffId
+let schedLock = (() => { try { return localStorage.getItem('otb_sched_lock') === '1'; } catch (_) { return false; } })(); // 수정금지: 배정된 일정 잠금
 function setSchedFilter(s) { schedFilter = s; renderSchedule(); }
 function schedMatch(b) {
   if (schedFilter === 'all') return true;
@@ -1365,6 +1366,14 @@ function updateSchedCount() {
   const n = schedChecked().length;
   if ($('schedSelCount')) $('schedSelCount').textContent = n ? `${n}건 선택` : '';
 }
+// 수정금지: 배정된 드롭다운(메인/서브)만 잠그고, 미배정은 수정 가능하게
+function applySchedLock() {
+  document.querySelectorAll('#schedList .sched-main, #schedList .sched-sub').forEach((sel) => {
+    const lock = schedLock && !!sel.value;
+    sel.disabled = lock;
+    sel.classList.toggle('locked', lock);
+  });
+}
 function bindSchedule() {
   document.querySelectorAll('#schedList .sched-cb').forEach((c) => c.addEventListener('change', updateSchedCount));
   // 행 클릭 → 체크 토글 (작가 드롭다운/체크박스 클릭은 제외)
@@ -1401,6 +1410,7 @@ function bindSchedule() {
       toast('작가 배정 변경됨');
     })
   );
+  applySchedLock();
   updateSchedCount();
 }
 if ($('schedAll')) {
@@ -1409,19 +1419,39 @@ if ($('schedAll')) {
     updateSchedCount();
   });
 }
+if ($('schedLock')) {
+  const wrap = $('schedLockWrap');
+  const syncLock = () => { if (wrap) wrap.classList.toggle('is-on', schedLock); };
+  $('schedLock').checked = schedLock;
+  syncLock();
+  $('schedLock').addEventListener('change', (e) => {
+    schedLock = e.target.checked;
+    try { localStorage.setItem('otb_sched_lock', schedLock ? '1' : '0'); } catch (_) {}
+    syncLock();
+    applySchedLock();
+    toast(schedLock ? '🔒 수정금지 ON · 배정된 일정 잠금' : '🔓 수정금지 해제');
+  });
+}
 let lastAssign = null; // 직전 배정 스냅샷 [{id, main, sub}]
 function updateUndoBtn() { if ($('schedUndo')) $('schedUndo').hidden = !lastAssign; }
 async function bulkAssign(role) {
-  const ids = schedChecked();
+  let ids = schedChecked();
   const aid = $('schedAssignee').value;
   if (!ids.length) { toast('배정할 일정을 선택하세요.'); return; }
   if (!aid) { toast('담당자를 선택하세요.'); return; }
+  let skipped = 0;
+  if (schedLock) { // 수정금지: 이미 배정된 일정은 제외하고 미배정만 배정
+    const before = ids.length;
+    ids = ids.filter((id) => { const b = allBookings.find((x) => x.id === id) || {}; return role === 'sub' ? !b.sub_assignee_id : !b.assignee_id; });
+    skipped = before - ids.length;
+    if (!ids.length) { toast('🔒 수정금지: 이미 배정된 일정은 변경되지 않아요.'); return; }
+  }
   // 되돌리기용 직전 상태 스냅샷
   lastAssign = ids.map((id) => { const b = allBookings.find((x) => x.id === id) || {}; return { id, main: b.assignee_id || '', sub: b.sub_assignee_id || '' }; });
   const { error } = await sb.rpc('admin_assign_role', { p_ids: ids, p_assignee: aid, p_role: role });
   if (error) { lastAssign = null; alert('배정 실패: ' + error.message); return; }
   ids.forEach((id) => { const b = allBookings.find((x) => x.id === id); if (b) { if (role === 'sub') b.sub_assignee_id = aid; else b.assignee_id = aid; } });
-  toast(`${ids.length}건 → ${staffName(aid)} ${role === 'sub' ? '서브' : '메인'} 배정 완료`);
+  toast(`${ids.length}건 → ${staffName(aid)} ${role === 'sub' ? '서브' : '메인'} 배정 완료${skipped ? ` (배정된 ${skipped}건 제외)` : ''}`);
   updateUndoBtn();
   renderSchedule(); renderCalendar(); renderDashboard();
   if ($('schedAll')) $('schedAll').checked = false;
