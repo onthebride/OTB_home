@@ -49,9 +49,18 @@ function tint(hex, a) { // 작가 색을 옅은 배경(rgba)으로
 }
 
 /* ===== Auth views ===== */
+const SAVED_EMAIL_KEY = 'otb_admin_email';
 const showLogin = () => {
   $('loginView').hidden = false;
   $('dashView').hidden = true;
+  // 저장된 관리자 아이디(이메일) 자동 입력 → 비밀번호 칸으로 포커스
+  let saved = '';
+  try { saved = localStorage.getItem(SAVED_EMAIL_KEY) || ''; } catch {}
+  if (saved) {
+    $('email').value = saved;
+    const pw = $('password');
+    if (pw) setTimeout(() => pw.focus(), 0);
+  }
 };
 const showDash = (email) => {
   $('loginView').hidden = true;
@@ -76,14 +85,18 @@ $('loginForm').addEventListener('submit', async (e) => {
   msg.textContent = '';
   btn.disabled = true;
   btn.textContent = '로그인 중...';
+  const email = $('email').value.trim();
   const { error } = await sb.auth.signInWithPassword({
-    email: $('email').value.trim(),
+    email,
     password: $('password').value,
   });
   btn.disabled = false;
   btn.textContent = '로그인';
   if (error) {
     msg.textContent = '로그인 실패: 이메일 또는 비밀번호를 확인해 주세요.';
+  } else {
+    // 로그인 성공 시 아이디 저장
+    try { localStorage.setItem(SAVED_EMAIL_KEY, email); } catch {}
   }
 });
 
