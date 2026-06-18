@@ -122,7 +122,6 @@
           <div id="schedBody">
             <div class="sched-tags" id="schedTags"></div>
             <div class="sched-bar">
-              <label class="sched-lock" id="schedLockWrap"><input type="checkbox" id="schedLock" /> 🔒 수정금지</label>
               <label class="sched-all"><input type="checkbox" id="schedAll" /> 전체선택</label>
               <select id="schedAssignee"><option value="">담당자 선택…</option></select>
               <button class="btn-sm dl-save" id="schedAssignMain">메인 배정</button>
@@ -130,6 +129,11 @@
               <button class="btn-sm" id="schedShare">선택 공유(복사)</button>
               <button class="btn-sm sched-undo" id="schedUndo" hidden>↩ 직전 배정 되돌리기</button>
               <span class="sched-selcount" id="schedSelCount"></span>
+              <label class="sched-lock" id="schedLockWrap">
+                <span class="sched-lock-txt">🔒 수정금지</span>
+                <input type="checkbox" id="schedLock" class="switch-input" />
+                <span class="switch"></span>
+              </label>
             </div>
             <div id="schedList"></div>
           </div>

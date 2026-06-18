@@ -385,9 +385,13 @@ td .muted { color: var(--ink-soft); }
 .sched-all { font-size: .85rem; display: flex; align-items: center; gap: 5px; cursor: pointer; }
 .sched-bar select { border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; font-size: .85rem; }
 .sched-selcount { font-size: .82rem; color: var(--gold-deep); margin-left: auto; }
-.sched-lock { font-size: .85rem; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px; user-select: none; white-space: nowrap; transition: background .15s, border-color .15s, color .15s; }
-.sched-lock input { margin: 0; cursor: pointer; }
-.sched-lock.is-on { background: #fdeceb; border-color: #e0a59f; color: #c0392b; font-weight: 600; }
+.sched-lock { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: .85rem; color: var(--ink-soft); user-select: none; white-space: nowrap; }
+.sched-lock .switch-input { position: absolute; opacity: 0; width: 0; height: 0; }
+.sched-lock .switch { position: relative; flex: none; width: 40px; height: 22px; background: #cfcabf; border-radius: 999px; transition: background .18s; }
+.sched-lock .switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: transform .18s; }
+.sched-lock .switch-input:checked + .switch { background: #c0392b; }
+.sched-lock .switch-input:checked + .switch::after { transform: translateX(18px); }
+.sched-lock.is-on { color: #c0392b; font-weight: 600; }
 #schedList .sched-main:disabled, #schedList .sched-sub:disabled { background: var(--cream); border-style: dashed; color: var(--ink-soft); opacity: 1; cursor: not-allowed; }
 .sched-group { margin-bottom: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); overflow: hidden; }
 .sched-date { font-weight: 700; font-size: .9rem; margin: 0; padding: 11px 14px; background: var(--cream); border-bottom: 1px solid var(--line); }
