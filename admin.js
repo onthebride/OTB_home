@@ -902,11 +902,14 @@ async function sendAlimtalk(id, tpl) {
   if (!$('modal').hidden && b) renderView(allBookings[i] || b);
 }
 
-// 작가 공유용 설문(읽기전용) 링크 복사
+// 작가 공유용 설문(읽기전용) 링크 복사 — 예식날짜·성함을 링크 위에 함께 복사
 function copySurveyShare(id) {
+  const b = allBookings.find((x) => x.id === id);
   const url = location.origin + '/survey-view?b=' + id;
-  if (navigator.clipboard) navigator.clipboard.writeText(url);
-  toast(surveyIds.has(id) ? '작가 공유용 설문 링크를 복사했어요 📋' : '설문 링크 복사 — 아직 고객이 설문 미작성 상태예요');
+  const head = b ? `${fmtDate(b.wedding_date)} ${b.contractor_name || ''}`.trim() + ' 예식 설문' : '';
+  const text = head ? `${head}\n${url}` : url;
+  if (navigator.clipboard) navigator.clipboard.writeText(text);
+  toast(surveyIds.has(id) ? '작가 공유용 설문 링크를 복사했어요 📋 (날짜·성함 포함)' : '설문 링크 복사 — 아직 고객이 설문 미작성 상태예요');
 }
 
 const ATK_FAIL_NAME = { A: '계약안내', B: '한달전', C: '일주일전·잔금', D: '전날', E: '촬영본 안내', F: '입금확인' };
