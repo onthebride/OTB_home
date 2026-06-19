@@ -1978,9 +1978,17 @@ async function initPush() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return; // 미지원
   try {
     swReg = await navigator.serviceWorker.register('sw.js', { scope: '/' });
+    await navigator.serviceWorker.ready;
   } catch (e) { console.warn('SW 등록 실패', e); return; }
-  const sub = await swReg.pushManager.getSubscription();
-  if (sub && Notification.permission === 'granted') { await saveSub(sub); return; } // 이미 구독됨
+  let sub = await swReg.pushManager.getSubscription();
+  // 기존 구독이 현재 VAPID 키와 다르면 해지(키 교체 대응) → 새로 구독 유도
+  if (sub) {
+    const cur = urlB64ToUint8(VAPID_PUBLIC);
+    const old = new Uint8Array(sub.options && sub.options.applicationServerKey ? sub.options.applicationServerKey : []);
+    const same = old.length === cur.length && old.every((v, i) => v === cur[i]);
+    if (!same) { try { await sub.unsubscribe(); } catch (_) {} sub = null; }
+  }
+  if (sub && Notification.permission === 'granted') { await saveSub(sub); return; } // 이미 구독됨(키 일치)
   btn.hidden = false;
   btn.addEventListener('click', enablePush);
 }
