@@ -1963,7 +1963,7 @@ async function deleteGalleryItem(id, path) {
 }
 
 /* ===== 웹 푸시 알림 (신규 예약) ===== */
-const VAPID_PUBLIC = 'BDjeNAkhopFDs4C3z86ghAoaCMOIVD36HtS7LLr1MXoeZQelIYxJ63BUK7Ec52TGF0PVw-67C1sDWioXjv-lDbA';
+const VAPID_PUBLIC = 'BNgY76pnHOwm28BIYaOfPo45abDvlcw4vFQARQRMg169r8IttLfDO1jv1Ao9hQajx76DTrbonRC-gvpSogjdJcs';
 function urlB64ToUint8(b64) {
   const pad = '='.repeat((4 - (b64.length % 4)) % 4);
   const base = (b64 + pad).replace(/-/g, '+').replace(/_/g, '/');
