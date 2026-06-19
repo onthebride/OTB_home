@@ -82,6 +82,12 @@ begin
     coalesce((payload->>'photo_usage_agree')::boolean, false),
     nullif(payload->>'total_price','')::int
   ) returning id into new_id;
+  -- 신규 예약 → 관리자 폰 푸시 (실패해도 예약은 정상 처리)
+  perform private.otb_push('🔔 신규 예약',
+    coalesce(nullif(payload->>'contractor_name',''),'')
+    || coalesce(' · ' || nullif(payload->>'wedding_date',''), '')
+    || coalesce(' · ' || nullif(payload->>'wedding_venue',''), ''),
+    '/admin');
   return new_id;
 end;
 $$;
@@ -334,6 +340,8 @@ begin
     elsif confirmed_fail then
       if r.attempts >= 3 then
         update private.alimtalk_outbox set status = 'gaveup', checked_at = now() where id = r.id;
+        perform private.otb_push('⚠️ 알림톡 발송 실패',
+          coalesce((select contractor_name from public.bookings where id=r.booking_id),'') || ' · ' || private.atk_kname(r.template) || ' 발송실패(접수오류)', '/admin');
       else
         newreq := private.solapi_send(r.phone, 'tpl_' || r.template, r.vars);
         update private.alimtalk_outbox
@@ -345,6 +353,8 @@ begin
       -- 응답 없음(지연): 15분까지 대기 후에도 없으면 재발송 없이 실패표시(중복 방지, 수동 확인용)
       if r.created_at < now() - interval '15 minutes' then
         update private.alimtalk_outbox set status = 'gaveup', checked_at = now() where id = r.id;
+        perform private.otb_push('⚠️ 알림톡 발송 실패',
+          coalesce((select contractor_name from public.bookings where id=r.booking_id),'') || ' · ' || private.atk_kname(r.template) || ' 발송실패(무응답)', '/admin');
       end if;
       -- 그 외엔 그대로 두고 다음 분에 재확인
     end if;
@@ -368,7 +378,7 @@ begin
 
   -- (A) 조회 응답 수집
   for r in
-    select id, message_id, report_req_id from private.alimtalk_outbox
+    select id, message_id, report_req_id, booking_id, template from private.alimtalk_outbox
     where status='delivered' and report_req_id is not null order by id limit 100
   loop
     select status_code, content into resp from net._http_response where id = r.report_req_id;
@@ -385,6 +395,8 @@ begin
         update private.alimtalk_outbox set status='failed', fail_code=sc,
           rendered_text = (resp.content::jsonb) #>> array['messageList', r.message_id, 'text'],
           report_checked_at=now(), report_req_id=null where id=r.id;
+        perform private.otb_push('⚠️ 알림톡 전달 실패',
+          coalesce((select contractor_name from public.bookings where id=r.booking_id),'') || ' · ' || private.atk_kname(r.template) || ' 전달실패', '/admin');
         n := n + 1;
       end if;
     else
@@ -436,6 +448,28 @@ begin
     perform cron.schedule('otb-alimtalk-report', '*/3 * * * *', 'select private.alimtalk_check_delivery();');
   end if;
 end$cron3$;
+
+-- 알림톡 템플릿 한글명
+create or replace function private.atk_kname(p text) returns text language sql immutable as $$
+  select case p when 'A' then '계약안내' when 'B' then '한달전' when 'C' then '잔금안내' when 'D' then '최종안내' when 'E' then '링크안내' when 'F' then '입금확인' else p end;
+$$;
+
+-- 관리자 웹푸시 발송 헬퍼 (otb-push 엣지함수 호출). 실패해도 호출측에 영향 없음.
+create or replace function private.otb_push(p_title text, p_body text, p_url text default '/admin')
+returns bigint language plpgsql security definer set search_path=private, public, extensions, pg_temp as $$
+declare sec text; url text; req bigint;
+begin
+  select val into sec from private.solapi where key='push_secret';
+  select val into url from private.solapi where key='push_url';
+  if sec is null or url is null then return null; end if;
+  select net.http_post(
+    url := url,
+    body := jsonb_build_object('title', p_title, 'body', coalesce(p_body,''), 'url', coalesce(p_url,'/admin'), 'tag', 'otb'),
+    headers := jsonb_build_object('Content-Type','application/json','x-push-secret', sec)
+  ) into req;
+  return req;
+exception when others then return null;  -- 푸시 실패는 무시(호출측 보호)
+end$$;
 
 -- ============================================
 -- 담당자(작가) 명단 + 배정 + 입금확인
