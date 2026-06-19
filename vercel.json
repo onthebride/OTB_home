@@ -1,4 +1,8 @@
 {
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "headers": [
+    { "source": "/(.*).js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+    { "source": "/(.*).css", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+  ]
 }
