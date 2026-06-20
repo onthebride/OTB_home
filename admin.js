@@ -30,7 +30,7 @@ let dayOvKey = null; // 캘린더 날짜 팝업 열린 날 {y, m, d}
 let unpaidTab = 'deposit'; // 미입금 탭: deposit | balance
 let allStaff = [];
 let staffMap = {};
-const ATK_TPLS = [['A', '계약안내'], ['B', '한달 전'], ['C', '잔금안내'], ['D', '최종안내'], ['E', '링크안내']];
+const ATK_TPLS = [['A', '계약안내'], ['B', '한달 전'], ['C', '잔금안내'], ['D', '최종안내'], ['E', '링크안내'], ['F', '입금확인']];
 const notCancelled = (b) => b.status !== '취소';
 const phBadge = (b) =>
   (b.rep_designation ? ' <span class="ph-badge rep">대표지정</span>' : '')
@@ -516,6 +516,9 @@ function renderView(b, flash) {
       render();
       renderDashboard();
       renderView(data || b);
+      // 계약금을 '입금완료'로 켤 때 입금확인 알림톡(F) 발송 — 이미 보냈으면 생략
+      const nb = allBookings[i] || data || b;
+      if (kind === 'deposit' && !cur && !(nb && nb.alimtalk_sent && nb.alimtalk_sent.F)) sendAlimtalk(b.id, 'F');
     })
   );
   $('modalCard').querySelectorAll('.atk-badge').forEach((btn) =>
@@ -899,7 +902,7 @@ function toast(msg) {
 }
 
 // 알림톡 실제 발송 (솔라피)
-const ATK_NAME = { A: '계약안내', B: '한달전', C: '잔금안내', D: '최종안내', E: '링크안내' };
+const ATK_NAME = { A: '계약안내', B: '한달전', C: '잔금안내', D: '최종안내', E: '링크안내', F: '입금확인' };
 async function sendAlimtalk(id, tpl) {
   const b = allBookings.find((x) => x.id === id);
   if (!confirm(`${b ? b.contractor_name + '님께 ' : ''}"${ATK_NAME[tpl] || tpl}" 알림톡을 실제로 발송할까요?`)) return;
@@ -1209,6 +1212,9 @@ function bindDashEvents() {
       if (i >= 0 && data) allBookings[i] = data;
       toast((kind === 'balance' ? '잔금' : '계약금') + ' 입금 확인했어요.');
       renderDashboard();
+      // 계약금 확인 시 입금확인 알림톡(F) 발송 — 이미 보냈으면 생략
+      const nb = allBookings[i] || data;
+      if (kind === 'deposit' && !(nb && nb.alimtalk_sent && nb.alimtalk_sent.F)) sendAlimtalk(id, 'F');
     })
   );
   // 다운로드 링크 저장
