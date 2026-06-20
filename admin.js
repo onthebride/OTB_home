@@ -2051,15 +2051,19 @@ async function saveSub(sub) {
   });
 }
 
-/* ===== 모바일 당겨서 새로고침 (pull-to-refresh) ===== */
+/* ===== 모바일 당겨서 새로고침 (pull-to-refresh, 스피너) ===== */
 (function () {
   if (!('ontouchstart' in window)) return; // 터치 기기에서만
   // 브라우저 기본 당김새로고침 끄고 직접 처리 (홈화면 앱에선 기본 동작이 없어서 직접 구현 필요)
   try { document.documentElement.style.overscrollBehaviorY = 'contain'; document.body.style.overscrollBehaviorY = 'contain'; } catch (_) {}
+  const st = document.createElement('style');
+  st.textContent = '@keyframes otbSpin{to{transform:rotate(360deg)}}';
+  document.head.appendChild(st);
   const ind = document.createElement('div');
-  ind.style.cssText = 'position:fixed;top:0;left:0;right:0;display:flex;justify-content:center;align-items:flex-end;height:0;overflow:hidden;color:#8a7a52;font-size:.82rem;font-weight:600;z-index:99999;transition:height .15s ease;pointer-events:none;padding-bottom:8px;background:linear-gradient(#fdf8f0,rgba(253,248,240,0))';
-  const txt = document.createElement('span');
-  ind.appendChild(txt);
+  ind.style.cssText = 'position:fixed;top:0;left:0;right:0;display:flex;justify-content:center;align-items:flex-end;height:0;overflow:hidden;z-index:99999;transition:height .15s ease;pointer-events:none;padding-bottom:8px';
+  const sp = document.createElement('div');
+  sp.style.cssText = 'width:24px;height:24px;border:3px solid rgba(138,122,82,.25);border-top-color:#8a7a52;border-radius:50%;opacity:0';
+  ind.appendChild(sp);
   document.body.appendChild(ind);
   const TH = 70;
   let startY = 0, pulling = false, h = 0;
@@ -2067,7 +2071,7 @@ async function saveSub(sub) {
   const modalOpen = () => { const m = document.getElementById('modal'); return m && !m.hidden; };
   window.addEventListener('touchstart', (e) => {
     pulling = e.touches.length === 1 && atTop() && !modalOpen();
-    if (pulling) { startY = e.touches[0].clientY; h = 0; }
+    if (pulling) { startY = e.touches[0].clientY; h = 0; sp.style.animation = ''; }
   }, { passive: true });
   window.addEventListener('touchmove', (e) => {
     if (!pulling) return;
@@ -2075,14 +2079,19 @@ async function saveSub(sub) {
     if (d > 0 && atTop()) {
       h = Math.min(d * 0.5, 90);
       ind.style.height = h + 'px';
-      txt.textContent = h >= TH ? '↑ 놓으면 새로고침' : '↓ 당겨서 새로고침';
+      sp.style.opacity = Math.min(h / TH, 1);
+      sp.style.transform = 'rotate(' + Math.round(d * 2) + 'deg)';
     } else { pulling = false; ind.style.height = '0px'; h = 0; }
   }, { passive: true });
   window.addEventListener('touchend', () => {
     if (!pulling) return;
     pulling = false;
-    if (h >= TH) { txt.textContent = '새로고침 중…'; ind.style.height = '40px'; setTimeout(() => location.reload(), 150); }
-    else { ind.style.height = '0px'; }
+    if (h >= TH) {
+      sp.style.transform = ''; sp.style.opacity = '1';
+      sp.style.animation = 'otbSpin .6s linear infinite';
+      ind.style.height = '46px';
+      setTimeout(() => location.reload(), 350);
+    } else { ind.style.height = '0px'; }
     h = 0;
   });
 })();
