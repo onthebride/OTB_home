@@ -134,7 +134,7 @@ async function loadBookings() {
   allUnconfirmed = Array.isArray(ures.data) ? ures.data : [];
   const dres = await sb.rpc('admin_event_discounts');
   eventDiscounts = (dres.data && typeof dres.data === 'object') ? dres.data : {};
-  const fres = await sb.rpc('admin_alimtalk_failures');
+  const fres = await sb.rpc('admin_alimtalk_log');
   alimtalkFails = Array.isArray(fres.data) ? fres.data : [];
   await loadStaff();
   render();
@@ -928,25 +928,39 @@ function copySurveyShare(id) {
 const ATK_FAIL_NAME = { A: '계약안내', B: '한달전', C: '일주일전·잔금', D: '전날', E: '촬영본 안내', F: '입금확인' };
 const ATK_FAILCODE = { '3101': '발신프로필 오류', '3102': '카카오채널 친구 아님', '3103': '템플릿 불일치', '3104': '카카오톡 미사용자(번호 오류 등)', '3105': '미등록 템플릿', '3106': '메시지 타입 오류', '3107': '비활성/수신차단', '3108': '발송가능시간 외(08~20시)' };
 const atkFailReason = (code) => (code ? (ATK_FAILCODE[code] || ('전달실패 코드 ' + code)) : '전달 실패');
+const ATK_STATUS = (s) => ({
+  completed: '<span style="color:#2f7d4f;font-weight:600">✅ 성공</span>',
+  delivered: '<span style="color:#8a7a52;font-weight:600">📨 확인중</span>',
+  sent: '<span style="color:#8a7a52;font-weight:600">📨 발송중</span>',
+  failed: '<span style="color:#c0392b;font-weight:600">❌ 실패</span>',
+  gaveup: '<span style="color:#c0392b;font-weight:600">❌ 실패</span>',
+}[s] || esc(s || ''));
 function renderAtkFail() {
   const card = $('card-atkfail');
   if (!card) return;
-  const fails = alimtalkFails || [];
-  card.hidden = fails.length === 0;
-  $('dcAtkFail').textContent = fails.length;
-  if (!fails.length) { $('listAtkFail').innerHTML = ''; return; }
-  $('listAtkFail').innerHTML = fails.map((f) => `
-    <div class="dl-item overdue" data-id="${f.booking_id}">
+  const items = alimtalkFails || [];
+  card.hidden = items.length === 0;
+  $('dcAtkFail').textContent = items.length;
+  if (!items.length) { $('listAtkFail').innerHTML = ''; return; }
+  $('listAtkFail').innerHTML = items.map((f) => {
+    const failed = f.status === 'failed' || f.status === 'gaveup';
+    const detail = f.status === 'failed' ? '❌ ' + atkFailReason(f.fail_code)
+      : f.status === 'gaveup' ? '발송 실패 (접수 안 됨)'
+      : f.status === 'completed' ? '정상 전달됨'
+      : '발송됨 · 결과 확인 중';
+    return `
+    <div class="dl-item${failed ? ' overdue' : ''}" data-id="${f.booking_id}">
       <div class="dl-main">
-        <span class="dl-name">${esc(f.name || '-')} <span class="od-badge">${esc(ATK_FAIL_NAME[f.template] || f.template)} ${f.kind === 'failed' ? '전달실패' : '발송실패'}</span></span>
-        <span class="dl-meta">${esc(fmtDate(f.wedding_date))} · ${f.kind === 'failed' ? '❌ ' + esc(atkFailReason(f.fail_code)) : '발송 실패 (재시도 후에도 안 됨)'}</span>
+        <span class="dl-name">${esc(f.name || '-')} <b style="font-weight:600;color:var(--ink-soft)">${esc(ATK_FAIL_NAME[f.template] || f.template)}</b> ${ATK_STATUS(f.status)}</span>
+        <span class="dl-meta">${esc(fmtDate(f.wedding_date))} · ${esc(detail)}</span>
       </div>
       <div class="dl-actions">
-        <button class="btn-sm atk-copytext" data-id="${f.booking_id}" data-tpl="${f.template}">📋 내용 복사</button>
-        <button class="btn-sm btn-kakao-sm atk-resend" data-id="${f.booking_id}" data-tpl="${f.template}">다시 보내기</button>
+        ${failed ? `<button class="btn-sm atk-copytext" data-id="${f.booking_id}" data-tpl="${f.template}">📋 내용 복사</button>
+        <button class="btn-sm btn-kakao-sm atk-resend" data-id="${f.booking_id}" data-tpl="${f.template}">다시 보내기</button>` : ''}
         <button class="btn-sm atk-dismiss" data-id="${f.booking_id}" data-tpl="${f.template}">✓ 확인</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   $('listAtkFail').querySelectorAll('.atk-resend').forEach((btn) =>
     btn.addEventListener('click', (e) => { e.stopPropagation(); resendFailed(btn.dataset.id, btn.dataset.tpl); }));
   $('listAtkFail').querySelectorAll('.atk-copytext').forEach((btn) =>
@@ -976,15 +990,23 @@ function copyFailText(id, tpl) {
   copySchedText(text, '메시지 내용을 복사했어요 — 고객에게 직접 보내세요 📋');
 }
 
-// 실패 알림 '확인'(숨김) 처리
+// 발송 내역 '확인'(숨김) — 개별 (확인 즉시 숨김, 별도 확인창 없음)
 async function dismissFail(id, tpl) {
-  if (!confirm('이 실패 알림을 확인 처리하고 목록에서 숨길까요?')) return;
   const { error } = await sb.rpc('admin_dismiss_alimtalk_fail', { p_booking_id: id, p_template: tpl });
   if (error) { alert('처리 실패: ' + error.message); return; }
   alimtalkFails = (alimtalkFails || []).filter((x) => !(x.booking_id === id && x.template === tpl));
-  toast('확인 처리했어요. 목록에서 숨김.');
   renderAtkFail();
 }
+// 발송 내역 전체 '확인'(숨김)
+async function dismissAllAtk() {
+  if (!confirm('발송 내역을 전부 확인 처리할까요? (목록에서 사라집니다)')) return;
+  const { error } = await sb.rpc('admin_dismiss_alimtalk_all');
+  if (error) { alert('처리 실패: ' + error.message); return; }
+  alimtalkFails = [];
+  toast('전체 확인 처리했어요.');
+  renderAtkFail();
+}
+if ($('atkDismissAll')) $('atkDismissAll').addEventListener('click', dismissAllAtk);
 
 function renderDashboard() {
   if (!$('tab-dashboard')) return;

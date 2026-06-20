@@ -1449,10 +1449,50 @@ returns void language plpgsql security definer set search_path=public, private, 
 begin
   if auth.uid() is null then raise exception 'unauthorized'; end if;
   update private.alimtalk_outbox set dismissed = true
-    where booking_id = p_booking_id and template = p_template and status in ('failed','gaveup');
+    where booking_id = p_booking_id and template = p_template;
 end$$;
 revoke all on function public.admin_dismiss_alimtalk_fail(uuid, text) from public, anon;
 grant execute on function public.admin_dismiss_alimtalk_fail(uuid, text) to authenticated;
+
+-- 관리자: 오늘 알림톡 발송 내역(성공/실패 전부) + 미확인 실패(날짜무관), dismissed 제외
+create or replace function public.admin_alimtalk_log()
+returns jsonb language plpgsql security definer set search_path=public, private, pg_temp as $$
+declare res jsonb;
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'booking_id', o.booking_id, 'template', o.template, 'name', b.contractor_name,
+    'wedding_date', b.wedding_date, 'status', o.status, 'fail_code', o.fail_code, 'text', o.rendered_text,
+    'sent_at', o.created_at) order by o.created_at desc), '[]'::jsonb)
+  into res
+  from private.alimtalk_outbox o
+  join public.bookings b on b.id = o.booking_id
+  where not o.dismissed
+    and b.status <> '취소'
+    and ( (o.created_at at time zone 'Asia/Seoul')::date = (now() at time zone 'Asia/Seoul')::date
+          or o.status in ('failed','gaveup') )
+    and not exists (
+      select 1 from private.alimtalk_outbox o2
+      where o2.booking_id=o.booking_id and o2.template=o.template
+        and o2.status in ('delivered','completed') and o2.created_at > o.created_at and not o2.dismissed);
+  return res;
+end$$;
+revoke all on function public.admin_alimtalk_log() from public, anon;
+grant execute on function public.admin_alimtalk_log() to authenticated;
+
+-- 관리자: 발송 내역 전체 '확인'(숨김) — 오늘분 + 미확인 실패 모두
+create or replace function public.admin_dismiss_alimtalk_all()
+returns void language plpgsql security definer set search_path=public, private, pg_temp as $$
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  update private.alimtalk_outbox o set dismissed = true
+  from public.bookings b
+  where b.id = o.booking_id and not o.dismissed and b.status <> '취소'
+    and ( (o.created_at at time zone 'Asia/Seoul')::date = (now() at time zone 'Asia/Seoul')::date
+          or o.status in ('failed','gaveup') );
+end$$;
+revoke all on function public.admin_dismiss_alimtalk_all() from public, anon;
+grant execute on function public.admin_dismiss_alimtalk_all() to authenticated;
 
 -- ============================================
 -- 웹 푸시 알림 (신규 예약) — 구독 저장
