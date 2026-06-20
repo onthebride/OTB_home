@@ -2050,3 +2050,39 @@ async function saveSub(sub) {
     p_auth: j.keys && j.keys.auth,
   });
 }
+
+/* ===== 모바일 당겨서 새로고침 (pull-to-refresh) ===== */
+(function () {
+  if (!('ontouchstart' in window)) return; // 터치 기기에서만
+  // 브라우저 기본 당김새로고침 끄고 직접 처리 (홈화면 앱에선 기본 동작이 없어서 직접 구현 필요)
+  try { document.documentElement.style.overscrollBehaviorY = 'contain'; document.body.style.overscrollBehaviorY = 'contain'; } catch (_) {}
+  const ind = document.createElement('div');
+  ind.style.cssText = 'position:fixed;top:0;left:0;right:0;display:flex;justify-content:center;align-items:flex-end;height:0;overflow:hidden;color:#8a7a52;font-size:.82rem;font-weight:600;z-index:99999;transition:height .15s ease;pointer-events:none;padding-bottom:8px;background:linear-gradient(#fdf8f0,rgba(253,248,240,0))';
+  const txt = document.createElement('span');
+  ind.appendChild(txt);
+  document.body.appendChild(ind);
+  const TH = 70;
+  let startY = 0, pulling = false, h = 0;
+  const atTop = () => (document.scrollingElement || document.documentElement).scrollTop <= 0;
+  const modalOpen = () => { const m = document.getElementById('modal'); return m && !m.hidden; };
+  window.addEventListener('touchstart', (e) => {
+    pulling = e.touches.length === 1 && atTop() && !modalOpen();
+    if (pulling) { startY = e.touches[0].clientY; h = 0; }
+  }, { passive: true });
+  window.addEventListener('touchmove', (e) => {
+    if (!pulling) return;
+    const d = e.touches[0].clientY - startY;
+    if (d > 0 && atTop()) {
+      h = Math.min(d * 0.5, 90);
+      ind.style.height = h + 'px';
+      txt.textContent = h >= TH ? '↑ 놓으면 새로고침' : '↓ 당겨서 새로고침';
+    } else { pulling = false; ind.style.height = '0px'; h = 0; }
+  }, { passive: true });
+  window.addEventListener('touchend', () => {
+    if (!pulling) return;
+    pulling = false;
+    if (h >= TH) { txt.textContent = '새로고침 중…'; ind.style.height = '40px'; setTimeout(() => location.reload(), 150); }
+    else { ind.style.height = '0px'; }
+    h = 0;
+  });
+})();
