@@ -320,6 +320,41 @@ function copyCheckLink(bid, sid, roleLabel, role) {
   }
 }
 
+// 작가 체크 링크를 카톡 등으로 공유 (모바일 공유 시트) — 공유 후 '보냄' 표시
+async function shareCheckLink(bid, sid, roleLabel, role) {
+  if (!sid) { toast('먼저 작가를 배정하세요.'); return; }
+  const b = allBookings.find((x) => x.id === bid);
+  const lr = await sb.rpc('admin_make_check_link', { p_booking_id: bid, p_staff_id: sid });
+  const url = lr.data ? location.origin + '/c?k=' + lr.data : location.origin + '/staff-schedule?s=' + sid + '&b=' + bid;
+  const head = b ? [fmtDate(b.wedding_date), kTimeShort(b.wedding_time), b.contractor_name, b.wedding_venue].filter(Boolean).join(' · ') : '';
+  const note = (head ? head + '\n' : '') + '예식 전 확인 부탁드려요 🙏';
+  const markSent = async () => {
+    const { data } = await sb.rpc('admin_mark_check_sent', { p_id: bid, p_on: true, p_role: String(role || '').includes('서브') ? '서브' : '메인' });
+    const i = allBookings.findIndex((x) => x.id === bid);
+    if (i >= 0 && data) allBookings[i] = data;
+    const ures = await sb.rpc('admin_unconfirmed');
+    allUnconfirmed = Array.isArray(ures.data) ? ures.data : [];
+    renderDashboard();
+  };
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: '예식 전 확인', text: note, url });
+    } catch (e) {
+      if (e && e.name === 'AbortError') return; // 사용자가 공유 취소 — 보냄 표시 안 함
+      try { await navigator.clipboard.writeText(note + '\n' + url); } catch (_) {}
+      await markSent();
+      toast(`${roleLabel} 링크 복사됨 · 보냄 표시`);
+      return;
+    }
+    await markSent();
+    toast(`${roleLabel} 공유 완료 · 보냄 표시`);
+  } else {
+    try { await navigator.clipboard.writeText(note + '\n' + url); } catch (_) {}
+    await markSent();
+    toast(`${roleLabel} 링크 복사됨 (공유 미지원) · 보냄 표시`);
+  }
+}
+
 function renderChecks(b, checks) {
   const byName = {};
   checks.forEach((c) => { byName[c.staff] = c; });
@@ -1074,10 +1109,12 @@ function renderDashboard() {
           ${b.assignee_id
             ? `<div class="chk-rolerow">
                  <button class="btn-sm chk-send" data-id="${b.id}" data-staff="${b.assignee_id}" data-role="메인">${mainSent ? '메인 재전송' : '메인 체크'}</button>
+                 <button class="btn-sm btn-kakao-sm chk-share" data-id="${b.id}" data-staff="${b.assignee_id}" data-role="메인" title="카톡으로 공유">공유</button>
                  ${roleFlag(mainSent, mainOk, '메인')}
                </div>
                ${needsSub ? `<div class="chk-rolerow">
                  <button class="btn-sm chk-send" data-id="${b.id}" data-staff="${b.sub_assignee_id}" data-role="서브">${subSent ? '서브 재전송' : '서브 체크'}</button>
+                 <button class="btn-sm btn-kakao-sm chk-share" data-id="${b.id}" data-staff="${b.sub_assignee_id}" data-role="서브" title="카톡으로 공유">공유</button>
                  ${roleFlag(subSent, subOk, '서브')}
                </div>` : ''}`
             : '<span class="dl-na">작가 미배정</span>'}
@@ -1184,6 +1221,10 @@ function bindDashEvents() {
   // 작가 체크 링크 전송(복사 + 보냄 표시)
   document.querySelectorAll('#tab-dashboard .chk-send').forEach((btn) =>
     btn.addEventListener('click', (e) => { e.stopPropagation(); copyCheckLink(btn.dataset.id, btn.dataset.staff, `${btn.dataset.role} 작가(${staffName(btn.dataset.staff)})`, btn.dataset.role); })
+  );
+  // 작가 체크 링크 카톡 공유(공유 시트 + 보냄 표시)
+  document.querySelectorAll('#tab-dashboard .chk-share').forEach((btn) =>
+    btn.addEventListener('click', (e) => { e.stopPropagation(); shareCheckLink(btn.dataset.id, btn.dataset.staff, `${btn.dataset.role} 작가(${staffName(btn.dataset.staff)})`, btn.dataset.role); })
   );
   // 작가 공유용 설문 링크 복사
   document.querySelectorAll('#tab-dashboard .sv-copy').forEach((btn) =>
