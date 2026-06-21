@@ -118,7 +118,16 @@ $('refreshBtn').addEventListener('click', () => loadBookings());
 
 /* ===== Load + render ===== */
 async function loadBookings() {
-  const { data, error } = await sb.rpc('admin_list_bookings');
+  // 모든 조회는 서로 독립적이라 한 번에 병렬로 — 순차 대기 제거(체감 속도 개선)
+  const [res, sres, ures, dres, fres] = await Promise.all([
+    sb.rpc('admin_list_bookings'),    // 예약 목록
+    sb.rpc('admin_survey_ids'),       // 설문 제출 여부
+    sb.rpc('admin_unconfirmed'),      // 작가 미확인
+    sb.rpc('admin_event_discounts'),  // 이벤트 할인
+    sb.rpc('admin_alimtalk_log'),     // 알림톡 발송 내역
+    loadStaff(),                      // 작가 목록
+  ]);
+  const { data, error } = res;
   if (error) {
     console.error(error);
     $('bkRows').innerHTML =
@@ -127,16 +136,10 @@ async function loadBookings() {
     return;
   }
   allBookings = data || [];
-  // 설문 제출 여부
-  const sres = await sb.rpc('admin_survey_ids');
   surveyIds = new Set(Array.isArray(sres.data) ? sres.data : []);
-  const ures = await sb.rpc('admin_unconfirmed');
   allUnconfirmed = Array.isArray(ures.data) ? ures.data : [];
-  const dres = await sb.rpc('admin_event_discounts');
   eventDiscounts = (dres.data && typeof dres.data === 'object') ? dres.data : {};
-  const fres = await sb.rpc('admin_alimtalk_log');
   alimtalkFails = Array.isArray(fres.data) ? fres.data : [];
-  await loadStaff();
   render();
   renderDashboard();
   refreshEventBadge();
