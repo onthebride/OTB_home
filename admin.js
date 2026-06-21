@@ -327,7 +327,8 @@ async function shareCheckLink(bid, sid, roleLabel, role) {
   const lr = await sb.rpc('admin_make_check_link', { p_booking_id: bid, p_staff_id: sid });
   const url = lr.data ? location.origin + '/c?k=' + lr.data : location.origin + '/staff-schedule?s=' + sid + '&b=' + bid;
   const head = b ? [fmtDate(b.wedding_date), kTimeShort(b.wedding_time), b.contractor_name, b.wedding_venue].filter(Boolean).join(' · ') : '';
-  const note = (head ? head + '\n' : '') + '예식 전 확인 부탁드려요 🙏';
+  // 메시지(설명)가 먼저, 링크가 그 다음에 오도록 한 덩어리로 합쳐서 공유 — url 필드를 따로 넘기면 카톡이 링크 카드를 위에 띄움
+  const text = ((head ? head + '\n' : '') + '예식 전 확인 부탁드려요\n' + url).trim();
   const markSent = async () => {
     const { data } = await sb.rpc('admin_mark_check_sent', { p_id: bid, p_on: true, p_role: String(role || '').includes('서브') ? '서브' : '메인' });
     const i = allBookings.findIndex((x) => x.id === bid);
@@ -338,10 +339,10 @@ async function shareCheckLink(bid, sid, roleLabel, role) {
   };
   if (navigator.share) {
     try {
-      await navigator.share({ title: '예식 전 확인', text: note, url });
+      await navigator.share({ text });
     } catch (e) {
       if (e && e.name === 'AbortError') return; // 사용자가 공유 취소 — 보냄 표시 안 함
-      try { await navigator.clipboard.writeText(note + '\n' + url); } catch (_) {}
+      try { await navigator.clipboard.writeText(text); } catch (_) {}
       await markSent();
       toast(`${roleLabel} 링크 복사됨 · 보냄 표시`);
       return;
@@ -349,7 +350,7 @@ async function shareCheckLink(bid, sid, roleLabel, role) {
     await markSent();
     toast(`${roleLabel} 공유 완료 · 보냄 표시`);
   } else {
-    try { await navigator.clipboard.writeText(note + '\n' + url); } catch (_) {}
+    try { await navigator.clipboard.writeText(text); } catch (_) {}
     await markSent();
     toast(`${roleLabel} 링크 복사됨 (공유 미지원) · 보냄 표시`);
   }
