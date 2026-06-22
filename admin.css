@@ -35,6 +35,7 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 /* Dashboard */
 .dash-head { background: var(--paper); border-bottom: 1px solid var(--line); padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
 .dash-brand { display: flex; align-items: center; }
+.dash-logo-link { display: inline-flex; align-items: center; cursor: pointer; }
 .dash-logo { height: 26px; width: auto; display: block; }
 .dash-brand em { font-style: normal; font-family: var(--sans); font-size: .8rem; color: var(--gold-deep); letter-spacing: .04em; margin-left: 8px; }
 .dash-head-right { display: flex; align-items: center; gap: 12px; }
