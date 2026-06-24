@@ -744,7 +744,7 @@ function renderEdit(b) {
       </select>
     </div>
     <label class="eopt" style="margin-top:8px"><input type="checkbox" id="e_rep" data-price="35" ${ck(b.rep_designation)} /><span>대표지정</span><b>+35만원</b></label>
-    <label class="eopt" style="margin-top:8px"><input type="checkbox" id="e_usage" data-price="-1" ${ck(b.photo_usage_agree)} /><span>촬영본 사용동의 (YES)</span><b>-1만원</b></label>
+    <label class="eopt" style="margin-top:8px"><input type="checkbox" id="e_usage" data-price="${isNewPricing(b) ? 0 : -1}" ${ck(b.photo_usage_agree)} /><span>촬영본 사용동의 (YES)</span><b>${isNewPricing(b) ? '' : '-1만원'}</b></label>
 
     <h5 class="eg">커스텀 옵션 <small>(예전·비표준 옵션)</small></h5>
     <div id="customOpts" class="custom-opts"></div>
