@@ -238,10 +238,20 @@ if ($('bkPrev')) {
 }
 
 /* ===== Detail modal ===== */
+// 베이직(데이터형) 기본가 개정: 2026-06-24부터 55→49만원.
+// 기존 예약은 접수일(created_at) 기준으로 55만원 그대로 유지(저장된 총액·내역 보존).
+const PRICE49_FROM = Date.parse('2026-06-24T01:00:00Z');
+const isNewPricing = (b) => !!(b && b.created_at && Date.parse(b.created_at) >= PRICE49_FROM);
+function basicBasePrice(b) {
+  if (b.package === '베이직(구)') return 50;
+  if (b.package === '스페셜') return 55; // 구상품
+  return isNewPricing(b) ? 49 : 55; // 베이직(데이터형)
+}
+
 // 상품 + 옵션을 한 카테고리로 (가격 분리표시)
 function productOptions(b) {
   const rows = [];
-  const base = b.package === '베이직(구)' ? 50 : 55;
+  const base = basicBasePrice(b);
   if (b.package) rows.push({ name: String(b.package).replace('(데이터형)', ''), price: base });
   if (b.travel_fee) rows.push({ name: '출장비', price: b.photographer === '2인 촬영' ? 10 : 5 });
   if (b.option_album) rows.push({ name: '앨범 1권 추가', price: 5 });
@@ -714,7 +724,7 @@ function renderEdit(b) {
     <div class="field" style="margin-bottom:10px">
       <label>상품</label>
       <select id="e_package">
-        <option value="베이직(데이터형)" data-price="55" ${sl(b.package, '베이직(데이터형)')}>베이직 (데이터형) · 55만원</option>
+        <option value="베이직(데이터형)" data-price="${isNewPricing(b) ? 49 : 55}" ${sl(b.package, '베이직(데이터형)')}>베이직 (데이터형) · ${isNewPricing(b) ? 49 : 55}만원</option>
         <option value="스페셜" data-price="55" ${sl(b.package, '스페셜')}>스페셜 · 55만원 (구상품)</option>
         <option value="베이직(구)" data-price="50" ${sl(b.package, '베이직(구)')}>베이직(구) · 50만원 (구상품)</option>
       </select>

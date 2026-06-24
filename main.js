@@ -343,7 +343,7 @@ if (bookingForm) {
         return (hh < 12 ? '오전' : '오후') + ' ' + (hh % 12 === 0 ? 12 : hh % 12) + ':' + String(mm).padStart(2, '0');
       };
       const items = [];
-      if (row.basic) items.push('베이직(데이터형) · 14×11인치 40p 앨범 1권 포함 (55)');
+      if (row.basic) items.push('베이직(데이터형) (49)');
       if (row.travel_fee) items.push(row.photographer === '2인 촬영' ? '출장비 (10)' : '출장비 (5)');
       if (row.option_album) items.push('앨범 1권 추가 (5)');
       if (row.option_reception) items.push('연회장 인사촬영 (5)');
