@@ -242,6 +242,9 @@ if ($('bkPrev')) {
 // 기존 예약은 접수일(created_at) 기준으로 55만원 그대로 유지(저장된 총액·내역 보존).
 const PRICE49_FROM = Date.parse('2026-06-24T01:00:00Z');
 const isNewPricing = (b) => !!(b && b.created_at && Date.parse(b.created_at) >= PRICE49_FROM);
+// 앨범 1권 추가 옵션 개정: 2026-06-25부터 5→10만원. 기존 예약은 5만원 유지.
+const ALBUM10_FROM = Date.parse('2026-06-25T03:15:00Z');
+const albumPrice = (b) => (b && b.created_at && Date.parse(b.created_at) >= ALBUM10_FROM) ? 10 : 5;
 function basicBasePrice(b) {
   if (b.package === '베이직(구)') return 50;
   if (b.package === '스페셜') return 55; // 구상품
@@ -254,7 +257,7 @@ function productOptions(b) {
   const base = basicBasePrice(b);
   if (b.package) rows.push({ name: String(b.package).replace('(데이터형)', ''), price: base });
   if (b.travel_fee) rows.push({ name: '출장비', price: b.photographer === '2인 촬영' ? 10 : 5 });
-  if (b.option_album) rows.push({ name: '앨범 1권 추가', price: 5 });
+  if (b.option_album) rows.push({ name: '앨범 1권 추가', price: albumPrice(b) });
   if (b.option_reception) rows.push({ name: '연회장 인사촬영', price: 5 });
   if (b.option_pyebaek) rows.push({ name: '폐백촬영', price: 10 });
   if (b.option_part2) rows.push({ name: '2부 촬영', price: 10 });
@@ -732,7 +735,7 @@ function renderEdit(b) {
     </div>
     <div class="edit-opts">
       <label class="eopt"><input type="checkbox" id="e_travel" data-price="5" ${ck(b.travel_fee)} /><span>출장비</span><b>5만원</b></label>
-      <label class="eopt"><input type="checkbox" id="e_option_album" data-price="5" ${ck(b.option_album)} /><span>앨범 1권 추가</span><b>+5만원</b></label>
+      <label class="eopt"><input type="checkbox" id="e_option_album" data-price="${albumPrice(b)}" ${ck(b.option_album)} /><span>앨범 1권 추가</span><b>+${albumPrice(b)}만원</b></label>
       <label class="eopt"><input type="checkbox" id="e_option_reception" data-price="5" ${ck(b.option_reception)} /><span>연회장 인사촬영</span><b>+5만원</b></label>
       <label class="eopt"><input type="checkbox" id="e_option_pyebaek" data-price="10" ${ck(b.option_pyebaek)} /><span>폐백촬영</span><b>+10만원</b></label>
       <label class="eopt"><input type="checkbox" id="e_option_part2" data-price="10" ${ck(b.option_part2)} /><span>2부 촬영</span><b>+10만원</b></label>

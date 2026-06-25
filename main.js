@@ -345,7 +345,7 @@ if (bookingForm) {
       const items = [];
       if (row.basic) items.push('베이직(데이터형) (49)');
       if (row.travel_fee) items.push(row.photographer === '2인 촬영' ? '출장비 (10)' : '출장비 (5)');
-      if (row.option_album) items.push('앨범 1권 추가 (5)');
+      if (row.option_album) items.push('앨범 1권 추가 (10)');
       if (row.option_reception) items.push('연회장 인사촬영 (5)');
       if (row.option_pyebaek) items.push('폐백촬영 (10)');
       if (row.option_part2) items.push('2부 촬영 (10)');
