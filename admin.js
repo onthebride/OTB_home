@@ -1155,7 +1155,7 @@ function renderDashboard() {
       </div>
       <div class="dl-actions">
         <button class="btn-sm dl-paid" data-id="${b.id}" data-pay="${kind}">${kind === 'deposit' ? '계약금 확인' : '잔금 확인'}</button>
-        ${overdue ? `<button class="btn-sm od-cancel" data-id="${b.id}">예약 취소</button>` : ''}
+        ${overdue && kind === 'deposit' ? `<button class="btn-sm od-cancel" data-id="${b.id}">예약 취소</button>` : ''}
       </div>
     </div>`;
   };
