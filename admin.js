@@ -386,7 +386,7 @@ function renderChecks(b, checks) {
       ${c && c.note ? `<div class="chk-note">📝 ${esc(c.note)}</div>` : ''}
     </div>`;
   };
-  return `<div class="chk-box"><p class="chk-title">🧑‍🎨 작가 예식 전 확인</p>${line(b.assignee_id, '메인작가')}${b.sub_assignee_id ? line(b.sub_assignee_id, '서브작가') : ''}</div>`;
+  return `<div class="chk-box"><p class="chk-title">🧑‍🎨 작가 예식 전 확인</p>${line(b.assignee_id, '메인작가')}${(b.photographer === '2인 촬영' && b.sub_assignee_id) ? line(b.sub_assignee_id, '서브작가') : ''}</div>`;
 }
 
 const PROG_ALL = ['신랑신부 동시 입장', '예물교환', '주례말씀', '축사', '축가', '예배식'];
@@ -539,7 +539,8 @@ function renderView(b, flash) {
   $('mCancelBk').addEventListener('click', () => cancelBooking(b.id));
   const saveAssignees = async () => {
     const main = $('mAssignee').value || null;
-    const sub = $('mSubAssignee') ? ($('mSubAssignee').value || null) : (b.sub_assignee_id || null);
+    // 서브 선택칸이 없으면(=2인 촬영 아님) 서브는 비움
+    const sub = $('mSubAssignee') ? ($('mSubAssignee').value || null) : null;
     const { error } = await sb.rpc('admin_set_assignees', { p_id: b.id, p_main: main, p_sub: sub });
     if (error) { alert('배정 실패: ' + error.message); return; }
     b.assignee_id = main; b.sub_assignee_id = sub;
@@ -896,7 +897,8 @@ async function saveDetail(id, recalcEdit) {
     balance_paid: cc('e_balance'),
     assignee_id: $('e_assignee') ? $('e_assignee').value : '',
   };
-  if ($('e_sub_assignee')) payload.sub_assignee_id = $('e_sub_assignee').value;
+  // 2인 촬영이 아니면 서브작가는 항상 비움(2인 → 기본 변경 시 잔존 방지)
+  payload.sub_assignee_id = (payload.photographer === '2인 촬영' && $('e_sub_assignee')) ? ($('e_sub_assignee').value || null) : null;
   payload.custom_options = Array.from(document.querySelectorAll('#customOpts .co-row'))
     .map((r) => ({ name: r.querySelector('.co-name').value.trim(), price: Number(r.querySelector('.co-price').value) || 0 }))
     .filter((o) => o.name);
@@ -1100,7 +1102,7 @@ function renderDashboard() {
         : '<span class="dl-asg none">미배정</span>';
       const mainSent = !!b.check_sent_at;
       const subSent = !!b.sub_check_sent_at;
-      const needsSub = !!b.sub_assignee_id;
+      const needsSub = b.photographer === '2인 촬영' && !!b.sub_assignee_id;
       const conf = confMap[b.id];
       const mainOk = !!(conf && conf.main_ok);
       const subOk = !!(conf && conf.sub_ok);
@@ -1531,7 +1533,8 @@ function bindSchedule() {
       const row = sel.closest('.sched-row');
       const main = (row.querySelector('.sched-main') || {}).value || null;
       const subEl = row.querySelector('.sched-sub');
-      const sub = subEl ? (subEl.value || null) : ((allBookings.find((x) => x.id === id) || {}).sub_assignee_id || null);
+      // 서브 선택칸이 없으면(=2인 촬영 아님) 서브는 비움
+      const sub = subEl ? (subEl.value || null) : null;
       const { error } = await sb.rpc('admin_set_assignees', { p_id: id, p_main: main, p_sub: sub });
       if (error) { alert('배정 실패: ' + error.message); return; }
       const b = allBookings.find((x) => x.id === id);
