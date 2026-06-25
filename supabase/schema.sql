@@ -1174,7 +1174,10 @@ begin
   reveal := b.wedding_date is not null and b.wedding_date <= (current_date + 7);
   if reveal then
     select name, phone into pm_name, pm_phone from public.staff where id = b.assignee_id;
-    select name, phone into ps_name, ps_phone from public.staff where id = b.sub_assignee_id;
+    -- 서브작가는 2인 촬영일 때만 노출 (2인→기본 변경 후 잔존 sub_assignee_id 방지)
+    if b.photographer = '2인 촬영' then
+      select name, phone into ps_name, ps_phone from public.staff where id = b.sub_assignee_id;
+    end if;
   end if;
   photog := jsonb_build_object('reveal', reveal, 'main_name', pm_name, 'main_phone', pm_phone, 'sub_name', ps_name, 'sub_phone', ps_phone);
   total := coalesce(b.total_price, 0);
