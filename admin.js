@@ -131,7 +131,7 @@ async function loadBookings() {
   if (error) {
     console.error(error);
     $('bkRows').innerHTML =
-      '<tr><td colspan="7" style="padding:40px;text-align:center;color:#c0392b">목록을 불러오지 못했습니다. (' +
+      '<tr><td colspan="6" style="padding:40px;text-align:center;color:#c0392b">목록을 불러오지 못했습니다. (' +
       esc(error.message) + ')</td></tr>';
     return;
   }
@@ -205,9 +205,8 @@ function render() {
     .map((b) => {
       const opts = bookingOpts(b);
       return `<tr data-id="${b.id}">
-        <td data-label="접수일">${esc(fmtDateShort(b.created_at))}</td>
-        <td data-label="계약자">${esc(b.contractor_name || '-')}${phBadge(b)}${surveyIds.has(b.id) ? ' <span class="survey-badge" title="설문 제출됨">📝</span>' : ''}</td>
         <td data-label="예식일">${esc(fmtDateShort(b.wedding_date))}</td>
+        <td data-label="계약자">${esc(b.contractor_name || '-')}${phBadge(b)}${surveyIds.has(b.id) ? ' <span class="survey-badge" title="설문 제출됨">📝</span>' : ''}</td>
         <td data-label="예식장">${esc(b.wedding_venue || '-')}</td>
         <td data-label="작가">${esc(staffName(b.assignee_id) || '-')}</td>
         <td data-label="옵션">${opts.length ? opts.map((o) => `<span class="bk-opt">${esc(o)}</span>`).join('') : '<span class="muted">-</span>'}</td>
