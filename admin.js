@@ -1086,9 +1086,9 @@ function renderDashboard() {
       </div>`).join('')
     : '<p class="dash-empty">새 예약이 없어요.</p>';
 
-  // 📅 다가오는 예식 (오늘 ~ 2주)
-  const in14 = new Date(today); in14.setDate(in14.getDate() + 14);
-  const upcoming = allBookings.filter((b) => { const d = wDate(b); return d && d >= today && d <= in14 && b.status === '확정'; })
+  // 📅 다가오는 예식 (오늘 ~ 일주일)
+  const in7 = new Date(today); in7.setDate(in7.getDate() + 7);
+  const upcoming = allBookings.filter((b) => { const d = wDate(b); return d && d >= today && d <= in7 && b.status === '확정'; })
     .sort((a, b) => wDate(a) - wDate(b));
   $('dcUpcoming').textContent = upcoming.length;
   // 작가 확인 여부 맵 (admin_unconfirmed: main_ok/sub_ok)
@@ -1137,7 +1137,7 @@ function renderDashboard() {
         </div>
       </div>`;
     })
-    : '<p class="dash-empty">2주 내 예식이 없어요.</p>';
+    : '<p class="dash-empty">일주일 내 예식이 없어요.</p>';
 
   // 💳 미입금 (계약금 / 잔금)
   const byDate = (a, b) => (wDate(a) || 0) - (wDate(b) || 0);
