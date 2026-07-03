@@ -2,7 +2,7 @@
 -- 관리자 "할 일" 리마인더 (폰 푸시 + 대시보드 상단 배너)
 --  ① 매주 월요일 → 작가 스케줄 체크
 --  ② 예식 하루 전 → 설문 공유 (예식 있는 날마다 자동, 예약별 1건)
--- 매일 09:00 KST(=00:00 UTC) pg_cron 이 생성 + otb_push 발송.
+-- 매일 06:00 KST(=21:00 UTC) pg_cron 이 생성 + otb_push 발송.
 -- 대시보드는 미확인(dismissed=false) 건을 상단 배너로 노출, '확인' 누르면 숨김.
 -- ============================================
 create table if not exists public.admin_reminders (
@@ -89,14 +89,14 @@ begin
 end$$;
 revoke all on function private.generate_admin_reminders() from public, anon, authenticated;
 
--- 매일 09:00 KST(=00:00 UTC) cron 등록 (pg_cron 있을 때만)
+-- 매일 06:00 KST(=21:00 UTC) cron 등록 (pg_cron 있을 때만)
 do $cron_rem$
 begin
   if exists (select 1 from pg_extension where extname = 'pg_cron') then
     if exists (select 1 from cron.job where jobname = 'otb-admin-reminders') then
       perform cron.unschedule('otb-admin-reminders');
     end if;
-    perform cron.schedule('otb-admin-reminders', '0 0 * * *', 'select private.generate_admin_reminders();');
+    perform cron.schedule('otb-admin-reminders', '0 21 * * *', 'select private.generate_admin_reminders();');
   else
     raise notice 'pg_cron 미설치 — 대시보드에서 활성화 후 재실행 필요';
   end if;
