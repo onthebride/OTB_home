@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="admin.css?v=20260628a" />
+  <link rel="stylesheet" href="admin.css?v=20260703a" />
 </head>
 <body>
 
@@ -43,6 +43,15 @@
     </header>
 
     <div class="dash-body">
+      <!-- 상단 '오늘 할 일' 리마인더 배너 (미확인 건만, 모든 탭에서 노출) -->
+      <div class="reminder-bar" id="reminderBar" hidden>
+        <div class="reminder-head">
+          <span class="reminder-title">📌 오늘 할 일 <span class="reminder-count" id="remCount">0</span></span>
+          <button class="btn-sm" id="remDismissAll">전체 확인</button>
+        </div>
+        <div class="reminder-list" id="reminderList"></div>
+      </div>
+
       <div class="dash-tabs">
         <button class="dtab active" data-tab="dashboard">홈</button>
         <button class="dtab" data-tab="calendar">캘린더</button>
@@ -226,6 +235,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=20260629a"></script>
+  <script src="admin.js?v=20260703a"></script>
 </body>
 </html>

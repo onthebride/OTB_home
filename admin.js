@@ -25,6 +25,7 @@ let bkMonth = null; // 예약 목록 월별 페이지 {y, m}
 let surveyIds = new Set(); // 설문 제출된 예약 ID
 let allUnconfirmed = []; // 작가 미확인 (admin_unconfirmed)
 let alimtalkFails = []; // 알림톡 발송 실패 (admin_alimtalk_failures)
+let reminders = []; // 관리자 할 일 리마인더 (admin_reminders_list)
 let calMonth = null; // 캘린더 현재 월 {y, m}
 let dayOvKey = null; // 캘린더 날짜 팝업 열린 날 {y, m, d}
 let unpaidTab = 'deposit'; // 미입금 탭: deposit | balance
@@ -119,12 +120,13 @@ $('refreshBtn').addEventListener('click', () => loadBookings());
 /* ===== Load + render ===== */
 async function loadBookings() {
   // 모든 조회는 서로 독립적이라 한 번에 병렬로 — 순차 대기 제거(체감 속도 개선)
-  const [res, sres, ures, dres, fres] = await Promise.all([
+  const [res, sres, ures, dres, fres, rres] = await Promise.all([
     sb.rpc('admin_list_bookings'),    // 예약 목록
     sb.rpc('admin_survey_ids'),       // 설문 제출 여부
     sb.rpc('admin_unconfirmed'),      // 작가 미확인
     sb.rpc('admin_event_discounts'),  // 이벤트 할인
     sb.rpc('admin_alimtalk_log'),     // 알림톡 발송 내역
+    sb.rpc('admin_reminders_list'),   // 할 일 리마인더
     loadStaff(),                      // 작가 목록
   ]);
   const { data, error } = res;
@@ -140,8 +142,10 @@ async function loadBookings() {
   allUnconfirmed = Array.isArray(ures.data) ? ures.data : [];
   eventDiscounts = (dres.data && typeof dres.data === 'object') ? dres.data : {};
   alimtalkFails = Array.isArray(fres.data) ? fres.data : [];
+  reminders = Array.isArray(rres.data) ? rres.data : [];
   render();
   renderDashboard();
+  renderReminders();
   refreshEventBadge();
 }
 
@@ -1063,6 +1067,48 @@ async function dismissAllAtk() {
   renderAtkFail();
 }
 if ($('atkDismissAll')) $('atkDismissAll').addEventListener('click', dismissAllAtk);
+
+/* ===== 할 일 리마인더 (상단 배너) ===== */
+function renderReminders() {
+  const bar = $('reminderBar');
+  if (!bar) return;
+  const items = reminders || [];
+  bar.hidden = items.length === 0;
+  if ($('remCount')) $('remCount').textContent = items.length;
+  if (!items.length) { $('reminderList').innerHTML = ''; return; }
+  $('reminderList').innerHTML = items.map((r) => {
+    const ico = r.kind === 'survey_share' ? '📋' : '🗓';
+    const openable = !!r.booking_id;
+    return `
+    <div class="reminder-item" data-id="${r.id}">
+      <span class="reminder-ico">${ico}</span>
+      <div class="reminder-text${openable ? ' rem-open' : ''}"${openable ? ` data-bid="${r.booking_id}"` : ''}>
+        <b>${esc(r.title)}</b>${r.body ? `<span>${esc(r.body)}</span>` : ''}
+      </div>
+      <button class="btn-sm rem-dismiss" data-id="${r.id}">✓ 확인</button>
+    </div>`;
+  }).join('');
+  $('reminderList').querySelectorAll('.rem-dismiss').forEach((btn) =>
+    btn.addEventListener('click', (e) => { e.stopPropagation(); dismissReminder(btn.dataset.id); }));
+  $('reminderList').querySelectorAll('.rem-open').forEach((el) =>
+    el.addEventListener('click', () => openDetail(el.dataset.bid)));
+}
+
+async function dismissReminder(id) {
+  const { error } = await sb.rpc('admin_reminder_dismiss', { p_id: id });
+  if (error) { alert('처리 실패: ' + error.message); return; }
+  reminders = (reminders || []).filter((r) => r.id !== id);
+  renderReminders();
+}
+
+async function dismissAllReminders() {
+  if (!confirm('할 일 알림을 전부 확인 처리할까요? (배너에서 사라집니다)')) return;
+  const { error } = await sb.rpc('admin_reminders_dismiss_all');
+  if (error) { alert('처리 실패: ' + error.message); return; }
+  reminders = [];
+  renderReminders();
+}
+if ($('remDismissAll')) $('remDismissAll').addEventListener('click', dismissAllReminders);
 
 function renderDashboard() {
   if (!$('tab-dashboard')) return;

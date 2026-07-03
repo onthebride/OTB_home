@@ -605,6 +605,21 @@ td .muted { color: var(--ink-soft); }
 #card-atkfail { grid-column: 1 / -1; border-color: #d9b3aa; background: #fcf3f1; }
 #card-atkfail .dash-count { background: #b5462f; }
 
+/* 상단 '오늘 할 일' 리마인더 배너 */
+.reminder-bar { background: #fdf8f0; border: 1px solid var(--gold); border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; box-shadow: 0 12px 32px -24px rgba(150,110,50,.55); }
+.reminder-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 10px; }
+.reminder-title { font-size: .98rem; font-weight: 700; color: var(--gold-deep); display: inline-flex; align-items: center; gap: 7px; }
+.reminder-count { background: var(--gold-deep); color: #fff; border-radius: 999px; min-width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: .74rem; font-weight: 700; padding: 0 7px; }
+.reminder-list { display: flex; flex-direction: column; gap: 8px; }
+.reminder-item { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.reminder-ico { font-size: 1.15rem; line-height: 1; flex-shrink: 0; }
+.reminder-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.reminder-text b { font-weight: 600; font-size: .92rem; }
+.reminder-text span { font-size: .82rem; color: var(--ink-soft); }
+.reminder-text.rem-open { cursor: pointer; }
+.reminder-text.rem-open:hover b { color: var(--gold-deep); text-decoration: underline; }
+.reminder-item .rem-dismiss { flex-shrink: 0; }
+
 /* 예약 상세 이벤트 참여 — 관리자 직접 체크 */
 .evd-ctrl { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; padding: 7px 0; }
 .evd-chk { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: .9rem; cursor: pointer; white-space: nowrap; }
