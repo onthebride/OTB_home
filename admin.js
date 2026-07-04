@@ -245,9 +245,8 @@ if ($('bkPrev')) {
 // 기존 예약은 접수일(created_at) 기준으로 55만원 그대로 유지(저장된 총액·내역 보존).
 const PRICE49_FROM = Date.parse('2026-06-24T01:00:00Z');
 const isNewPricing = (b) => !!(b && b.created_at && Date.parse(b.created_at) >= PRICE49_FROM);
-// 앨범 1권 추가 옵션 개정: 2026-06-25부터 5→10만원. 기존 예약은 5만원 유지.
-const ALBUM10_FROM = Date.parse('2026-06-25T03:15:00Z');
-const albumPrice = (b) => (b && b.created_at && Date.parse(b.created_at) >= ALBUM10_FROM) ? 10 : 5;
+// 앨범 1권 추가 옵션: 5만원. (2026-06-25~07-04 잠시 10만원 적용했으나 해당 기간 앨범 예약 0건 → 5만원 환원)
+const albumPrice = (b) => 5;
 function basicBasePrice(b) {
   if (b.package === '베이직(구)') return 50;
   if (b.package === '스페셜') return 55; // 구상품
