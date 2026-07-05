@@ -241,16 +241,20 @@ if ($('bkPrev')) {
 }
 
 /* ===== Detail modal ===== */
-// 베이직(데이터형) 기본가 개정: 2026-06-24부터 55→49만원.
-// 기존 예약은 접수일(created_at) 기준으로 55만원 그대로 유지(저장된 총액·내역 보존).
+// 베이직(데이터형) 기본가: 상시 55만원. 단, 2026-06-24~07-05 인하기간 접수분만 49만원 유지.
+// 각 예약은 접수일(created_at) 기준 단가 유지(저장된 총액·내역 보존).
 const PRICE49_FROM = Date.parse('2026-06-24T01:00:00Z');
+const PRICE55_AGAIN_FROM = Date.parse('2026-07-05T10:50:00Z'); // 다시 55만원으로 환원한 시점
+// 49만원 인하 스킴(2026-06-24~) 접수 여부 — 촬영본 사용동의 -1만원 폐지 등 스킴 판정용
 const isNewPricing = (b) => !!(b && b.created_at && Date.parse(b.created_at) >= PRICE49_FROM);
+// 베이직 49만원 적용 대상: 인하기간(2026-06-24 ~ 2026-07-05) 접수분만
+const isBasic49 = (b) => { const t = (b && b.created_at) ? Date.parse(b.created_at) : 0; return t >= PRICE49_FROM && t < PRICE55_AGAIN_FROM; };
 // 앨범 1권 추가 옵션: 5만원. (2026-06-25~07-04 잠시 10만원 적용했으나 해당 기간 앨범 예약 0건 → 5만원 환원)
 const albumPrice = (b) => 5;
 function basicBasePrice(b) {
   if (b.package === '베이직(구)') return 50;
   if (b.package === '스페셜') return 55; // 구상품
-  return isNewPricing(b) ? 49 : 55; // 베이직(데이터형)
+  return isBasic49(b) ? 49 : 55; // 베이직(데이터형): 인하기간만 49, 그 외 55
 }
 
 // 상품 + 옵션을 한 카테고리로 (가격 분리표시)
@@ -730,7 +734,7 @@ function renderEdit(b) {
     <div class="field" style="margin-bottom:10px">
       <label>상품</label>
       <select id="e_package">
-        <option value="베이직(데이터형)" data-price="${isNewPricing(b) ? 49 : 55}" ${sl(b.package, '베이직(데이터형)')}>베이직 (데이터형) · ${isNewPricing(b) ? 49 : 55}만원</option>
+        <option value="베이직(데이터형)" data-price="${basicBasePrice(b)}" ${sl(b.package, '베이직(데이터형)')}>베이직 (데이터형) · ${basicBasePrice(b)}만원</option>
         <option value="스페셜" data-price="55" ${sl(b.package, '스페셜')}>스페셜 · 55만원 (구상품)</option>
         <option value="베이직(구)" data-price="50" ${sl(b.package, '베이직(구)')}>베이직(구) · 50만원 (구상품)</option>
       </select>

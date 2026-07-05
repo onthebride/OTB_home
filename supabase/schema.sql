@@ -1139,11 +1139,12 @@ returns jsonb language plpgsql stable set search_path=public, pg_temp as $$
 declare b public.bookings; base int; items jsonb := '[]'::jsonb; co jsonb;
 begin
   select * into b from public.bookings where id = p_id; if not found then return '[]'::jsonb; end if;
-  -- 가격 개정 분기(접수일 기준): 베이직 55→49(2026-06-24~). 앨범은 5만원(2026-06-25~07-04 잠시 10만원, 해당기간 예약 0건 → 환원). 기존 예약은 유지.
+  -- 가격 개정 분기(접수일 기준): 베이직 상시 55(2026-06-24~07-05 인하기간만 49). 앨범 5만원. 각 예약은 접수 당시 단가 유지.
   base := case
             when b.package = '베이직(구)' then 50
             when b.package = '스페셜' then 55
-            when b.created_at >= timestamptz '2026-06-24 01:00:00+00' then 49
+            when b.created_at >= timestamptz '2026-06-24 01:00:00+00'
+                 and b.created_at <  timestamptz '2026-07-05 10:50:00+00' then 49
             else 55
           end;
   if b.package is not null then
