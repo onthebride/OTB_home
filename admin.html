@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="admin.css?v=20260703a" />
+  <link rel="stylesheet" href="admin.css?v=20260706a" />
 </head>
 <body>
 
@@ -57,6 +57,7 @@
         <button class="dtab" data-tab="calendar">캘린더</button>
         <button class="dtab" data-tab="bookings">예약</button>
         <button class="dtab" data-tab="staff">작가관리</button>
+        <button class="dtab" data-tab="pricing">상품·가격</button>
         <button class="dtab" data-tab="gallery">갤러리</button>
         <button class="dtab" data-tab="events">이벤트<span class="dtab-badge" id="evBadge" hidden>0</span></button>
       </div>
@@ -223,6 +224,14 @@
           <div class="ev-list" id="evReviewList"></div>
         </div>
       </div>
+
+      <div id="tab-pricing" hidden>
+        <div class="pricing-admin">
+          <h3>상품·옵션 가격 관리</h3>
+          <p class="pr-hint">가격·이름을 바꾸고 <b>저장</b>을 누르면 예약 폼·홈페이지·신부 포털에 바로 반영됩니다. <b>이미 접수된 예약은 그대로 유지</b>돼요(그때 단가로 저장됨). "폼 노출"을 끄면 예약 폼에서 그 옵션이 사라집니다.</p>
+          <div id="pricingList"></div>
+        </div>
+      </div>
     </div>
     <footer class="dash-foot">© ONTHEBRIDE · 관리자</footer>
   </section>
@@ -235,6 +244,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=20260705a"></script>
+  <script src="admin.js?v=20260706a"></script>
 </body>
 </html>

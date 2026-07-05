@@ -172,7 +172,7 @@
       <article class="price-card featured">
         <p class="price-note">촬영상품</p>
         <p class="price-name">BASIC</p>
-        <p class="price-amount">550,000<span class="won-suffix">원</span></p>
+        <p class="price-amount" data-code="basic"><span class="price-num">550,000</span><span class="won-suffix">원</span></p>
         <ul class="price-list">
           <li>예식 한 시간 반 전 신부대기실부터 예식 종료까지</li>
           <li>스냅과 원판 촬영</li>
@@ -186,10 +186,10 @@
         <h3>옵션 사항</h3>
         <p class="opt-sub">Option 1</p>
         <ul class="price-opt">
-          <li><span>앨범 1권 추가</span><span class="opt-won">50,000원</span></li>
-          <li><span>연회장 인사 촬영</span><span class="opt-won">50,000원</span></li>
-          <li><span>폐백 촬영</span><span class="opt-won">100,000원</span></li>
-          <li><span>2부 촬영</span><span class="opt-won">100,000원</span></li>
+          <li data-code="album"><span>앨범 1권 추가</span><span class="opt-won">50,000원</span></li>
+          <li data-code="reception"><span>연회장 인사 촬영</span><span class="opt-won">50,000원</span></li>
+          <li data-code="pyebaek"><span>폐백 촬영</span><span class="opt-won">100,000원</span></li>
+          <li data-code="part2"><span>2부 촬영</span><span class="opt-won">100,000원</span></li>
         </ul>
         <ul class="opt-desc">
           <li>호텔이나 2부 식순이 추가로 있는 경우는 “2부 촬영”을 추가하시면 됩니다.</li>
@@ -532,6 +532,6 @@
   <script defer src="https://snapwidget.com/js/snapwidget.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="config.js"></script>
-  <script defer src="main.js?v=20260705"></script>
+  <script defer src="main.js?v=20260706"></script>
 </body>
 </html>

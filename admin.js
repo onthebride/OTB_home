@@ -26,6 +26,8 @@ let surveyIds = new Set(); // 설문 제출된 예약 ID
 let allUnconfirmed = []; // 작가 미확인 (admin_unconfirmed)
 let alimtalkFails = []; // 알림톡 발송 실패 (admin_alimtalk_failures)
 let reminders = []; // 관리자 할 일 리마인더 (admin_reminders_list)
+let pricingList = []; // 상품·옵션 카탈로그 (admin_pricing_list)
+let pricingMap = {}; // code → {name, price, active, ...}
 let calMonth = null; // 캘린더 현재 월 {y, m}
 let dayOvKey = null; // 캘린더 날짜 팝업 열린 날 {y, m, d}
 let unpaidTab = 'deposit'; // 미입금 탭: deposit | balance
@@ -120,13 +122,14 @@ $('refreshBtn').addEventListener('click', () => loadBookings());
 /* ===== Load + render ===== */
 async function loadBookings() {
   // 모든 조회는 서로 독립적이라 한 번에 병렬로 — 순차 대기 제거(체감 속도 개선)
-  const [res, sres, ures, dres, fres, rres] = await Promise.all([
+  const [res, sres, ures, dres, fres, rres, pres] = await Promise.all([
     sb.rpc('admin_list_bookings'),    // 예약 목록
     sb.rpc('admin_survey_ids'),       // 설문 제출 여부
     sb.rpc('admin_unconfirmed'),      // 작가 미확인
     sb.rpc('admin_event_discounts'),  // 이벤트 할인
     sb.rpc('admin_alimtalk_log'),     // 알림톡 발송 내역
     sb.rpc('admin_reminders_list'),   // 할 일 리마인더
+    sb.rpc('admin_pricing_list'),     // 상품·옵션 카탈로그
     loadStaff(),                      // 작가 목록
   ]);
   const { data, error } = res;
@@ -143,6 +146,8 @@ async function loadBookings() {
   eventDiscounts = (dres.data && typeof dres.data === 'object') ? dres.data : {};
   alimtalkFails = Array.isArray(fres.data) ? fres.data : [];
   reminders = Array.isArray(rres.data) ? rres.data : [];
+  pricingList = Array.isArray(pres.data) ? pres.data : [];
+  pricingMap = {}; pricingList.forEach((p) => { pricingMap[p.code] = p; });
   render();
   renderDashboard();
   renderReminders();
@@ -258,7 +263,11 @@ function basicBasePrice(b) {
 }
 
 // 상품 + 옵션을 한 카테고리로 (가격 분리표시)
+// 예약 시점 스냅샷(line_items)이 있으면 그대로 사용 → 가격 변경돼도 기존 예약 보존
 function productOptions(b) {
+  if (Array.isArray(b.line_items) && b.line_items.length) {
+    return b.line_items.map((it) => ({ name: it.name, price: Number(it.price) || 0 }));
+  }
   const rows = [];
   const base = basicBasePrice(b);
   if (b.package) rows.push({ name: String(b.package).replace('(데이터형)', ''), price: base });
@@ -277,6 +286,66 @@ function productOptionsHtml(b) {
   if (!rows.length) return '<span class="dv">없음</span>';
   return '<div class="po-list">' + rows.map((r) =>
     `<div class="po-row"><span class="po-nm">${esc(r.name)}</span><span class="po-pr">${won(r.price)}</span></div>`).join('') + '</div>';
+}
+
+/* ===== 상품·가격 관리 (카탈로그) ===== */
+// 카탈로그 현재 단가
+const catPrice = (code, dflt) => { const c = pricingMap[code]; return c && c.price != null ? c.price : dflt; };
+// 수정폼 단가: 이 예약 스냅샷에 있으면 그 값(기존 예약 보존), 없으면 현재 카탈로그가
+function editPrice(b, name, code) {
+  const snap = Array.isArray(b.line_items) ? b.line_items.find((it) => it.name === name) : null;
+  if (snap && snap.price != null) return Number(snap.price) || 0;
+  return catPrice(code, 0);
+}
+function renderPricing() {
+  const wrap = $('pricingList');
+  if (!wrap) return;
+  if (!pricingList.length) { wrap.innerHTML = '<p class="empty">불러오는 중…</p>'; return; }
+  const kindLabel = { product: '상품', option: '옵션', photographer: '작가' };
+  wrap.innerHTML = pricingList.map((p) => `
+    <div class="pr-row${p.editable ? '' : ' locked'}" data-code="${p.code}">
+      <input class="pr-name" value="${esc(p.name)}" ${p.editable ? '' : 'disabled'} />
+      <span class="pr-kind">${kindLabel[p.kind] || esc(p.kind)}</span>
+      <div class="pr-price"><input class="pr-price-in" type="number" min="0" value="${p.price}" ${p.editable ? '' : 'disabled'} /><span>만원</span></div>
+      <label class="pr-active"><input type="checkbox" class="pr-active-in" ${p.active ? 'checked' : ''} ${p.editable ? '' : 'disabled'} /> 폼 노출</label>
+      ${p.editable ? '<button class="btn-sm pr-save">저장</button>' : '<span class="pr-locktag">구상품</span>'}
+      <span class="pr-msg"></span>
+    </div>`).join('');
+  wrap.querySelectorAll('.pr-save').forEach((btn) =>
+    btn.addEventListener('click', () => savePricing(btn.closest('.pr-row'))));
+}
+async function savePricing(row) {
+  const code = row.dataset.code;
+  const name = row.querySelector('.pr-name').value.trim();
+  const price = Number(row.querySelector('.pr-price-in').value);
+  const active = row.querySelector('.pr-active-in').checked;
+  const msg = row.querySelector('.pr-msg');
+  if (!name) { msg.textContent = '이름을 입력하세요'; msg.style.color = '#c0392b'; return; }
+  if (!(price >= 0)) { msg.textContent = '가격 확인'; msg.style.color = '#c0392b'; return; }
+  msg.textContent = '저장 중…'; msg.style.color = 'var(--ink-soft)';
+  const { data, error } = await sb.rpc('admin_pricing_update', { p_code: code, p_name: name, p_price: price, p_active: active });
+  if (error) { msg.textContent = '실패: ' + error.message; msg.style.color = '#c0392b'; return; }
+  const p = pricingMap[code]; if (p && data) { p.name = data.name; p.price = data.price; p.active = data.active; }
+  msg.textContent = '저장됨 ✓'; msg.style.color = '#2f7d4f';
+  setTimeout(() => { msg.textContent = ''; }, 2000);
+}
+// 수정폼 → line_items 스냅샷 (총액은 recalcEdit 사용, 항목은 이 배열)
+function buildEditLineItems() {
+  const items = [];
+  const two = $('e_photographer') && $('e_photographer').value === '2인 촬영';
+  const pkSel = $('e_package') && $('e_package').selectedOptions[0];
+  if (pkSel && $('e_package').value) items.push({ group: '상품', name: $('e_package').value.replace('(데이터형)', ''), price: Number(pkSel.dataset.price) || 0 });
+  if ($('e_travel') && $('e_travel').checked) items.push({ group: '상품', name: '출장비', price: (Number($('e_travel').dataset.price) || 0) + (two ? 5 : 0) });
+  [['e_option_album', '앨범 1권 추가'], ['e_option_reception', '연회장 인사촬영'], ['e_option_pyebaek', '폐백촬영'], ['e_option_part2', '2부 촬영']].forEach(([id, nm]) => {
+    if ($(id) && $(id).checked) items.push({ group: '옵션', name: nm, price: Number($(id).dataset.price) || 0 });
+  });
+  if (two) items.push({ group: '옵션', name: '2인 촬영', price: Number($('e_photographer').selectedOptions[0].dataset.price) || 0 });
+  if ($('e_rep') && $('e_rep').checked) items.push({ group: '옵션', name: '대표지정', price: Number($('e_rep').dataset.price) || 0 });
+  document.querySelectorAll('#customOpts .co-row').forEach((r) => {
+    const nm = r.querySelector('.co-name').value.trim();
+    if (nm) items.push({ group: '옵션', name: nm, price: Number(r.querySelector('.co-price').value) || 0 });
+  });
+  return items;
 }
 
 const kTimeDisp = (t) => {
@@ -734,26 +803,26 @@ function renderEdit(b) {
     <div class="field" style="margin-bottom:10px">
       <label>상품</label>
       <select id="e_package">
-        <option value="베이직(데이터형)" data-price="${basicBasePrice(b)}" ${sl(b.package, '베이직(데이터형)')}>베이직 (데이터형) · ${basicBasePrice(b)}만원</option>
+        <option value="베이직(데이터형)" data-price="${editPrice(b, '베이직', 'basic')}" ${sl(b.package, '베이직(데이터형)')}>베이직 (데이터형) · ${editPrice(b, '베이직', 'basic')}만원</option>
         <option value="스페셜" data-price="55" ${sl(b.package, '스페셜')}>스페셜 · 55만원 (구상품)</option>
         <option value="베이직(구)" data-price="50" ${sl(b.package, '베이직(구)')}>베이직(구) · 50만원 (구상품)</option>
       </select>
     </div>
     <div class="edit-opts">
-      <label class="eopt"><input type="checkbox" id="e_travel" data-price="5" ${ck(b.travel_fee)} /><span>출장비</span><b>5만원</b></label>
-      <label class="eopt"><input type="checkbox" id="e_option_album" data-price="${albumPrice(b)}" ${ck(b.option_album)} /><span>앨범 1권 추가</span><b>+${albumPrice(b)}만원</b></label>
-      <label class="eopt"><input type="checkbox" id="e_option_reception" data-price="5" ${ck(b.option_reception)} /><span>연회장 인사촬영</span><b>+5만원</b></label>
-      <label class="eopt"><input type="checkbox" id="e_option_pyebaek" data-price="10" ${ck(b.option_pyebaek)} /><span>폐백촬영</span><b>+10만원</b></label>
-      <label class="eopt"><input type="checkbox" id="e_option_part2" data-price="10" ${ck(b.option_part2)} /><span>2부 촬영</span><b>+10만원</b></label>
+      <label class="eopt"><input type="checkbox" id="e_travel" data-price="${catPrice('travel', 5)}" ${ck(b.travel_fee)} /><span>출장비</span><b>${catPrice('travel', 5)}만원</b></label>
+      <label class="eopt"><input type="checkbox" id="e_option_album" data-price="${editPrice(b, '앨범 1권 추가', 'album')}" ${ck(b.option_album)} /><span>앨범 1권 추가</span><b>+${editPrice(b, '앨범 1권 추가', 'album')}만원</b></label>
+      <label class="eopt"><input type="checkbox" id="e_option_reception" data-price="${editPrice(b, '연회장 인사촬영', 'reception')}" ${ck(b.option_reception)} /><span>연회장 인사촬영</span><b>+${editPrice(b, '연회장 인사촬영', 'reception')}만원</b></label>
+      <label class="eopt"><input type="checkbox" id="e_option_pyebaek" data-price="${editPrice(b, '폐백촬영', 'pyebaek')}" ${ck(b.option_pyebaek)} /><span>폐백촬영</span><b>+${editPrice(b, '폐백촬영', 'pyebaek')}만원</b></label>
+      <label class="eopt"><input type="checkbox" id="e_option_part2" data-price="${editPrice(b, '2부 촬영', 'part2')}" ${ck(b.option_part2)} /><span>2부 촬영</span><b>+${editPrice(b, '2부 촬영', 'part2')}만원</b></label>
     </div>
     <div class="field" style="margin-top:10px">
       <label>작가 선택</label>
       <select id="e_photographer">
         <option value="기본" data-price="0" ${sl(b.photographer, '기본')}>기본 (1인 촬영)</option>
-        <option value="2인 촬영" data-price="25" ${sl(b.photographer, '2인 촬영')}>2인 촬영 (+25만원)</option>
+        <option value="2인 촬영" data-price="${catPrice('photographer_2p', 25)}" ${sl(b.photographer, '2인 촬영')}>2인 촬영 (+${catPrice('photographer_2p', 25)}만원)</option>
       </select>
     </div>
-    <label class="eopt" style="margin-top:8px"><input type="checkbox" id="e_rep" data-price="35" ${ck(b.rep_designation)} /><span>대표지정</span><b>+35만원</b></label>
+    <label class="eopt" style="margin-top:8px"><input type="checkbox" id="e_rep" data-price="${editPrice(b, '대표지정', 'rep')}" ${ck(b.rep_designation)} /><span>대표지정</span><b>+${editPrice(b, '대표지정', 'rep')}만원</b></label>
     <label class="eopt" style="margin-top:8px"><input type="checkbox" id="e_usage" data-price="${isNewPricing(b) ? 0 : -1}" ${ck(b.photo_usage_agree)} /><span>촬영본 사용동의 (YES)</span><b>${isNewPricing(b) ? '' : '-1만원'}</b></label>
 
     <h5 class="eg">커스텀 옵션 <small>(예전·비표준 옵션)</small></h5>
@@ -911,6 +980,7 @@ async function saveDetail(id, recalcEdit) {
   payload.custom_options = Array.from(document.querySelectorAll('#customOpts .co-row'))
     .map((r) => ({ name: r.querySelector('.co-name').value.trim(), price: Number(r.querySelector('.co-price').value) || 0 }))
     .filter((o) => o.name);
+  payload.line_items = buildEditLineItems(); // 수정 내용으로 단가 스냅샷 갱신
   const { data, error } = await sb.rpc('admin_save_booking', { p_id: id, payload });
   btn.disabled = false;
   if (error) {
@@ -1774,11 +1844,13 @@ if (dashTabs) {
     $('tab-calendar').hidden = tab !== 'calendar';
     $('tab-bookings').hidden = tab !== 'bookings';
     $('tab-staff').hidden = tab !== 'staff';
+    $('tab-pricing').hidden = tab !== 'pricing';
     $('tab-gallery').hidden = tab !== 'gallery';
     $('tab-events').hidden = tab !== 'events';
     if (tab === 'dashboard') renderDashboard();
     if (tab === 'calendar') { renderCalendar(); renderSchedule(); }
     if (tab === 'staff') renderStaff();
+    if (tab === 'pricing') renderPricing();
     if (tab === 'gallery') loadGallery();
     if (tab === 'events') loadEvents();
   });

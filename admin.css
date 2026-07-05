@@ -620,6 +620,27 @@ td .muted { color: var(--ink-soft); }
 .reminder-text.rem-open:hover b { color: var(--gold-deep); text-decoration: underline; }
 .reminder-item .rem-dismiss { flex-shrink: 0; }
 
+/* 상품·가격 관리 탭 */
+.pricing-admin { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 22px; }
+.pricing-admin h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; }
+.pr-hint { font-size: .84rem; color: var(--ink-soft); margin-bottom: 18px; line-height: 1.55; }
+.pr-row { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.pr-row:last-child { border-bottom: none; }
+.pr-row.locked { opacity: .7; }
+.pr-name { flex: 1; min-width: 150px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 6px; font-size: .92rem; background: #fff; color: var(--ink); }
+.pr-name:focus { outline: none; border-color: var(--gold); }
+.pr-name:disabled { background: var(--cream); }
+.pr-kind { font-size: .72rem; color: var(--ink-soft); background: var(--cream); border-radius: 6px; padding: 3px 8px; white-space: nowrap; }
+.pr-price { display: flex; align-items: center; gap: 4px; }
+.pr-price-in { width: 74px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; text-align: right; font-size: .92rem; background: #fff; color: var(--ink); }
+.pr-price-in:focus { outline: none; border-color: var(--gold); }
+.pr-price > span { font-size: .82rem; color: var(--ink-soft); }
+.pr-active { display: inline-flex; align-items: center; gap: 5px; font-size: .82rem; color: var(--ink-soft); white-space: nowrap; cursor: pointer; }
+.pr-active input { width: 15px; height: 15px; accent-color: var(--gold-deep); margin: 0; }
+.pr-locktag { font-size: .74rem; color: var(--ink-soft); }
+.pr-msg { font-size: .8rem; min-width: 56px; }
+@media (max-width: 640px) { .pr-name { min-width: 110px; } .pr-row { gap: 8px; } }
+
 /* 예약 상세 이벤트 참여 — 관리자 직접 체크 */
 .evd-ctrl { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; padding: 7px 0; }
 .evd-chk { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: .9rem; cursor: pointer; white-space: nowrap; }

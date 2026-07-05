@@ -236,6 +236,38 @@ const sb =
     ? window.supabase.createClient(window.OTB_CONFIG.SUPABASE_URL, window.OTB_CONFIG.SUPABASE_KEY)
     : null;
 
+// ===== 상품·옵션 단가 동적 적용 (관리자 '상품관리' 설정 반영) =====
+const CODE_INPUT = { basic: 'f_basic', travel: 'f_travel', album: 'f_option_album', reception: 'f_option_reception', pyebaek: 'f_option_pyebaek', part2: 'f_option_part2', rep: 'f_rep' };
+const _show = (el, on) => { if (el) el.style.display = on ? '' : 'none'; };
+async function applyPricing() {
+  if (!sb) return;
+  let data;
+  try { data = (await sb.rpc('pricing_public')).data; } catch (_) { return; }
+  if (!Array.isArray(data)) return;
+  const P = {}; data.forEach((p) => { P[p.code] = p; });
+  window.__OTB_PRICING = P;
+  // 예약 폼: 단가·이름·노출
+  Object.entries(CODE_INPUT).forEach(([code, id]) => {
+    const p = P[code], input = document.getElementById(id);
+    if (!p || !input) return;
+    input.dataset.price = p.price;
+    const li = input.closest('li'); if (!li) return;
+    const pe = li.querySelector('.opt-price'); if (pe) pe.textContent = (p.kind === 'product' ? '' : '+') + p.price + '만원';
+    if (code !== 'basic') { const ne = li.querySelector('.opt-name'); if (ne) ne.textContent = p.name; _show(li, p.active); }
+  });
+  // 2인 촬영(라디오)
+  const twoR = bookingForm && bookingForm.querySelector('input[name="photographer"][value="2인 촬영"]');
+  if (twoR && P.photographer_2p) { twoR.dataset.price = P.photographer_2p.price; const li = twoR.closest('li'); const pe = li && li.querySelector('.opt-price'); if (pe) pe.textContent = '+' + P.photographer_2p.price + '만원'; }
+  // 홈 가격표(데이터-코드)
+  document.querySelectorAll('[data-code]').forEach((el) => {
+    const p = P[el.dataset.code]; if (!p) return;
+    const num = el.querySelector('.price-num'); if (num) num.textContent = (p.price * 10000).toLocaleString('ko-KR');
+    const won = el.querySelector('.opt-won'); if (won) { won.textContent = (p.price * 10000).toLocaleString('ko-KR') + '원'; _show(el, p.active); }
+  });
+  if (bookingForm) { const t = document.getElementById('bkTotal'); if (t) t.textContent = calcTotal().toLocaleString('ko-KR') + '만원'; }
+}
+applyPricing();
+
 const val = (id) => {
   const el = document.getElementById(id);
   return el ? el.value.trim() : '';
@@ -248,6 +280,23 @@ const radioVal = (name) => {
   const el = bookingForm.querySelector(`input[name="${name}"]:checked`);
   return el ? el.value : null;
 };
+
+// 폼 선택 → 단가 스냅샷 line_items (DOM data-price 기준 → 화면 총액과 항상 일치)
+const _price = (id) => { const el = document.getElementById(id); return el ? (Number(el.dataset.price) || 0) : 0; };
+const _optName = (id, fb) => { const el = document.getElementById(id); const li = el && el.closest('li'); const n = li && li.querySelector('.opt-name'); return n ? n.textContent.trim() : fb; };
+function buildLineItems() {
+  const items = [];
+  const two = radioVal('photographer') === '2인 촬영';
+  if (checked('f_basic')) items.push({ group: '상품', name: '베이직', price: _price('f_basic') });
+  if (checked('f_travel')) items.push({ group: '상품', name: '출장비', price: _price('f_travel') + (two ? 5 : 0) });
+  if (checked('f_option_album')) items.push({ group: '옵션', name: _optName('f_option_album', '앨범 1권 추가'), price: _price('f_option_album') });
+  if (checked('f_option_reception')) items.push({ group: '옵션', name: _optName('f_option_reception', '연회장 인사촬영'), price: _price('f_option_reception') });
+  if (checked('f_option_pyebaek')) items.push({ group: '옵션', name: _optName('f_option_pyebaek', '폐백촬영'), price: _price('f_option_pyebaek') });
+  if (checked('f_option_part2')) items.push({ group: '옵션', name: _optName('f_option_part2', '2부 촬영'), price: _price('f_option_part2') });
+  if (two) { const r = bookingForm.querySelector('input[name="photographer"][value="2인 촬영"]'); items.push({ group: '옵션', name: '2인 촬영', price: r ? (Number(r.dataset.price) || 0) : 25 }); }
+  if (checked('f_rep')) items.push({ group: '옵션', name: _optName('f_rep', '대표지정'), price: _price('f_rep') });
+  return items;
+}
 
 // Booking — submit to Supabase
 if (bookingForm) {
@@ -297,6 +346,7 @@ if (bookingForm) {
       return;
     }
 
+    const lineItems = buildLineItems();
     const row = {
       agree_available: checked('f_agree_available'),
       agree_terms: checked('f_agree_terms'),
@@ -320,6 +370,7 @@ if (bookingForm) {
       rep_designation: checked('f_rep'),
       photo_usage_agree: radioVal('usage') === 'yes',
       total_price: calcTotal(),
+      line_items: lineItems,
     };
 
     submitBtn.disabled = true;
@@ -342,15 +393,8 @@ if (bookingForm) {
         const [hh, mm] = t.split(':').map(Number);
         return (hh < 12 ? '오전' : '오후') + ' ' + (hh % 12 === 0 ? 12 : hh % 12) + ':' + String(mm).padStart(2, '0');
       };
-      const items = [];
-      if (row.basic) items.push('베이직(데이터형) (55)');
-      if (row.travel_fee) items.push(row.photographer === '2인 촬영' ? '출장비 (10)' : '출장비 (5)');
-      if (row.option_album) items.push('앨범 1권 추가 (5)');
-      if (row.option_reception) items.push('연회장 인사촬영 (5)');
-      if (row.option_pyebaek) items.push('폐백촬영 (10)');
-      if (row.option_part2) items.push('2부 촬영 (10)');
-      if (row.photographer === '2인 촬영') items.push('2인 촬영 (25)');
-      if (row.rep_designation) items.push('대표지정 (35)');
+      // 계약안내 메일 항목 = 실제 스냅샷 단가 기준
+      const items = lineItems.map((it) => `${it.name} (${it.price})`);
 
       const body = [
         '* 온더브라이드 계약안내서 *',
