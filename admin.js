@@ -305,14 +305,45 @@ function renderPricing() {
   wrap.innerHTML = pricingList.map((p) => `
     <div class="pr-row${p.editable ? '' : ' locked'}" data-code="${p.code}">
       <input class="pr-name" value="${esc(p.name)}" ${p.editable ? '' : 'disabled'} />
-      <span class="pr-kind">${kindLabel[p.kind] || esc(p.kind)}</span>
+      <span class="pr-kind">${kindLabel[p.kind] || esc(p.kind)}${p.is_core ? '' : ' · 추가'}</span>
       <div class="pr-price"><input class="pr-price-in" type="number" min="0" value="${p.price}" ${p.editable ? '' : 'disabled'} /><span>만원</span></div>
       <label class="pr-active"><input type="checkbox" class="pr-active-in" ${p.active ? 'checked' : ''} ${p.editable ? '' : 'disabled'} /> 폼 노출</label>
       ${p.editable ? '<button class="btn-sm pr-save">저장</button>' : '<span class="pr-locktag">구상품</span>'}
+      ${p.is_core ? '' : '<button class="btn-sm pr-del" title="삭제">🗑</button>'}
       <span class="pr-msg"></span>
-    </div>`).join('');
-  wrap.querySelectorAll('.pr-save').forEach((btn) =>
-    btn.addEventListener('click', () => savePricing(btn.closest('.pr-row'))));
+    </div>`).join('') + `
+    <div class="pr-add">
+      <input class="pr-add-name" placeholder="새 옵션 이름 (예: 드론 촬영)" />
+      <div class="pr-price"><input class="pr-add-price" type="number" min="0" placeholder="가격" /><span>만원</span></div>
+      <button class="btn-primary pr-add-btn">+ 옵션 추가</button>
+      <span class="pr-add-msg"></span>
+    </div>`;
+  wrap.querySelectorAll('.pr-save').forEach((btn) => btn.addEventListener('click', () => savePricing(btn.closest('.pr-row'))));
+  wrap.querySelectorAll('.pr-del').forEach((btn) => btn.addEventListener('click', () => deletePricing(btn.closest('.pr-row'))));
+  const addBtn = wrap.querySelector('.pr-add-btn');
+  if (addBtn) addBtn.addEventListener('click', () => addPricing(wrap));
+}
+async function addPricing(wrap) {
+  const name = wrap.querySelector('.pr-add-name').value.trim();
+  const price = Number(wrap.querySelector('.pr-add-price').value);
+  const msg = wrap.querySelector('.pr-add-msg');
+  if (!name) { msg.textContent = '이름을 입력하세요'; msg.style.color = '#c0392b'; return; }
+  if (!(price >= 0)) { msg.textContent = '가격 확인'; msg.style.color = '#c0392b'; return; }
+  msg.textContent = '추가 중…'; msg.style.color = 'var(--ink-soft)';
+  const { data, error } = await sb.rpc('admin_pricing_add', { p_name: name, p_price: price });
+  if (error) { msg.textContent = '실패: ' + error.message; msg.style.color = '#c0392b'; return; }
+  if (data) { pricingList.push(data); pricingMap[data.code] = data; }
+  renderPricing();
+  toast('옵션을 추가했어요. 예약 폼에 바로 노출됩니다.');
+}
+async function deletePricing(row) {
+  const code = row.dataset.code;
+  const name = row.querySelector('.pr-name').value;
+  if (!confirm(`"${name}" 옵션을 삭제할까요?\n예약 폼에서 사라집니다. 이미 이 옵션으로 접수된 예약은 그대로 유지돼요.`)) return;
+  const { error } = await sb.rpc('admin_pricing_delete', { p_code: code });
+  if (error) { alert('삭제 실패: ' + error.message); return; }
+  pricingList = pricingList.filter((p) => p.code !== code); delete pricingMap[code];
+  renderPricing();
 }
 async function savePricing(row) {
   const code = row.dataset.code;

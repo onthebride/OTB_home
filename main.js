@@ -237,6 +237,7 @@ const sb =
     : null;
 
 // ===== 상품·옵션 단가 동적 적용 (관리자 '상품관리' 설정 반영) =====
+const _esc = (s) => (s == null ? '' : String(s)).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const CODE_INPUT = { basic: 'f_basic', travel: 'f_travel', album: 'f_option_album', reception: 'f_option_reception', pyebaek: 'f_option_pyebaek', part2: 'f_option_part2', rep: 'f_rep' };
 const _show = (el, on) => { if (el) el.style.display = on ? '' : 'none'; };
 async function applyPricing() {
@@ -264,6 +265,12 @@ async function applyPricing() {
     const num = el.querySelector('.price-num'); if (num) num.textContent = (p.price * 10000).toLocaleString('ko-KR');
     const won = el.querySelector('.opt-won'); if (won) { won.textContent = (p.price * 10000).toLocaleString('ko-KR') + '원'; _show(el, p.active); }
   });
+  // 추가 옵션(손님용, is_core=false) 예약폼에 동적 체크박스로 노출
+  const extraWrap = document.getElementById('extraOptions');
+  if (extraWrap) {
+    const extras = data.filter((p) => !p.is_core && p.active && p.kind === 'option');
+    extraWrap.innerHTML = extras.map((p) => `<li class="opt"><label class="check"><input type="checkbox" class="f-extra" data-code="${_esc(p.code)}" data-name="${_esc(p.name)}" data-price="${p.price}" /> <span class="opt-name">${_esc(p.name)}</span></label><span class="opt-price">+${p.price}만원</span></li>`).join('');
+  }
   if (bookingForm) { const t = document.getElementById('bkTotal'); if (t) t.textContent = calcTotal().toLocaleString('ko-KR') + '만원'; }
 }
 applyPricing();
@@ -295,6 +302,9 @@ function buildLineItems() {
   if (checked('f_option_part2')) items.push({ group: '옵션', name: _optName('f_option_part2', '2부 촬영'), price: _price('f_option_part2') });
   if (two) { const r = bookingForm.querySelector('input[name="photographer"][value="2인 촬영"]'); items.push({ group: '옵션', name: '2인 촬영', price: r ? (Number(r.dataset.price) || 0) : 25 }); }
   if (checked('f_rep')) items.push({ group: '옵션', name: _optName('f_rep', '대표지정'), price: _price('f_rep') });
+  document.querySelectorAll('#extraOptions input.f-extra:checked').forEach((el) => {
+    items.push({ group: '옵션', name: el.dataset.name, price: Number(el.dataset.price) || 0 });
+  });
   return items;
 }
 
@@ -347,6 +357,7 @@ if (bookingForm) {
     }
 
     const lineItems = buildLineItems();
+    const extraSel = Array.from(document.querySelectorAll('#extraOptions input.f-extra:checked')).map((el) => ({ name: el.dataset.name, price: Number(el.dataset.price) || 0 }));
     const row = {
       agree_available: checked('f_agree_available'),
       agree_terms: checked('f_agree_terms'),
@@ -371,6 +382,7 @@ if (bookingForm) {
       photo_usage_agree: radioVal('usage') === 'yes',
       total_price: calcTotal(),
       line_items: lineItems,
+      custom_options: extraSel,
     };
 
     submitBtn.disabled = true;
