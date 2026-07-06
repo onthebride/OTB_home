@@ -50,6 +50,12 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .dtab.active { color: var(--gold-deep); border-bottom-color: var(--gold-deep); font-weight: 500; }
 .dtab-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; margin-left: 5px; padding: 0 5px; border-radius: 999px; background: #b5462f; color: #fff; font-size: .7rem; font-weight: 700; vertical-align: middle; }
 
+/* 설정 하위탭 (작가관리 · 상품·가격 · 갤러리) */
+.dash-subtabs { display: inline-flex; gap: 4px; margin-bottom: 22px; background: var(--cream); border: 1px solid var(--line); border-radius: 9px; padding: 4px; flex-wrap: wrap; max-width: 100%; }
+.sub-tab { background: none; border: none; padding: 8px 18px; cursor: pointer; font-family: var(--sans); font-size: .92rem; color: var(--ink-soft); border-radius: 6px; transition: all .15s; }
+.sub-tab:hover { color: var(--ink); }
+.sub-tab.active { background: var(--paper); color: var(--gold-deep); font-weight: 600; box-shadow: 0 1px 5px -1px rgba(60,45,30,.18); }
+
 /* Gallery management */
 .gl-upload { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 24px; margin-bottom: 24px; }
 .gl-upload h3 { font-family: var(--serif); font-size: 1.2rem; font-weight: 600; margin-bottom: 16px; }

@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="admin.css?v=20260706b" />
+  <link rel="stylesheet" href="admin.css?v=20260706c" />
 </head>
 <body>
 
@@ -56,10 +56,8 @@
         <button class="dtab active" data-tab="dashboard">홈</button>
         <button class="dtab" data-tab="calendar">캘린더</button>
         <button class="dtab" data-tab="bookings">예약</button>
-        <button class="dtab" data-tab="staff">작가관리</button>
-        <button class="dtab" data-tab="pricing">상품·가격</button>
-        <button class="dtab" data-tab="gallery">갤러리</button>
         <button class="dtab" data-tab="events">이벤트<span class="dtab-badge" id="evBadge" hidden>0</span></button>
+        <button class="dtab" data-tab="settings">설정</button>
       </div>
 
       <div id="tab-dashboard">
@@ -151,20 +149,6 @@
         </div>
       </div>
 
-      <div id="tab-staff" hidden>
-        <div class="staff-add">
-          <h3>작가 등록</h3>
-          <div class="staff-add-row">
-            <input type="text" id="stName" placeholder="이름" />
-            <input type="text" id="stPhone" class="phone" placeholder="연락처" />
-            <button class="btn-primary" id="stAddBtn">추가</button>
-          </div>
-          <p class="staff-msg" id="stMsg"></p>
-        </div>
-        <div class="staff-list" id="staffList"></div>
-        <p class="empty" id="staffEmpty" hidden>등록된 작가가 없습니다.</p>
-      </div>
-
       <div id="tab-bookings" hidden>
         <div class="filters" id="filters">
           <button class="filter active" data-f="전체">전체 <span id="c_all">0</span></button>
@@ -196,24 +180,6 @@
         </div>
       </div>
 
-      <div id="tab-gallery" hidden>
-        <div class="gl-upload">
-          <h3>사진 업로드</h3>
-          <div class="gl-up-row">
-            <label class="gl-file"><input type="file" id="glFiles" accept="image/*" multiple /><span id="glFileLabel">사진 선택 (여러 장 가능)</span></label>
-            <input type="text" id="glVenue" placeholder="예식장소 태그 (예: 아펠가모 선릉)" />
-            <button class="btn-primary" id="glUploadBtn">업로드</button>
-          </div>
-          <div class="gl-queue" id="glQueue"></div>
-          <p class="gl-status" id="glStatus"></p>
-          <p class="gl-hint">※ "사진 선택"이나 드래그로 한 장씩 계속 추가할 수 있어요. 다 모은 뒤 "업로드"를 누르면 한 번에 올라갑니다. 같은 장소면 태그 한 번만 입력하면 돼요. 업로드 시 자동으로 용량을 줄여 빠르게 올립니다.</p>
-        </div>
-        <div class="gl-tags" id="glTags"></div>
-        <div class="gl-grid" id="glGrid"></div>
-        <div class="gl-pager" id="glPager"></div>
-        <p class="empty" id="glEmpty" hidden>등록된 사진이 없습니다.</p>
-      </div>
-
       <div id="tab-events" hidden>
         <div class="ev-section">
           <h3 class="ev-h">🤝 짝꿍 이벤트 <small>(매칭 완료 → 승인 대기)</small></h3>
@@ -225,11 +191,51 @@
         </div>
       </div>
 
-      <div id="tab-pricing" hidden>
-        <div class="pricing-admin">
-          <h3>상품·옵션 가격 관리</h3>
-          <p class="pr-hint">가격·이름을 바꾸고 <b>저장</b>을 누르면 예약 폼·홈페이지·신부 포털에 바로 반영됩니다. <b>이미 접수된 예약은 그대로 유지</b>돼요(그때 단가로 저장됨). "폼 노출"을 끄면 예약 폼에서 그 옵션이 사라집니다.</p>
-          <div id="pricingList"></div>
+      <div id="tab-settings" hidden>
+        <div class="dash-subtabs">
+          <button class="sub-tab active" data-subtab="staff">작가관리</button>
+          <button class="sub-tab" data-subtab="pricing">상품·가격</button>
+          <button class="sub-tab" data-subtab="gallery">갤러리</button>
+        </div>
+
+        <div id="tab-staff">
+          <div class="staff-add">
+            <h3>작가 등록</h3>
+            <div class="staff-add-row">
+              <input type="text" id="stName" placeholder="이름" />
+              <input type="text" id="stPhone" class="phone" placeholder="연락처" />
+              <button class="btn-primary" id="stAddBtn">추가</button>
+            </div>
+            <p class="staff-msg" id="stMsg"></p>
+          </div>
+          <div class="staff-list" id="staffList"></div>
+          <p class="empty" id="staffEmpty" hidden>등록된 작가가 없습니다.</p>
+        </div>
+
+        <div id="tab-pricing" hidden>
+          <div class="pricing-admin">
+            <h3>상품·옵션 가격 관리</h3>
+            <p class="pr-hint">가격·이름을 바꾸고 <b>저장</b>을 누르면 예약 폼·홈페이지·신부 포털에 바로 반영됩니다. <b>이미 접수된 예약은 그대로 유지</b>돼요(그때 단가로 저장됨). "폼 노출"을 끄면 예약 폼에서 그 옵션이 사라집니다.</p>
+            <div id="pricingList"></div>
+          </div>
+        </div>
+
+        <div id="tab-gallery" hidden>
+          <div class="gl-upload">
+            <h3>사진 업로드</h3>
+            <div class="gl-up-row">
+              <label class="gl-file"><input type="file" id="glFiles" accept="image/*" multiple /><span id="glFileLabel">사진 선택 (여러 장 가능)</span></label>
+              <input type="text" id="glVenue" placeholder="예식장소 태그 (예: 아펠가모 선릉)" />
+              <button class="btn-primary" id="glUploadBtn">업로드</button>
+            </div>
+            <div class="gl-queue" id="glQueue"></div>
+            <p class="gl-status" id="glStatus"></p>
+            <p class="gl-hint">※ "사진 선택"이나 드래그로 한 장씩 계속 추가할 수 있어요. 다 모은 뒤 "업로드"를 누르면 한 번에 올라갑니다. 같은 장소면 태그 한 번만 입력하면 돼요. 업로드 시 자동으로 용량을 줄여 빠르게 올립니다.</p>
+          </div>
+          <div class="gl-tags" id="glTags"></div>
+          <div class="gl-grid" id="glGrid"></div>
+          <div class="gl-pager" id="glPager"></div>
+          <p class="empty" id="glEmpty" hidden>등록된 사진이 없습니다.</p>
         </div>
       </div>
     </div>
@@ -244,6 +250,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=20260706b"></script>
+  <script src="admin.js?v=20260706c"></script>
 </body>
 </html>

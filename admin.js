@@ -1874,18 +1874,32 @@ if (dashTabs) {
     $('tab-dashboard').hidden = tab !== 'dashboard';
     $('tab-calendar').hidden = tab !== 'calendar';
     $('tab-bookings').hidden = tab !== 'bookings';
-    $('tab-staff').hidden = tab !== 'staff';
-    $('tab-pricing').hidden = tab !== 'pricing';
-    $('tab-gallery').hidden = tab !== 'gallery';
     $('tab-events').hidden = tab !== 'events';
+    $('tab-settings').hidden = tab !== 'settings';
     if (tab === 'dashboard') renderDashboard();
     if (tab === 'calendar') { renderCalendar(); renderSchedule(); }
-    if (tab === 'staff') renderStaff();
-    if (tab === 'pricing') renderPricing();
-    if (tab === 'gallery') loadGallery();
     if (tab === 'events') loadEvents();
+    if (tab === 'settings') showSubtab(currentSubtab);
   });
 }
+
+/* ===== 설정 하위탭 (작가관리 · 상품·가격 · 갤러리) ===== */
+let currentSubtab = 'staff';
+function showSubtab(st) {
+  currentSubtab = st;
+  if ($('tab-staff')) $('tab-staff').hidden = st !== 'staff';
+  if ($('tab-pricing')) $('tab-pricing').hidden = st !== 'pricing';
+  if ($('tab-gallery')) $('tab-gallery').hidden = st !== 'gallery';
+  document.querySelectorAll('.sub-tab').forEach((b) => b.classList.toggle('active', b.dataset.subtab === st));
+  if (st === 'staff') renderStaff();
+  if (st === 'pricing') renderPricing();
+  if (st === 'gallery') loadGallery();
+}
+const dashSubtabs = document.querySelector('.dash-subtabs');
+if (dashSubtabs) dashSubtabs.addEventListener('click', (e) => {
+  const t = e.target.closest('.sub-tab'); if (!t) return;
+  showSubtab(t.dataset.subtab);
+});
 
 /* ===== 이벤트 (짝꿍 / 후기) ===== */
 async function loadEvents() {
