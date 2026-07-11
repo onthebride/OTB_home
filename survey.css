@@ -211,6 +211,15 @@ textarea { resize: vertical; }
 }
 .sv-lb img { max-width: 100%; max-height: 100%; border-radius: 6px; }
 
+/* 연락처 탭 → 바로 전화 */
+.sv-tel {
+  color: inherit;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+
 /* 모바일 입력 시 자동 확대 방지 (iOS) */
 @media (max-width: 640px) {
   input, select, textarea, .sv-field input { font-size: 16px; }

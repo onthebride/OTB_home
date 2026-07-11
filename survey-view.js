@@ -22,8 +22,10 @@ const kTime = (t) => {
 };
 
 function person(name, phone) {
-  const n = name || '-';
-  return phone ? `${n} (${phone})` : n;
+  const n = esc(name || '-');
+  if (!phone) return n;
+  const dial = String(phone).replace(/[^0-9+]/g, '');
+  return `${n} (<a class="sv-tel" href="tel:${esc(dial)}">${esc(phone)}</a>)`;
 }
 
 function renderWeddingInfo(d) {
@@ -42,8 +44,8 @@ function renderWeddingInfo(d) {
     <ul>
       <li><b>예식 날짜</b> ${esc(fmtDate(d.wedding_date))}${d.wedding_time ? ' ' + esc(kTime(d.wedding_time)) : ''}</li>
       <li><b>예식 장소</b> ${esc(d.wedding_venue || '-')}</li>
-      <li><b>신랑</b> ${esc(person(d.groom_name, d.groom_phone))}</li>
-      <li><b>신부</b> ${esc(person(d.bride_name, d.bride_phone))}</li>
+      <li><b>신랑</b> ${person(d.groom_name, d.groom_phone)}</li>
+      <li><b>신부</b> ${person(d.bride_name, d.bride_phone)}</li>
       <li><b>촬영 옵션</b> ${esc(optText)}</li>
     </ul>`;
 }
