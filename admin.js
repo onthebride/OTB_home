@@ -625,13 +625,14 @@ function renderView(b, flash) {
     </div>
 
     <div class="atk-prog">
-      <p class="dl">알림톡 발송 <small>([발송]=실제 전송 · 배지=보냄 수동표시(클릭 토글))</small></p>
+      <p class="dl">알림톡 발송 <small>([발송]=실제 전송 · 배지=보냄 수동표시 · [복사]=문구 복사해 카톡 수동발송)</small></p>
       <div class="atk-rows">
         ${ATK_TPLS.map(([k, label]) => {
           const on = b.alimtalk_sent && b.alimtalk_sent[k];
           return `<div class="atk-row">
             <button class="atk-send" data-send-atk="${k}">발송</button>
             <button class="atk-badge${on ? ' on' : ''}" data-atk="${k}">${esc(k)}. ${esc(label)}${on ? ' ✓' : ''}</button>
+            <button class="atk-copy" data-copy-atk="${k}" title="이 안내 문구를 복사 — 카톡에 붙여넣어 수동 발송(외국 고객 등 알림톡 불가 시)">📋 복사</button>
           </div>`;
         }).join('')}
       </div>
@@ -703,6 +704,14 @@ function renderView(b, flash) {
   // 알림톡 실제 발송
   $('modalCard').querySelectorAll('.atk-send').forEach((btn) =>
     btn.addEventListener('click', () => sendAlimtalk(b.id, btn.dataset.sendAtk))
+  );
+  // 수동발송용 문구 복사 (알림톡 못 받는 외국 고객 등 → 카톡에 붙여넣기)
+  $('modalCard').querySelectorAll('.atk-copy').forEach((btn) =>
+    btn.addEventListener('click', async () => {
+      await copySchedText(atkManualText(b, btn.dataset.copyAtk), '문구를 복사했어요 📋 카톡에 붙여넣어 보내세요');
+      const t = btn.textContent; btn.textContent = '복사됨 ✓';
+      setTimeout(() => (btn.textContent = t), 1400);
+    })
   );
 
   // 고객 예약확인 페이지 링크 복사
@@ -1062,6 +1071,80 @@ const kTimeShort = (t) => {
   const [hh, mm] = String(t).split(':').map(Number);
   return (hh < 12 ? '오전' : '오후') + (hh % 12 === 0 ? 12 : hh % 12) + ':' + String(mm).padStart(2, '0');
 };
+
+// 알림톡을 못 받는 외국 고객(한국번호 없음) 등에게 수동발송할 문구 — 카톡에 붙여넣어 보냄.
+// 실제 카카오 알림톡 템플릿(A~F)과 문구를 동일하게 맞춘다. 변수는 #{고객명} 하나뿐이고,
+// 금액·계좌·일정 등 나머지 정보는 [내 예약 확인하기] 포털 페이지가 항상 최신으로 보여준다.
+const ATK_MANUAL = {
+  A: `#{고객명}님,
+
+온더브라이드 본식스냅 예약이 접수되었습니다
+
+신청하신 상품·옵션, 입금 계좌, 앞으로의 진행 안내, 예식 전 설문, 짝꿍·후기 이벤트까지
+
+아래 [내 예약 확인하기]에서 한 번에 확인하실 수 있어요.
+
+계약금 입금이 확인되면 예약이 확정됩니다.
+
+궁금하신 점은 카카오톡 채널로 편하게 문의해 주세요. 😊`,
+  B: `#{고객명}님,
+
+예식이 한 달 앞으로 다가왔어요! 🤍
+
+[내 예약 확인하기]에서 예식 정보가 맞는지 확인해 주시고, '예식 전 설문'을 미리 작성해 주세요.
+
+짝꿍·후기 이벤트도 페이지에서 바로 신청하시면 혜택이 있어요!
+
+예식 일주일 전 최종 스케줄 체크 안내 드리겠습니다!`,
+  C: `#{고객명}님,
+
+예식이 일주일 앞으로 다가왔어요!
+
+[내 예약 확인하기]에서 스케줄이 맞는지 한번 더 확인 부탁드립니다!
+
+· 담당 작가 확인
+· 최종 스케줄 체크
+· 잔금 결제 (계좌는 페이지에 안내)
+· 예식 전 설문 (아직이면 꼭 작성 부탁드려요)
+
+확인 후 잔금 결제까지 마쳐주시면 됩니다. 🤍`,
+  D: `#{고객명}님,
+
+예식이 코앞이에요! 😊
+
+· 작가님은 예식 1시간 30분 전 도착합니다.
+· 담당 작가 정보는 [내 예약 확인하기]에서 확인하실 수 있어요!
+
+· 촬영본 원본은 예식 후 약 일주일 내 [내 예약 확인하기]에서 받으실 수 있어요. (잔금 입금 확인 후 활성화)
+
+행복한 예식 되세요! 🤍`,
+  E: `#{고객명}님,
+
+온더브라이드로 본식스냅을 예약하신 고객님께 안내 드립니다!
+
+소중한 예식 촬영본이 준비됐어요! 🤍
+
+[내 예약 확인하기]의 '원본파일 다운로드'에서 받으실 수 있어요.
+
+· 잔금 입금이 확인되면 다운로드가 열립니다.
+· 링크는 30일간 유지돼요. 기간 내 꼭 받아주세요.
+
+궁금하신 점 있으시면 카톡으로 문의주세요!`,
+  F: `#{고객명}님,
+
+계약금 입금 확인되어 예약이 확정되었습니다.
+
+궁금하신 점 있으시면 언제든 톡으로 문의주시면 바로 답변드리겠습니다!
+
+감사합니다!`,
+};
+function atkManualText(b, tpl) {
+  const name = b.contractor_name || '고객';
+  const portal = `${location.origin}/portal?b=${b.id}`;
+  const body = (ATK_MANUAL[tpl] || `#{고객명}님,`).replace(/#\{고객명\}/g, name);
+  // 알림톡의 [내 예약 확인하기] 버튼은 수동발송 시 링크로 대체
+  return `${body}\n\n▶ 내 예약 확인하기\n${portal}`;
+}
 
 // 목록을 예식 날짜별로 묶어 날짜 헤더 삽입
 const dateGroupLabel = (dstr) => {
