@@ -302,6 +302,8 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .od-badge { display: inline-block; font-size: .68rem; font-weight: 600; color: #b5462f; background: #f7e0da; border-radius: 6px; padding: 1px 6px; margin-left: 4px; }
 .od-cancel { background: #fff; border-color: #d9b3aa; color: #b5462f; }
 .od-cancel:hover { background: #b5462f; border-color: #b5462f; color: #fff; }
+.od-unpaid { background: #fff; border-color: #cdbfae; color: #7a6a52; }
+.od-unpaid:hover { background: #7a6a52; border-color: #7a6a52; color: #fff; }
 .dl-main { cursor: pointer; }
 .dl-name { font-weight: 600; font-size: .92rem; }
 .dl-meta { display: block; color: var(--ink-soft); font-size: .8rem; margin-top: 2px; overflow-wrap: anywhere; }
@@ -465,6 +467,7 @@ td .muted { color: var(--ink-soft); }
 
 /* 상태 배지 / 버튼 */
 .badge.취소 { background: #f1e3e3; color: #b5462f; }
+.badge.미입금 { background: #ebe7e2; color: #7a7168; }
 .btn-outline { background: #fff; border: 1px solid var(--ink); color: var(--ink); padding: 13px 18px; border-radius: 4px; cursor: pointer; font-weight: 500; transition: all .2s; }
 .btn-outline:hover { background: var(--ink); color: #fff; }
 .btn-del { background: #fff; border: 1px solid #d9b3aa; color: #b5462f; padding: 13px 18px; border-radius: 4px; cursor: pointer; font-weight: 500; transition: all .2s; }

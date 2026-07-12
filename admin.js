@@ -179,13 +179,14 @@ function populateAssigneeSelects() {
 }
 
 function render() {
-  const counts = { 전체: allBookings.length, 신규: 0, 확정: 0, 취소: 0 };
+  const counts = { 전체: allBookings.length, 신규: 0, 확정: 0, 미입금: 0, 취소: 0 };
   allBookings.forEach((b) => {
     if (counts[b.status] != null) counts[b.status]++;
   });
   $('c_all').textContent = counts['전체'];
   $('c_new').textContent = counts['신규'];
   if ($('c_confirm')) $('c_confirm').textContent = counts['확정'];
+  if ($('c_unpaid')) $('c_unpaid').textContent = counts['미입금'];
   if ($('c_cancel')) $('c_cancel').textContent = counts['취소'];
 
   if (!bkMonth) { const t = new Date(); bkMonth = { y: t.getFullYear(), m: t.getMonth() }; }
@@ -672,9 +673,15 @@ function renderView(b, flash) {
       if (error) { btn.disabled = false; alert('처리 실패: ' + error.message); return; }
       const i = allBookings.findIndex((x) => x.id === b.id);
       if (i >= 0 && data) allBookings[i] = data;
+      // '미입금'으로 분류했던 건이 실제로 계약금을 내면 확정으로 되돌림
+      // (admin_set_deposit 은 신규→확정만 자동전환하므로 여기서 보완)
+      if (kind === 'deposit' && !cur && data && data.status === '미입금') {
+        const { data: cd } = await sb.rpc('admin_update_booking', { p_id: b.id, p_status: '확정' });
+        if (i >= 0 && cd) allBookings[i] = cd;
+      }
       render();
       renderDashboard();
-      renderView(data || b);
+      renderView(allBookings[i] || data || b);
       // 계약금을 '입금완료'로 켤 때 입금확인 알림톡(F) 발송 — 이미 보냈으면 생략
       const nb = allBookings[i] || data || b;
       if (kind === 'deposit' && !cur && !(nb && nb.alimtalk_sent && nb.alimtalk_sent.F)) sendAlimtalk(b.id, 'F');
@@ -879,6 +886,7 @@ function renderEdit(b) {
         <select id="mStatus">
           <option value="신규" ${sl(b.status, '신규')}>신규</option>
           <option value="확정" ${sl(b.status, '확정')}>확정</option>
+          <option value="미입금" ${sl(b.status, '미입금')}>미입금</option>
           <option value="취소" ${sl(b.status, '취소')}>취소</option>
         </select>
       </div>
@@ -931,6 +939,23 @@ async function deleteBooking(id) {
   render();
   renderDashboard();
   toast('예약을 삭제했어요.');
+}
+
+async function markUnpaid(id) {
+  const b = allBookings.find((x) => x.id === id);
+  if (!b) return;
+  const revert = b.status === '미입금';
+  if (!confirm(revert
+    ? '미입금 분류를 해제할까요? (신규로 되돌림)'
+    : '이 예약을 "미입금"으로 분류할까요?\n계약 의사가 없는 건으로 표시됩니다. (기록은 남고, 나중에 되돌릴 수 있어요)')) return;
+  const { data, error } = await sb.rpc('admin_update_booking', { p_id: id, p_status: revert ? '신규' : '미입금' });
+  if (error) { alert('처리 실패: ' + error.message); return; }
+  const i = allBookings.findIndex((x) => x.id === id);
+  if (i >= 0 && data) allBookings[i] = data;
+  render();
+  renderDashboard();
+  renderView(data || b);
+  toast(revert ? '미입금 분류를 해제했어요.' : '미입금으로 분류했어요.');
 }
 
 async function cancelBooking(id) {
@@ -1291,10 +1316,10 @@ function renderDashboard() {
 
   // 💳 미입금 (계약금 / 잔금)
   const byDate = (a, b) => (wDate(a) || 0) - (wDate(b) || 0);
-  // 계약금 미입금: 계약안내(A) 보낸 뒤 ~ 입금 확인 전
-  const depUnpaid = allBookings.filter((b) => b.alimtalk_sent && b.alimtalk_sent.A && !b.deposit_paid && notCancelled(b)).sort(byDate);
+  // 계약금 미입금: 계약안내(A) 보낸 뒤 ~ 입금 확인 전 ('미입금'으로 분류한 건은 팔로업 목록에서 제외)
+  const depUnpaid = allBookings.filter((b) => b.alimtalk_sent && b.alimtalk_sent.A && !b.deposit_paid && notCancelled(b) && b.status !== '미입금').sort(byDate);
   // 잔금 미입금: 잔금안내(C) 보낸 뒤 ~ 입금 확인 전
-  const balUnpaid = allBookings.filter((b) => b.alimtalk_sent && b.alimtalk_sent.C && !b.balance_paid && notCancelled(b)).sort(byDate);
+  const balUnpaid = allBookings.filter((b) => b.alimtalk_sent && b.alimtalk_sent.C && !b.balance_paid && notCancelled(b) && b.status !== '미입금').sort(byDate);
   const nowMs = Date.now();
   const unpaidItem = (b, kind) => {
     const amt = kind === 'deposit' ? won(10) : (effBalance(b) != null ? won(effBalance(b)) : '-');
@@ -1309,6 +1334,7 @@ function renderDashboard() {
       </div>
       <div class="dl-actions">
         <button class="btn-sm dl-paid" data-id="${b.id}" data-pay="${kind}">${kind === 'deposit' ? '계약금 확인' : '잔금 확인'}</button>
+        ${overdue && kind === 'deposit' ? `<button class="btn-sm od-unpaid" data-id="${b.id}">미입금 처리</button>` : ''}
         ${overdue && kind === 'deposit' ? `<button class="btn-sm od-cancel" data-id="${b.id}">예약 취소</button>` : ''}
       </div>
     </div>`;
@@ -1330,7 +1356,7 @@ function renderDashboard() {
 
   // ⬇️ 다운로드 링크 필요 (예식 당일·이후 + E 미발송)
   const endToday = new Date(today); endToday.setHours(23, 59, 59, 999);
-  const needDl = allBookings.filter((b) => { const d = wDate(b); return d && d <= endToday && !(b.alimtalk_sent && b.alimtalk_sent.E) && notCancelled(b); })
+  const needDl = allBookings.filter((b) => { const d = wDate(b); return d && d <= endToday && !(b.alimtalk_sent && b.alimtalk_sent.E) && notCancelled(b) && b.status !== '미입금'; })
     .sort((a, b) => wDate(b) - wDate(a));
   $('dcDownload').textContent = needDl.length;
   $('listDownload').innerHTML = needDl.length
@@ -1402,6 +1428,10 @@ function bindDashEvents() {
   // 카톡 전송
   document.querySelectorAll('#tab-dashboard [data-send]').forEach((btn) =>
     btn.addEventListener('click', (e) => { e.stopPropagation(); sendAlimtalk(btn.dataset.send, btn.dataset.tpl); })
+  );
+  // 5일+ 미입금 → '미입금'으로 분류 (취소와 달리 기록·목록 유지, 미입금 탭으로 이동)
+  document.querySelectorAll('#tab-dashboard .od-unpaid').forEach((btn) =>
+    btn.addEventListener('click', (e) => { e.stopPropagation(); markUnpaid(btn.dataset.id); })
   );
   // 5일+ 미입금 → 예약 취소
   document.querySelectorAll('#tab-dashboard .od-cancel').forEach((btn) =>
