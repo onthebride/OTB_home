@@ -346,6 +346,32 @@ ${siteFooter()}
 </html>`;
 }
 
+// ---- llms.txt (AI에게 사이트 안내) -----------------------------
+// https://llmstxt.org 제안 표준. 핵심 페이지 지도를 사람/LLM이 읽기 쉽게 정리.
+function renderLlms(posts) {
+  const postLines = posts.length
+    ? posts.map((p) => `- [${p.title}](${SITE.origin}/blog/posts/${p.slug}): ${p.description}`).join('\n')
+    : '- (준비 중)';
+  return `# ${SITE.brand} (${SITE.brandEn})
+
+> 거품을 뺀 합리적인 견적과 검증된 작가의 웨딩 본식스냅 스튜디오. 결혼식 당일(본식) 현장을 자연스럽게 기록합니다.
+
+${SITE.brand}는 결혼식 본식 사진을 촬영하는 본식스냅 스튜디오입니다. 합리적인 가격과 정직한 운영을 지향하며, ${SITE.blogName}에서 본식스냅 준비에 도움이 되는 정보를 제공합니다.
+
+## 주요 페이지
+- [홈](${SITE.origin}/): 스튜디오 소개·갤러리·가격·이벤트·예약 안내
+- [${SITE.blogName}](${SITE.origin}/blog): ${SITE.tagline}
+- [예약 문의](${SITE.origin}/#booking): 본식스냅 예약·상담
+
+## 블로그 글
+${postLines}
+
+## 문의
+- 이메일: ${SITE.email}
+- 인스타그램: ${SITE.instagram}
+`;
+}
+
 // ---- 실행 -------------------------------------------------------
 function build() {
   if (!fs.existsSync(CONTENT_DIR)) { console.error('content 폴더 없음:', CONTENT_DIR); process.exit(1); }
@@ -409,6 +435,10 @@ Sitemap: ${SITE.origin}/sitemap.xml
 `;
   fs.writeFileSync(path.join(ROOT, 'robots.txt'), robots);
   console.log('  ✓ robots.txt');
+
+  // llms.txt
+  fs.writeFileSync(path.join(ROOT, 'llms.txt'), renderLlms(posts));
+  console.log('  ✓ llms.txt');
 
   console.log(`\n완료: 글 ${posts.length}편 생성 (origin=${SITE.origin})`);
 }
