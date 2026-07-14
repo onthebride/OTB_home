@@ -828,7 +828,7 @@ end; $$;
 
 revoke all on function public.admin_staff_list() from public, anon;
 revoke all on function public.admin_staff_add(text, text) from public, anon;
-revoke all on function public.admin_staff_update(uuid, text, text, boolean, boolean) from public, anon;
+revoke all on function public.admin_staff_update(uuid, text, text, boolean, boolean, text) from public, anon;
 revoke all on function public.admin_staff_delete(uuid) from public, anon;
 revoke all on function public.admin_set_deposit(uuid, boolean) from public, anon;
 revoke all on function public.admin_set_balance(uuid, boolean) from public, anon;
@@ -840,7 +840,7 @@ revoke all on function public.admin_assign_role(uuid[], uuid, text) from public,
 revoke all on function public.admin_restore_assignees(jsonb) from public, anon;
 grant execute on function public.admin_staff_list() to authenticated;
 grant execute on function public.admin_staff_add(text, text) to authenticated;
-grant execute on function public.admin_staff_update(uuid, text, text, boolean, boolean) to authenticated;
+grant execute on function public.admin_staff_update(uuid, text, text, boolean, boolean, text) to authenticated;
 grant execute on function public.admin_staff_delete(uuid) to authenticated;
 grant execute on function public.admin_set_deposit(uuid, boolean) to authenticated;
 grant execute on function public.admin_set_balance(uuid, boolean) to authenticated;

@@ -1,5 +1,8 @@
 node_modules/
 .vercel/
+.env
+.env.*
+.backups/
 .DS_Store
 Thumbs.db
 _*.png
