@@ -312,10 +312,12 @@ function renderIndex(posts) {
       datePublished: p.date, dateModified: p.updated || p.date, description: p.description,
     })),
   };
-  const cards = posts.map((p) => `
-      <li class="blog-card">
+  const cards = posts.map((p) => {
+    const th = p.thumb || p.cover; // 목록 썸네일: thumb 우선, 없으면 cover
+    return `
+      <li class="blog-card${th ? '' : ' no-cover'}">
         <a href="/blog/posts/${p.slug}">
-          ${p.cover ? `<span class="bc-cover"><img src="${attr(p.cover)}" alt="${attr(p.title)}" loading="lazy" /></span>` : ''}
+          ${th ? `<span class="bc-cover"><img src="${attr(th)}" alt="${attr(p.title)}" loading="lazy" /></span>` : ''}
           <span class="bc-body">
             ${(p.tags && p.tags[0]) ? `<span class="bc-tag">#${esc(p.tags[0])}</span>` : ''}
             <span class="bc-title">${esc(p.title)}</span>
@@ -323,7 +325,8 @@ function renderIndex(posts) {
             <span class="bc-date"><time datetime="${attr(p.date)}">${fmtDateK(p.date)}</time> · ${p.readingTime}분</span>
           </span>
         </a>
-      </li>`).join('');
+      </li>`;
+  }).join('');
 
   return `<!DOCTYPE html>
 <html lang="ko">
@@ -393,6 +396,7 @@ function build() {
       date: meta.date || '',
       updated: meta.updated || meta.date || '',
       cover: meta.cover || '',
+      thumb: meta.thumb || '',
       tags: meta.tags || [],
       readingTime: readingTime(body),
       rendered,

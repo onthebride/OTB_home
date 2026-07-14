@@ -61,6 +61,7 @@ img { max-width: 100%; height: auto; display: block; }
 .blog-hero-sub { color: var(--ink-soft); margin: 0; font-size: .98rem; }
 .blog-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 26px; }
 .blog-card a { display: grid; grid-template-columns: 168px 1fr; gap: 20px; align-items: stretch; color: inherit; }
+.blog-card.no-cover a { grid-template-columns: 1fr; }
 .blog-card a:hover { text-decoration: none; }
 .blog-card a:hover .bc-title { color: var(--gold-deep); }
 .bc-cover { overflow: hidden; border-radius: var(--radius); background: var(--cream); aspect-ratio: 4/3; }
