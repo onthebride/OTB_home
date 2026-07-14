@@ -39,8 +39,8 @@ const phBadge = (b) =>
   (b.rep_designation ? ' <span class="ph-badge rep">대표지정</span>' : '')
   + (b.photographer === '2인 촬영' ? ' <span class="ph-badge two">2인촬영</span>' : '');
 // 색상환을 고르게 돌며 서로 멀리 떨어진 색들 — 앞쪽일수록 대비가 크다(작가 수가 적을 때 최대 구분).
-// 비슷한 계열(골드·브라운 중복 등)을 없애고 파랑·빨강·초록·보라·주황을 앞에 배치.
-const STAFF_COLORS = ['#2f6fae', '#cf4d4d', '#3f9d5a', '#8a52c0', '#d98a2b', '#2fa3a3', '#c04d95', '#7a6a55', '#a9a832', '#5b5bbf'];
+// 작가 수가 이 색 개수를 넘으면 색이 한 바퀴 돌아 겹칠 수 있음 → 그때는 작가별 색 직접지정 권장.
+const STAFF_COLORS = ['#2f6fae', '#cf4d4d', '#3f9d5a', '#8a52c0', '#d98a2b', '#2fa3a3', '#c04d95', '#7a6a55', '#a9a832', '#5b5bbf', '#1f7a6b', '#b5462f'];
 // 작가별 색: id 해시로 뽑으면 두 작가가 비슷한 색으로 겹칠 수 있어서,
 // 활성/전체 작가를 id 기준으로 정렬한 '자리 순서'로 배정한다 → 작가끼리 항상 다른 색.
 function staffColor(id) {
