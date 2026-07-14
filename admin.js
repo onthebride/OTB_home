@@ -1728,9 +1728,9 @@ function renderSchedule() {
         const opts = bookingOpts(b);
         const is2 = b.photographer === '2인 촬영';
         const assigned = b.assignee_id && (!is2 || b.sub_assignee_id); // 배정 완료(2인은 서브까지)
-        // 배정 행: 옅은 배경 tint + 왼쪽에 '진한 작가색 세로 바'(연한 배경만으론 구분이 약해서 실색 바를 함께 표시)
+        // 배정 행: 옅은 배경 tint만 (왼쪽 세로 바는 제거)
         const sc = staffColor(b.assignee_id);
-        const bg = assigned ? ` style="background:${tint(sc, 0.16)};box-shadow:inset 4px 0 0 ${sc}"` : '';
+        const bg = assigned ? ` style="background:${tint(sc, 0.16)}"` : '';
         const flag = !b.assignee_id ? '미배정' : (is2 && !b.sub_assignee_id ? '서브 미배정' : '');
         return `
         <div class="sched-row${assigned ? ' assigned' : ' unassigned'}" data-id="${b.id}"${bg}>
