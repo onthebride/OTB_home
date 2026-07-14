@@ -2314,7 +2314,7 @@ function renderGalleryTags() {
 
 const imgThumb = (url, w) =>
   url && url.includes('/object/public/')
-    ? url.replace('/object/public/', '/render/image/public/') + `?width=${w}&quality=72`
+    ? url.replace('/object/public/', '/render/image/public/') + `?width=${w}&quality=82`
     : url;
 
 function renderGalleryGrid() {

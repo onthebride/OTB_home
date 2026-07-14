@@ -588,17 +588,17 @@ if (inquiryForm) {
     html += `<button class="gpg nav" data-p="${page + 1}"${page === pages ? ' disabled' : ''}>›</button>`;
     pagerEl.innerHTML = html;
   };
-  // 썸네일: Supabase 이미지 변환으로 작게 받아 빠르게 (원본 1400px → 폭 지정 리사이즈)
+  // 썸네일: Supabase 이미지 변환으로 폭 지정 리사이즈 (원본 1400px). 고해상도 화면 대비 폭·품질 상향.
   const thumb = (url, w) =>
     url && url.includes('/object/public/')
-      ? url.replace('/object/public/', '/render/image/public/') + `?width=${w}&quality=72`
+      ? url.replace('/object/public/', '/render/image/public/') + `?width=${w}&quality=82`
       : url;
   const renderGrid = () => {
     const list = visible();
     const start = (page - 1) * PER;
     grid.innerHTML = list
       .slice(start, start + PER)
-      .map((p, i) => `<button class="gthumb" data-i="${start + i}"><img src="${esc(thumb(p.image_url, 600))}" alt="${esc(p.venue || '')}" loading="lazy" decoding="async" /></button>`)
+      .map((p, i) => `<button class="gthumb" data-i="${start + i}"><img src="${esc(thumb(p.image_url, 1000))}" alt="${esc(p.venue || '')}" loading="lazy" decoding="async" /></button>`)
       .join('');
     renderPager(list.length);
   };
