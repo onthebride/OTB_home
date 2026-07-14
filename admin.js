@@ -41,11 +41,14 @@ const phBadge = (b) =>
 // 색상환을 고르게 돌며 서로 멀리 떨어진 색들 — 앞쪽일수록 대비가 크다(작가 수가 적을 때 최대 구분).
 // 작가 수가 이 색 개수를 넘으면 색이 한 바퀴 돌아 겹칠 수 있음 → 그때는 작가별 색 직접지정 권장.
 const STAFF_COLORS = ['#2f6fae', '#cf4d4d', '#3f9d5a', '#8a52c0', '#d98a2b', '#2fa3a3', '#c04d95', '#7a6a55', '#a9a832', '#5b5bbf', '#1f7a6b', '#b5462f'];
-// 작가별 색: id 해시로 뽑으면 두 작가가 비슷한 색으로 겹칠 수 있어서,
-// 활성/전체 작가를 id 기준으로 정렬한 '자리 순서'로 배정한다 → 작가끼리 항상 다른 색.
+const isHex = (c) => typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c);
+// 작가별 색: ① 담당자 관리에서 직접 지정한 색(staff.color)이 있으면 그걸 최우선.
+// ② 없으면 자동 배정 — id 해시는 두 작가가 겹칠 수 있어서, 정렬한 '자리 순서'로 팔레트 배정.
 function staffColor(id) {
   if (!id) return null;
-  const ids = allStaff.map((s) => s.id).sort();
+  const s = allStaff.find((x) => x.id === id);
+  if (s && isHex(s.color)) return s.color;
+  const ids = allStaff.map((x) => x.id).sort();
   const idx = ids.indexOf(id);
   if (idx >= 0) return STAFF_COLORS[idx % STAFF_COLORS.length];
   let h = 0; // 목록에 없는 id(삭제된 작가 등)는 해시로 대체
@@ -1923,11 +1926,23 @@ function renderStaff() {
     <div class="staff-item${s.active ? '' : ' inactive'}" data-id="${s.id}">
       <input type="text" class="st-name" data-id="${s.id}" value="${esc(s.name || '')}" placeholder="이름" />
       <input type="text" class="st-phone" data-id="${s.id}" value="${esc(s.phone || '')}" placeholder="연락처" />
+      <span class="st-color-wrap" title="달력·스케줄에 표시될 작가 색">
+        <input type="color" class="st-color" data-id="${s.id}" value="${isHex(s.color) ? s.color : (staffColor(s.id) || '#888888')}" ${isHex(s.color) ? '' : 'disabled'} />
+        <label class="st-active"><input type="checkbox" class="st-auto" data-id="${s.id}" ${isHex(s.color) ? '' : 'checked'} /> 자동색</label>
+      </span>
       <label class="st-active"><input type="checkbox" class="st-rep" data-id="${s.id}" ${s.is_rep ? 'checked' : ''} /> 대표</label>
       <label class="st-active"><input type="checkbox" class="st-act" data-id="${s.id}" ${s.active ? 'checked' : ''} /> 활성</label>
       <button class="btn-sm st-save" data-id="${s.id}">저장</button>
       <button class="btn-sm st-del" data-id="${s.id}">삭제</button>
     </div>`).join('');
+
+  // '자동색' 체크 → 색 선택기 비활성(자동 팔레트), 해제 → 직접 지정 가능
+  $('staffList').querySelectorAll('.st-auto').forEach((cb) =>
+    cb.addEventListener('change', () => {
+      const picker = $('staffList').querySelector(`.st-color[data-id="${cb.dataset.id}"]`);
+      picker.disabled = cb.checked;
+    })
+  );
 
   $('staffList').querySelectorAll('.st-save').forEach((btn) =>
     btn.addEventListener('click', async () => {
@@ -1936,9 +1951,11 @@ function renderStaff() {
       const phone = $('staffList').querySelector(`.st-phone[data-id="${id}"]`).value.trim();
       const active = $('staffList').querySelector(`.st-act[data-id="${id}"]`).checked;
       const rep = $('staffList').querySelector(`.st-rep[data-id="${id}"]`).checked;
+      const auto = $('staffList').querySelector(`.st-auto[data-id="${id}"]`).checked;
+      const color = auto ? '' : $('staffList').querySelector(`.st-color[data-id="${id}"]`).value; // ''=자동, #RRGGBB=지정
       if (!name) { alert('이름을 입력하세요.'); return; }
       btn.disabled = true;
-      const { error } = await sb.rpc('admin_staff_update', { p_id: id, p_name: name, p_phone: phone, p_active: active, p_rep: rep });
+      const { error } = await sb.rpc('admin_staff_update', { p_id: id, p_name: name, p_phone: phone, p_active: active, p_rep: rep, p_color: color });
       btn.disabled = false;
       if (error) { alert('저장 실패: ' + error.message); return; }
       await loadStaff();

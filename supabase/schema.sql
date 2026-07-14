@@ -521,8 +521,11 @@ as $$ declare r public.staff; begin
   return r;
 end; $$;
 
+alter table public.staff add column if not exists color text;  -- 작가별 색상 직접 지정(비면 자동 팔레트)
+
 drop function if exists public.admin_staff_update(uuid, text, text, boolean);
-create or replace function public.admin_staff_update(p_id uuid, p_name text, p_phone text, p_active boolean, p_rep boolean)
+drop function if exists public.admin_staff_update(uuid, text, text, boolean, boolean);
+create or replace function public.admin_staff_update(p_id uuid, p_name text, p_phone text, p_active boolean, p_rep boolean, p_color text default null)
 returns public.staff language plpgsql security definer set search_path=public, pg_temp
 as $$ declare r public.staff; begin
   if auth.uid() is null then raise exception 'unauthorized'; end if;
@@ -530,10 +533,13 @@ as $$ declare r public.staff; begin
     update public.staff set is_rep = false where id <> p_id;  -- 대표는 1명만
   end if;
   update public.staff set name=nullif(p_name,''), phone=nullif(p_phone,''),
-       active=coalesce(p_active,true), is_rep=coalesce(p_rep,false)
+       active=coalesce(p_active,true), is_rep=coalesce(p_rep,false),
+       color=case when p_color is null then color else nullif(p_color,'') end  -- null=유지/''=자동/#RRGGBB=지정
    where id=p_id returning * into r;
   return r;
 end; $$;
+revoke all on function public.admin_staff_update(uuid, text, text, boolean, boolean, text) from public, anon;
+grant execute on function public.admin_staff_update(uuid, text, text, boolean, boolean, text) to authenticated;
 
 create or replace function public.admin_staff_delete(p_id uuid)
 returns void language plpgsql security definer set search_path=public, pg_temp

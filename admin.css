@@ -462,6 +462,9 @@ td .muted { color: var(--ink-soft); }
 .staff-item input[type="text"] { border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font-size: .9rem; color: var(--ink); background: var(--cream); transition: all .15s; }
 .staff-item input[type="text"]:focus { outline: none; border-color: var(--gold); background: #fff; }
 .staff-item .st-active { font-size: .82rem; display: flex; align-items: center; gap: 4px; white-space: nowrap; color: var(--ink-soft); }
+.st-color-wrap { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.st-color { width: 30px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: #fff; cursor: pointer; }
+.st-color:disabled { opacity: .4; cursor: not-allowed; }
 .staff-add-row input { background: var(--cream); border-radius: 8px; }
 .staff-add-row input:focus { background: #fff; }
 
