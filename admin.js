@@ -38,8 +38,9 @@ const notCancelled = (b) => b.status !== '취소';
 const phBadge = (b) =>
   (b.rep_designation ? ' <span class="ph-badge rep">대표지정</span>' : '')
   + (b.photographer === '2인 촬영' ? ' <span class="ph-badge two">2인촬영</span>' : '');
-// 색상환에서 서로 멀리 떨어진 색들 — 앞쪽일수록 대비가 크다(작가 수가 적을 때 가장 잘 구분).
-const STAFF_COLORS = ['#b08d57', '#3f7f9c', '#c0546a', '#4f9d63', '#7a5cae', '#d0783a', '#2fa19b', '#8a6f5a', '#b23e86', '#4a5bb0'];
+// 색상환을 고르게 돌며 서로 멀리 떨어진 색들 — 앞쪽일수록 대비가 크다(작가 수가 적을 때 최대 구분).
+// 비슷한 계열(골드·브라운 중복 등)을 없애고 파랑·빨강·초록·보라·주황을 앞에 배치.
+const STAFF_COLORS = ['#2f6fae', '#cf4d4d', '#3f9d5a', '#8a52c0', '#d98a2b', '#2fa3a3', '#c04d95', '#7a6a55', '#a9a832', '#5b5bbf'];
 // 작가별 색: id 해시로 뽑으면 두 작가가 비슷한 색으로 겹칠 수 있어서,
 // 활성/전체 작가를 id 기준으로 정렬한 '자리 순서'로 배정한다 → 작가끼리 항상 다른 색.
 function staffColor(id) {
@@ -1724,7 +1725,9 @@ function renderSchedule() {
         const opts = bookingOpts(b);
         const is2 = b.photographer === '2인 촬영';
         const assigned = b.assignee_id && (!is2 || b.sub_assignee_id); // 배정 완료(2인은 서브까지)
-        const bg = assigned ? ` style="background:${tint(staffColor(b.assignee_id), 0.16)}"` : '';
+        // 배정 행: 옅은 배경 tint + 왼쪽에 '진한 작가색 세로 바'(연한 배경만으론 구분이 약해서 실색 바를 함께 표시)
+        const sc = staffColor(b.assignee_id);
+        const bg = assigned ? ` style="background:${tint(sc, 0.16)};box-shadow:inset 4px 0 0 ${sc}"` : '';
         const flag = !b.assignee_id ? '미배정' : (is2 && !b.sub_assignee_id ? '서브 미배정' : '');
         return `
         <div class="sched-row${assigned ? ' assigned' : ' unassigned'}" data-id="${b.id}"${bg}>
