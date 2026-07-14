@@ -602,8 +602,15 @@ if (inquiryForm) {
       .join('');
     renderPager(list.length);
   };
+  // 블로그 등에서 ?g=<예식장> 으로 들어오면 그 예식장으로 검색된 채 갤러리 표시
+  const urlG = new URLSearchParams(location.search).get('g');
+  if (urlG) { searchTerm = urlG; activeTag = '전체'; }
   renderTags();
   renderGrid();
+  if (urlG) {
+    const gs = document.getElementById('gallery');
+    if (gs) setTimeout(() => gs.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+  }
 
   tagsEl.addEventListener('click', (e) => {
     const b = e.target.closest('button.gtag');

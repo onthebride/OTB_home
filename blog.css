@@ -134,6 +134,17 @@ img { max-width: 100%; height: auto; display: block; }
 .post-related ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
 .post-related a { font-weight: 500; }
 
+/* 하단 사진 그리드 (4×2) + 갤러리 보러가기 */
+.post-photos { margin: 52px 0 0; padding-top: 34px; border-top: 1px solid var(--line); }
+.post-photos h2 { font-family: var(--kserif); font-weight: 600; font-size: 1.25rem; margin: 0 0 16px; }
+.photo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.photo-grid .pg-item { display: block; aspect-ratio: 1/1; overflow: hidden; border-radius: var(--radius); background: var(--cream); }
+.photo-grid .pg-item img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
+.photo-grid .pg-item:hover img { transform: scale(1.05); }
+.photos-more { display: inline-block; margin-top: 20px; font-weight: 600; font-size: .95rem; color: var(--gold-deep); }
+.photos-more:hover { text-decoration: underline; }
+@media (max-width: 640px) { .photo-grid { grid-template-columns: repeat(2, 1fr); } }
+
 /* ---- 푸터 ---- */
 .blog-footer { border-top: 1px solid var(--line); background: var(--cream); margin-top: 40px; }
 .blog-footer-inner { width: 90%; max-width: var(--maxw); margin: 0 auto; padding: 36px 0; text-align: center; }

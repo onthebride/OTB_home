@@ -122,7 +122,7 @@ function mdToHtml(md) {
     if (/^!\[[^\]]*\]\([^)]+\)\s*$/.test(line)) { blocks.push({ type: 'img', text: line.trim() }); i++; continue; }
     const buf = [line]; i++;
     while (i < lines.length && lines[i].trim() && !special.test(lines[i])) { buf.push(lines[i]); i++; }
-    blocks.push({ type: 'p', text: buf.join(' ') });
+    blocks.push({ type: 'p', text: buf.join(' '), lines: buf.slice() });
   }
 
   const faq = [];
@@ -136,7 +136,8 @@ function mdToHtml(md) {
       out.push(`<h${b.level} id="${slugifyHeading(b.text)}">${inline(b.text)}</h${b.level}>`);
     } else if (b.type === 'p') {
       if (inFaq && curQ && !curQ.a) curQ.a = stripMd(b.text);
-      out.push(`<p>${inline(b.text)}</p>`);
+      // 문단 내 줄바꿈은 <br>로 보존(에세이 형식)
+      out.push('<p>' + (b.lines || [b.text]).map((l) => inline(l)).join('<br>\n') + '</p>');
     } else if (b.type === 'ul') {
       out.push(`<ul>${b.items.map((x) => `<li>${inline(x)}</li>`).join('')}</ul>`);
     } else if (b.type === 'ol') {
@@ -255,6 +256,16 @@ function renderPost(post, allPosts) {
       <h2>함께 보면 좋은 글</h2>
       <ul>${related.map((p) => `<li><a href="/blog/posts/${p.slug}">${esc(p.title)}</a></li>`).join('')}</ul>
     </section>` : '';
+  // 하단 사진 그리드 + 갤러리(해당 예식장으로 검색된 채) 보러가기
+  const galleryLink = post.venue ? `/?g=${encodeURIComponent(post.venue)}#gallery` : '/#gallery';
+  const photosHtml = (post.grid && post.grid.length) ? `
+      <section class="post-photos">
+        <h2>${esc(post.venue || '')} 사진</h2>
+        <div class="photo-grid">
+          ${post.grid.map((u) => `<a class="pg-item" href="${attr(galleryLink)}"><img src="${attr(u)}" alt="${attr((post.venue ? post.venue + ' ' : '') + '본식스냅')}" loading="lazy" /></a>`).join('')}
+        </div>
+        <a class="photos-more" href="${attr(galleryLink)}">${esc(post.venue || '')} 사진 더 보기 →</a>
+      </section>` : '';
 
   return `<!DOCTYPE html>
 <html lang="ko">
@@ -284,6 +295,7 @@ ${siteHeader('blog')}
       <div class="post-body">
 ${html}
       </div>
+      ${photosHtml}
       <aside class="post-cta">
         <p class="cta-lead">본식스냅, 온더브라이드와 함께하세요</p>
         <p class="cta-sub">거품 뺀 합리적인 견적, 검증된 작가의 본식스냅.</p>
@@ -312,12 +324,9 @@ function renderIndex(posts) {
       datePublished: p.date, dateModified: p.updated || p.date, description: p.description,
     })),
   };
-  const cards = posts.map((p) => {
-    const th = p.thumb || p.cover; // 목록 썸네일: thumb 우선, 없으면 cover
-    return `
-      <li class="blog-card${th ? '' : ' no-cover'}">
+  const cards = posts.map((p) => `
+      <li class="blog-card no-cover">
         <a href="/blog/posts/${p.slug}">
-          ${th ? `<span class="bc-cover"><img src="${attr(th)}" alt="${attr(p.title)}" loading="lazy" /></span>` : ''}
           <span class="bc-body">
             ${(p.tags && p.tags[0]) ? `<span class="bc-tag">#${esc(p.tags[0])}</span>` : ''}
             <span class="bc-title">${esc(p.title)}</span>
@@ -325,8 +334,7 @@ function renderIndex(posts) {
             <span class="bc-date"><time datetime="${attr(p.date)}">${fmtDateK(p.date)}</time> · ${p.readingTime}분</span>
           </span>
         </a>
-      </li>`;
-  }).join('');
+      </li>`).join('');
 
   return `<!DOCTYPE html>
 <html lang="ko">
@@ -397,6 +405,8 @@ function build() {
       updated: meta.updated || meta.date || '',
       cover: meta.cover || '',
       thumb: meta.thumb || '',
+      venue: meta.venue || '',
+      grid: (meta.grid || '').split(',').map((s) => s.trim()).filter(Boolean),
       tags: meta.tags || [],
       readingTime: readingTime(body),
       rendered,
