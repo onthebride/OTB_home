@@ -670,9 +670,7 @@ td .muted { color: var(--ink-soft); }
 
 /* 배정 완료된 일정 행은 담당 작가 색으로 옅게 (미배정이 눈에 띄게, 배경은 인라인 rgba) */
 .sched-row.assigned .sched-name { color: var(--muted, #888); }
-/* 미배정 행 강조: 왼쪽 붉은 악센트 + 옅은 배경 + 배지 */
-.sched-row.unassigned { background: #fdf4ef; box-shadow: inset 3px 0 0 #d9724f; }
-.sched-row.unassigned:hover { background: #fbeae1; }
+/* 미배정 행: 배경/띠 없이 흰색(기본) 유지 + 이름은 진하게 + "미배정" 배지로만 표시 */
 .sched-row.unassigned .sched-name { color: var(--ink); }
 .sched-flag { display: inline-block; font-size: .7rem; font-weight: 700; color: #b5462f; background: #f7ddd3; border-radius: 4px; padding: 1px 7px; white-space: nowrap; }
 
