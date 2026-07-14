@@ -58,17 +58,20 @@
 }</script>
 </head>
 <body class="blog">
-<header class="blog-header">
-    <div class="blog-header-inner">
-      <a href="/" class="blog-brand"><img src="/assets/logo-black.png" alt="온더브라이드" /></a>
-      <nav aria-label="주요 메뉴"><ul>
+<header class="site-header">
+    <nav class="nav">
+      <a href="/" class="brand"><img src="/assets/logo-black.png" alt="온더브라이드" class="brand-logo brand-logo-dark" /></a>
+      <button class="nav-toggle" aria-label="메뉴 열기"><span></span><span></span><span></span></button>
+      <ul class="nav-menu">
         <li><a href="/#about">소개</a></li>
         <li><a href="/#gallery">갤러리</a></li>
         <li><a href="/#pricing">가격</a></li>
+        <li><a href="/#event">이벤트</a></li>
         <li><a href="/blog" aria-current="page">블로그</a></li>
-        <li><a href="/#booking">예약하기</a></li>
-      </ul></nav>
-    </div>
+        <li><a href="/#contact">문의</a></li>
+        <li><a href="/#booking" class="nav-cta">예약하기</a></li>
+      </ul>
+    </nav>
   </header>
   <main class="blog-list-wrap">
     <header class="blog-hero">
@@ -108,5 +111,6 @@
       <p class="bf-copy">© 2013 ONTHEBRIDE. All rights reserved.</p>
     </div>
   </footer>
+  <script>(function(){var t=document.querySelector('.nav-toggle'),m=document.querySelector('.nav-menu');if(t&&m){t.addEventListener('click',function(){m.classList.toggle('open');});m.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){m.classList.remove('open');});});}})();</script>
 </body>
 </html>

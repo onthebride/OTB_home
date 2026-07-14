@@ -31,27 +31,39 @@ body.blog a { color: var(--gold-deep); text-decoration: none; }
 body.blog a:hover { text-decoration: underline; }
 img { max-width: 100%; height: auto; display: block; }
 
-/* ---- 헤더 ---- */
-.blog-header {
+/* ---- 헤더 (메인 사이트 .site-header 와 동일한 모양 — 블로그는 항상 솔리드) ---- */
+.site-header {
   position: sticky; top: 0; z-index: 50;
-  background: rgba(255, 253, 250, .92);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  box-shadow: 0 2px 12px -4px rgba(60, 45, 30, .18);
 }
-.blog-header-inner {
-  width: 90%; max-width: var(--maxw); margin: 0 auto;
-  display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  min-height: 62px;
+.site-header .nav {
+  width: 90%; max-width: 1180px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between; height: 84px;
 }
-.blog-brand img { height: 26px; width: auto; }
-.blog-header nav ul {
-  display: flex; gap: 20px; list-style: none; margin: 0; padding: 0; flex-wrap: wrap;
+.site-header .brand { display: flex; align-items: center; }
+.site-header .brand-logo { height: 38px; width: auto; display: block; }
+.nav-menu { list-style: none; display: flex; align-items: center; gap: 38px; margin: 0; padding: 0; }
+.nav-menu a { font-size: .92rem; font-weight: 500; letter-spacing: .03em; color: var(--ink); }
+.nav-menu a:hover { color: var(--gold); text-decoration: none; }
+.nav-cta { border: 1px solid var(--ink); padding: 9px 22px; border-radius: var(--radius); }
+.nav-cta:hover { background: var(--gold); border-color: var(--gold); color: #fff; }
+.nav-toggle { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; }
+.nav-toggle span { width: 26px; height: 2px; background: var(--ink); transition: background .3s; }
+@media (max-width: 860px) {
+  .nav-toggle { display: flex; }
+  .nav-menu {
+    position: absolute; top: 84px; left: 0; right: 0;
+    background: rgba(255, 253, 250, .98); flex-direction: column; gap: 0;
+    padding: 0; box-shadow: 0 12px 30px -18px rgba(0, 0, 0, .3);
+    max-height: 0; overflow: hidden; visibility: hidden;
+    transition: max-height .3s ease, padding .3s ease, visibility .3s;
+  }
+  .nav-menu.open { max-height: 460px; padding: 10px 0; visibility: visible; }
+  .nav-menu li { width: 100%; text-align: center; }
+  .nav-menu a { display: block; padding: 14px 0; }
+  .nav-cta { border: none; }
 }
-.blog-header nav a {
-  color: var(--ink); font-size: .9rem; font-weight: 500; letter-spacing: -.01em;
-}
-.blog-header nav a:hover { color: var(--gold); text-decoration: none; }
-.blog-header nav a[aria-current="page"] { color: var(--gold-deep); }
 
 /* ---- 목록 페이지 ---- */
 .blog-list-wrap { width: 90%; max-width: var(--maxw); margin: 0 auto; padding: 48px 0 80px; }
@@ -155,9 +167,6 @@ img { max-width: 100%; height: auto; display: block; }
 
 /* ---- 모바일 ---- */
 @media (max-width: 640px) {
-  .blog-header-inner { flex-direction: column; align-items: flex-start; gap: 8px; padding: 10px 0; min-height: 0; }
-  .blog-header nav ul { gap: 14px; }
-  .blog-header nav a { font-size: .84rem; }
   .blog-card a { grid-template-columns: 1fr; gap: 12px; }
   .bc-cover { aspect-ratio: 16/9; }
   .post-body { font-size: 1.0rem; }

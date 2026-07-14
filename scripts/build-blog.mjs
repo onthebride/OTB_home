@@ -157,19 +157,22 @@ function slugifyHeading(t) {
 }
 
 // ---- 공통 헤더/푸터 --------------------------------------------
-function siteHeader(active) {
-  const link = (href, label, key) => `<li><a href="${href}"${active === key ? ' aria-current="page"' : ''}>${label}</a></li>`;
-  return `<header class="blog-header">
-    <div class="blog-header-inner">
-      <a href="/" class="blog-brand"><img src="${SITE.logo}" alt="${attr(SITE.brand)}" /></a>
-      <nav aria-label="주요 메뉴"><ul>
-        ${link('/#about', '소개', 'about')}
-        ${link('/#gallery', '갤러리', 'gallery')}
-        ${link('/#pricing', '가격', 'pricing')}
-        ${link('/blog', '블로그', 'blog')}
-        ${link('/#booking', '예약하기', 'booking')}
-      </ul></nav>
-    </div>
+// 메인 사이트 헤더와 동일한 구조·클래스(.site-header). 블로그는 히어로가 없어 항상 솔리드.
+function siteHeader() {
+  return `<header class="site-header">
+    <nav class="nav">
+      <a href="/" class="brand"><img src="${SITE.logo}" alt="${attr(SITE.brand)}" class="brand-logo brand-logo-dark" /></a>
+      <button class="nav-toggle" aria-label="메뉴 열기"><span></span><span></span><span></span></button>
+      <ul class="nav-menu">
+        <li><a href="/#about">소개</a></li>
+        <li><a href="/#gallery">갤러리</a></li>
+        <li><a href="/#pricing">가격</a></li>
+        <li><a href="/#event">이벤트</a></li>
+        <li><a href="/blog" aria-current="page">블로그</a></li>
+        <li><a href="/#contact">문의</a></li>
+        <li><a href="/#booking" class="nav-cta">예약하기</a></li>
+      </ul>
+    </nav>
   </header>`;
 }
 function siteFooter() {
@@ -182,7 +185,8 @@ function siteFooter() {
       </p>
       <p class="bf-copy">© 2013 ${esc(SITE.brandEn)}. All rights reserved.</p>
     </div>
-  </footer>`;
+  </footer>
+  <script>(function(){var t=document.querySelector('.nav-toggle'),m=document.querySelector('.nav-menu');if(t&&m){t.addEventListener('click',function(){m.classList.toggle('open');});m.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){m.classList.remove('open');});});}})();</script>`;
 }
 function headCommon({ title, description, canonical, image, type = 'website', published, modified }) {
   const img = abs(image || SITE.ogDefault);
