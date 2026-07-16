@@ -468,8 +468,10 @@ input.readonly { background: var(--cream); color: var(--ink-soft); cursor: not-a
 .opt.fixed { padding: 12px 0; }
 .opt.fixed .opt-name { color: var(--ink); }
 
-/* 수량 스테퍼 (앨범 추가 등) */
-.opt-album { gap: 10px; }
+/* 수량 스테퍼 (앨범 추가 등) — 스테퍼를 이름 바로 옆에, 가격은 오른쪽 끝 */
+.opt-album { gap: 10px; justify-content: flex-start; }
+.opt-album .check { flex: 0 0 auto; }
+.opt-album .opt-price { margin-left: auto; }
 .qty-stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; background: #fff; overflow: hidden; flex: none; }
 .qty-btn { width: 32px; height: 32px; border: none; background: transparent; color: var(--gold-deep); font-size: 1.15rem; line-height: 1; cursor: pointer; display: grid; place-items: center; transition: background .15s; -webkit-tap-highlight-color: transparent; }
 .qty-btn:hover { background: var(--cream); }

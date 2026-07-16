@@ -154,6 +154,8 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .eopt span { flex: 1; }
 .eopt b { color: var(--gold-deep); font-weight: 500; font-size: .85rem; }
 .eopt-qty { cursor: default; }
+.eopt-qty span { flex: 0 0 auto; }
+.eopt-qty b { margin-left: auto; }
 .eopt-qty .qty-stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; background: #fff; overflow: hidden; }
 .eopt-qty .qty-btn { width: 26px; height: 26px; border: none; background: transparent; color: var(--gold-deep); font-size: 1rem; line-height: 1; cursor: pointer; display: grid; place-items: center; flex: none; }
 .eopt-qty .qty-btn:hover { background: var(--cream); }
