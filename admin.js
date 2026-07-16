@@ -308,6 +308,19 @@ function editPrice(b, name, code) {
   if (snap && snap.price != null) return Number(snap.price) || 0;
   return catPrice(code, 0);
 }
+// 앨범 추가 수량·단가: line_items 스냅샷 우선(신규 예약), 없으면 boolean(과거=1권)
+function albumSnap(b) {
+  const li = Array.isArray(b.line_items) ? b.line_items : [];
+  const it = li.find((x) => x && /앨범/.test(x.name || ''));
+  if (it) {
+    const cat = catPrice('album', 5) || 5;
+    const qty = (it.qty != null) ? Math.max(0, parseInt(it.qty, 10) || 0)
+                                 : Math.max(1, Math.round((Number(it.price) || 0) / cat));
+    const unit = qty > 0 ? Math.round((Number(it.price) || 0) / qty) : cat;
+    return { qty, unit: unit || cat };
+  }
+  return { qty: b.option_album ? 1 : 0, unit: catPrice('album', 5) || 5 };
+}
 function renderPricing() {
   const wrap = $('pricingList');
   if (!wrap) return;
@@ -378,7 +391,10 @@ function buildEditLineItems() {
   const pkSel = $('e_package') && $('e_package').selectedOptions[0];
   if (pkSel && $('e_package').value) items.push({ group: '상품', name: $('e_package').value.replace('(데이터형)', ''), price: Number(pkSel.dataset.price) || 0 });
   if ($('e_travel') && $('e_travel').checked) items.push({ group: '상품', name: '출장비', price: (Number($('e_travel').dataset.price) || 0) + (two ? 5 : 0) });
-  [['e_option_album', '앨범 1권 추가'], ['e_option_reception', '연회장 인사촬영'], ['e_option_pyebaek', '폐백촬영'], ['e_option_part2', '2부 촬영']].forEach(([id, nm]) => {
+  const _aqi = $('e_album_qty');
+  const _aq = _aqi ? (parseInt(_aqi.value, 10) || 0) : 0;
+  if (_aq > 0) items.push({ group: '옵션', name: `앨범 추가 ${_aq}권`, price: (Number(_aqi.dataset.unit) || 0) * _aq, qty: _aq });
+  [['e_option_reception', '연회장 인사촬영'], ['e_option_pyebaek', '폐백촬영'], ['e_option_part2', '2부 촬영']].forEach(([id, nm]) => {
     if ($(id) && $(id).checked) items.push({ group: '옵션', name: nm, price: Number($(id).dataset.price) || 0 });
   });
   if (two) items.push({ group: '옵션', name: '2인 촬영', price: Number($('e_photographer').selectedOptions[0].dataset.price) || 0 });
@@ -828,6 +844,7 @@ function renderEdit(b) {
   const dval = (s) => (s ? esc(String(s).slice(0, 10)) : '');
   const ck = (c) => (c ? 'checked' : '');
   const sl = (a, bb) => (a === bb ? 'selected' : '');
+  const asnap = albumSnap(b);
 
   $('modalCard').innerHTML = `
     <button class="modal-close" id="modalClose">&times;</button>
@@ -867,7 +884,7 @@ function renderEdit(b) {
     </div>
     <div class="edit-opts">
       <label class="eopt"><input type="checkbox" id="e_travel" data-price="${catPrice('travel', 5)}" ${ck(b.travel_fee)} /><span>출장비</span><b>${catPrice('travel', 5)}만원</b></label>
-      <label class="eopt"><input type="checkbox" id="e_option_album" data-price="${editPrice(b, '앨범 1권 추가', 'album')}" ${ck(b.option_album)} /><span>앨범 1권 추가</span><b>+${editPrice(b, '앨범 1권 추가', 'album')}만원</b></label>
+      <div class="eopt eopt-qty"><span>앨범 추가</span><div class="qty-stepper" data-qty-for="e_album"><button type="button" class="qty-btn" data-step="-1" aria-label="수량 줄이기">−</button><input type="number" id="e_album_qty" class="qty-input" value="${asnap.qty}" min="0" max="9" step="1" inputmode="numeric" data-unit="${asnap.unit}" readonly aria-label="앨범 수량" /><button type="button" class="qty-btn" data-step="1" aria-label="수량 늘리기">+</button></div><b>+${asnap.unit}만원</b></div>
       <label class="eopt"><input type="checkbox" id="e_option_reception" data-price="${editPrice(b, '연회장 인사촬영', 'reception')}" ${ck(b.option_reception)} /><span>연회장 인사촬영</span><b>+${editPrice(b, '연회장 인사촬영', 'reception')}만원</b></label>
       <label class="eopt"><input type="checkbox" id="e_option_pyebaek" data-price="${editPrice(b, '폐백촬영', 'pyebaek')}" ${ck(b.option_pyebaek)} /><span>폐백촬영</span><b>+${editPrice(b, '폐백촬영', 'pyebaek')}만원</b></label>
       <label class="eopt"><input type="checkbox" id="e_option_part2" data-price="${editPrice(b, '2부 촬영', 'part2')}" ${ck(b.option_part2)} /><span>2부 촬영</span><b>+${editPrice(b, '2부 촬영', 'part2')}만원</b></label>
@@ -923,6 +940,8 @@ function renderEdit(b) {
     $('modalCard')
       .querySelectorAll('input[data-price]:checked')
       .forEach((el) => (sum += Number(el.dataset.price) || 0));
+    const aqi = $('e_album_qty');
+    if (aqi) sum += (Number(aqi.dataset.unit) || 0) * (parseInt(aqi.value, 10) || 0);
     const pk = $('e_package') && $('e_package').selectedOptions[0];
     if (pk) sum += Number(pk.dataset.price) || 0;
     const ph = $('e_photographer').selectedOptions[0];
@@ -937,6 +956,17 @@ function renderEdit(b) {
   $('addCustom').addEventListener('click', () => { addCustomRow('', ''); recalcEdit(); });
   $('modalCard').addEventListener('change', recalcEdit);
   $('modalCard').addEventListener('input', (e) => { if (e.target.classList.contains('co-price')) recalcEdit(); });
+  $('modalCard').querySelectorAll('.qty-stepper').forEach((st) => {
+    const input = st.querySelector('.qty-input');
+    if (!input) return;
+    st.classList.toggle('on', (parseInt(input.value, 10) || 0) > 0);
+    st.querySelectorAll('.qty-btn').forEach((btn) => btn.addEventListener('click', () => {
+      const min = Number(input.min) || 0, max = input.max === '' ? Infinity : Number(input.max);
+      input.value = Math.max(min, Math.min(max, (parseInt(input.value, 10) || 0) + (Number(btn.dataset.step) || 0)));
+      st.classList.toggle('on', (parseInt(input.value, 10) || 0) > 0);
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }));
+  });
   recalcEdit();
 
   $('modalClose').addEventListener('click', closeModal);
@@ -1036,7 +1066,8 @@ async function saveDetail(id, recalcEdit) {
     bride_phone: cv('e_bride_phone'),
     package: $('e_package') ? $('e_package').value : '베이직(데이터형)',
     travel_fee: cc('e_travel'),
-    option_album: cc('e_option_album'),
+    option_album: ($('e_album_qty') ? (parseInt($('e_album_qty').value, 10) || 0) : 0) > 0,
+    option_album_qty: $('e_album_qty') ? (parseInt($('e_album_qty').value, 10) || 0) : 0,
     option_reception: cc('e_option_reception'),
     option_pyebaek: cc('e_option_pyebaek'),
     option_part2: cc('e_option_part2'),
@@ -1681,7 +1712,7 @@ const WD = ['일', '월', '화', '수', '목', '금', '토'];
 const wdLabel = (b) => { const d = wDate(b); return d ? WD[d.getDay()] : ''; };
 function bookingOpts(b) {
   const o = [];
-  if (b.option_album) o.push('앨범');
+  if (b.option_album) { const q = albumSnap(b).qty; o.push(q > 1 ? `앨범×${q}` : '앨범'); }
   if (b.option_reception) o.push('연회장');
   if (b.option_pyebaek) o.push('폐백');
   if (b.option_part2) o.push('2부');

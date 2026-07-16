@@ -210,11 +210,17 @@ if (tpDisplay) {
   };
 }
 
+// 앨범 추가: 체크박스가 아닌 수량 스테퍼 — 단가 × 수량으로 합산
+const albumQty = () => { const el = document.getElementById('f_album_qty'); return el ? Math.max(0, parseInt(el.value, 10) || 0) : 0; };
+const albumUnit = () => { const el = document.getElementById('f_option_album'); return el ? (Number(el.dataset.price) || 0) : 0; };
+const albumName = () => { const el = document.getElementById('f_option_album'); const li = el && el.closest('li'); const n = li && li.querySelector('.opt-name'); return (n && n.textContent.trim()) || '앨범 추가'; };
+
 const calcTotal = () => {
   let sum = 0;
   bookingForm
     .querySelectorAll('input[data-price]:checked')
     .forEach((el) => (sum += Number(el.dataset.price) || 0));
+  sum += albumUnit() * albumQty(); // 앨범 추가: 단가 × 수량
   // 2인 촬영이면 출장비는 1인당 적용 → +5 (출장비 10만원)
   const tv = bookingForm.querySelector('#f_travel');
   const two = (bookingForm.querySelector('input[name="photographer"]:checked') || {}).value === '2인 촬영';
@@ -229,6 +235,29 @@ if (bookingForm) {
   bookingForm.addEventListener('change', recalc);
   recalc();
 }
+
+// 수량 스테퍼(−/＋) 배선 — 값 변경 시 폼 change 이벤트로 합계 재계산
+const setStepperVal = (input, v) => {
+  const min = Number(input.min) || 0;
+  const max = input.max === '' ? Infinity : Number(input.max);
+  input.value = Math.max(min, Math.min(max, v));
+  const st = input.closest('.qty-stepper');
+  if (st) st.classList.toggle('on', (parseInt(input.value, 10) || 0) > 0);
+};
+if (bookingForm) {
+  bookingForm.querySelectorAll('.qty-stepper').forEach((st) => {
+    const input = st.querySelector('.qty-input');
+    if (!input) return;
+    setStepperVal(input, parseInt(input.value, 10) || 0);
+    st.querySelectorAll('.qty-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        setStepperVal(input, (parseInt(input.value, 10) || 0) + (Number(btn.dataset.step) || 0));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+    });
+  });
+}
+const resetSteppers = () => { if (bookingForm) bookingForm.querySelectorAll('.qty-input').forEach((i) => setStepperVal(i, 0)); };
 
 // Supabase client
 const sb =
@@ -254,7 +283,7 @@ async function applyPricing() {
     input.dataset.price = p.price;
     const li = input.closest('li'); if (!li) return;
     const pe = li.querySelector('.opt-price'); if (pe) pe.textContent = (p.kind === 'product' ? '' : '+') + p.price + '만원';
-    if (code !== 'basic') { const ne = li.querySelector('.opt-name'); if (ne) ne.textContent = p.name; _show(li, p.active); }
+    if (code !== 'basic') { if (code !== 'album') { const ne = li.querySelector('.opt-name'); if (ne) ne.textContent = p.name; } _show(li, p.active); }
   });
   // 2인 촬영(라디오)
   const twoR = bookingForm && bookingForm.querySelector('input[name="photographer"][value="2인 촬영"]');
@@ -296,7 +325,7 @@ function buildLineItems() {
   const two = radioVal('photographer') === '2인 촬영';
   if (checked('f_basic')) items.push({ group: '상품', name: '베이직', price: _price('f_basic') });
   if (checked('f_travel')) items.push({ group: '상품', name: '출장비', price: _price('f_travel') + (two ? 5 : 0) });
-  if (checked('f_option_album')) items.push({ group: '옵션', name: _optName('f_option_album', '앨범 1권 추가'), price: _price('f_option_album') });
+  if (albumQty() > 0) items.push({ group: '옵션', name: `${albumName()} ${albumQty()}권`, price: albumUnit() * albumQty(), qty: albumQty() });
   if (checked('f_option_reception')) items.push({ group: '옵션', name: _optName('f_option_reception', '연회장 인사촬영'), price: _price('f_option_reception') });
   if (checked('f_option_pyebaek')) items.push({ group: '옵션', name: _optName('f_option_pyebaek', '폐백촬영'), price: _price('f_option_pyebaek') });
   if (checked('f_option_part2')) items.push({ group: '옵션', name: _optName('f_option_part2', '2부 촬영'), price: _price('f_option_part2') });
@@ -373,7 +402,8 @@ if (bookingForm) {
       bride_phone: val('f_bride_phone'),
       basic: checked('f_basic'),
       travel_fee: checked('f_travel'),
-      option_album: checked('f_option_album'),
+      option_album: albumQty() > 0,
+      option_album_qty: albumQty(),
       option_reception: checked('f_option_reception'),
       option_pyebaek: checked('f_option_pyebaek'),
       option_part2: checked('f_option_part2'),
@@ -458,6 +488,7 @@ if (bookingForm) {
 
     bookingForm.reset();
     resetSameAs();
+    resetSteppers();
     if (fpDate) fpDate.clear();
     tpReset();
     document.getElementById('bkTotal').textContent = calcTotal().toLocaleString('ko-KR') + '만원';

@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://cthpxcgesorvtgjdgrtu.supabase.co" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-  <link rel="stylesheet" href="styles.css?v=20260616" />
+  <link rel="stylesheet" href="styles.css?v=20260716" />
 </head>
 <body>
 
@@ -213,7 +213,7 @@
         <h3>옵션 사항</h3>
         <p class="opt-sub">Option 1</p>
         <ul class="price-opt">
-          <li data-code="album"><span>앨범 1권 추가</span><span class="opt-won">50,000원</span></li>
+          <li data-code="album"><span>앨범 추가 (1권당)</span><span class="opt-won">50,000원</span></li>
           <li data-code="reception"><span>연회장 인사 촬영</span><span class="opt-won">50,000원</span></li>
           <li data-code="pyebaek"><span>폐백 촬영</span><span class="opt-won">100,000원</span></li>
           <li data-code="part2"><span>2부 촬영</span><span class="opt-won">100,000원</span></li>
@@ -423,14 +423,23 @@
         <legend>옵션 1 · 추가 서비스 <small>(선택)</small></legend>
         <p class="opt-hint">중복선택 가능 / 필수 아님!</p>
         <ul class="opt-list">
-          <li class="opt"><label class="check"><input type="checkbox" id="f_option_album" data-price="5" /> <span class="opt-name">앨범 1권 추가</span></label><span class="opt-price">+5만원</span></li>
+          <li class="opt opt-album">
+            <span class="opt-name">앨범 추가</span>
+            <div class="qty-stepper" data-qty-for="album">
+              <button type="button" class="qty-btn" data-step="-1" aria-label="앨범 수량 줄이기">−</button>
+              <input type="number" id="f_album_qty" class="qty-input" value="0" min="0" max="9" step="1" inputmode="numeric" readonly aria-label="앨범 수량" />
+              <button type="button" class="qty-btn" data-step="1" aria-label="앨범 수량 늘리기">+</button>
+            </div>
+            <span class="opt-price">+5만원</span>
+            <input type="hidden" id="f_option_album" data-price="5" />
+          </li>
           <li class="opt"><label class="check"><input type="checkbox" id="f_option_reception" data-price="5" /> <span class="opt-name">연회장 인사촬영</span></label><span class="opt-price">+5만원</span></li>
           <li class="opt"><label class="check"><input type="checkbox" id="f_option_pyebaek" data-price="10" /> <span class="opt-name">폐백촬영</span></label><span class="opt-price">+10만원</span></li>
           <li class="opt"><label class="check"><input type="checkbox" id="f_option_part2" data-price="10" /> <span class="opt-name">2부 촬영</span></label><span class="opt-price">+10만원</span></li>
         </ul>
         <ul class="opt-list" id="extraOptions"></ul>
         <ul class="opt-notes">
-          <li>앨범이 필요하신 분은 체크하시면 됩니다. 1권 이상 추가는 체크 후 따로 말씀해 주시거나 추후에 언제든 추가 가능합니다!</li>
+          <li>앨범이 필요하시면 “앨범 추가”에서 원하시는 수량만큼 선택해 주세요. 추후에 언제든 추가·변경도 가능합니다!</li>
           <li>호텔이나 2부 식순이 추가로 있는 경우는 “2부 촬영”을 추가하시면 됩니다.</li>
           <li>단순 하객 인사는 “연회장 인사촬영”을 추가하시면 됩니다.</li>
           <li>2부 촬영은 연회장 인사촬영이 포함되어 있습니다.</li>
@@ -561,6 +570,6 @@
   <script defer src="https://snapwidget.com/js/snapwidget.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="config.js"></script>
-  <script defer src="main.js?v=20260706b"></script>
+  <script defer src="main.js?v=20260716"></script>
 </body>
 </html>

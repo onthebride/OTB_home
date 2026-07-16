@@ -153,6 +153,13 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .eopt input { width: 16px; height: 16px; accent-color: var(--gold-deep); flex: none; }
 .eopt span { flex: 1; }
 .eopt b { color: var(--gold-deep); font-weight: 500; font-size: .85rem; }
+.eopt-qty { cursor: default; }
+.eopt-qty .qty-stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; background: #fff; overflow: hidden; }
+.eopt-qty .qty-btn { width: 26px; height: 26px; border: none; background: transparent; color: var(--gold-deep); font-size: 1rem; line-height: 1; cursor: pointer; display: grid; place-items: center; flex: none; }
+.eopt-qty .qty-btn:hover { background: var(--cream); }
+.eopt-qty .qty-input { width: 30px; height: auto; text-align: center; border: none; background: transparent; font-size: .9rem; font-weight: 600; color: var(--ink); padding: 0; accent-color: initial; -moz-appearance: textfield; flex: none; }
+.eopt-qty .qty-input::-webkit-outer-spin-button, .eopt-qty .qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.eopt-qty .qty-stepper:not(.on) .qty-input { color: var(--ink-soft); }
 
 .modal-actions { border-top: 1px solid var(--line); padding-top: 20px; }
 .row-2 { display: flex; gap: 12px; align-items: flex-end; }
