@@ -2387,8 +2387,15 @@ function renderGalleryGrid() {
   const pages = Math.ceil(list.length / GL_PER);
   const pg = $('glPager');
   if (pages <= 1) { pg.innerHTML = ''; return; }
+  // 페이지 번호 10개씩 블록으로 끊어 표시 (화면 넘침 방지)
+  const WIN = 10;
+  const block = Math.floor((glPage - 1) / WIN);
+  const from = block * WIN + 1;
+  const to = Math.min(from + WIN - 1, pages);
   let html = `<button class="gpg nav" data-p="${glPage - 1}"${glPage === 1 ? ' disabled' : ''}>‹</button>`;
-  for (let i = 1; i <= pages; i++) html += `<button class="gpg${i === glPage ? ' active' : ''}" data-p="${i}">${i}</button>`;
+  if (from > 1) html += `<button class="gpg" data-p="${from - 1}">…</button>`;
+  for (let i = from; i <= to; i++) html += `<button class="gpg${i === glPage ? ' active' : ''}" data-p="${i}">${i}</button>`;
+  if (to < pages) html += `<button class="gpg" data-p="${to + 1}">…</button>`;
   html += `<button class="gpg nav" data-p="${glPage + 1}"${glPage === pages ? ' disabled' : ''}>›</button>`;
   pg.innerHTML = html;
   pg.querySelectorAll('.gpg').forEach((b) =>
