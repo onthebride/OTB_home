@@ -219,8 +219,8 @@ const calcTotal = () => {
   let sum = 0;
   bookingForm
     .querySelectorAll('input[data-price]:checked')
-    .forEach((el) => (sum += Number(el.dataset.price) || 0));
-  sum += albumUnit() * albumQty(); // 앨범 추가: 단가 × 수량
+    .forEach((el) => { if (el.id !== 'f_option_album') sum += Number(el.dataset.price) || 0; });
+  sum += albumUnit() * albumQty(); // 앨범 추가: 체크박스는 위에서 제외, 단가 × 수량으로 합산
   // 2인 촬영이면 출장비는 1인당 적용 → +5 (출장비 10만원)
   const tv = bookingForm.querySelector('#f_travel');
   const two = (bookingForm.querySelector('input[name="photographer"]:checked') || {}).value === '2인 촬영';
@@ -244,6 +244,8 @@ const setStepperVal = (input, v) => {
   const st = input.closest('.qty-stepper');
   if (st) st.classList.toggle('on', (parseInt(input.value, 10) || 0) > 0);
 };
+// 앨범: 체크박스 ↔ 수량 연동 (수량>0이면 체크, 체크 해제면 0권)
+const albumCheckboxSync = () => { const cb = document.getElementById('f_option_album'); const qi = document.getElementById('f_album_qty'); if (cb && qi) cb.checked = (parseInt(qi.value, 10) || 0) > 0; };
 if (bookingForm) {
   bookingForm.querySelectorAll('.qty-stepper').forEach((st) => {
     const input = st.querySelector('.qty-input');
@@ -252,9 +254,15 @@ if (bookingForm) {
     st.querySelectorAll('.qty-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         setStepperVal(input, (parseInt(input.value, 10) || 0) + (Number(btn.dataset.step) || 0));
+        if (input.id === 'f_album_qty') albumCheckboxSync();
         input.dispatchEvent(new Event('change', { bubbles: true }));
       });
     });
+  });
+  const albumCb = document.getElementById('f_option_album');
+  if (albumCb) albumCb.addEventListener('change', () => {
+    const qi = document.getElementById('f_album_qty');
+    if (qi) setStepperVal(qi, albumCb.checked ? Math.max(1, parseInt(qi.value, 10) || 0) : 0);
   });
 }
 const resetSteppers = () => { if (bookingForm) bookingForm.querySelectorAll('.qty-input').forEach((i) => setStepperVal(i, 0)); };

@@ -884,7 +884,7 @@ function renderEdit(b) {
     </div>
     <div class="edit-opts">
       <label class="eopt"><input type="checkbox" id="e_travel" data-price="${catPrice('travel', 5)}" ${ck(b.travel_fee)} /><span>출장비</span><b>${catPrice('travel', 5)}만원</b></label>
-      <div class="eopt eopt-qty"><span>앨범 추가</span><div class="qty-stepper" data-qty-for="e_album"><button type="button" class="qty-btn" data-step="-1" aria-label="수량 줄이기">−</button><input type="number" id="e_album_qty" class="qty-input" value="${asnap.qty}" min="0" max="9" step="1" inputmode="numeric" data-unit="${asnap.unit}" readonly aria-label="앨범 수량" /><button type="button" class="qty-btn" data-step="1" aria-label="수량 늘리기">+</button></div><b>+${asnap.unit}만원</b></div>
+      <div class="eopt eopt-qty"><input type="checkbox" id="e_option_album" ${asnap.qty > 0 ? 'checked' : ''} /><span>앨범 추가</span><div class="qty-stepper" data-qty-for="e_album"><button type="button" class="qty-btn" data-step="-1" aria-label="수량 줄이기">−</button><input type="number" id="e_album_qty" class="qty-input" value="${asnap.qty}" min="0" max="9" step="1" inputmode="numeric" data-unit="${asnap.unit}" readonly aria-label="앨범 수량" /><button type="button" class="qty-btn" data-step="1" aria-label="수량 늘리기">+</button></div><b>+${asnap.unit}만원</b></div>
       <label class="eopt"><input type="checkbox" id="e_option_reception" data-price="${editPrice(b, '연회장 인사촬영', 'reception')}" ${ck(b.option_reception)} /><span>연회장 인사촬영</span><b>+${editPrice(b, '연회장 인사촬영', 'reception')}만원</b></label>
       <label class="eopt"><input type="checkbox" id="e_option_pyebaek" data-price="${editPrice(b, '폐백촬영', 'pyebaek')}" ${ck(b.option_pyebaek)} /><span>폐백촬영</span><b>+${editPrice(b, '폐백촬영', 'pyebaek')}만원</b></label>
       <label class="eopt"><input type="checkbox" id="e_option_part2" data-price="${editPrice(b, '2부 촬영', 'part2')}" ${ck(b.option_part2)} /><span>2부 촬영</span><b>+${editPrice(b, '2부 촬영', 'part2')}만원</b></label>
@@ -964,8 +964,15 @@ function renderEdit(b) {
       const min = Number(input.min) || 0, max = input.max === '' ? Infinity : Number(input.max);
       input.value = Math.max(min, Math.min(max, (parseInt(input.value, 10) || 0) + (Number(btn.dataset.step) || 0)));
       st.classList.toggle('on', (parseInt(input.value, 10) || 0) > 0);
+      if (input.id === 'e_album_qty' && $('e_option_album')) $('e_option_album').checked = (parseInt(input.value, 10) || 0) > 0;
       input.dispatchEvent(new Event('change', { bubbles: true }));
     }));
+  });
+  if ($('e_option_album')) $('e_option_album').addEventListener('change', () => {
+    const qi = $('e_album_qty'); if (!qi) return;
+    const max = qi.max === '' ? Infinity : Number(qi.max);
+    qi.value = $('e_option_album').checked ? Math.max(1, Math.min(max, parseInt(qi.value, 10) || 0)) : 0;
+    const st = qi.closest('.qty-stepper'); if (st) st.classList.toggle('on', (parseInt(qi.value, 10) || 0) > 0);
   });
   recalcEdit();
 

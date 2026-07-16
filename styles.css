@@ -469,8 +469,8 @@ input.readonly { background: var(--cream); color: var(--ink-soft); cursor: not-a
 .opt.fixed .opt-name { color: var(--ink); }
 
 /* 수량 스테퍼 (앨범 추가 등) */
-.opt-album .opt-name { flex: 1; }
-.qty-stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; background: #fff; overflow: hidden; }
+.opt-album { gap: 10px; }
+.qty-stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; background: #fff; overflow: hidden; flex: none; }
 .qty-btn { width: 32px; height: 32px; border: none; background: transparent; color: var(--gold-deep); font-size: 1.15rem; line-height: 1; cursor: pointer; display: grid; place-items: center; transition: background .15s; -webkit-tap-highlight-color: transparent; }
 .qty-btn:hover { background: var(--cream); }
 .qty-btn:active { transform: scale(.92); }
