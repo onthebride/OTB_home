@@ -36,14 +36,38 @@ menu.querySelectorAll('a').forEach((a) =>
 );
 
 // Rules modal (규정 전문)
+// 규정 원문은 /rules 페이지 한 곳에만 존재한다. 모달은 열릴 때 그 페이지에서
+// .rules-content 를 그대로 가져와 붙인다 — 두 곳에 같은 약관을 복사해두고
+// 한쪽만 고치는 사고를 막기 위함.
 const rulesModal = document.getElementById('rulesModal');
 if (rulesModal) {
   const openBtn = document.getElementById('rulesOpen');
   const closeBtn = document.getElementById('rulesClose');
   const backdrop = document.getElementById('rulesBackdrop');
+  const content = document.getElementById('rulesContent');
+  let loaded = false;
+
+  const loadRules = async () => {
+    if (loaded || !content) return;
+    try {
+      const res = await fetch('/rules', { cache: 'no-cache' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+      const src = doc.getElementById('rulesSource');
+      if (!src) throw new Error('no rulesSource');
+      content.innerHTML = src.innerHTML;
+      loaded = true;
+    } catch (err) {
+      content.innerHTML =
+        '<p class="rules-loading">규정을 불러오지 못했습니다.<br />' +
+        '<a href="/rules" target="_blank" rel="noopener" class="rules-openpage">규정 전문 페이지에서 보기 ↗</a></p>';
+    }
+  };
+
   const open = () => {
     rulesModal.hidden = false;
     document.body.style.overflow = 'hidden';
+    loadRules();
   };
   const close = () => {
     rulesModal.hidden = true;

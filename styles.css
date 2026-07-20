@@ -453,6 +453,25 @@ input.readonly { background: var(--cream); color: var(--ink-soft); cursor: not-a
 .rules-content strong { color: var(--ink); font-weight: 600; }
 .rules-sign { margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--line); text-align: center; font-size: .9rem; color: var(--ink); line-height: 1.9; }
 
+/* 모달 상단 — 전문 페이지로 나가는 링크 */
+.rules-modal-head { text-align: center; margin: -14px 0 24px; }
+.rules-openpage { font-size: .85rem; color: var(--gold-deep); border-bottom: 1px solid var(--gold); }
+.rules-openpage:hover { color: var(--gold); }
+.rules-loading { text-align: center; color: var(--ink-soft); font-size: .9rem; padding: 30px 0; }
+
+/* 규정 전문 단독 페이지 (/rules) */
+.rules-page { background: var(--cream); }
+.rules-page-head { background: var(--paper); border-bottom: 1px solid var(--line); padding: 18px 20px; text-align: center; }
+.rules-page-brand img { height: 30px; }
+.rules-page-main { max-width: 720px; margin: 0 auto; background: var(--paper); padding: 48px 38px 40px; }
+.rules-page-lead { text-align: center; font-size: .92rem; color: var(--ink-soft); margin: -18px 0 30px; line-height: 1.7; }
+.rules-page-actions { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); text-align: center; }
+.rules-page-foot { text-align: center; padding: 28px 20px 40px; }
+@media (max-width: 640px) {
+  .rules-page-main { padding: 34px 20px 30px; }
+  .rules-page-lead { margin: -12px 0 24px; }
+}
+
 .check { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 9px 0; font-size: .98rem; color: var(--ink); }
 .check input { width: 17px; height: 17px; accent-color: var(--gold-deep); flex: none; }
 
