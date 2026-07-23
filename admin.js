@@ -389,7 +389,9 @@ function buildEditLineItems() {
   const items = [];
   const two = $('e_photographer') && $('e_photographer').value === '2인 촬영';
   const pkSel = $('e_package') && $('e_package').selectedOptions[0];
-  if (pkSel && $('e_package').value) items.push({ group: '상품', name: $('e_package').value.replace('(데이터형)', ''), price: Number(pkSel.dataset.price) || 0 });
+  const pkPriceEl = $('e_package_price');
+  const pkPrice = pkPriceEl ? (Number(pkPriceEl.value) || 0) : (pkSel ? (Number(pkSel.dataset.price) || 0) : 0);
+  if (pkSel && $('e_package').value) items.push({ group: '상품', name: $('e_package').value.replace('(데이터형)', ''), price: pkPrice });
   if ($('e_travel') && $('e_travel').checked) items.push({ group: '상품', name: '출장비', price: (Number($('e_travel').dataset.price) || 0) + (two ? 5 : 0) });
   const _aqi = $('e_album_qty');
   const _aq = _aqi ? (parseInt(_aqi.value, 10) || 0) : 0;
@@ -845,6 +847,7 @@ function renderEdit(b) {
   const ck = (c) => (c ? 'checked' : '');
   const sl = (a, bb) => (a === bb ? 'selected' : '');
   const asnap = albumSnap(b);
+  const basePrice = editPrice(b, '베이직', 'basic'); // 상품 기본가(스냅샷 우선) — 아래 입력칸에서 직접 수정 가능
 
   $('modalCard').innerHTML = `
     <button class="modal-close" id="modalClose">&times;</button>
@@ -875,12 +878,15 @@ function renderEdit(b) {
 
     <h5 class="eg">상품 · 옵션 <small>(체크 시 합계 자동 변경)</small></h5>
     <div class="field" style="margin-bottom:10px">
-      <label>상품</label>
-      <select id="e_package">
-        <option value="베이직(데이터형)" data-price="${editPrice(b, '베이직', 'basic')}" ${sl(b.package, '베이직(데이터형)')}>베이직 (데이터형) · ${editPrice(b, '베이직', 'basic')}만원</option>
-        <option value="스페셜" data-price="55" ${sl(b.package, '스페셜')}>스페셜 · 55만원 (구상품)</option>
-        <option value="베이직(구)" data-price="50" ${sl(b.package, '베이직(구)')}>베이직(구) · 50만원 (구상품)</option>
-      </select>
+      <label>상품 <small style="font-weight:400;opacity:.6">· 가격 직접 수정 가능</small></label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="e_package" style="flex:1">
+          <option value="베이직(데이터형)" data-price="${basePrice}" ${sl(b.package, '베이직(데이터형)')}>베이직 (데이터형)</option>
+          <option value="스페셜" data-price="55" ${sl(b.package, '스페셜')}>스페셜 (구상품)</option>
+          <option value="베이직(구)" data-price="50" ${sl(b.package, '베이직(구)')}>베이직(구) (구상품)</option>
+        </select>
+        <div style="display:flex;align-items:center;gap:4px;white-space:nowrap"><input id="e_package_price" type="number" min="0" step="1" value="${basePrice}" inputmode="numeric" aria-label="상품 가격(만원)" style="width:72px;text-align:right" /><span>만원</span></div>
+      </div>
     </div>
     <div class="edit-opts">
       <label class="eopt"><input type="checkbox" id="e_travel" data-price="${catPrice('travel', 5)}" ${ck(b.travel_fee)} /><span>출장비</span><b>${catPrice('travel', 5)}만원</b></label>
@@ -942,8 +948,10 @@ function renderEdit(b) {
       .forEach((el) => (sum += Number(el.dataset.price) || 0));
     const aqi = $('e_album_qty');
     if (aqi) sum += (Number(aqi.dataset.unit) || 0) * (parseInt(aqi.value, 10) || 0);
+    const pkPriceEl = $('e_package_price');
     const pk = $('e_package') && $('e_package').selectedOptions[0];
-    if (pk) sum += Number(pk.dataset.price) || 0;
+    if (pkPriceEl) sum += Number(pkPriceEl.value) || 0;
+    else if (pk) sum += Number(pk.dataset.price) || 0;
     const ph = $('e_photographer').selectedOptions[0];
     if (ph) sum += Number(ph.dataset.price) || 0;
     // 2인 촬영 + 출장비 → 출장비 1인당(+5)
@@ -955,7 +963,14 @@ function renderEdit(b) {
   renderCustomOpts(Array.isArray(b.custom_options) ? b.custom_options : []);
   $('addCustom').addEventListener('click', () => { addCustomRow('', ''); recalcEdit(); });
   $('modalCard').addEventListener('change', recalcEdit);
-  $('modalCard').addEventListener('input', (e) => { if (e.target.classList.contains('co-price')) recalcEdit(); });
+  $('modalCard').addEventListener('input', (e) => { if (e.target.classList.contains('co-price') || e.target.id === 'e_package_price') recalcEdit(); });
+  // 상품 바꾸면 가격칸을 그 상품 기본가로 채움(그 뒤 직접 수정 가능)
+  if ($('e_package')) $('e_package').addEventListener('change', () => {
+    const opt = $('e_package').selectedOptions[0];
+    const pp = $('e_package_price');
+    if (opt && pp) pp.value = Number(opt.dataset.price) || 0;
+    recalcEdit();
+  });
   $('modalCard').querySelectorAll('.qty-stepper').forEach((st) => {
     const input = st.querySelector('.qty-input');
     if (!input) return;
