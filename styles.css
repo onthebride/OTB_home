@@ -17,7 +17,7 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 [hidden] { display: none !important; }
-html { scroll-behavior: smooth; scrollbar-gutter: stable; }
+html { scroll-behavior: smooth; scrollbar-gutter: stable; scroll-padding-top: 100px; } /* 고정 헤더(84px) 아래로 앵커 위치 보정 */
 body {
   font-family: var(--sans);
   color: var(--ink);

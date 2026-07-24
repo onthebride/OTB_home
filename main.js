@@ -35,6 +35,27 @@ menu.querySelectorAll('a').forEach((a) =>
   a.addEventListener('click', () => menu.classList.remove('open'))
 );
 
+// 앵커 진입 보정 (#event 등)
+// 위쪽 갤러리(비동기 DB 렌더)·인스타 임베드가 뒤늦게 커지면서 목표 섹션이
+// 아래로 밀려, 직접 링크로 들어오면 "그 위 섹션"이 보이는 문제를 보정한다.
+// 콘텐츠가 자리잡을 때까지 여러 번 다시 정렬하되, 사용자가 스크롤을 시작하면 멈춘다.
+const hashRealign = (() => {
+  const id = decodeURIComponent((location.hash || '').replace(/^#/, ''));
+  let stopped = !id;
+  if (!stopped) {
+    const evs = ['wheel', 'touchmove', 'keydown', 'mousedown'];
+    const stop = () => { stopped = true; };
+    evs.forEach((e) => window.addEventListener(e, stop, { passive: true }));
+    setTimeout(() => evs.forEach((e) => window.removeEventListener(e, stop)), 2500);
+  }
+  return () => {
+    if (stopped) return;
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
+  };
+})();
+window.addEventListener('load', () => { hashRealign(); [250, 600, 1200].forEach((t) => setTimeout(hashRealign, t)); });
+
 // Rules modal (규정 전문)
 // 규정 원문은 /rules 페이지 한 곳에만 존재한다. 모달은 열릴 때 그 페이지에서
 // .rules-content 를 그대로 가져와 붙인다 — 두 곳에 같은 약관을 복사해두고
@@ -670,6 +691,7 @@ if (inquiryForm) {
   if (urlG) { searchTerm = urlG; activeTag = '전체'; }
   renderTags();
   renderGrid();
+  hashRealign(); // 갤러리가 채워져 높이가 커진 직후 목표 앵커로 다시 정렬
   if (urlG) {
     const gs = document.getElementById('gallery');
     if (gs) setTimeout(() => gs.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
