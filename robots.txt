@@ -46,4 +46,4 @@ Allow: /
 User-agent: Meta-ExternalAgent
 Allow: /
 
-Sitemap: https://onthebride.co.kr/sitemap.xml
+Sitemap: https://onthebride.com/sitemap.xml

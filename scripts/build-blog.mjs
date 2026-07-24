@@ -19,7 +19,7 @@ const ROOT = path.resolve(__dirname, '..');
 // ---- 사이트 설정 ------------------------------------------------
 // ⚠️ 실제 도메인으로 바꾸세요. canonical·OG·sitemap 절대주소에 쓰입니다.
 const SITE = {
-  origin: 'https://onthebride.co.kr',           // ← 실제 도메인 확정 후 수정
+  origin: 'https://onthebride.com',           // ← 실제 도메인 확정 후 수정
   brand: '온더브라이드',
   brandEn: 'ONTHEBRIDE',
   blogName: '온더브라이드 블로그',
