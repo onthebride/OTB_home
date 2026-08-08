@@ -847,7 +847,17 @@ function renderEdit(b) {
   const ck = (c) => (c ? 'checked' : '');
   const sl = (a, bb) => (a === bb ? 'selected' : '');
   const asnap = albumSnap(b);
-  const basePrice = editPrice(b, '베이직', 'basic'); // 상품 기본가(스냅샷 우선) — 아래 입력칸에서 직접 수정 가능
+  const basicPrice = editPrice(b, '베이직', 'basic'); // 베이직(데이터형) 단가(스냅샷 우선, 없으면 카탈로그가)
+  // 가격칸 초깃값은 '이 예약의 상품' 기준이어야 함.
+  // 베이직가로 채우면 스페셜·베이직(구) 예약을 열어 저장만 해도 베이직가로 덮어써짐.
+  const OLD_PKG_PRICE = { '스페셜': 55, '베이직(구)': 50 };  // 구상품 정가(카탈로그에 없음)
+  const pkgVal = b.package || '베이직(데이터형)';
+  const pkgSnap = Array.isArray(b.line_items)
+    ? b.line_items.find((it) => it && it.name === pkgVal.replace('(데이터형)', ''))  // 스냅샷 이름 규칙은 buildEditLineItems와 동일
+    : null;
+  const basePrice = pkgSnap && pkgSnap.price != null
+    ? (Number(pkgSnap.price) || 0)
+    : (OLD_PKG_PRICE[pkgVal] != null ? OLD_PKG_PRICE[pkgVal] : basicPrice);
 
   $('modalCard').innerHTML = `
     <button class="modal-close" id="modalClose">&times;</button>
@@ -881,7 +891,7 @@ function renderEdit(b) {
       <label>상품 <small style="font-weight:400;opacity:.6">· 가격 직접 수정 가능</small></label>
       <div style="display:flex;gap:8px;align-items:center">
         <select id="e_package" style="flex:1">
-          <option value="베이직(데이터형)" data-price="${basePrice}" ${sl(b.package, '베이직(데이터형)')}>베이직 (데이터형)</option>
+          <option value="베이직(데이터형)" data-price="${basicPrice}" ${sl(b.package, '베이직(데이터형)')}>베이직 (데이터형)</option>
           <option value="스페셜" data-price="55" ${sl(b.package, '스페셜')}>스페셜 (구상품)</option>
           <option value="베이직(구)" data-price="50" ${sl(b.package, '베이직(구)')}>베이직(구) (구상품)</option>
         </select>
