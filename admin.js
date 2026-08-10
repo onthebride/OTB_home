@@ -1011,15 +1011,29 @@ function closeModal() {
 }
 $('modalBackdrop').addEventListener('click', closeModal);
 
+// 설문 레퍼런스 사진 파일 삭제 (DB 행은 예약 삭제 시 cascade 되지만 스토리지 파일은 남으므로 직접 지움)
+async function removeRefFiles(id) {
+  const dir = `refs/${id}`;
+  const { data: files, error } = await sb.storage.from('gallery').list(dir, { limit: 200 });
+  if (error) return { ok: false, msg: error.message };
+  if (!files || !files.length) return { ok: true, n: 0 };
+  const { error: rmErr } = await sb.storage.from('gallery').remove(files.map((f) => `${dir}/${f.name}`));
+  if (rmErr) return { ok: false, msg: rmErr.message };
+  return { ok: true, n: files.length };
+}
+
 async function deleteBooking(id) {
   if (!confirm('이 예약을 완전히 삭제할까요?\n설문·레퍼런스도 함께 삭제되며 되돌릴 수 없습니다.')) return;
+  // 파일 먼저 삭제 — 예약을 지우면 경로를 찾을 근거(설문 행)가 사라지기 때문
+  const rf = await removeRefFiles(id);
+  if (!rf.ok && !confirm('레퍼런스 사진 파일을 지우지 못했어요: ' + rf.msg + '\n\n예약만 삭제하고 사진 파일은 남겨둘까요?')) return;
   const { error } = await sb.rpc('admin_delete_booking', { p_id: id });
   if (error) { alert('삭제 실패: ' + error.message); return; }
   allBookings = allBookings.filter((b) => b.id !== id);
   closeModal();
   render();
   renderDashboard();
-  toast('예약을 삭제했어요.');
+  toast('예약을 삭제했어요.' + (rf.ok && rf.n ? ` (레퍼런스 사진 ${rf.n}장 함께 삭제)` : ''));
 }
 
 async function markUnpaid(id) {

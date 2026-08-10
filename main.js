@@ -429,8 +429,8 @@ if (bookingForm) {
       setStatus('필수 항목을 입력해 주세요: ' + missing.join(', '), 'error');
       return;
     }
-    if (!checked('f_agree_available') || !checked('f_agree_terms')) {
-      setStatus('확인사항 2개 항목에 모두 체크해 주세요.', 'error');
+    if (!checked('f_agree_available') || !checked('f_agree_terms') || !checked('f_agree_privacy')) {
+      setStatus('확인사항 3개 항목(예약 가능 확인 · 규정 동의 · 개인정보 수집·이용 동의)에 모두 체크해 주세요.', 'error');
       return;
     }
     if (!sb) {
