@@ -384,6 +384,8 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .bk-search input:focus { border-color: var(--gold); }
 .bk-monthnav { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .bk-monthnav .btn-ghost { padding: 5px 13px; }
+.bk-monthnav .btn-ghost:disabled { opacity: .3; cursor: default; }
+.bk-monthnav .btn-ghost:disabled:hover { border-color: var(--line); color: var(--ink); }
 .bk-monthnav span { font-weight: 600; font-size: .95rem; }
 .bk-opt { display: inline-block; font-size: .72rem; background: var(--cream); border: 1px solid var(--line); color: var(--ink-soft); border-radius: 4px; padding: 1px 6px; margin: 0 2px 2px 0; white-space: nowrap; }
 td .muted { color: var(--ink-soft); }

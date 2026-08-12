@@ -188,6 +188,45 @@ function populateAssigneeSelects() {
     allStaff.filter((s) => s.active).map((s) => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
 }
 
+/* ===== 예약 목록 필터 · 월 이동 헬퍼 ===== */
+// 현재 필터·검색어에 해당하는 예약 (월 제한 없음)
+function bkFiltered() {
+  const term = bkSearchTerm.toLowerCase();
+  return allBookings.filter((b) => {
+    if (filter !== '전체' && b.status !== filter) return false;
+    if (!term) return true;
+    return [b.contractor_name, b.wedding_venue, b.contractor_phone, b.groom_name, b.bride_name]
+      .some((v) => (v || '').toLowerCase().includes(term));
+  });
+}
+const mKey = (y, m) => y * 12 + m;
+const fromKey = (k) => ({ y: Math.floor(k / 12), m: k % 12 });
+// 해당 필터의 예약이 실제로 있는 월 목록(오름차순) — 빈 달은 건너뛰기 위함
+function bkMonthKeys() {
+  const set = new Set();
+  bkFiltered().forEach((b) => { const d = wDate(b); if (d) set.add(mKey(d.getFullYear(), d.getMonth())); });
+  return [...set].sort((a, b) => a - b);
+}
+// 오늘 기준 가장 가까운 월(이번 달 이후 우선, 없으면 가장 최근 과거 달)
+function bkNearestMonth() {
+  const keys = bkMonthKeys();
+  if (!keys.length) return null;
+  const t = new Date();
+  const now = mKey(t.getFullYear(), t.getMonth());
+  const next = keys.find((k) => k >= now);
+  return fromKey(next != null ? next : keys[keys.length - 1]);
+}
+// 예약이 있는 이전/다음 달로만 이동
+function bkStepMonth(dir) {
+  if (!bkMonth) return;
+  const keys = bkMonthKeys();
+  const cur = mKey(bkMonth.y, bkMonth.m);
+  const target = dir < 0 ? keys.filter((k) => k < cur).pop() : keys.find((k) => k > cur);
+  if (target == null) return;
+  bkMonth = fromKey(target);
+  render();
+}
+
 function render() {
   const counts = { 전체: allBookings.length, 신규: 0, 확정: 0, 미입금: 0, 취소: 0 };
   allBookings.forEach((b) => {
@@ -199,25 +238,31 @@ function render() {
   if ($('c_unpaid')) $('c_unpaid').textContent = counts['미입금'];
   if ($('c_cancel')) $('c_cancel').textContent = counts['취소'];
 
-  if (!bkMonth) { const t = new Date(); bkMonth = { y: t.getFullYear(), m: t.getMonth() }; }
-  const term = bkSearchTerm.toLowerCase();
-  const searching = !!term;
+  if (!bkMonth) {
+    const t = new Date();
+    bkMonth = { y: t.getFullYear(), m: t.getMonth() };
+    const near = bkNearestMonth(); // 이번 달에 예약이 없으면 가장 가까운 달로
+    if (near && !bkFiltered().some((b) => { const d = wDate(b); return d && d.getFullYear() === bkMonth.y && d.getMonth() === bkMonth.m; })) bkMonth = near;
+  }
+  const searching = !!bkSearchTerm;
 
-  let rows = allBookings.filter((b) => {
-    if (filter !== '전체' && b.status !== filter) return false;
-    if (!term) return true;
-    return [b.contractor_name, b.wedding_venue, b.contractor_phone, b.groom_name, b.bride_name]
-      .some((v) => (v || '').toLowerCase().includes(term));
-  });
+  let rows = bkFiltered();
 
   if (searching) {
     if ($('bkMonthNav')) $('bkMonthNav').hidden = true;
     rows.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   } else {
     if ($('bkMonthNav')) $('bkMonthNav').hidden = false;
+    const totalAll = rows.filter((b) => wDate(b)).length;
     rows = rows.filter((b) => { const d = wDate(b); return d && d.getFullYear() === bkMonth.y && d.getMonth() === bkMonth.m; });
     rows.sort((a, b) => (wDate(a) - wDate(b)) || (a.wedding_time || '').localeCompare(b.wedding_time || ''));
-    if ($('bkMonthLabel')) $('bkMonthLabel').textContent = `${bkMonth.y}년 ${bkMonth.m + 1}월 · ${rows.length}건`;
+    const other = totalAll - rows.length;
+    if ($('bkMonthLabel')) $('bkMonthLabel').textContent =
+      `${bkMonth.y}년 ${bkMonth.m + 1}월 · ${rows.length}건` + (other > 0 ? ` (다른 달 ${other}건)` : '');
+    const keys = bkMonthKeys();
+    const cur = mKey(bkMonth.y, bkMonth.m);
+    if ($('bkPrev')) $('bkPrev').disabled = !keys.some((k) => k < cur);
+    if ($('bkNext')) $('bkNext').disabled = !keys.some((k) => k > cur);
   }
   $('emptyMsg').hidden = rows.length > 0;
 
@@ -245,6 +290,8 @@ $('filters').addEventListener('click', (e) => {
   if (!btn) return;
   filter = btn.dataset.f;
   document.querySelectorAll('.filter').forEach((f) => f.classList.toggle('active', f === btn));
+  const near = bkNearestMonth(); // 오늘 기준 가장 가까운 해당 예약이 있는 달로 이동
+  if (near) bkMonth = near;
   render();
 });
 
@@ -252,8 +299,8 @@ if ($('bkSearch')) {
   $('bkSearch').addEventListener('input', (e) => { bkSearchTerm = e.target.value.trim(); render(); });
 }
 if ($('bkPrev')) {
-  $('bkPrev').addEventListener('click', () => { if (!bkMonth) return; bkMonth.m--; if (bkMonth.m < 0) { bkMonth.m = 11; bkMonth.y--; } render(); });
-  $('bkNext').addEventListener('click', () => { if (!bkMonth) return; bkMonth.m++; if (bkMonth.m > 11) { bkMonth.m = 0; bkMonth.y++; } render(); });
+  $('bkPrev').addEventListener('click', () => bkStepMonth(-1));
+  $('bkNext').addEventListener('click', () => bkStepMonth(1));
 }
 
 /* ===== Detail modal ===== */
