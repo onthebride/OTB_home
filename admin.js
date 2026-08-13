@@ -189,11 +189,27 @@ function populateAssigneeSelects() {
 }
 
 /* ===== 예약 목록 필터 · 월 이동 헬퍼 ===== */
+// 계약금 입금확인 후 이 시간(72h) 동안은 '신규' 목록에 계속 보여줌 — 입금 즉시 사라져 놓치는 것 방지
+const NEW_GRACE_MS = 3 * 24 * 60 * 60 * 1000;
+// 입금확인 시각: deposit_paid_at(정식) → 없으면 입금확인 알림톡(F) 발송시각으로 대체
+function depositPaidAt(b) {
+  const t = b.deposit_paid_at || (b.alimtalk_sent && b.alimtalk_sent.F);
+  const ms = t ? Date.parse(t) : NaN;
+  return Number.isNaN(ms) ? null : ms;
+}
+// '신규' 필터 대상: 신규 + 최근 3일 내 입금확인된 확정 건
+function isNewish(b) {
+  if (b.status === '신규') return true;
+  if (b.status !== '확정' || !b.deposit_paid) return false;
+  const ms = depositPaidAt(b);
+  return ms != null && Date.now() - ms < NEW_GRACE_MS;
+}
 // 현재 필터·검색어에 해당하는 예약 (월 제한 없음)
 function bkFiltered() {
   const term = bkSearchTerm.toLowerCase();
   return allBookings.filter((b) => {
-    if (filter !== '전체' && b.status !== filter) return false;
+    if (filter === '신규') { if (!isNewish(b)) return false; }
+    else if (filter !== '전체' && b.status !== filter) return false;
     if (!term) return true;
     return [b.contractor_name, b.wedding_venue, b.contractor_phone, b.groom_name, b.bride_name]
       .some((v) => (v || '').toLowerCase().includes(term));
@@ -231,6 +247,7 @@ function render() {
   const counts = { 전체: allBookings.length, 신규: 0, 확정: 0, 미입금: 0, 취소: 0 };
   allBookings.forEach((b) => {
     if (counts[b.status] != null) counts[b.status]++;
+    if (b.status !== '신규' && isNewish(b)) counts['신규']++;  // 입금확인 3일 유예분
   });
   $('c_all').textContent = counts['전체'];
   $('c_new').textContent = counts['신규'];
@@ -275,7 +292,7 @@ function render() {
         <td data-label="예식장">${esc(b.wedding_venue || '-')}</td>
         <td data-label="작가">${esc(staffName(b.assignee_id) || '-')}</td>
         <td data-label="옵션">${opts.length ? opts.map((o) => `<span class="bk-opt">${esc(o)}</span>`).join('') : '<span class="muted">-</span>'}</td>
-        <td data-label="상태"><span class="badge ${esc(b.status)}">${esc(b.status)}</span></td>
+        <td data-label="상태"><span class="badge ${esc(b.status)}">${esc(b.status)}</span>${b.status !== '신규' && isNewish(b) ? ' <span class="bk-fresh">입금확인</span>' : ''}</td>
       </tr>`;
     })
     .join('');
