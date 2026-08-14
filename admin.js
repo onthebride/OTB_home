@@ -84,6 +84,7 @@ const showDash = (email) => {
   $('loginView').hidden = true;
   $('dashView').hidden = false;
   $('dashUser').textContent = email || '';
+  syncHeadHeight();  // 숨김 상태에선 높이가 0이라 표시 직후 다시 실측
   loadBookings();
   initPush();
 };
@@ -2146,6 +2147,20 @@ if (schedTabs) {
   });
 }
 
+/* 탭바 고정: 헤더 높이를 실측해 --headh 로 넘김(버튼 줄바꿈·모바일 대응) */
+function syncHeadHeight() {
+  const head = document.querySelector('.dash-head');
+  if (!head || !head.offsetHeight) return;
+  document.documentElement.style.setProperty('--headh', head.offsetHeight + 'px');
+}
+window.addEventListener('resize', syncHeadHeight);
+window.addEventListener('load', syncHeadHeight);
+if (window.ResizeObserver) {
+  const h = document.querySelector('.dash-head');
+  if (h) new ResizeObserver(syncHeadHeight).observe(h);
+}
+syncHeadHeight();
+
 const dashTabs = document.querySelector('.dash-tabs');
 if (dashTabs) {
   dashTabs.addEventListener('click', (e) => {
@@ -2162,6 +2177,9 @@ if (dashTabs) {
     if (tab === 'calendar') { renderCalendar(); renderSchedule(); }
     if (tab === 'events') loadEvents();
     if (tab === 'settings') showSubtab(currentSubtab);
+    const headH = document.querySelector('.dash-head');
+    const y = dashTabs.getBoundingClientRect().top + window.scrollY - (headH ? headH.offsetHeight : 0);
+    if (window.scrollY > y) window.scrollTo({ top: y });
   });
 }
 
