@@ -43,9 +43,9 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .dash-body { max-width: 1100px; margin: 0 auto; padding: 28px 28px 80px; }
 .dash-foot { text-align: center; color: var(--ink-soft); font-size: .75rem; letter-spacing: .15em; padding: 28px 0 40px; }
 
-/* Tabs — 헤더 바로 아래 고정(스크롤해도 항상 보이게). --headh 는 admin.js가 헤더 실측해 넣음 */
-.dash-tabs { display: flex; gap: 8px; margin-bottom: 22px; border-bottom: 1px solid var(--line);
-  position: sticky; top: var(--headh, 79px); z-index: 9; background: var(--cream); padding-top: 6px; }
+/* Tabs — 헤더에 딱 붙여 고정(위아래 여백 없이). --headh 는 admin.js가 헤더 실측해 넣음 */
+.dash-tabwrap { position: sticky; top: var(--headh, 79px); z-index: 9; background: var(--cream); border-bottom: 1px solid var(--line); }
+.dash-tabs { display: flex; gap: 8px; max-width: 1100px; margin: 0 auto; padding: 0 28px; }
 .dtab { background: none; border: none; padding: 12px 20px; cursor: pointer; font-family: var(--sans); font-size: .98rem; color: var(--ink-soft); border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .dtab:hover { color: var(--ink); }
 .dtab.active { color: var(--gold-deep); border-bottom-color: var(--gold-deep); font-weight: 500; }
@@ -252,7 +252,7 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
   .btn-ghost { padding: 7px 12px; font-size: .85rem; }
 
   /* 탭: 스크롤 없이 한 줄에 균등 배치 */
-  .dash-tabs { gap: 0; overflow: visible; flex-wrap: nowrap; padding-top: 4px; }
+  .dash-tabs { gap: 0; overflow: visible; flex-wrap: nowrap; padding: 0 6px; }
   .dtab { flex: 1 1 0; min-width: 0; padding: 11px 2px; font-size: .82rem; white-space: nowrap; text-align: center; }
   .sched-tabs { flex-wrap: nowrap; }
 

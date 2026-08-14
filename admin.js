@@ -2177,9 +2177,7 @@ if (dashTabs) {
     if (tab === 'calendar') { renderCalendar(); renderSchedule(); }
     if (tab === 'events') loadEvents();
     if (tab === 'settings') showSubtab(currentSubtab);
-    const headH = document.querySelector('.dash-head');
-    const y = dashTabs.getBoundingClientRect().top + window.scrollY - (headH ? headH.offsetHeight : 0);
-    if (window.scrollY > y) window.scrollTo({ top: y });
+    if (window.scrollY > 0) window.scrollTo({ top: 0 });  // 새 탭 내용을 처음부터 보이게
   });
 }
 
