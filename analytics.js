@@ -71,17 +71,53 @@
     }
   } catch (_) {}
 
-  try {
-    fetch(cfg.SUPABASE_URL + '/rest/v1/rpc/log_pageview', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', apikey: cfg.SUPABASE_KEY, Authorization: 'Bearer ' + cfg.SUPABASE_KEY },
-      body: JSON.stringify({
-        p_path: location.pathname,
-        p_ref: ref,
-        p_mobile: window.innerWidth <= 860,
-        p_sid: sid,
-      }),
-      keepalive: true,
-    }).catch(function () {});
-  } catch (_) {}
+  function send(path) {
+    try {
+      fetch(cfg.SUPABASE_URL + '/rest/v1/rpc/log_pageview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: cfg.SUPABASE_KEY, Authorization: 'Bearer ' + cfg.SUPABASE_KEY },
+        body: JSON.stringify({
+          p_path: path,
+          p_ref: ref,
+          p_mobile: window.innerWidth <= 860,
+          p_sid: sid,
+        }),
+        keepalive: true,
+      }).catch(function () {});
+    } catch (_) {}
+  }
+
+  send(location.pathname);
+
+  /* 홈은 한 페이지에 소개·갤러리·가격·이벤트·문의·예약이 모두 들어 있어
+     경로만 보면 전부 '/' 로만 잡힌다. 그래서 화면에 실제로 머문 구역을 따로 기록한다.
+     - 구역이 절반 이상 보이는 상태가 1.5초 이상 이어질 때만 (스크롤로 스쳐 지나간 건 제외)
+     - 한 번 방문에 구역당 한 번만 */
+  if (window.IntersectionObserver) {
+    var seen = {}, timers = {};
+    var secs = document.querySelectorAll('section[id]');
+    if (secs.length) {
+      var io = new window.IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          var id = e.target.id;
+          if (!id || seen[id]) return;
+          if (e.isIntersecting && e.intersectionRatio >= 0.5) {
+            if (!timers[id]) timers[id] = setTimeout(function () {
+              seen[id] = 1; timers[id] = null;
+              send(location.pathname + '#' + id);
+            }, 1500);
+          } else if (timers[id]) {
+            clearTimeout(timers[id]); timers[id] = null;
+          }
+        });
+      }, { threshold: [0.5] });
+      Array.prototype.forEach.call(secs, function (s) { io.observe(s); });
+    }
+    // 예약신청 시작 버튼 — 가장 중요한 반응이라 따로 센다
+    var bs = document.getElementById('bookingStart');
+    if (bs) bs.addEventListener('click', function () {
+      if (seen['__bk']) return; seen['__bk'] = 1;
+      send(location.pathname + '#booking-start');
+    }, { once: false });
+  }
 })();

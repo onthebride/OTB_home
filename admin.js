@@ -2200,8 +2200,10 @@ function refLabel(r) {
   for (const [re, nm] of REF_NAMES) if (re.test(r)) return nm + ' (' + r + ')';
   return r;
 }
+const HOME_SECTIONS = { about: '소개 · 이야기', gallery: '갤러리', pricing: '상품 가격', event: '이벤트', contact: '문의하기', booking: '예약신청', 'booking-start': '예약신청 시작 버튼 ⭐' };
 function pathLabel(p) {
-  if (p === '/' || p === '') return '홈';
+  if (p === '/' || p === '') return '홈 (첫 화면)';
+  if (p.startsWith('/#')) { const k = p.slice(2); return '홈 · ' + (HOME_SECTIONS[k] || k); }
   if (p === '/blog') return '블로그 목록';
   if (p.startsWith('/blog/posts/')) return '블로그 글 · ' + p.replace('/blog/posts/', '');
   if (p === '/rules') return '규정 안내';
