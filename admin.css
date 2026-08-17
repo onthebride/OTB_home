@@ -706,10 +706,12 @@ td .muted { color: var(--ink-soft); }
 .st-card strong { font-size: 1.55rem; font-weight: 700; line-height: 1.2; }
 .st-card .st-sub { font-size: .74rem; color: var(--ink-soft); }
 
-.st-chart { display: flex; align-items: flex-end; gap: 3px; height: 150px; padding-top: 8px; }
-.st-bar-col { flex: 1 1 0; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; }
+.st-chart-card { margin-bottom: 16px; }
+.st-chart { display: flex; align-items: flex-end; gap: 3px; height: 150px; padding: 8px 16px 0; }
+.st-bar-col { position: relative; flex: 1 1 0; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 16px; }
 .st-bar-fill { width: 100%; max-width: 26px; min-height: 2px; background: var(--gold); border-radius: 3px 3px 0 0; }
-.st-bar-lbl { font-size: .62rem; color: var(--ink-soft); white-space: nowrap; overflow: hidden; }
+/* 라벨은 절대배치 — 막대 폭이 좁아도 칸을 넓히지 않아 겹치거나 카드 밖으로 나가지 않는다 */
+.st-bar-lbl { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-size: .62rem; color: var(--ink-soft); white-space: nowrap; }
 
 .st-two { align-items: flex-start; }
 .st-two .dash-card { flex: 1; min-width: 0; }
@@ -724,6 +726,6 @@ td .muted { color: var(--ink-soft); }
   .st-card strong { font-size: 1.3rem; }
   .st-links { margin-left: 0; width: 100%; }
   .st-two { flex-direction: column; }
-  .st-chart { height: 120px; }
-  .st-bar-lbl { display: none; }
+  .st-chart { height: 120px; padding: 8px 10px 0; }
+  .st-bar-lbl { font-size: .56rem; }
 }

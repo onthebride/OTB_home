@@ -2223,12 +2223,15 @@ async function renderStats() {
   const d = data;
   const daily = Array.isArray(d.daily) ? d.daily : [];
   const max = daily.reduce((m, x) => Math.max(m, Number(x.views) || 0), 0) || 1;
-  const bars = daily.map((x) => {
+  // 날짜 라벨은 최대 10개만 (30·90일에서 글자가 겹치지 않게). 오늘이 항상 표시되도록 뒤에서부터 센다.
+  const step = Math.max(1, Math.ceil(daily.length / 10));
+  const bars = daily.map((x, i) => {
     const v = Number(x.views) || 0;
     const md = String(x.d).slice(5).replace('-', '.');
+    const showLbl = (daily.length - 1 - i) % step === 0;
     return '<div class="st-bar-col" title="' + esc(md + ' · 방문 ' + stNum(x.visits) + ' · 페이지뷰 ' + stNum(v)) + '">'
       + '<div class="st-bar-fill" style="height:' + Math.round((v / max) * 100) + '%"></div>'
-      + '<span class="st-bar-lbl">' + esc(md) + '</span></div>';
+      + (showLbl ? '<span class="st-bar-lbl">' + esc(md) + '</span>' : '') + '</div>';
   }).join('');
 
   const list = (rows, keyFn, valFn, empty) => rows && rows.length
@@ -2247,8 +2250,8 @@ async function renderStats() {
     + '<div class="st-card"><span class="st-k">최근 ' + d.days + '일</span><strong>' + stNum(d.range.visits) + '</strong><span class="st-sub">방문 · 페이지뷰 ' + stNum(d.range.views) + '</span></div>'
     + '<div class="st-card"><span class="st-k">모바일</span><strong>' + stNum(d.mobile_pct) + '%</strong><span class="st-sub">휴대폰으로 본 비율</span></div>'
     + '</div>'
-    + '<div class="dash-card"><div class="dash-card-head"><h3>📈 일자별 <small>(막대 = 페이지뷰)</small></h3></div>'
-    + '<div class="st-chart">' + bars + '</div></div>'
+    + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>📈 일자별 <small>(막대 = 페이지뷰)</small></h3></div>'
+    + '<div class="st-chart" style="gap:' + (daily.length > 45 ? 1 : 3) + 'px">' + bars + '</div></div>'
     + '<div class="dash-cards st-two">'
     + '<div class="dash-card"><div class="dash-card-head"><h3>📄 많이 본 페이지</h3></div>'
     + list(d.pages, (r) => pathLabel(r.path), (r) => r.views, '아직 기록이 없습니다.') + '</div>'
