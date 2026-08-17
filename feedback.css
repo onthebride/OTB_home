@@ -20,7 +20,6 @@
 
 .fb-issue { margin-top: 14px; }
 
-.fb-privacy { margin-top: 14px; text-align: left; line-height: 1.6; }
 .fb-status { margin-top: 12px; font-size: .9rem; min-height: 1.2em; color: var(--ink-soft); }
 .fb-status.err { color: #c0392b; }
 .fb-thanks-sub { margin-top: 10px; color: var(--ink-soft); font-size: .9rem; }
