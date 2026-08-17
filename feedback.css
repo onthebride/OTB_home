@@ -1,0 +1,31 @@
+/* ===== 촬영 후 설문 — survey.css 위에 얹는 최소 스타일 ===== */
+
+.fb-sub { font-size: .88rem; margin-top: 4px; }
+.fb-req { color: var(--gold-deep); font-style: normal; }
+
+/* 별점 */
+.fb-stars { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
+.fb-star-row { display: inline-flex; gap: 2px; }
+.fb-star {
+  background: none; border: none; cursor: pointer; padding: 4px 6px; line-height: 1;
+  font-size: 2.1rem; color: #e0d8cc; transition: color .12s, transform .12s;
+}
+.fb-star:hover { transform: translateY(-2px); }
+.fb-star.on { color: var(--gold); }
+.fb-star-txt { font-size: .88rem; color: var(--gold-deep); min-height: 1.2em; }
+
+/* 빠뜨린 항목 표시 */
+.fb-stars.miss .fb-star-row,
+.sv-choices.miss { outline: 1px solid #d9a79a; outline-offset: 6px; border-radius: 8px; }
+
+.fb-issue { margin-top: 14px; }
+
+.fb-privacy { margin-top: 14px; text-align: left; line-height: 1.6; }
+.fb-status { margin-top: 12px; font-size: .9rem; min-height: 1.2em; color: var(--ink-soft); }
+.fb-status.err { color: #c0392b; }
+.fb-thanks-sub { margin-top: 10px; color: var(--ink-soft); font-size: .9rem; }
+
+@media (max-width: 600px) {
+  .fb-star { font-size: 1.9rem; padding: 4px 4px; }
+  .fb-star-txt { width: 100%; }
+}

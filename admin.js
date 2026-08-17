@@ -33,7 +33,7 @@ let dayOvKey = null; // 캘린더 날짜 팝업 열린 날 {y, m, d}
 let unpaidTab = 'deposit'; // 미입금 탭: deposit | balance
 let allStaff = [];
 let staffMap = {};
-const ATK_TPLS = [['A', '계약안내'], ['B', '한달 전'], ['C', '잔금안내'], ['D', '최종안내'], ['E', '링크안내'], ['F', '입금확인']];
+const ATK_TPLS = [['A', '계약안내'], ['B', '한달 전'], ['C', '잔금안내'], ['D', '최종안내'], ['E', '링크안내'], ['F', '입금확인'], ['G', '촬영설문']];
 const notCancelled = (b) => b.status !== '취소';
 const phBadge = (b) =>
   (b.rep_designation ? ' <span class="ph-badge rep">대표지정</span>' : '')
@@ -1323,7 +1323,7 @@ function toast(msg) {
 }
 
 // 알림톡 실제 발송 (솔라피)
-const ATK_NAME = { A: '계약안내', B: '한달전', C: '잔금안내', D: '최종안내', E: '링크안내', F: '입금확인' };
+const ATK_NAME = { A: '계약안내', B: '한달전', C: '잔금안내', D: '최종안내', E: '링크안내', F: '입금확인', G: '촬영설문' };
 async function sendAlimtalk(id, tpl) {
   const b = allBookings.find((x) => x.id === id);
   if (!confirm(`${b ? b.contractor_name + '님께 ' : ''}"${ATK_NAME[tpl] || tpl}" 알림톡을 실제로 발송할까요?`)) return;
@@ -1349,7 +1349,7 @@ function copySurveyShare(id) {
   toast(surveyIds.has(id) ? '작가 공유용 설문 링크를 복사했어요 📋 (날짜·성함 포함)' : '설문 링크 복사 — 아직 고객이 설문 미작성 상태예요');
 }
 
-const ATK_FAIL_NAME = { A: '계약안내', B: '한달전', C: '일주일전·잔금', D: '전날', E: '촬영본 안내', F: '입금확인' };
+const ATK_FAIL_NAME = { A: '계약안내', B: '한달전', C: '일주일전·잔금', D: '전날', E: '촬영본 안내', F: '입금확인', G: '촬영 설문' };
 const ATK_FAILCODE = { '3101': '발신프로필 오류', '3102': '카카오채널 친구 아님', '3103': '템플릿 불일치', '3104': '카카오톡 미사용자(번호 오류 등)', '3105': '미등록 템플릿', '3106': '메시지 타입 오류', '3107': '비활성/수신차단', '3108': '발송가능시간 외(08~20시)' };
 const atkFailReason = (code) => (code ? (ATK_FAILCODE[code] || ('전달실패 코드 ' + code)) : '전달 실패');
 const ATK_STATUS = (s) => ({
@@ -2273,6 +2273,84 @@ if (stRange) {
     stRange.querySelectorAll('button').forEach((x) => x.classList.toggle('active', x === b));
     statsLoaded = false;
     renderStats();
+  });
+}
+
+
+/* ===== 작가 평가 (촬영 후 설문) =====
+   응답은 대표만 열람. 작가에게 자동으로 가지 않으며, 필요할 때 [공유] 로 대표가 직접 보낸다. */
+const ARRIVAL_TXT = { ontime: '제시간', late_small: '조금 늦음', late_big: '많이 늦음' };
+const stars = (n) => '★★★★★'.slice(0, Number(n) || 0) + '☆☆☆☆☆'.slice(0, 5 - (Number(n) || 0));
+const avg1 = (v) => (v == null ? '-' : Number(v).toFixed(1));
+
+async function renderFeedback() {
+  const wrap = $('fbBody');
+  if (!wrap) return;
+  const [fr, pr] = await Promise.all([sb.rpc('admin_feedback', { p_days: 365 }), sb.rpc('admin_feedback_pending')]);
+  if (fr.error) { wrap.innerHTML = '<p class="empty">불러오지 못했습니다. (' + esc(fr.error.message) + ')</p>'; return; }
+  const d = fr.data || {};
+  const staff = Array.isArray(d.staff) ? d.staff : [];
+  const items = Array.isArray(d.items) ? d.items : [];
+  const pend = Array.isArray(pr.data) ? pr.data.filter((x) => !x.done) : [];
+
+  const staffRows = staff.length ? staff.map((s) => `
+    <div class="fb-srow">
+      <span class="fb-sname">${esc(s.staff_name)}</span>
+      <span class="fb-sscore">${stars(Math.round(s.avg_overall))} <b>${avg1(s.avg_overall)}</b></span>
+      <span class="fb-sdetail">친절 ${avg1(s.avg_kindness)} · 요청 ${avg1(s.avg_requests)} · 진행 ${avg1(s.avg_flow)}</span>
+      <span class="fb-sn">${s.n}건${Number(s.late_n) ? ' · 지각 ' + s.late_n : ''}${Number(s.issue_n) ? ' · 불편 ' + s.issue_n : ''}</span>
+    </div>`).join('') : '<p class="empty">아직 응답이 없습니다.</p>';
+
+  const itemRows = items.length ? items.map((x) => {
+    const dt = String(x.created_at).slice(0, 10).replace(/-/g, '.');
+    const low = Number(x.overall) <= 3;
+    return `
+    <div class="fb-item${low ? ' low' : ''}" data-id="${esc(x.booking_id)}">
+      <div class="fb-ihead">
+        <span class="fb-istar">${stars(x.overall)} <b>${x.overall}</b></span>
+        <span class="fb-iwho">${esc(x.staff_name)} · ${esc(x.contractor_name || '-')}</span>
+        <span class="fb-idate">${esc(dt)}</span>
+      </div>
+      <div class="fb-imeta">도착 ${esc(ARRIVAL_TXT[x.arrival] || x.arrival)} · 친절 ${x.kindness} · 요청 ${x.requests} · 진행 ${x.flow}</div>
+      ${x.issue && x.issue_text ? '<div class="fb-iissue">⚠️ ' + esc(x.issue_text) + '</div>' : (x.issue ? '<div class="fb-iissue">⚠️ 불편했던 점 있음(내용 미작성)</div>' : '')}
+      ${x.message ? '<div class="fb-imsg">💬 ' + esc(x.message) + '</div>' : ''}
+      ${x.message || x.issue_text ? '<button class="btn-sm fb-share" data-id="' + esc(x.booking_id) + '">작가에게 공유</button>' : ''}
+    </div>`;
+  }).join('') : '<p class="empty">아직 응답이 없습니다.</p>';
+
+  wrap.innerHTML =
+    '<div class="st-cards fb-top">'
+    + '<div class="st-card"><span class="st-k">응답</span><strong>' + (d.count || 0) + '</strong><span class="st-sub">최근 1년</span></div>'
+    + '<div class="st-card"><span class="st-k">전체 평균</span><strong>' + avg1(d.avg_overall) + '</strong><span class="st-sub">5점 만점</span></div>'
+    + '<div class="st-card"><span class="st-k">설문 안 온 예식</span><strong>' + pend.length + '</strong><span class="st-sub">최근 60일 · 미응답</span></div>'
+    + '</div>'
+    + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>👤 작가별 <small>(평균 높은 순)</small></h3></div>' + staffRows + '</div>'
+    + '<div class="dash-card"><div class="dash-card-head"><h3>💬 받은 응답 <small>(최근순)</small></h3></div><div class="fb-list">' + itemRows + '</div></div>'
+    + '<p class="st-note">응답은 대표님만 보십니다. 손님에게도 "작가에게 자동 전달되지 않는다"고 안내했습니다. [작가에게 공유]를 누르면 작성자 이름을 뺀 내용이 복사되어, 카톡에 붙여넣어 보내실 수 있습니다.</p>';
+
+  wrap.querySelectorAll('.fb-share').forEach((b) => b.addEventListener('click', () => {
+    const it = items.find((x) => x.booking_id === b.dataset.id);
+    if (!it) return;
+    const txt = ['[촬영 후 설문]',
+      '전체 ' + it.overall + '점 · 친절 ' + it.kindness + ' · 요청 ' + it.requests + ' · 진행 ' + it.flow,
+      it.issue && it.issue_text ? '아쉬운 점: ' + it.issue_text : '',
+      it.message ? '한마디: ' + it.message : ''].filter(Boolean).join(String.fromCharCode(10));
+    navigator.clipboard?.writeText(txt);
+    toast('복사됐습니다 · 카톡에 붙여넣어 보내세요');
+  }));
+}
+
+const stSubtabs = document.querySelector('.st-subtabs');
+if (stSubtabs) {
+  stSubtabs.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-sttab]');
+    if (!b) return;
+    stSubtabs.querySelectorAll('button').forEach((x) => x.classList.toggle('active', x === b));
+    const isFb = b.dataset.sttab === 'feedback';
+    $('statsBody').hidden = isFb;
+    $('fbBody').hidden = !isFb;
+    document.querySelector('.st-bar').hidden = isFb;   // 기간 버튼은 방문 통계 전용
+    if (isFb) renderFeedback();
   });
 }
 

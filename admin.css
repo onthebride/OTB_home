@@ -730,3 +730,33 @@ td .muted { color: var(--ink-soft); }
   .st-bar-lbl { font-size: .56rem; }
   .st-bar-lbl.alt { display: none; }  /* 좁은 화면에선 라벨을 절반만 */
 }
+
+/* ===== 작가 평가 (촬영 후 설문) ===== */
+.st-subtabs { margin-bottom: 16px; }
+.fb-top { margin-bottom: 16px; }
+
+.fb-srow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.fb-srow:last-child { border-bottom: none; }
+.fb-sname { font-weight: 700; min-width: 68px; }
+.fb-sscore { color: var(--gold); letter-spacing: 1px; }
+.fb-sscore b { color: var(--ink); margin-left: 4px; letter-spacing: 0; }
+.fb-sdetail { font-size: .82rem; color: var(--ink-soft); }
+.fb-sn { font-size: .78rem; color: var(--ink-soft); margin-left: auto; white-space: nowrap; }
+
+.fb-list { display: flex; flex-direction: column; gap: 10px; max-height: 620px; overflow-y: auto; }
+.fb-item { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; background: #fff; }
+.fb-item.low { border-color: #d9b3aa; background: #fcf3f1; }
+.fb-ihead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.fb-istar { color: var(--gold); letter-spacing: 1px; }
+.fb-istar b { color: var(--ink); margin-left: 3px; letter-spacing: 0; }
+.fb-iwho { font-weight: 600; font-size: .9rem; }
+.fb-idate { margin-left: auto; font-size: .78rem; color: var(--ink-soft); }
+.fb-imeta { font-size: .8rem; color: var(--ink-soft); margin-top: 5px; }
+.fb-iissue { margin-top: 8px; font-size: .88rem; color: #b5462f; line-height: 1.6; }
+.fb-imsg { margin-top: 8px; font-size: .88rem; line-height: 1.6; }
+.fb-share { margin-top: 10px; }
+
+@media (max-width: 600px) {
+  .fb-sn { margin-left: 0; width: 100%; }
+  .fb-idate { margin-left: 0; width: 100%; }
+}
