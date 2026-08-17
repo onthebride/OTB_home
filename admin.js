@@ -2225,13 +2225,14 @@ async function renderStats() {
   const max = daily.reduce((m, x) => Math.max(m, Number(x.views) || 0), 0) || 1;
   // 날짜 라벨은 최대 10개만 (30·90일에서 글자가 겹치지 않게). 오늘이 항상 표시되도록 뒤에서부터 센다.
   const step = Math.max(1, Math.ceil(daily.length / 10));
+  let lblSeq = 0;  // 표시되는 라벨의 순번 — 짝수번째만 모바일에 남긴다
   const bars = daily.map((x, i) => {
     const v = Number(x.views) || 0;
-    const md = String(x.d).slice(5).replace('-', '.');
+    const md = String(x.d).slice(0, 10).slice(5).replace('-', '.');  // 'YYYY-MM-DD...' → 'MM.DD'
     const showLbl = (daily.length - 1 - i) % step === 0;
     return '<div class="st-bar-col" title="' + esc(md + ' · 방문 ' + stNum(x.visits) + ' · 페이지뷰 ' + stNum(v)) + '">'
       + '<div class="st-bar-fill" style="height:' + Math.round((v / max) * 100) + '%"></div>'
-      + (showLbl ? '<span class="st-bar-lbl">' + esc(md) + '</span>' : '') + '</div>';
+      + (showLbl ? '<span class="st-bar-lbl' + (lblSeq++ % 2 ? ' alt' : '') + '">' + esc(md) + '</span>' : '') + '</div>';
   }).join('');
 
   const list = (rows, keyFn, valFn, empty) => rows && rows.length

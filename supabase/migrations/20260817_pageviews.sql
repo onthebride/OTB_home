@@ -66,7 +66,7 @@ begin
     'mobile_pct', coalesce((select round(100.0 * count(*) filter (where mobile) / nullif(count(*), 0)) from v), 0),
     -- 일자별 (기록 없는 날도 0으로 채워 그래프가 끊기지 않게)
     'daily', coalesce((
-      select jsonb_agg(jsonb_build_object('d', g.day, 'visits', x.visits, 'views', x.views) order by g.day)
+      select jsonb_agg(jsonb_build_object('d', g.day::date, 'visits', x.visits, 'views', x.views) order by g.day)
       from generate_series(kst_today - (n_days - 1), kst_today, '1 day') as g(day)
       left join lateral (
         select count(distinct s) as visits, count(*) as views from v where v.vday = g.day
