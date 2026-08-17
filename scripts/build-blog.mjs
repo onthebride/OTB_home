@@ -56,10 +56,6 @@ function fmtDateK(iso) {
   const wd = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
   return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${wd})`;
 }
-function readingTime(mdBody) {
-  const chars = stripMd(mdBody).replace(/\s+/g, '').length;
-  return Math.max(1, Math.round(chars / 500)); // 한국어 대략 분당 500자
-}
 
 // ---- 프론트매터 파서 (간단 key: value, faq는 본문에서 추출) --------
 function parseFront(raw) {
@@ -290,7 +286,6 @@ ${siteHeader('blog')}
         <h1>${esc(post.title)}</h1>
         <p class="post-meta">
           <time datetime="${attr(post.date)}">${fmtDateK(post.date)}</time>
-          <span>·</span><span>${post.readingTime}분 읽기</span>
           ${post.updated && post.updated !== post.date ? `<span>·</span><span>${fmtDateK(post.updated)} 업데이트</span>` : ''}
         </p>
       </header>
@@ -335,7 +330,7 @@ function renderIndex(posts) {
             ${(p.tags && p.tags[0]) ? `<span class="bc-tag">#${esc(p.tags[0])}</span>` : ''}
             <span class="bc-title">${esc(p.title)}</span>
             <span class="bc-desc">${esc(p.description)}</span>
-            <span class="bc-date"><time datetime="${attr(p.date)}">${fmtDateK(p.date)}</time> · ${p.readingTime}분</span>
+            <span class="bc-date"><time datetime="${attr(p.date)}">${fmtDateK(p.date)}</time></span>
           </span>
         </a>
       </li>`).join('');
@@ -412,7 +407,6 @@ function build() {
       venue: meta.venue || '',
       grid: (meta.grid || '').split(',').map((s) => s.trim()).filter(Boolean),
       tags: meta.tags || [],
-      readingTime: readingTime(body),
       rendered,
     });
   }
@@ -428,6 +422,9 @@ function build() {
   // sitemap.xml
   const urls = [
     { loc: SITE.origin + '/', pri: '1.0' },
+    // 블로그 밖 정적 페이지. 이 스크립트가 sitemap.xml 을 통째로 덮어쓰므로 여기 없으면 재빌드 때 사라짐.
+    // ※ /rules 는 검색 비노출(noindex) 정책이라 일부러 넣지 않음.
+    { loc: SITE.origin + '/privacy', pri: '0.3', lastmod: '2026-08-10' },
     { loc: SITE.origin + '/blog', pri: '0.8', lastmod: posts[0] && (posts[0].updated || posts[0].date) },
     ...posts.map((p) => ({ loc: `${SITE.origin}/blog/posts/${p.slug}`, pri: '0.7', lastmod: p.updated || p.date })),
   ];
