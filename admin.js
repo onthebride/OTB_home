@@ -2340,16 +2340,18 @@ async function renderFeedback() {
   }));
 }
 
-const stSubtabs = document.querySelector('.st-subtabs');
-if (stSubtabs) {
-  stSubtabs.addEventListener('click', (e) => {
+const stToggle = $('stToggle');
+if (stToggle) {
+  stToggle.addEventListener('click', (e) => {
     const b = e.target.closest('button[data-sttab]');
     if (!b) return;
-    stSubtabs.querySelectorAll('button').forEach((x) => x.classList.toggle('active', x === b));
     const isFb = b.dataset.sttab === 'feedback';
+    stToggle.querySelectorAll('button').forEach((x) => x.classList.toggle('active', x === b));
+    stToggle.classList.toggle('on', isFb);            // 표시등을 오른쪽으로 밀어줌
     $('statsBody').hidden = isFb;
     $('fbBody').hidden = !isFb;
-    document.querySelector('.st-bar').hidden = isFb;   // 기간 버튼은 방문 통계 전용
+    const bar = document.querySelector('.st-bar');
+    if (bar) bar.hidden = isFb;                       // 기간 버튼·바로가기는 방문 통계 전용
     if (isFb) renderFeedback();
   });
 }
