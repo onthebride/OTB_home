@@ -786,3 +786,13 @@ td .muted { color: var(--ink-soft); }
 @media (max-width: 600px) {
   .fb-prow .fb-copy { margin-left: 0; }
 }
+
+/* 작가 평가 — 기간·작가 필터 */
+.fb-rangebar { display: inline-flex; gap: 5px; margin-left: auto; }
+.fb-rangebar .btn-sm.active { border-color: var(--gold-deep); color: var(--gold-deep); font-weight: 600; }
+.fb-srow { cursor: pointer; border-radius: 6px; transition: background .15s; }
+.fb-srow:hover { background: var(--cream); }
+.fb-srow.on { background: #faf4ea; box-shadow: inset 3px 0 0 var(--gold-deep); }
+.fb-filter { font-size: .84rem; color: var(--ink-soft); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.fb-filter b { color: var(--gold-deep); }
+.fb-pendmore { margin-top: 10px; }

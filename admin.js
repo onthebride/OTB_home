@@ -2282,21 +2282,32 @@ if (stRange) {
 const ARRIVAL_TXT = { ontime: '제시간', late_small: '조금 늦음', late_big: '많이 늦음' };
 const stars = (n) => '★★★★★'.slice(0, Number(n) || 0) + '☆☆☆☆☆'.slice(0, 5 - (Number(n) || 0));
 const avg1 = (v) => (v == null ? '-' : Number(v).toFixed(1));
+let fbDays = 365;        // 응답 조회 기간
+let fbStaff = null;      // 특정 작가만 보기
+let fbPendAll = false;   // '설문 안 온 예식'을 2주 이전까지 펼쳤는지
+const fbRangeLabel = () => (fbDays >= 3650 ? '전체 기간' : fbDays >= 365 ? '최근 1년' : '최근 3개월');
 
 async function renderFeedback() {
   const wrap = $('fbBody');
   if (!wrap) return;
-  const [fr, pr] = await Promise.all([sb.rpc('admin_feedback', { p_days: 365 }), sb.rpc('admin_feedback_pending')]);
+  const [fr, pr] = await Promise.all([sb.rpc('admin_feedback', { p_days: fbDays }), sb.rpc('admin_feedback_pending')]);
   if (fr.error) { wrap.innerHTML = '<p class="empty">불러오지 못했습니다. (' + esc(fr.error.message) + ')</p>'; return; }
   const d = fr.data || {};
   const staff = Array.isArray(d.staff) ? d.staff : [];
-  const items = Array.isArray(d.items) ? d.items : [];
-  const pend = Array.isArray(pr.data) ? pr.data.filter((x) => !x.done) : [];
+  const allItems = Array.isArray(d.items) ? d.items : [];
+  const items = fbStaff ? allItems.filter((x) => x.staff_name === fbStaff) : allItems;
 
-  const pendRows = pend.map((x) => {
-    const d = String(x.wedding_date).slice(0, 10).replace(/-/g, '.');
+  // ── 설문 안 온 예식: 기본은 최근 2주만. 오래된 건 이제 와서 보내기 어색하므로 접어둔다 ──
+  const pendAll = (Array.isArray(pr.data) ? pr.data : []).filter((x) => !x.done);
+  const cut = new Date(); cut.setDate(cut.getDate() - 14);
+  const isRecent = (x) => new Date(String(x.wedding_date).slice(0, 10) + 'T00:00:00') >= cut;
+  const pendShown = fbPendAll ? pendAll : pendAll.filter(isRecent);
+  const pendHidden = pendAll.length - pendShown.length;
+
+  const pendRows = pendShown.map((x) => {
+    const dd = String(x.wedding_date).slice(0, 10).replace(/-/g, '.');
     return '<div class="fb-prow">'
-      + '<span class="fb-pdate">' + esc(d) + '</span>'
+      + '<span class="fb-pdate">' + esc(dd) + '</span>'
       + '<span class="fb-pname">' + esc(x.contractor_name || '-') + '</span>'
       + '<span class="fb-pstaff">' + esc(x.staff_name || '미배정') + '</span>'
       + (x.sent ? '<span class="fb-psent">알림톡 보냄</span>' : '')
@@ -2305,42 +2316,60 @@ async function renderFeedback() {
       + '</div>';
   }).join('');
 
-  const staffRows = staff.length ? staff.map((s) => `
-    <div class="fb-srow">
-      <span class="fb-sname">${esc(s.staff_name)}</span>
-      <span class="fb-sscore">${stars(Math.round(s.avg_overall))} <b>${avg1(s.avg_overall)}</b></span>
-      <span class="fb-sdetail">친절 ${avg1(s.avg_kindness)} · 요청 ${avg1(s.avg_requests)} · 진행 ${avg1(s.avg_flow)}</span>
-      <span class="fb-sn">${s.n}건${Number(s.late_n) ? ' · 지각 ' + s.late_n : ''}${Number(s.issue_n) ? ' · 불편 ' + s.issue_n : ''}</span>
-    </div>`).join('') : '<p class="empty">아직 응답이 없습니다.</p>';
+  const staffRows = staff.length ? staff.map((s) => {
+    const on = fbStaff === s.staff_name;
+    return '<div class="fb-srow' + (on ? ' on' : '') + '" data-staff="' + esc(s.staff_name) + '" title="누르면 이 작가 응답만 보기">'
+      + '<span class="fb-sname">' + esc(s.staff_name) + '</span>'
+      + '<span class="fb-sscore">' + stars(Math.round(s.avg_overall)) + ' <b>' + avg1(s.avg_overall) + '</b></span>'
+      + '<span class="fb-sdetail">친절 ' + avg1(s.avg_kindness) + ' · 요청 ' + avg1(s.avg_requests) + ' · 진행 ' + avg1(s.avg_flow) + '</span>'
+      + '<span class="fb-sn">' + s.n + '건'
+        + (Number(s.late_n) ? ' · 지각 ' + s.late_n : '')
+        + (Number(s.issue_n) ? ' · 불편 ' + s.issue_n : '') + '</span>'
+      + '</div>';
+  }).join('') : '<p class="empty">아직 응답이 없습니다.</p>';
 
   const itemRows = items.length ? items.map((x) => {
     const dt = String(x.created_at).slice(0, 10).replace(/-/g, '.');
+    const wd = x.wedding_date ? String(x.wedding_date).slice(0, 10).replace(/-/g, '.') : '';
     const low = Number(x.overall) <= 3;
-    return `
-    <div class="fb-item${low ? ' low' : ''}" data-id="${esc(x.booking_id)}">
-      <div class="fb-ihead">
-        <span class="fb-istar">${stars(x.overall)} <b>${x.overall}</b></span>
-        <span class="fb-iwho">${esc(x.staff_name)} · ${esc(x.contractor_name || '-')}</span>
-        <span class="fb-idate">${esc(dt)}</span>
-      </div>
-      <div class="fb-imeta">도착 ${esc(ARRIVAL_TXT[x.arrival] || x.arrival)} · 친절 ${x.kindness} · 요청 ${x.requests} · 진행 ${x.flow}</div>
-      ${x.issue && x.issue_text ? '<div class="fb-iissue">⚠️ ' + esc(x.issue_text) + '</div>' : (x.issue ? '<div class="fb-iissue">⚠️ 불편했던 점 있음(내용 미작성)</div>' : '')}
-      ${x.message ? '<div class="fb-imsg">💬 ' + esc(x.message) + '</div>' : ''}
-      ${x.message || x.issue_text ? '<button class="btn-sm fb-share" data-id="' + esc(x.booking_id) + '">작가에게 공유</button>' : ''}
-    </div>`;
-  }).join('') : '<p class="empty">아직 응답이 없습니다.</p>';
+    return '<div class="fb-item' + (low ? ' low' : '') + '" data-id="' + esc(x.booking_id) + '">'
+      + '<div class="fb-ihead">'
+        + '<span class="fb-istar">' + stars(x.overall) + ' <b>' + x.overall + '</b></span>'
+        + '<span class="fb-iwho">' + esc(x.staff_name) + ' · ' + esc(x.contractor_name || '-') + '</span>'
+        + '<span class="fb-idate">' + esc(dt) + ' 응답' + (wd ? ' · 예식 ' + esc(wd) : '') + '</span>'
+      + '</div>'
+      + '<div class="fb-imeta">도착 ' + esc(ARRIVAL_TXT[x.arrival] || x.arrival) + ' · 친절 ' + x.kindness + ' · 요청 ' + x.requests + ' · 진행 ' + x.flow + '</div>'
+      + (x.issue && x.issue_text ? '<div class="fb-iissue">⚠️ ' + esc(x.issue_text) + '</div>'
+         : (x.issue ? '<div class="fb-iissue">⚠️ 불편했던 점 있음(내용 미작성)</div>' : ''))
+      + (x.message ? '<div class="fb-imsg">💬 ' + esc(x.message) + '</div>' : '')
+      + (x.message || x.issue_text ? '<button class="btn-sm fb-share" data-id="' + esc(x.booking_id) + '">작가에게 공유</button>' : '')
+      + '</div>';
+  }).join('') : '<p class="empty">' + (fbStaff ? '이 작가의 응답이 없습니다.' : '아직 응답이 없습니다.') + '</p>';
+
+  const rangeBtn = (v, t) => '<button class="btn-sm fb-range' + (fbDays === v ? ' active' : '') + '" data-days="' + v + '">' + t + '</button>';
 
   wrap.innerHTML =
     '<div class="st-cards fb-top">'
-    + '<div class="st-card"><span class="st-k">응답</span><strong>' + (d.count || 0) + '</strong><span class="st-sub">최근 1년</span></div>'
+    + '<div class="st-card"><span class="st-k">응답</span><strong>' + (d.count || 0) + '</strong><span class="st-sub">' + esc(fbRangeLabel()) + '</span></div>'
     + '<div class="st-card"><span class="st-k">전체 평균</span><strong>' + avg1(d.avg_overall) + '</strong><span class="st-sub">5점 만점</span></div>'
-    + '<div class="st-card"><span class="st-k">설문 안 온 예식</span><strong>' + pend.length + '</strong><span class="st-sub">최근 60일 · 미응답</span></div>'
+    + '<div class="st-card"><span class="st-k">설문 안 온 예식</span><strong>' + pendAll.length + '</strong><span class="st-sub">최근 60일 · 미응답</span></div>'
     + '</div>'
-    + (pend.length ? '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>📮 설문 안 온 예식 <small>(최근 60일 · 링크를 복사해 직접 보낼 수 있습니다)</small></h3></div>'
-        + '<div class="fb-pend">' + pendRows + '</div></div>' : '')
-    + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>👤 작가별 <small>(평균 높은 순)</small></h3></div>' + staffRows + '</div>'
-    + '<div class="dash-card"><div class="dash-card-head"><h3>💬 받은 응답 <small>(최근순)</small></h3></div><div class="fb-list">' + itemRows + '</div></div>'
-    + '<p class="st-note">응답은 대표님만 보십니다. 손님에게도 "작가에게 자동 전달되지 않는다"고 안내했습니다. [작가에게 공유]를 누르면 작성자 이름을 뺀 내용이 복사되어, 카톡에 붙여넣어 보내실 수 있습니다.</p>';
+    + (pendAll.length
+      ? '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>📮 설문 안 온 예식 <small>(최근 2주 · 링크를 복사해 직접 보낼 수 있습니다)</small></h3></div>'
+        + '<div class="fb-pend">' + (pendShown.length ? pendRows : '<p class="empty">최근 2주 안에는 없습니다.</p>') + '</div>'
+        + (pendHidden > 0 || fbPendAll
+          ? '<button class="btn-sm fb-pendmore">' + (fbPendAll ? '최근 2주만 보기' : '2주 이전 ' + pendHidden + '건 더 보기') + '</button>'
+          : '')
+        + '</div>'
+      : '')
+    + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>👤 작가별 <small>(평균 높은 순 · 누르면 그 작가 응답만)</small></h3></div>' + staffRows + '</div>'
+    + '<div class="dash-card">'
+      + '<div class="dash-card-head"><h3>💬 받은 응답 <small>(최근순)</small></h3>'
+        + '<span class="fb-rangebar">' + rangeBtn(90, '3개월') + rangeBtn(365, '1년') + rangeBtn(3650, '전체') + '</span></div>'
+      + (fbStaff ? '<div class="fb-filter"><b>' + esc(fbStaff) + '</b> 작가 응답만 보는 중 <button class="btn-sm fb-clear">전체 보기</button></div>' : '')
+      + '<div class="fb-list">' + itemRows + '</div>'
+    + '</div>'
+    + '<p class="st-note">응답은 지워지지 않고 계속 남습니다. 기간 버튼으로 예전 것도 언제든 다시 보실 수 있습니다. [작가에게 공유]를 누르면 손님 이름을 뺀 내용이 복사되어, 카톡에 붙여넣어 보내실 수 있습니다.</p>';
 
   const fbUrl = (id) => location.origin + '/f?b=' + id;
   wrap.querySelectorAll('.fb-copy').forEach((b) => b.addEventListener('click', async () => {
@@ -2355,7 +2384,7 @@ async function renderFeedback() {
     catch (_) { prompt('아래 내용을 복사하세요:', text); }
   }));
   wrap.querySelectorAll('.fb-share').forEach((b) => b.addEventListener('click', () => {
-    const it = items.find((x) => x.booking_id === b.dataset.id);
+    const it = allItems.find((x) => x.booking_id === b.dataset.id);
     if (!it) return;
     const txt = ['[촬영 후 설문]',
       '전체 ' + it.overall + '점 · 친절 ' + it.kindness + ' · 요청 ' + it.requests + ' · 진행 ' + it.flow,
@@ -2364,6 +2393,16 @@ async function renderFeedback() {
     navigator.clipboard?.writeText(txt);
     toast('복사됐습니다 · 카톡에 붙여넣어 보내세요');
   }));
+  const more = wrap.querySelector('.fb-pendmore');
+  if (more) more.addEventListener('click', () => { fbPendAll = !fbPendAll; renderFeedback(); });
+  wrap.querySelectorAll('.fb-range').forEach((b) => b.addEventListener('click', () => {
+    fbDays = Number(b.dataset.days) || 365; renderFeedback();
+  }));
+  wrap.querySelectorAll('.fb-srow').forEach((r) => r.addEventListener('click', () => {
+    fbStaff = fbStaff === r.dataset.staff ? null : r.dataset.staff; renderFeedback();
+  }));
+  const clr = wrap.querySelector('.fb-clear');
+  if (clr) clr.addEventListener('click', (e) => { e.stopPropagation(); fbStaff = null; renderFeedback(); });
 }
 
 const stToggle = $('stToggle');
