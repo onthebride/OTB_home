@@ -771,3 +771,18 @@ td .muted { color: var(--ink-soft); }
   .fb-sn { margin-left: 0; width: 100%; }
   .fb-idate { margin-left: 0; width: 100%; }
 }
+
+/* 설문 안 온 예식 목록 */
+.fb-pend { display: flex; flex-direction: column; }
+.fb-prow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 9px 4px; border-bottom: 1px solid var(--line); }
+.fb-prow:last-child { border-bottom: none; }
+.fb-pdate { font-size: .82rem; color: var(--ink-soft); min-width: 74px; }
+.fb-pname { font-weight: 600; font-size: .9rem; }
+.fb-pstaff { font-size: .82rem; color: var(--gold-deep); }
+.fb-psent { font-size: .72rem; color: var(--ink-soft); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
+.fb-prow .btn-sm { margin-left: 0; }
+.fb-prow .fb-copy { margin-left: auto; }
+
+@media (max-width: 600px) {
+  .fb-prow .fb-copy { margin-left: 0; }
+}

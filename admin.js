@@ -2293,6 +2293,18 @@ async function renderFeedback() {
   const items = Array.isArray(d.items) ? d.items : [];
   const pend = Array.isArray(pr.data) ? pr.data.filter((x) => !x.done) : [];
 
+  const pendRows = pend.map((x) => {
+    const d = String(x.wedding_date).slice(0, 10).replace(/-/g, '.');
+    return '<div class="fb-prow">'
+      + '<span class="fb-pdate">' + esc(d) + '</span>'
+      + '<span class="fb-pname">' + esc(x.contractor_name || '-') + '</span>'
+      + '<span class="fb-pstaff">' + esc(x.staff_name || '미배정') + '</span>'
+      + (x.sent ? '<span class="fb-psent">알림톡 보냄</span>' : '')
+      + '<button class="btn-sm fb-copy" data-id="' + esc(x.id) + '">설문 링크</button>'
+      + '<button class="btn-sm btn-kakao-sm fb-sharelink" data-id="' + esc(x.id) + '" data-name="' + esc(x.contractor_name || '') + '">공유</button>'
+      + '</div>';
+  }).join('');
+
   const staffRows = staff.length ? staff.map((s) => `
     <div class="fb-srow">
       <span class="fb-sname">${esc(s.staff_name)}</span>
@@ -2324,10 +2336,24 @@ async function renderFeedback() {
     + '<div class="st-card"><span class="st-k">전체 평균</span><strong>' + avg1(d.avg_overall) + '</strong><span class="st-sub">5점 만점</span></div>'
     + '<div class="st-card"><span class="st-k">설문 안 온 예식</span><strong>' + pend.length + '</strong><span class="st-sub">최근 60일 · 미응답</span></div>'
     + '</div>'
+    + (pend.length ? '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>📮 설문 안 온 예식 <small>(최근 60일 · 링크를 복사해 직접 보낼 수 있습니다)</small></h3></div>'
+        + '<div class="fb-pend">' + pendRows + '</div></div>' : '')
     + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>👤 작가별 <small>(평균 높은 순)</small></h3></div>' + staffRows + '</div>'
     + '<div class="dash-card"><div class="dash-card-head"><h3>💬 받은 응답 <small>(최근순)</small></h3></div><div class="fb-list">' + itemRows + '</div></div>'
     + '<p class="st-note">응답은 대표님만 보십니다. 손님에게도 "작가에게 자동 전달되지 않는다"고 안내했습니다. [작가에게 공유]를 누르면 작성자 이름을 뺀 내용이 복사되어, 카톡에 붙여넣어 보내실 수 있습니다.</p>';
 
+  const fbUrl = (id) => location.origin + '/f?b=' + id;
+  wrap.querySelectorAll('.fb-copy').forEach((b) => b.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(fbUrl(b.dataset.id)); toast('설문 링크 복사됨 · 카톡에 붙여넣어 보내세요'); }
+    catch (_) { prompt('아래 링크를 복사하세요:', fbUrl(b.dataset.id)); }
+  }));
+  wrap.querySelectorAll('.fb-sharelink').forEach((b) => b.addEventListener('click', async () => {
+    const nm = b.dataset.name;
+    const text = (nm ? nm + '님, ' : '') + '결혼 진심으로 축하드립니다.\n촬영을 담당한 작가에 대해 짧게 여쭙고 싶습니다. 30초면 됩니다.\n' + fbUrl(b.dataset.id);
+    if (navigator.share) { try { await navigator.share({ text }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+    try { await navigator.clipboard.writeText(text); toast('메시지 복사됨 · 카톡에 붙여넣어 보내세요'); }
+    catch (_) { prompt('아래 내용을 복사하세요:', text); }
+  }));
   wrap.querySelectorAll('.fb-share').forEach((b) => b.addEventListener('click', () => {
     const it = items.find((x) => x.booking_id === b.dataset.id);
     if (!it) return;
