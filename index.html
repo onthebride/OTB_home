@@ -312,7 +312,7 @@
           <li><span>인스타그램</span><a href="https://www.instagram.com/onthebride/" target="_blank" rel="noopener">@onthebride</a></li>
         </ul>
       </div>
-      <form class="contact-form" id="inquiryForm" onsubmit="return false;">
+      <form class="contact-form" id="inquiryForm" onsubmit="return false;" data-clarity-mask="true">
         <div class="field"><label>성함 <em>*</em></label><input type="text" id="f_inq_name" placeholder="성함을 입력해 주세요" /></div>
         <div class="field"><label>E-mail <em>*</em></label><input type="email" id="f_inq_email" placeholder="이메일로 답변을 보내드립니다" /></div>
         <div class="field"><label>문의내용 <em>*</em></label><textarea id="f_inq_message" rows="5" placeholder="예약가능여부는 예식날짜 / 장소 / 시간을 꼭 적어주세요~"></textarea></div>
@@ -331,7 +331,7 @@
       <button type="button" class="btn btn-primary booking-start" id="bookingStart">예약신청 시작하기</button>
     </div>
 
-    <form class="booking-form" id="bookingForm" onsubmit="return false;" hidden>
+    <form class="booking-form" id="bookingForm" onsubmit="return false;" hidden data-clarity-mask="true">
       <!-- 규정 안내 -->
       <fieldset class="bk-group">
         <legend>규정 안내</legend>
@@ -521,5 +521,6 @@
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="config.js"></script>
   <script defer src="main.js?v=20260810a"></script>
+  <script defer src="/analytics.js?v=20260817a"></script>
 </body>
 </html>
