@@ -273,7 +273,8 @@ function renderPost(post, allPosts) {
 ${headCommon({ title: `${post.title} | ${SITE.blogName}`, description: post.description, canonical, image: post.cover, type: 'article', published: post.date, modified: post.updated || post.date })}
   <script type="application/ld+json">${ld(jsonldPost)}</script>
   <script type="application/ld+json">${ld(jsonldCrumb)}</script>${jsonldFaq ? `\n  <script type="application/ld+json">${ld(jsonldFaq)}</script>` : ''}
-  <script defer src="/analytics.js?v=20260817a"></script>
+  <script defer src="/config.js"></script>
+  <script defer src="/analytics.js?v=20260817b"></script>
 </head>
 <body class="blog">
 ${siteHeader('blog')}
@@ -341,7 +342,8 @@ function renderIndex(posts) {
 <head>
 ${headCommon({ title: `${SITE.blogName} — ${SITE.tagline}`, description: `${SITE.tagline}. 본식스냅 준비에 도움이 되는 정보를 온더브라이드가 정리했습니다.`, canonical })}
   <script type="application/ld+json">${ld(jsonld)}</script>
-  <script defer src="/analytics.js?v=20260817a"></script>
+  <script defer src="/config.js"></script>
+  <script defer src="/analytics.js?v=20260817b"></script>
 </head>
 <body class="blog">
 ${siteHeader('blog')}

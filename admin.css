@@ -692,3 +692,38 @@ td .muted { color: var(--ink-soft); }
 
 .sched-undo { background:#fff3e0; border-color:#e0a96d; color:#9a5b1e; }
 .sched-undo:hover { background:#ffe7c2; }
+
+/* ===== 통계 탭 ===== */
+.st-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px; }
+.st-range { display: flex; gap: 6px; }
+.st-range .btn-sm.active { border-color: var(--gold-deep); color: var(--gold-deep); font-weight: 600; }
+.st-links { display: flex; gap: 6px; margin-left: auto; }
+.st-links .btn-sm { text-decoration: none; color: var(--ink); }
+
+.st-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.st-card { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.st-card .st-k { font-size: .8rem; color: var(--ink-soft); }
+.st-card strong { font-size: 1.55rem; font-weight: 700; line-height: 1.2; }
+.st-card .st-sub { font-size: .74rem; color: var(--ink-soft); }
+
+.st-chart { display: flex; align-items: flex-end; gap: 3px; height: 150px; padding-top: 8px; }
+.st-bar-col { flex: 1 1 0; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; }
+.st-bar-fill { width: 100%; max-width: 26px; min-height: 2px; background: var(--gold); border-radius: 3px 3px 0 0; }
+.st-bar-lbl { font-size: .62rem; color: var(--ink-soft); white-space: nowrap; overflow: hidden; }
+
+.st-two { align-items: flex-start; }
+.st-two .dash-card { flex: 1; min-width: 0; }
+.st-row { position: relative; display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; margin-bottom: 4px; overflow: hidden; }
+.st-row-bar { position: absolute; left: 0; top: 0; bottom: 0; background: #f4ece0; border-radius: 6px; }
+.st-row-k { position: relative; flex: 1; min-width: 0; font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-row-v { position: relative; font-size: .85rem; font-weight: 600; color: var(--gold-deep); }
+.st-note { margin-top: 14px; font-size: .76rem; color: var(--ink-soft); line-height: 1.6; }
+
+@media (max-width: 600px) {
+  .st-cards { grid-template-columns: repeat(2, 1fr); }
+  .st-card strong { font-size: 1.3rem; }
+  .st-links { margin-left: 0; width: 100%; }
+  .st-two { flex-direction: column; }
+  .st-chart { height: 120px; }
+  .st-bar-lbl { display: none; }
+}

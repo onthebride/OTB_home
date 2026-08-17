@@ -42,3 +42,46 @@
     })(window, document, 'clarity', 'script', CLARITY_ID);
   }
 })();
+
+/* ===== 자체 방문 집계 (관리자 '통계' 탭용) =====
+ *  구글·클래리티와 별개로, 관리자 화면에서 바로 보기 위해 우리 DB에도 최소한만 기록한다.
+ *  저장 항목: 경로(쿼리스트링 제외) · 유입 도메인 · 모바일 여부 · 브라우저 세션 난수.
+ *  IP·UserAgent 원문·쿠키는 저장하지 않는다. 실패해도 화면에 영향이 없도록 전부 무시한다.
+ *  ※ 위 (function) 안의 도메인 검사와 동일한 조건에서만 돌도록 여기서도 다시 확인한다.
+ */
+(function () {
+  var host = location.hostname;
+  if (host !== 'onthebride.com' && host !== 'www.onthebride.com') return;
+  var cfg = window.OTB_CONFIG;
+  if (!cfg || !cfg.SUPABASE_URL || !cfg.SUPABASE_KEY) return;
+
+  // 브라우저 세션 동안만 유지되는 난수 — 사람을 식별하지 못하며, 방문 수와 페이지뷰를 구분하는 용도
+  var sid = '';
+  try {
+    sid = sessionStorage.getItem('otb_sid') || '';
+    if (!sid) { sid = Math.random().toString(36).slice(2) + Date.now().toString(36); sessionStorage.setItem('otb_sid', sid); }
+  } catch (_) {}
+
+  // 유입은 도메인만 남긴다(전체 주소·검색어는 저장하지 않음). 사이트 내 이동은 유입으로 치지 않음
+  var ref = null;
+  try {
+    if (document.referrer) {
+      var rh = new URL(document.referrer).hostname;
+      if (rh && rh !== host && rh !== 'onthebride.com' && rh !== 'www.onthebride.com') ref = rh;
+    }
+  } catch (_) {}
+
+  try {
+    fetch(cfg.SUPABASE_URL + '/rest/v1/rpc/log_pageview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: cfg.SUPABASE_KEY, Authorization: 'Bearer ' + cfg.SUPABASE_KEY },
+      body: JSON.stringify({
+        p_path: location.pathname,
+        p_ref: ref,
+        p_mobile: window.innerWidth <= 860,
+        p_sid: sid,
+      }),
+      keepalive: true,
+    }).catch(function () {});
+  } catch (_) {}
+})();

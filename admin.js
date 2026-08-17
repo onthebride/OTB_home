@@ -2172,12 +2172,101 @@ if (dashTabs) {
     $('tab-calendar').hidden = tab !== 'calendar';
     $('tab-bookings').hidden = tab !== 'bookings';
     $('tab-events').hidden = tab !== 'events';
+    $('tab-stats').hidden = tab !== 'stats';
     $('tab-settings').hidden = tab !== 'settings';
     if (tab === 'dashboard') renderDashboard();
     if (tab === 'calendar') { renderCalendar(); renderSchedule(); }
     if (tab === 'events') loadEvents();
+    if (tab === 'stats') renderStats();
     if (tab === 'settings') showSubtab(currentSubtab);
     if (window.scrollY > 0) window.scrollTo({ top: 0 });  // 새 탭 내용을 처음부터 보이게
+  });
+}
+
+
+/* ===== 통계 (자체 방문 집계) =====
+   수집은 analytics.js → log_pageview RPC. 여기서는 admin_analytics 로 집계만 읽는다. */
+let statsDays = 7;
+let statsLoaded = false;
+
+// 유입 도메인을 사람이 읽는 이름으로
+const REF_NAMES = [
+  [/(^|.)naver.com$/, '네이버'], [/(^|.)google./, '구글'], [/(^|.)daum.net$|(^|.)kakao.com$/, '다음·카카오'],
+  [/(^|.)instagram.com$/, '인스타그램'], [/(^|.)facebook.com$|(^|.)fb./, '페이스북'],
+  [/(^|.)youtube.com$|(^|.)youtu.be$/, '유튜브'], [/(^|.)bing.com$/, '빙'], [/(^|.)tistory.com$/, '티스토리'],
+];
+function refLabel(r) {
+  if (!r || r[0] === '(') return r || '(직접 · 즐겨찾기)';
+  for (const [re, nm] of REF_NAMES) if (re.test(r)) return nm + ' (' + r + ')';
+  return r;
+}
+function pathLabel(p) {
+  if (p === '/' || p === '') return '홈';
+  if (p === '/blog') return '블로그 목록';
+  if (p.startsWith('/blog/posts/')) return '블로그 글 · ' + p.replace('/blog/posts/', '');
+  if (p === '/rules') return '규정 안내';
+  if (p === '/privacy') return '개인정보처리방침';
+  return p;
+}
+const stNum = (n) => Number(n || 0).toLocaleString('ko-KR');
+
+async function renderStats() {
+  const wrap = $('statsBody');
+  if (!wrap) return;
+  if (!statsLoaded) wrap.innerHTML = '<p class="empty">불러오는 중…</p>';
+  const { data, error } = await sb.rpc('admin_analytics', { p_days: statsDays });
+  if (error || !data) {
+    wrap.innerHTML = '<p class="empty">통계를 불러오지 못했습니다. (' + esc(error ? error.message : '응답 없음') + ')</p>';
+    return;
+  }
+  statsLoaded = true;
+  const d = data;
+  const daily = Array.isArray(d.daily) ? d.daily : [];
+  const max = daily.reduce((m, x) => Math.max(m, Number(x.views) || 0), 0) || 1;
+  const bars = daily.map((x) => {
+    const v = Number(x.views) || 0;
+    const md = String(x.d).slice(5).replace('-', '.');
+    return '<div class="st-bar-col" title="' + esc(md + ' · 방문 ' + stNum(x.visits) + ' · 페이지뷰 ' + stNum(v)) + '">'
+      + '<div class="st-bar-fill" style="height:' + Math.round((v / max) * 100) + '%"></div>'
+      + '<span class="st-bar-lbl">' + esc(md) + '</span></div>';
+  }).join('');
+
+  const list = (rows, keyFn, valFn, empty) => rows && rows.length
+    ? rows.map((r) => {
+        const val = Number(valFn(r)) || 0;
+        const top = Number(valFn(rows[0])) || 1;
+        return '<div class="st-row"><span class="st-row-bar" style="width:' + Math.round((val / top) * 100) + '%"></span>'
+          + '<span class="st-row-k">' + esc(keyFn(r)) + '</span><span class="st-row-v">' + stNum(val) + '</span></div>';
+      }).join('')
+    : '<p class="empty">' + empty + '</p>';
+
+  wrap.innerHTML =
+    '<div class="st-cards">'
+    + '<div class="st-card"><span class="st-k">오늘</span><strong>' + stNum(d.today.visits) + '</strong><span class="st-sub">방문 · 페이지뷰 ' + stNum(d.today.views) + '</span></div>'
+    + '<div class="st-card"><span class="st-k">최근 7일</span><strong>' + stNum(d.week.visits) + '</strong><span class="st-sub">방문 · 페이지뷰 ' + stNum(d.week.views) + '</span></div>'
+    + '<div class="st-card"><span class="st-k">최근 ' + d.days + '일</span><strong>' + stNum(d.range.visits) + '</strong><span class="st-sub">방문 · 페이지뷰 ' + stNum(d.range.views) + '</span></div>'
+    + '<div class="st-card"><span class="st-k">모바일</span><strong>' + stNum(d.mobile_pct) + '%</strong><span class="st-sub">휴대폰으로 본 비율</span></div>'
+    + '</div>'
+    + '<div class="dash-card"><div class="dash-card-head"><h3>📈 일자별 <small>(막대 = 페이지뷰)</small></h3></div>'
+    + '<div class="st-chart">' + bars + '</div></div>'
+    + '<div class="dash-cards st-two">'
+    + '<div class="dash-card"><div class="dash-card-head"><h3>📄 많이 본 페이지</h3></div>'
+    + list(d.pages, (r) => pathLabel(r.path), (r) => r.views, '아직 기록이 없습니다.') + '</div>'
+    + '<div class="dash-card"><div class="dash-card-head"><h3>🔗 어디서 들어왔나 <small>(방문 수)</small></h3></div>'
+    + list(d.refs, (r) => refLabel(r.ref), (r) => r.visits, '아직 기록이 없습니다.') + '</div>'
+    + '</div>'
+    + '<p class="st-note">방문 = 브라우저 한 번 열어 둘러본 단위. 구글 애널리틱스 숫자와 몇 % 다를 수 있습니다(광고 차단 사용 등). 기록은 180일 후 자동 삭제됩니다.</p>';
+}
+
+const stRange = document.querySelector('.st-range');
+if (stRange) {
+  stRange.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-days]');
+    if (!b) return;
+    statsDays = parseInt(b.dataset.days, 10) || 7;
+    stRange.querySelectorAll('button').forEach((x) => x.classList.toggle('active', x === b));
+    statsLoaded = false;
+    renderStats();
   });
 }
 
