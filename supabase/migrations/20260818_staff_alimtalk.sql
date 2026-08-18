@@ -113,3 +113,33 @@ begin
 end$fn$;
 revoke all on function public.admin_staff_check_targets() from public, anon;
 grant execute on function public.admin_staff_check_targets() to authenticated;
+
+-- 2026-08-18 수정: nearest 를 미확인 건 기준으로 + never_sent 추가
+-- 표시 오류 수정: nearest 를 '미확인 건'의 예식일로. 지금은 그 작가의 2주 내 모든 배정에서
+-- min 을 잡아, 이미 확인된 8/22 건 때문에 "가장 가까운 예식 8/22"로 보였다(실제 미확인은 8/29).
+create or replace function public.admin_staff_check_targets()
+returns jsonb language plpgsql security definer set search_path=public, pg_temp as $fn$
+declare res jsonb;
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  select coalesce(jsonb_agg(t order by t.nearest, t.name), '[]'::jsonb) into res from (
+    select s.id, s.name, (s.phone is not null and s.phone <> '') as has_phone,
+           count(*) filter (where c.checked_at is null) as unchecked,
+           count(*) as total,
+           min(b.wedding_date) filter (where c.checked_at is null) as nearest,
+           count(*) filter (where c.checked_at is null
+                              and (case when b.assignee_id = s.id then b.check_sent_at else b.sub_check_sent_at end) is null) as never_sent
+    from public.staff s
+    join public.bookings b
+      on (b.assignee_id = s.id or b.sub_assignee_id = s.id)
+     and b.status <> '취소'
+     and b.wedding_date between current_date and current_date + 14
+    left join public.assignment_checks c on c.booking_id = b.id and c.staff_id = s.id
+    where s.active
+    group by s.id, s.name, s.phone
+    having count(*) filter (where c.checked_at is null) > 0
+  ) t;
+  return res;
+end$fn$;
+revoke all on function public.admin_staff_check_targets() from public, anon;
+grant execute on function public.admin_staff_check_targets() to authenticated;
