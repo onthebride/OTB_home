@@ -796,3 +796,12 @@ td .muted { color: var(--ink-soft); }
 .fb-filter { font-size: .84rem; color: var(--ink-soft); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .fb-filter b { color: var(--gold-deep); }
 .fb-pendmore { margin-top: 10px; }
+
+/* '설문 안 온 예식' 접이식 카드 (맨 아래) */
+.fb-pendcard { margin-top: 16px; }
+.fb-pendcard .dash-card-head { margin-bottom: 0; }
+.fb-pendcard.open .dash-card-head { margin-bottom: 12px; }
+.fb-pendtoggle { display: flex; align-items: center; gap: 6px; width: 100%; background: none; border: none; padding: 0;
+  cursor: pointer; font-family: var(--sans); font-size: 1rem; font-weight: 700; color: var(--ink); text-align: left; }
+.fb-pendtoggle small { font-weight: 400; color: var(--ink-soft); font-size: .76rem; }
+.fb-pendtoggle .dash-count { margin-left: auto; }

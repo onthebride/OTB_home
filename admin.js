@@ -2285,6 +2285,7 @@ const avg1 = (v) => (v == null ? '-' : Number(v).toFixed(1));
 let fbDays = 365;        // 응답 조회 기간
 let fbStaff = null;      // 특정 작가만 보기
 let fbPendAll = false;   // '설문 안 온 예식'을 2주 이전까지 펼쳤는지
+let fbPendOpen = false;  // '설문 안 온 예식' 카드를 폈는지 (기본 접힘)
 const fbRangeLabel = () => (fbDays >= 3650 ? '전체 기간' : fbDays >= 365 ? '최근 1년' : '최근 3개월');
 
 async function renderFeedback() {
@@ -2354,14 +2355,6 @@ async function renderFeedback() {
     + '<div class="st-card"><span class="st-k">전체 평균</span><strong>' + avg1(d.avg_overall) + '</strong><span class="st-sub">5점 만점</span></div>'
     + '<div class="st-card"><span class="st-k">설문 안 온 예식</span><strong>' + pendAll.length + '</strong><span class="st-sub">최근 60일 · 미응답</span></div>'
     + '</div>'
-    + (pendAll.length
-      ? '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>📮 설문 안 온 예식 <small>(최근 2주 · 링크를 복사해 직접 보낼 수 있습니다)</small></h3></div>'
-        + '<div class="fb-pend">' + (pendShown.length ? pendRows : '<p class="empty">최근 2주 안에는 없습니다.</p>') + '</div>'
-        + (pendHidden > 0 || fbPendAll
-          ? '<button class="btn-sm fb-pendmore">' + (fbPendAll ? '최근 2주만 보기' : '2주 이전 ' + pendHidden + '건 더 보기') + '</button>'
-          : '')
-        + '</div>'
-      : '')
     + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>👤 작가별 <small>(평균 높은 순 · 누르면 그 작가 응답만)</small></h3></div>' + staffRows + '</div>'
     + '<div class="dash-card">'
       + '<div class="dash-card-head"><h3>💬 받은 응답 <small>(최근순)</small></h3>'
@@ -2369,6 +2362,19 @@ async function renderFeedback() {
       + (fbStaff ? '<div class="fb-filter"><b>' + esc(fbStaff) + '</b> 작가 응답만 보는 중 <button class="btn-sm fb-clear">전체 보기</button></div>' : '')
       + '<div class="fb-list">' + itemRows + '</div>'
     + '</div>'
+    + (pendAll.length
+      ? '<div class="dash-card fb-pendcard' + (fbPendOpen ? ' open' : '') + '">'
+        + '<div class="dash-card-head"><button type="button" class="fb-pendtoggle" aria-expanded="' + (fbPendOpen ? 'true' : 'false') + '">'
+          + '📮 설문 안 온 예식 <small>(링크를 복사해 직접 보낼 수 있습니다)</small> '
+          + '<span class="dash-count">' + pendAll.length + '</span> <span class="sv-caret">' + (fbPendOpen ? '▴' : '▾') + '</span></button></div>'
+        + (fbPendOpen
+          ? '<div class="fb-pend">' + (pendShown.length ? pendRows : '<p class="empty">최근 2주 안에는 없습니다.</p>') + '</div>'
+            + (pendHidden > 0 || fbPendAll
+              ? '<button class="btn-sm fb-pendmore">' + (fbPendAll ? '최근 2주만 보기' : '2주 이전 ' + pendHidden + '건 더 보기') + '</button>'
+              : '')
+          : '')
+        + '</div>'
+      : '')
     + '<p class="st-note">응답은 지워지지 않고 계속 남습니다. 기간 버튼으로 예전 것도 언제든 다시 보실 수 있습니다. [작가에게 공유]를 누르면 손님 이름을 뺀 내용이 복사되어, 카톡에 붙여넣어 보내실 수 있습니다.</p>';
 
   const fbUrl = (id) => location.origin + '/f?b=' + id;
@@ -2393,6 +2399,8 @@ async function renderFeedback() {
     navigator.clipboard?.writeText(txt);
     toast('복사됐습니다 · 카톡에 붙여넣어 보내세요');
   }));
+  const pt = wrap.querySelector('.fb-pendtoggle');
+  if (pt) pt.addEventListener('click', () => { fbPendOpen = !fbPendOpen; renderFeedback(); });
   const more = wrap.querySelector('.fb-pendmore');
   if (more) more.addEventListener('click', () => { fbPendAll = !fbPendAll; renderFeedback(); });
   wrap.querySelectorAll('.fb-range').forEach((b) => b.addEventListener('click', () => {
