@@ -53,8 +53,9 @@ function card(w) {
         <div class="ss-row"><b>신랑</b> : ${esc(w.groom_name || '-')}${w.groom_phone ? ' 📞 ' + esc(w.groom_phone) : ''}</div>
         <div class="ss-row"><b>신부</b> : ${esc(w.bride_name || '-')}${w.bride_phone ? ' 📞 ' + esc(w.bride_phone) : ''}</div>
       </div>
-      ${o.length ? `<div class="ss-grp ss-optgrp"><div class="ss-row"><b>옵션</b></div>
+      ${o.length ? `<div class="ss-grp"><div class="ss-row"><b>옵션</b></div>
         <div class="ss-opts">${o.map((x) => `<span class="ss-opt${x === '2인 촬영' ? ' two' : ''}">${esc(x)}</span>`).join('')}</div></div>` : ''}
+      ${w.sub_name ? `<div class="ss-grp"><div class="ss-row"><b>서브작가</b> : ${esc(w.sub_name)}${w.sub_phone ? ' 📞 ' + esc(w.sub_phone) : ''}</div></div>` : ''}
       ${w.rep_designation ? '<div class="ss-grp"><div class="ss-row"><b>촬영</b> : 대표지정</div></div>' : ''}
     </div>
     <div class="ss-checks">
