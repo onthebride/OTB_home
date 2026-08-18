@@ -85,7 +85,9 @@ const showDash = (email) => {
   $('dashView').hidden = false;
   $('dashUser').textContent = email || '';
   syncHeadHeight();  // 숨김 상태에선 높이가 0이라 표시 직후 다시 실측
-  loadBookings();
+  // 예약 데이터를 먼저 받은 뒤 탭을 복원한다. 먼저 복원하면 캘린더 같은 탭이
+  // 빈 데이터로 그려진 채 남는다(loadBookings 는 캘린더를 다시 그리지 않음).
+  loadBookings().then(applyHash);
   initPush();
 };
 
@@ -2161,6 +2163,33 @@ if (window.ResizeObserver) {
 }
 syncHeadHeight();
 
+/* ===== 새로고침·뒤로가기해도 보던 탭 유지 =====
+   현재 위치를 주소 해시(#stats/feedback 같은)에 적어두고, 열 때 그대로 되살린다.
+   되살리는 동안에는 해시를 다시 쓰지 않도록 applyingHash 로 잠근다(무한루프 방지). */
+let applyingHash = false;
+function setHash(v) {
+  if (applyingHash) return;
+  if (location.hash.slice(1) !== v) history.replaceState(null, '', '#' + v);
+}
+function applyHash() {
+  const [tab, sub] = (location.hash.slice(1) || 'dashboard').split('/');
+  const btn = document.querySelector('.dtab[data-tab="' + (tab || 'dashboard') + '"]');
+  if (!btn) return;
+  applyingHash = true;
+  try {
+    if (!btn.classList.contains('active') || tab === 'dashboard') btn.click();
+    if (tab === 'settings' && sub) {
+      const sb2 = document.querySelector('.sub-tab[data-subtab="' + sub + '"]');
+      if (sb2) sb2.click();
+    }
+    if (tab === 'stats') {
+      const tg = document.querySelector('.st-tg[data-sttab="' + (sub === 'feedback' ? 'feedback' : 'visits') + '"]');
+      if (tg && !tg.classList.contains('active')) tg.click();
+    }
+  } finally { applyingHash = false; }
+}
+window.addEventListener('hashchange', applyHash);
+
 const dashTabs = document.querySelector('.dash-tabs');
 if (dashTabs) {
   dashTabs.addEventListener('click', (e) => {
@@ -2179,6 +2208,7 @@ if (dashTabs) {
     if (tab === 'events') loadEvents();
     if (tab === 'stats') renderStats();
     if (tab === 'settings') showSubtab(currentSubtab);
+    setHash(tab === 'settings' ? 'settings/' + currentSubtab : tab);
     if (window.scrollY > 0) window.scrollTo({ top: 0 });  // 새 탭 내용을 처음부터 보이게
   });
 }
@@ -2282,7 +2312,7 @@ if (stRange) {
 const ARRIVAL_TXT = { ontime: '제시간', late_small: '조금 늦음', late_big: '많이 늦음' };
 const stars = (n) => '★★★★★'.slice(0, Number(n) || 0) + '☆☆☆☆☆'.slice(0, 5 - (Number(n) || 0));
 const avg1 = (v) => (v == null ? '-' : Number(v).toFixed(1));
-let fbDays = 365;        // 응답 조회 기간
+let fbDays = 90;         // 응답 조회 기간 (기본 3개월)
 let fbStaff = null;      // 특정 작가만 보기
 let fbPendAll = false;   // '설문 안 온 예식'을 2주 이전까지 펼쳤는지
 let fbPendOpen = false;  // '설문 안 온 예식' 카드를 폈는지 (기본 접힘)
@@ -2452,6 +2482,7 @@ if (stToggle) {
     $('fbBody').hidden = !isFb;
     const bar = document.querySelector('.st-bar');
     if (bar) bar.hidden = isFb;                       // 기간 버튼·바로가기는 방문 통계 전용
+    setHash(isFb ? 'stats/feedback' : 'stats');
     if (isFb) renderFeedback();
   });
 }
@@ -2464,6 +2495,7 @@ function showSubtab(st) {
   if ($('tab-pricing')) $('tab-pricing').hidden = st !== 'pricing';
   if ($('tab-gallery')) $('tab-gallery').hidden = st !== 'gallery';
   document.querySelectorAll('.sub-tab').forEach((b) => b.classList.toggle('active', b.dataset.subtab === st));
+  setHash('settings/' + st);
   if (st === 'staff') renderStaff();
   if (st === 'pricing') renderPricing();
   if (st === 'gallery') loadGallery();
