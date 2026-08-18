@@ -815,3 +815,11 @@ td .muted { color: var(--ink-soft); }
   cursor: pointer; font-family: var(--sans); font-size: 1rem; font-weight: 700; color: var(--ink); text-align: left; }
 .fb-pendtoggle small { font-weight: 400; color: var(--ink-soft); font-size: .76rem; }
 .fb-pendtoggle .dash-count { margin-left: auto; }
+
+/* 작가 스케줄 확인 알림톡 (다가오는 예식 카드 안) */
+.staff-atk { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 12px;
+  padding: 10px 12px; background: #fdf8f0; border: 1px solid var(--gold); border-radius: 8px; }
+.staff-atk-txt { font-size: .86rem; min-width: 0; }
+.staff-atk-txt small { color: var(--ink-soft); font-size: .78rem; }
+.staff-atk .btn-sm { margin-left: auto; }
+@media (max-width: 600px) { .staff-atk .btn-sm { margin-left: 0; width: 100%; } }
