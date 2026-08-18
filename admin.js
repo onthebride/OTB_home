@@ -2325,7 +2325,8 @@ async function refreshStaffAtk() {
   const names = sendable.slice(0, 3).map((s) => s.name).join(', ');
   const more = sendable.length > 3 ? ' 외 ' + (sendable.length - 3) + '명' : '';
   const unchecked = sendable.reduce((a, s) => a + Number(s.unchecked || 0), 0);
-  $('staffAtkTxt').innerHTML = '📷 스케줄 미확인 <b>' + sendable.length + '명</b> <small>(' + esc(names) + esc(more) + ' · 미확인 ' + unchecked + '건)</small>';
+  $('staffAtkTxt').innerHTML = '📷 <b>2주 이내 예식</b> 중 작가가 아직 확인 안 한 건 <b>' + unchecked + '건</b>'
+    + ' <small>(' + esc(names) + esc(more) + ' · ' + sendable.length + '명)</small>';
   $('staffAtkSend').textContent = '작가 ' + sendable.length + '명에게 발송';
 }
 

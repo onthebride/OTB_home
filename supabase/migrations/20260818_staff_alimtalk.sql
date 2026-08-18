@@ -85,3 +85,31 @@ create or replace function private.atk_kname(p text) returns text language sql i
                 when 'E' then '링크안내' when 'F' then '입금확인' when 'G' then '촬영 설문'
                 when 'S' then '작가 스케줄확인' else p end;
 $fn$;
+
+-- 2026-08-18 수정: 대상 창을 2주로 좁힘
+-- 대상 창을 2주로. 실제 데이터를 보니 대표는 예식 10~14일 전쯤 체크링크를 보내고 있어서
+-- (오늘 기준 10일 이내 미확인 0건, 다음 묶음이 D-11) 일주일로 잡으면 거의 항상 0이 뜬다.
+create or replace function public.admin_staff_check_targets()
+returns jsonb language plpgsql security definer set search_path=public, pg_temp as $fn$
+declare res jsonb;
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  select coalesce(jsonb_agg(t order by t.nearest, t.name), '[]'::jsonb) into res from (
+    select s.id, s.name, (s.phone is not null and s.phone <> '') as has_phone,
+           count(*) filter (where c.checked_at is null) as unchecked,
+           count(*) as total,
+           min(b.wedding_date) as nearest
+    from public.staff s
+    join public.bookings b
+      on (b.assignee_id = s.id or b.sub_assignee_id = s.id)
+     and b.status <> '취소'
+     and b.wedding_date between current_date and current_date + 14
+    left join public.assignment_checks c on c.booking_id = b.id and c.staff_id = s.id
+    where s.active
+    group by s.id, s.name, s.phone
+    having count(*) filter (where c.checked_at is null) > 0
+  ) t;
+  return res;
+end$fn$;
+revoke all on function public.admin_staff_check_targets() from public, anon;
+grant execute on function public.admin_staff_check_targets() to authenticated;
