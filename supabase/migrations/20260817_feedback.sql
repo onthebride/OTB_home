@@ -187,3 +187,41 @@ create or replace function private.atk_kname(p text) returns text language sql i
   select case p when 'A' then '계약안내' when 'B' then '한달전' when 'C' then '잔금안내' when 'D' then '최종안내'
                 when 'E' then '링크안내' when 'F' then '입금확인' when 'G' then '촬영 설문' else p end;
 $fn$;
+
+-- 2026-08-18: 관리자 목록 표시 변경(신부이름 추가)
+-- 관리자 작가평가 목록에 신부 이름 추가 (표시를 "작가 (신부이름 예식날짜)" 로 바꾸기 위함)
+create or replace function public.admin_feedback(p_days int default 365)
+returns jsonb language plpgsql security definer set search_path = public, pg_temp as $fn$
+declare n_days int := least(greatest(coalesce(p_days, 365), 1), 3650); res jsonb;
+begin
+  if auth.uid() is null then raise exception 'unauthorized'; end if;
+  with f as (
+    select fb.*, s.name as staff_name, b.contractor_name, b.bride_name, b.wedding_date, b.wedding_venue
+    from public.feedback fb
+    join public.bookings b on b.id = fb.booking_id
+    left join public.staff s on s.id = fb.staff_id
+    where fb.created_at >= now() - (n_days || ' days')::interval
+  )
+  select jsonb_build_object(
+    'count', (select count(*) from f),
+    'avg_overall', (select round(avg(overall)::numeric, 2) from f),
+    'staff', coalesce((select jsonb_agg(t order by t.avg_overall desc nulls last) from (
+        select coalesce(staff_name, '(배정 없음)') as staff_name,
+               count(*) as n,
+               round(avg(overall)::numeric, 2)  as avg_overall,
+               round(avg(kindness)::numeric, 2) as avg_kindness,
+               round(avg(requests)::numeric, 2) as avg_requests,
+               round(avg(flow)::numeric, 2)     as avg_flow,
+               count(*) filter (where arrival <> 'ontime') as late_n,
+               count(*) filter (where issue)               as issue_n
+        from f group by 1) t), '[]'::jsonb),
+    'items', coalesce((select jsonb_agg(t order by t.created_at desc) from (
+        select booking_id, created_at, coalesce(staff_name, '(배정 없음)') as staff_name,
+               contractor_name, bride_name, wedding_date, wedding_venue,
+               overall, arrival, kindness, requests, flow, issue, issue_text, message
+        from f) t), '[]'::jsonb)
+  ) into res;
+  return res;
+end; $fn$;
+revoke all on function public.admin_feedback(int) from public, anon;
+grant execute on function public.admin_feedback(int) to authenticated;

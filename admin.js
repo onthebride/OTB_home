@@ -2286,6 +2286,8 @@ let fbDays = 365;        // 응답 조회 기간
 let fbStaff = null;      // 특정 작가만 보기
 let fbPendAll = false;   // '설문 안 온 예식'을 2주 이전까지 펼쳤는지
 let fbPendOpen = false;  // '설문 안 온 예식' 카드를 폈는지 (기본 접힘)
+let fbPage = 0;          // 받은 응답 페이지 (0부터)
+const FB_PER = 10;       // 한 페이지에 보여줄 응답 수
 const fbRangeLabel = () => (fbDays >= 3650 ? '전체 기간' : fbDays >= 365 ? '최근 1년' : '최근 3개월');
 
 async function renderFeedback() {
@@ -2329,23 +2331,43 @@ async function renderFeedback() {
       + '</div>';
   }).join('') : '<p class="empty">아직 응답이 없습니다.</p>';
 
-  const itemRows = items.length ? items.map((x) => {
-    const dt = String(x.created_at).slice(0, 10).replace(/-/g, '.');
+  // 페이지네이션 — 필터/기간이 바뀌어 목록이 짧아지면 마지막 페이지로 당겨준다
+  const pageMax = Math.max(0, Math.ceil(items.length / FB_PER) - 1);
+  if (fbPage > pageMax) fbPage = pageMax;
+  const paged = items.slice(fbPage * FB_PER, fbPage * FB_PER + FB_PER);
+
+  const chip = (label, val, bad) =>
+    '<span class="fb-chip' + (bad ? ' bad' : '') + '">' + esc(label) + (val == null ? '' : ' <b>' + val + '</b>') + '</span>';
+
+  const itemRows = paged.length ? paged.map((x) => {
     const wd = x.wedding_date ? String(x.wedding_date).slice(0, 10).replace(/-/g, '.') : '';
+    const who = x.bride_name || x.contractor_name || '-';
     const low = Number(x.overall) <= 3;
     return '<div class="fb-item' + (low ? ' low' : '') + '" data-id="' + esc(x.booking_id) + '">'
       + '<div class="fb-ihead">'
         + '<span class="fb-istar">' + stars(x.overall) + ' <b>' + x.overall + '</b></span>'
-        + '<span class="fb-iwho">' + esc(x.staff_name) + ' · ' + esc(x.contractor_name || '-') + '</span>'
-        + '<span class="fb-idate">' + esc(dt) + ' 응답' + (wd ? ' · 예식 ' + esc(wd) : '') + '</span>'
+        + '<span class="fb-iwho">' + esc(x.staff_name) + ' <small>(' + esc(who) + (wd ? ' · ' + esc(wd) : '') + ')</small></span>'
       + '</div>'
-      + '<div class="fb-imeta">도착 ' + esc(ARRIVAL_TXT[x.arrival] || x.arrival) + ' · 친절 ' + x.kindness + ' · 요청 ' + x.requests + ' · 진행 ' + x.flow + '</div>'
+      + '<div class="fb-chips">'
+        + chip('도착 ' + (ARRIVAL_TXT[x.arrival] || x.arrival), null, x.arrival !== 'ontime')
+        + chip('친절', x.kindness, Number(x.kindness) <= 3)
+        + chip('요청', x.requests, Number(x.requests) <= 3)
+        + chip('진행', x.flow, Number(x.flow) <= 3)
+      + '</div>'
       + (x.issue && x.issue_text ? '<div class="fb-iissue">⚠️ ' + esc(x.issue_text) + '</div>'
          : (x.issue ? '<div class="fb-iissue">⚠️ 불편했던 점 있음(내용 미작성)</div>' : ''))
       + (x.message ? '<div class="fb-imsg">💬 ' + esc(x.message) + '</div>' : '')
       + (x.message || x.issue_text ? '<button class="btn-sm fb-share" data-id="' + esc(x.booking_id) + '">작가에게 공유</button>' : '')
       + '</div>';
   }).join('') : '<p class="empty">' + (fbStaff ? '이 작가의 응답이 없습니다.' : '아직 응답이 없습니다.') + '</p>';
+
+  const pager = items.length > FB_PER
+    ? '<div class="fb-pager">'
+      + '<button class="btn-sm fb-pg" data-pg="' + (fbPage - 1) + '"' + (fbPage <= 0 ? ' disabled' : '') + '>‹</button>'
+      + '<span>' + (fbPage * FB_PER + 1) + '–' + Math.min(items.length, (fbPage + 1) * FB_PER) + ' / ' + items.length + '건</span>'
+      + '<button class="btn-sm fb-pg" data-pg="' + (fbPage + 1) + '"' + (fbPage >= pageMax ? ' disabled' : '') + '>›</button>'
+      + '</div>'
+    : '';
 
   const rangeBtn = (v, t) => '<button class="btn-sm fb-range' + (fbDays === v ? ' active' : '') + '" data-days="' + v + '">' + t + '</button>';
 
@@ -2361,6 +2383,7 @@ async function renderFeedback() {
         + '<span class="fb-rangebar">' + rangeBtn(90, '3개월') + rangeBtn(365, '1년') + rangeBtn(3650, '전체') + '</span></div>'
       + (fbStaff ? '<div class="fb-filter"><b>' + esc(fbStaff) + '</b> 작가 응답만 보는 중 <button class="btn-sm fb-clear">전체 보기</button></div>' : '')
       + '<div class="fb-list">' + itemRows + '</div>'
+      + pager
     + '</div>'
     + (pendAll.length
       ? '<div class="dash-card fb-pendcard' + (fbPendOpen ? ' open' : '') + '">'
@@ -2404,13 +2427,17 @@ async function renderFeedback() {
   const more = wrap.querySelector('.fb-pendmore');
   if (more) more.addEventListener('click', () => { fbPendAll = !fbPendAll; renderFeedback(); });
   wrap.querySelectorAll('.fb-range').forEach((b) => b.addEventListener('click', () => {
-    fbDays = Number(b.dataset.days) || 365; renderFeedback();
+    fbDays = Number(b.dataset.days) || 365; fbPage = 0; renderFeedback();
   }));
   wrap.querySelectorAll('.fb-srow').forEach((r) => r.addEventListener('click', () => {
-    fbStaff = fbStaff === r.dataset.staff ? null : r.dataset.staff; renderFeedback();
+    fbStaff = fbStaff === r.dataset.staff ? null : r.dataset.staff; fbPage = 0; renderFeedback();
   }));
   const clr = wrap.querySelector('.fb-clear');
-  if (clr) clr.addEventListener('click', (e) => { e.stopPropagation(); fbStaff = null; renderFeedback(); });
+  if (clr) clr.addEventListener('click', (e) => { e.stopPropagation(); fbStaff = null; fbPage = 0; renderFeedback(); });
+  wrap.querySelectorAll('.fb-pg').forEach((b) => b.addEventListener('click', () => {
+    if (b.disabled) return;
+    fbPage = Math.max(0, Number(b.dataset.pg) || 0); renderFeedback();
+  }));
 }
 
 const stToggle = $('stToggle');
