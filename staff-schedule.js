@@ -88,13 +88,30 @@ async function init() {
   $('greet').innerHTML = `<b>${esc(data.staff_name || '')}</b> 작가님, ${single ? '아래 예식을 확인해 주세요.' : '배정된 예식입니다.'}`;
   const list = Array.isArray(data.schedule) ? data.schedule : [];
   $('emptyMsg').hidden = list.length > 0;
-  $('schedule').innerHTML = list.map(card).join('');
+
+  // 단건 링크(/c?k=)는 그대로 하나만. 작가 링크는 가까운 일정만 먼저 보여준다.
+  const NEAR_DAYS = 10;
+  const cut = new Date(); cut.setHours(0, 0, 0, 0); cut.setDate(cut.getDate() + NEAR_DAYS);
+  const dayOf = (w) => new Date(String(w.wedding_date).slice(0, 10) + 'T00:00:00');
+  const near = single ? list : list.filter((w) => dayOf(w) <= cut);
+  const later = single ? [] : list.filter((w) => dayOf(w) > cut);
+
+  $('schedule').innerHTML = (near.length ? near.map(card).join('') : '')
+    + (later.length
+      ? '<button type="button" class="ss-more" id="ssMore">이후 일정 ' + later.length + '건 더 보기</button>'
+        + '<div id="ssLater" hidden>' + later.map(card).join('') + '</div>'
+      : '');
+  if (!near.length && later.length) { $('ssLater').hidden = false; $('ssMore').remove(); }
+  const more = $('ssMore');
+  if (more) more.addEventListener('click', () => { $('ssLater').hidden = false; more.remove(); bind(); });
   bind();
   show($('mainCard'));
 }
 
 function bind() {
   document.querySelectorAll('.ss-card').forEach((el) => {
+    if (el.dataset.bound) return;      // '더 보기' 로 다시 부를 때 중복 등록 방지
+    el.dataset.bound = '1';
     el.querySelector('.ss-submit').addEventListener('click', async (e) => {
       const btn = e.currentTarget;
       const bid = el.dataset.bid;

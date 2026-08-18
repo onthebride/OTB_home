@@ -100,6 +100,10 @@
 .ss-submit:hover { background: var(--gold-deep); }
 .ss-submit:disabled { opacity: .55; }
 .ss-status { font-size: .72rem; color: var(--ink-soft); text-align: right; }
+.ss-more { display: block; width: 100%; margin: 4px 0 14px; padding: 11px; background: #fff;
+  border: 1px dashed var(--line); border-radius: 8px; color: var(--ink-soft); font-family: var(--sans);
+  font-size: .88rem; cursor: pointer; }
+.ss-more:hover { border-color: var(--gold); color: var(--gold-deep); }
 
 html { scroll-behavior: smooth; }
 .sv-sec[id] { scroll-margin-top: 16px; }
