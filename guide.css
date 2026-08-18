@@ -84,6 +84,12 @@
 .ss-grp { display: grid; gap: 4px; }
 .ss-row { font-size: .94rem; line-height: 1.5; word-break: break-word; }
 .ss-row b { color: var(--ink-soft); font-weight: 600; }
+/* 옵션은 현장에서 놓치면 안 되는 항목이라 눈에 띄게 */
+.ss-optgrp { background: #fdf6ec; border: 1px solid #ecdcc3; border-radius: 8px; padding: 10px 12px; }
+.ss-opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.ss-opt { font-size: .88rem; font-weight: 700; color: #8a5a1a; background: #fbe6c4; border: 1px solid #e6c894;
+  border-radius: 999px; padding: 4px 12px; white-space: nowrap; }
+.ss-opt.two { color: #1f4e73; background: #dbeaf6; border-color: #b6d2e8; }
 .ss-checks { display: grid; gap: 10px; margin: 16px 0; }
 .ss-chk { display: flex; align-items: flex-start; gap: 9px; font-size: .92rem; cursor: pointer; }
 .ss-chk em { color: #c0392b; font-style: normal; }

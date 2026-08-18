@@ -19,13 +19,13 @@ function fmt(d) {
   const dt = new Date(String(d).slice(0, 10) + 'T00:00:00');
   return `${dt.getFullYear()}.${dt.getMonth() + 1}.${dt.getDate()} (${WD[dt.getDay()]})`;
 }
+// 촬영 현장에서 작가가 알아야 할 것만. 앨범·플러스 같은 판매 옵션은 현장 진행과 무관해 뺀다.
 function opts(w) {
   const o = [];
   if (w.option_reception) o.push('연회장 인사촬영');
   if (w.option_pyebaek) o.push('폐백촬영');
   if (w.option_part2) o.push('2부 촬영');
-  if (w.option_album) o.push('앨범 1권 추가');
-  (Array.isArray(w.custom_options) ? w.custom_options : []).forEach((c) => { if (c && c.name) o.push(c.name); });
+  if (w.photographer === '2인 촬영') o.push('2인 촬영');
   return o;
 }
 
@@ -53,8 +53,9 @@ function card(w) {
         <div class="ss-row"><b>신랑</b> : ${esc(w.groom_name || '-')}${w.groom_phone ? ' 📞 ' + esc(w.groom_phone) : ''}</div>
         <div class="ss-row"><b>신부</b> : ${esc(w.bride_name || '-')}${w.bride_phone ? ' 📞 ' + esc(w.bride_phone) : ''}</div>
       </div>
-      ${o.length ? `<div class="ss-grp"><div class="ss-row"><b>옵션</b> : ${esc(o.join(', '))}</div></div>` : ''}
-      ${(w.photographer === '2인 촬영' || w.rep_designation) ? `<div class="ss-grp"><div class="ss-row"><b>촬영</b> : ${esc([w.photographer === '2인 촬영' ? '2인 촬영' : '', w.rep_designation ? '대표지정' : ''].filter(Boolean).join(', '))}</div></div>` : ''}
+      ${o.length ? `<div class="ss-grp ss-optgrp"><div class="ss-row"><b>옵션</b></div>
+        <div class="ss-opts">${o.map((x) => `<span class="ss-opt${x === '2인 촬영' ? ' two' : ''}">${esc(x)}</span>`).join('')}</div></div>` : ''}
+      ${w.rep_designation ? '<div class="ss-grp"><div class="ss-row"><b>촬영</b> : 대표지정</div></div>' : ''}
     </div>
     <div class="ss-checks">
       <label class="ss-chk"><input type="checkbox" data-k="attend" ${c.attend ? 'checked' : ''} /> <span>참석 / 스케줄 확정 <em>*</em></span></label>
