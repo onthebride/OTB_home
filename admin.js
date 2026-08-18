@@ -2315,33 +2315,34 @@ if (stRange) {
 let staffAtkTargets = [];
 
 async function refreshStaffAtk() {
-  const bar = $('staffAtkBar');
-  if (!bar) return;
+  const btn = $('staffAtkSend');
+  if (!btn) return;
   const { data, error } = await sb.rpc('admin_staff_check_targets');
   staffAtkTargets = (!error && Array.isArray(data)) ? data : [];
   const sendable = staffAtkTargets.filter((s) => s.has_phone);
-  if (!sendable.length) { bar.hidden = true; return; }
-  bar.hidden = false;
-  const names = sendable.slice(0, 3).map((s) => s.name).join(', ');
-  const more = sendable.length > 3 ? ' 외 ' + (sendable.length - 3) + '명' : '';
+  btn.hidden = !sendable.length;
+  if (!sendable.length) return;
   const unchecked = sendable.reduce((a, s) => a + Number(s.unchecked || 0), 0);
-  $('staffAtkTxt').innerHTML = '📷 <b>2주 이내 예식</b> 중 작가가 아직 확인 안 한 건 <b>' + unchecked + '건</b>'
-    + ' <small>(' + esc(names) + esc(more) + ' · ' + sendable.length + '명)</small>';
-  $('staffAtkSend').textContent = '작가 ' + sendable.length + '명에게 발송';
+  btn.textContent = '스케줄 톡 ' + sendable.length + '명';
+  btn.title = '2주 이내 예식 중 확인 안 된 ' + unchecked + '건 · '
+    + sendable.map((s) => s.name + ' ' + s.unchecked).join(', ');
 }
 
 if ($('staffAtkSend')) {
   $('staffAtkSend').addEventListener('click', async () => {
     const sendable = staffAtkTargets.filter((s) => s.has_phone);
     if (!sendable.length) return;
-    if (!confirm(sendable.length + '명에게 스케줄 확인 알림톡을 보냅니다.\n\n' +
-      sendable.map((s) => '· ' + s.name + ' (미확인 ' + s.unchecked + '건)').join('\n'))) return;
+    const md = (d) => (d ? String(d).slice(5, 10).replace('-', '/') : '');
+    if (!confirm('2주 이내 예식 중 아직 확인 안 된 작가에게 스케줄 확인 알림톡을 보냅니다.\n'
+      + '(체크링크를 아직 안 보낸 건도 포함됩니다)\n\n'
+      + sendable.map((s) => '· ' + s.name + ' — 미확인 ' + s.unchecked + '건'
+          + (s.nearest ? ' (가장 가까운 예식 ' + md(s.nearest) + ')' : '')).join('\n'))) return;
     const btn = $('staffAtkSend');
     btn.disabled = true;
     const before = btn.textContent;
     let ok = 0; const failed = [];
     for (const s of sendable) {
-      btn.textContent = '보내는 중… ' + (ok + failed.length + 1) + '/' + sendable.length;
+      btn.textContent = '보내는 중 ' + (ok + failed.length + 1) + '/' + sendable.length;
       const { error } = await sb.rpc('admin_send_staff_check', { p_staff_id: s.id });
       if (error) failed.push(s.name + ' (' + error.message + ')'); else ok++;
     }
