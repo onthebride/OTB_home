@@ -85,25 +85,12 @@ async function init() {
     ? await sb.rpc('staff_one', { p_booking_id: bookingId, p_staff_id: staffId })
     : await sb.rpc('staff_schedule', { p_staff_id: staffId });
   if (error || !data) { show($('errCard')); return; }
-  $('greet').innerHTML = `<b>${esc(data.staff_name || '')}</b> 작가님, ${single ? '아래 예식을 확인해 주세요.' : '배정된 예식입니다.'}`;
+  const wk = (d) => (d ? String(d).slice(5, 10).replace('-', '월 ') + '일' : '');
+  const range = (!single && data.week_from) ? ` (${wk(data.week_from)}~${wk(data.week_to)} 예식)` : '';
+  $('greet').innerHTML = `<b>${esc(data.staff_name || '')}</b> 작가님, ${single ? '아래 예식을 확인해 주세요.' : '이번에 확인하실 예식입니다.' + range}`;
   const list = Array.isArray(data.schedule) ? data.schedule : [];
   $('emptyMsg').hidden = list.length > 0;
-
-  // 단건 링크(/c?k=)는 그대로 하나만. 작가 링크는 가까운 일정만 먼저 보여준다.
-  const NEAR_DAYS = 10;
-  const cut = new Date(); cut.setHours(0, 0, 0, 0); cut.setDate(cut.getDate() + NEAR_DAYS);
-  const dayOf = (w) => new Date(String(w.wedding_date).slice(0, 10) + 'T00:00:00');
-  const near = single ? list : list.filter((w) => dayOf(w) <= cut);
-  const later = single ? [] : list.filter((w) => dayOf(w) > cut);
-
-  $('schedule').innerHTML = (near.length ? near.map(card).join('') : '')
-    + (later.length
-      ? '<button type="button" class="ss-more" id="ssMore">이후 일정 ' + later.length + '건 더 보기</button>'
-        + '<div id="ssLater" hidden>' + later.map(card).join('') + '</div>'
-      : '');
-  if (!near.length && later.length) { $('ssLater').hidden = false; $('ssMore').remove(); }
-  const more = $('ssMore');
-  if (more) more.addEventListener('click', () => { $('ssLater').hidden = false; more.remove(); bind(); });
+  $('schedule').innerHTML = list.map(card).join('');
   bind();
   show($('mainCard'));
 }
