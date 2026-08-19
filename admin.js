@@ -181,9 +181,51 @@ async function loadStaff() {
   populateAssigneeSelects();
 }
 const staffName = (id) => (id && staffMap[id] ? staffMap[id].name : '');
-function assigneeOptions(selId) {
+
+/* 배정 충돌 — 예약id별 { 작가id: {s:'off'|'tight', d:'사유'} }
+   off   = 작가가 그날을 촬영 불가로 찍음
+   tight = 같은 날 다른 일정과 4시간 안에 붙음 */
+let confMap = {};
+const confMonths = new Set();           // 이미 불러온 달
+let allowConf = false;                  // '겹쳐도 배정' 스위치
+const monthKey = (y, m) => `${y}-${String(m + 1).padStart(2, '0')}`;
+async function ensureConf(y, m, onLoad) {
+  const key = monthKey(y, m);
+  if (confMonths.has(key)) return;
+  confMonths.add(key);                  // 먼저 넣어야 다시 그릴 때 또 부르지 않는다
+  const last = new Date(y, m + 1, 0).getDate();
+  const { data, error } = await sb.rpc('admin_assign_conflicts',
+    { p_from: `${key}-01`, p_to: `${key}-${String(last).padStart(2, '0')}` });
+  if (error) { confMonths.delete(key); return; }
+  Object.assign(confMap, data || {});
+  if (onLoad) onLoad();
+}
+function invalidateConf() { confMap = {}; confMonths.clear(); }
+// 예약 하나에 대한 충돌표(없으면 아직 안 불러온 것)
+function confOf(b) { return confMap[b && b.id] || null; }
+
+function assigneeOptions(selId, conf) {
+  const one = (s, extra, dis) =>
+    `<option value="${s.id}"${s.id === selId ? ' selected' : ''}${dis ? ' disabled' : ''}>${esc(s.name)}${extra}</option>`;
+  if (!conf) {
+    return '<option value="">미배정</option>' +
+      allStaff.map((s) => one(s, s.active ? '' : ' (비활성)', false)).join('');
+  }
+  const ok = [], bad = [], off = [];
+  allStaff.forEach((s) => {
+    if (!s.active) { off.push(one(s, ' (비활성)', false)); return; }
+    const v = conf[s.id];
+    if (!v) { ok.push(one(s, '', false)); return; }
+    const why = v.s === 'off' ? '불가' : '겹침';
+    const d = v.d ? String(v.d) : '';
+    const shortD = d.length > 16 ? d.slice(0, 16) + '…' : d;
+    // 지금 배정된 작가는 잠그지 않는다 — 잠그면 되돌릴 수가 없다
+    bad.push(one(s, ` · ${why}${shortD ? ' ' + esc(shortD) : ''}`, s.id !== selId && !allowConf));
+  });
   return '<option value="">미배정</option>' +
-    allStaff.map((s) => `<option value="${s.id}"${s.id === selId ? ' selected' : ''}>${esc(s.name)}${s.active ? '' : ' (비활성)'}</option>`).join('');
+    (ok.length ? `<optgroup label="배정 가능 ${ok.length}명">${ok.join('')}</optgroup>` : '') +
+    (bad.length ? `<optgroup label="겹침·불가 ${bad.length}명">${bad.join('')}</optgroup>` : '') +
+    (off.length ? `<optgroup label="비활성">${off.join('')}</optgroup>` : '');
 }
 function populateAssigneeSelects() {
   const sa = $('schedAssignee');
@@ -675,8 +717,8 @@ function renderView(b, flash) {
 
     <div class="md-assignee">
       <span class="md-asg-label">메인작가</span>
-      <select id="mAssignee" class="md-sel">${assigneeOptions(b.assignee_id)}</select>
-      ${b.photographer === '2인 촬영' ? `<span class="md-asg-label">서브작가</span><select id="mSubAssignee" class="md-sel">${assigneeOptions(b.sub_assignee_id)}</select>` : ''}
+      <select id="mAssignee" class="md-sel">${assigneeOptions(b.assignee_id, confOf(b))}</select>
+      ${b.photographer === '2인 촬영' ? `<span class="md-asg-label">서브작가</span><select id="mSubAssignee" class="md-sel">${assigneeOptions(b.sub_assignee_id, confOf(b))}</select>` : ''}
     </div>
 
     <div class="detail-grid">
@@ -757,6 +799,7 @@ function renderView(b, flash) {
   };
   if ($('mAssignee')) $('mAssignee').addEventListener('change', saveAssignees);
   if ($('mSubAssignee')) $('mSubAssignee').addEventListener('change', saveAssignees);
+  refillAsg(b, { mAssignee: 'assignee_id', mSubAssignee: 'sub_assignee_id' });
 
   // 계약금/잔금 입금 토글 (잘못 누르면 다시 눌러 해제)
   $('modalCard').querySelectorAll('.pay-toggle').forEach((btn) =>
@@ -988,8 +1031,8 @@ function renderEdit(b) {
 
     <h5 class="eg">작가 배정 · 입금</h5>
     <div class="edit-grid">
-      <div class="field"><label>메인작가</label><select id="e_assignee">${assigneeOptions(b.assignee_id)}</select></div>
-      ${b.photographer === '2인 촬영' ? `<div class="field"><label>서브작가</label><select id="e_sub_assignee">${assigneeOptions(b.sub_assignee_id)}</select></div>` : ''}
+      <div class="field"><label>메인작가</label><select id="e_assignee">${assigneeOptions(b.assignee_id, confOf(b))}</select></div>
+      ${b.photographer === '2인 촬영' ? `<div class="field"><label>서브작가</label><select id="e_sub_assignee">${assigneeOptions(b.sub_assignee_id, confOf(b))}</select></div>` : ''}
     </div>
     <label class="eopt"><input type="checkbox" id="e_deposit" ${ck(b.deposit_paid)} /><span>계약금 입금 완료</span><b></b></label>
     <label class="eopt"><input type="checkbox" id="e_balance" ${ck(b.balance_paid)} /><span>잔금 입금 완료</span><b></b></label>
@@ -1905,6 +1948,8 @@ function schedMatch(b) {
 function renderSchedule() {
   const wrap = $('schedList');
   if (!wrap || !calMonth) return;
+  ensureConf(calMonth.y, calMonth.m, renderSchedule);   // 오면 다시 그린다
+  const wasChecked = schedChecked();                    // 다시 그려도 선택은 유지
   const all = schedMonthItems();
   renderSchedTags(all);
 
@@ -1938,15 +1983,25 @@ function renderSchedule() {
           </div>
           <div class="sched-asg-ctrls">
             <div class="sched-sels">
-              <select class="sched-main" data-id="${b.id}" title="메인작가">${assigneeOptions(b.assignee_id)}</select>
-              ${is2 ? `<select class="sched-sub" data-id="${b.id}" title="서브작가">${assigneeOptions(b.sub_assignee_id)}</select>` : ''}
+              <select class="sched-main" data-id="${b.id}" title="메인작가">${assigneeOptions(b.assignee_id, confOf(b))}</select>
+              ${is2 ? `<select class="sched-sub" data-id="${b.id}" title="서브작가">${assigneeOptions(b.sub_assignee_id, confOf(b))}</select>` : ''}
             </div>
             <button type="button" class="sched-copy1" data-id="${b.id}" title="이 예식 스케줄 복사">📋</button>
           </div>
         </div>`;
       }).join('')}
     </div>`).join('');
+  wasChecked.forEach((id) => {
+    const cb = wrap.querySelector('.sched-cb[value="' + id + '"]');
+    if (cb) cb.checked = true;
+  });
   bindSchedule();
+}
+
+function clearSchedChecks() {
+  document.querySelectorAll('#schedList .sched-cb').forEach((c) => { c.checked = false; });
+  if ($('schedAll')) $('schedAll').checked = false;
+  updateSchedCount();
 }
 
 function renderSchedTags(items) {
@@ -2012,8 +2067,8 @@ function bindSchedule() {
       if (error) { alert('배정 실패: ' + error.message); return; }
       const b = allBookings.find((x) => x.id === id);
       if (b) { b.assignee_id = main; b.sub_assignee_id = sub; }
-      renderCalendar(); renderDashboard();
-      renderSchedTags(schedMonthItems());
+      invalidateConf();
+      renderCalendar(); renderDashboard(); renderSchedule();
       toast('작가 배정 변경됨');
     })
   );
@@ -2026,6 +2081,30 @@ if ($('schedAll')) {
     updateSchedCount();
   });
 }
+if ($('schedAllowConf')) {
+  const wrap = $('schedAllowConfWrap');
+  $('schedAllowConf').addEventListener('change', (e) => {
+    allowConf = e.target.checked;
+    if (wrap) wrap.classList.toggle('is-on', allowConf);
+    renderSchedule();
+  });
+}
+
+// 모달·편집 폼은 화면을 다시 그리기 어렵다 → 충돌표가 늦게 오면 선택칸만 갈아끼운다
+function refillAsg(b, map) {
+  const d = wDate(b);
+  if (!d) return;
+  const fill = () => Object.keys(map).forEach((id) => {
+    const sel = $(id);
+    if (!sel) return;
+    const keep = sel.value;
+    sel.innerHTML = assigneeOptions(b[map[id]] || '', confOf(b));
+    sel.value = keep;
+  });
+  if (confOf(b)) return;            // 이미 있으면 그릴 때 반영됐다
+  ensureConf(d.getFullYear(), d.getMonth(), fill);
+}
+
 if ($('schedLock')) {
   const wrap = $('schedLockWrap');
   const syncLock = () => { if (wrap) wrap.classList.toggle('is-on', schedLock); };
@@ -2053,15 +2132,28 @@ async function bulkAssign(role) {
     skipped = before - ids.length;
     if (!ids.length) { toast('🔒 수정금지: 이미 배정된 일정은 변경되지 않아요.'); return; }
   }
+  // 겹치거나 불가인 일정이 섞여 있으면 알려주고 물어본다
+  const clash = ids.filter((id) => (confMap[id] || {})[aid]);
+  if (clash.length && !allowConf) {
+    const lines = clash.slice(0, 6).map((id) => {
+      const b = allBookings.find((x) => x.id === id) || {};
+      const v = (confMap[id] || {})[aid] || {};
+      return `· ${fmtDate(b.wedding_date)} ${kTimeShort(b.wedding_time) || ''} ${b.contractor_name || ''}`
+        + ` — ${v.s === 'off' ? '작가가 불가로 표시' : '겹침 ' + (v.d || '')}`;
+    }).join('\n');
+    const more = clash.length > 6 ? `\n… 외 ${clash.length - 6}건` : '';
+    if (!confirm(`${staffName(aid)} 작가는 아래 ${clash.length}건이 걸립니다.\n\n${lines}${more}\n\n그래도 배정할까요?`)) return;
+  }
   // 되돌리기용 직전 상태 스냅샷
   lastAssign = ids.map((id) => { const b = allBookings.find((x) => x.id === id) || {}; return { id, main: b.assignee_id || '', sub: b.sub_assignee_id || '' }; });
   const { error } = await sb.rpc('admin_assign_role', { p_ids: ids, p_assignee: aid, p_role: role });
   if (error) { lastAssign = null; alert('배정 실패: ' + error.message); return; }
   ids.forEach((id) => { const b = allBookings.find((x) => x.id === id); if (b) { if (role === 'sub') b.sub_assignee_id = aid; else b.assignee_id = aid; } });
   toast(`${ids.length}건 → ${staffName(aid)} ${role === 'sub' ? '서브' : '메인'} 배정 완료${skipped ? ` (배정된 ${skipped}건 제외)` : ''}`);
+  invalidateConf();
   updateUndoBtn();
   renderSchedule(); renderCalendar(); renderDashboard();
-  if ($('schedAll')) $('schedAll').checked = false;
+  clearSchedChecks();
 }
 if ($('schedAssignMain')) $('schedAssignMain').addEventListener('click', () => bulkAssign('main'));
 if ($('schedAssignSub')) $('schedAssignSub').addEventListener('click', () => bulkAssign('sub'));
@@ -2072,7 +2164,7 @@ if ($('schedUndo')) {
     const { error } = await sb.rpc('admin_restore_assignees', { p_rows: snap });
     if (error) { alert('되돌리기 실패: ' + error.message); return; }
     snap.forEach((s) => { const b = allBookings.find((x) => x.id === s.id); if (b) { b.assignee_id = s.main || null; b.sub_assignee_id = s.sub || null; } });
-    lastAssign = null; updateUndoBtn();
+    lastAssign = null; updateUndoBtn(); invalidateConf();
     toast(`${snap.length}건 직전 배정으로 되돌림`);
     renderSchedule(); renderCalendar(); renderDashboard();
   });

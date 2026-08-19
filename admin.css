@@ -837,3 +837,8 @@ td .muted { color: var(--ink-soft); }
 
 /* 작가관리 — 캘린더 링크 */
 .staff-item .st-cal { text-decoration: none; white-space: nowrap; }
+
+/* 배정 드롭다운 — 겹침·불가 표시 */
+.sched-sels select optgroup, .md-sel optgroup, #e_assignee optgroup, #e_sub_assignee optgroup { font-size: .82rem; }
+.sched-sels select option:disabled, .md-sel option:disabled { color: #b3ada4; }
+#schedAllowConfWrap.is-on .sched-lock-txt { color: #b8860b; font-weight: 600; }
