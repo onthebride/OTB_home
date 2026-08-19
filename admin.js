@@ -380,6 +380,17 @@ const PRICE55_AGAIN_FROM = Date.parse('2026-07-05T10:50:00Z'); // 다시 55만�
 const isNewPricing = (b) => !!(b && b.created_at && Date.parse(b.created_at) >= PRICE49_FROM);
 // 베이직 49만원 적용 대상: 인하기간(2026-06-24 ~ 2026-07-05) 접수분만
 const isBasic49 = (b) => { const t = (b && b.created_at) ? Date.parse(b.created_at) : 0; return t >= PRICE49_FROM && t < PRICE55_AGAIN_FROM; };
+// 촬영본 사용동의 -1만원 할인.
+// 접수일(created_at)로 판정하면 안 된다 — 지금 데이터의 접수일은 '시스템에 옮겨 적은 날'이라
+// 실제 계약 시점이 아니다. 같은 6월 9일 접수 안에도 할인 받은 건과 아닌 건이 섞여 있다.
+// 그래서 그 예약의 스냅샷(line_items)에 적힌 대로만 따른다. 스냅샷이 아직 없는 예약만 규칙으로.
+const USAGE_DC = '촬영본 사용동의';
+function usageDcPrice(b) {
+  const li = Array.isArray(b && b.line_items) ? b.line_items : null;
+  if (li && li.length) { const it = li.find((x) => x && x.name === USAGE_DC); return it ? (Number(it.price) || 0) : 0; }
+  return isNewPricing(b) ? 0 : -1;
+}
+
 // 앨범 1권 추가 옵션: 5만원. (2026-06-25~07-04 잠시 10만원 적용했으나 해당 기간 앨범 예약 0건 → 5만원 환원)
 const albumPrice = (b) => 5;
 function basicBasePrice(b) {
@@ -405,6 +416,7 @@ function productOptions(b) {
   (Array.isArray(b.custom_options) ? b.custom_options : []).forEach((o) => { if (o && o.name) rows.push({ name: o.name, price: Number(o.price) || 0 }); });
   if (b.photographer === '2인 촬영') rows.push({ name: '2인 촬영', price: 25 });
   if (b.rep_designation) rows.push({ name: '대표지정', price: 35 });
+  if (b.photo_usage_agree && usageDcPrice(b)) rows.push({ name: USAGE_DC, price: usageDcPrice(b) });
   return rows;
 }
 function productOptionsHtml(b) {
@@ -520,6 +532,10 @@ function buildEditLineItems() {
     const nm = r.querySelector('.co-name').value.trim();
     if (nm) items.push({ group: '옵션', name: nm, price: Number(r.querySelector('.co-price').value) || 0 });
   });
+  const dcEl = $('e_usage');
+  if (dcEl && dcEl.checked && Number(dcEl.dataset.price)) {
+    items.push({ group: '할인', name: USAGE_DC, price: Number(dcEl.dataset.price) });
+  }
   return items;
 }
 
@@ -1029,7 +1045,7 @@ function renderEdit(b) {
       </select>
     </div>
     <label class="eopt" style="margin-top:8px"><input type="checkbox" id="e_rep" data-price="${editPrice(b, '대표지정', 'rep')}" ${ck(b.rep_designation)} /><span>대표지정</span><b>+${editPrice(b, '대표지정', 'rep')}만원</b></label>
-    <label class="eopt" style="margin-top:8px"><input type="checkbox" id="e_usage" data-price="${isNewPricing(b) ? 0 : -1}" ${ck(b.photo_usage_agree)} /><span>촬영본 사용동의 (YES)</span><b>${isNewPricing(b) ? '' : '-1만원'}</b></label>
+    <label class="eopt" style="margin-top:8px"><input type="checkbox" id="e_usage" data-price="${usageDcPrice(b)}" ${ck(b.photo_usage_agree)} /><span>촬영본 사용동의 (YES)</span><b>${usageDcPrice(b) ? usageDcPrice(b) + '만원' : ''}</b></label>
 
     <h5 class="eg">커스텀 옵션 <small>(예전·비표준 옵션)</small></h5>
     <div id="customOpts" class="custom-opts"></div>
