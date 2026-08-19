@@ -878,3 +878,7 @@ td .muted { color: var(--ink-soft); }
 
 .dc-more { display: block; width: 100%; margin-top: 10px; }
 .fb-sscore small, .fb-istar small { color: var(--ink-soft); font-weight: 400; font-size: .78em; }
+
+.dc-role { font-size: .7rem; font-weight: 600; color: #2c6b9b; background: #e8f0f6;
+  border-radius: 999px; padding: 1px 7px; margin-left: 6px; }
+.dc-row.subonly .dc-name { font-weight: 500; }
