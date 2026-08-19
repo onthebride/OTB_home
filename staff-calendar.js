@@ -111,8 +111,6 @@ function render() {
 
 // 여러 날 고르기 — 켜고 끄는 버튼과, 고른 개수·저장 막대
 function renderPickBar() {
-  const btn = $('multiBtn');
-  if (btn) btn.textContent = multi ? '고르기 그만' : '여러 날 한번에 고르기';
   const bar = $('pickBar');
   if (!bar) return;
   if (!multi) { bar.hidden = true; bar.innerHTML = ''; return; }
@@ -187,6 +185,7 @@ function renderPanel() {
         <div class="sc-add-btns">
           ${off || bk.length ? '' : '<button type="button" class="btn-sm sc-off">이 날 촬영 불가</button>'}
           ${busyForm ? '' : '<button type="button" class="btn-sm sc-openbusy">다른 촬영 있음</button>'}
+          ${off || bk.length ? '' : '<button type="button" class="btn-sm sc-multi">여러 날 고르기</button>'}
         </div>
         ${busyForm ? `<div class="sc-busy-form">
           <label class="sc-f">시간<input type="time" id="bTime" /></label>
@@ -204,6 +203,14 @@ function renderPanel() {
   p.querySelectorAll('.sc-del').forEach((btn) => btn.addEventListener('click', () => del(btn.dataset.id)));
   const offBtn = p.querySelector('.sc-off');
   if (offBtn) offBtn.addEventListener('click', () => add('off'));
+  const multiBtn = p.querySelector('.sc-multi');
+  // 지금 보고 있는 날짜를 담은 채로 고르기 모드로 넘어간다
+  if (multiBtn) multiBtn.addEventListener('click', () => {
+    multi = true;
+    picked.clear();
+    picked.add(openDay);
+    render();
+  });
   const openBusy = p.querySelector('.sc-openbusy');
   if (openBusy) openBusy.addEventListener('click', () => { busyForm = true; renderPanel(); });
   const cancelBusy = p.querySelector('.sc-cancelbusy');
@@ -282,12 +289,6 @@ function goMonth(step) {
   slideDir = step > 0 ? 'next' : 'prev';
   load();
 }
-if ($('multiBtn')) $('multiBtn').addEventListener('click', () => {
-  multi = !multi;
-  picked.clear();
-  openDay = null;
-  render();
-});
 $('prevM').addEventListener('click', () => goMonth(-1));
 $('nextM').addEventListener('click', () => goMonth(1));
 

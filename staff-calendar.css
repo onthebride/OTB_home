@@ -104,7 +104,6 @@
 }
 
 /* 여러 날 한번에 고르기 */
-.sc-tools { display: flex; justify-content: flex-end; margin-bottom: 8px; }
 .sc-cell.picked { background: var(--ink); border-color: var(--ink); }
 .sc-cell.picked .sc-d { color: #fff; }
 .sc-cell.nopick { opacity: .45; cursor: default; }
