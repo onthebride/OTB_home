@@ -1,4 +1,8 @@
 /* ===== 작가 개인 캘린더 ===== */
+/* 상단 인사말 — 가운데로, 아래 선으로 달력과 나눈다 */
+.sv-greet { text-align: center; font-size: .95rem; padding-bottom: 14px;
+  border-bottom: 1px solid var(--line); }
+.sv-greet b { font-weight: 600; }
 .sc-nav { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 18px 0 12px; }
 .sc-nav span { font-family: var(--kserif); font-weight: 600; font-size: 1.15rem; min-width: 130px; text-align: center; }
 .btn-nav { background: #fff; border: 1px solid var(--line); border-radius: 8px; width: 38px; height: 38px;
@@ -79,7 +83,7 @@
   .sv-logo { height: 24px; }
   .sv-wrap { padding: 10px 12px 32px; }
   .sv-card { padding: 16px 12px; }
-  .sv-greet { font-size: .88rem; }
+  .sv-greet { font-size: .88rem; padding-bottom: 10px; }
 
   .sc-nav { margin: 10px 0 8px; gap: 12px; }
   .sc-nav span { min-width: 104px; font-size: .98rem; }

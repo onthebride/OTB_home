@@ -20,7 +20,7 @@ const dayKey = (v) => String(v).slice(0, 10);
 const kTime = (t) => {
   if (!t) return '';
   const [h, m] = String(t).split(':').map(Number);
-  return (h % 12 === 0 ? 12 : h % 12) + ':' + pad(m) + (h < 12 ? 'a' : 'p');
+  return h + ':' + pad(m);
 };
 const todayStr = ymd(new Date());
 
@@ -50,7 +50,7 @@ async function load() {
   });
   if (error || !res) { show($('errCard')); return; }
   data = { bookings: res.bookings || [], busy: res.busy || [] };
-  $('greet').innerHTML = `<b>${esc(res.staff_name || '')}</b> 작가님의 캘린더입니다.`;
+  $('greet').innerHTML = `<b>${esc(res.staff_name || '')}</b> 작가님의 캘린더`;
   render();
   show($('mainCard'));
 }
