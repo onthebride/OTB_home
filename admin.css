@@ -818,3 +818,15 @@ td .muted { color: var(--ink-soft); }
 
 /* 작가 미확인 박스 헤더 — 건수 배지 옆에 일괄발송 버튼 */
 .unconf-head-right { display: flex; align-items: center; gap: 8px; flex: none; }
+
+/* 배정 변경 이력 */
+.au-list { display: flex; flex-direction: column; }
+.au-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 9px 4px; border-bottom: 1px solid var(--line); font-size: .86rem; }
+.au-row:last-child { border-bottom: none; }
+.au-row.risky { background: #fcf3f1; border-radius: 6px; }
+.au-at { color: var(--ink-soft); font-size: .8rem; min-width: 96px; }
+.au-act { font-weight: 700; min-width: 74px; }
+.au-row.risky .au-act { color: #b5462f; }
+.au-who { color: var(--gold-deep); }
+.au-bk { color: var(--ink-soft); margin-left: auto; }
+@media (max-width: 600px) { .au-bk { margin-left: 0; width: 100%; } }

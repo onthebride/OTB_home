@@ -2309,6 +2309,49 @@ if (stRange) {
 
 
 
+
+/* ===== 배정 이력·점검 =====
+   작가 배정은 사라지면 안 되는 데이터라, 바뀔 때마다 이전 값을 남기고(트리거)
+   매시간 배정 수를 점검해 줄어들면 대표 폰으로 알림이 간다. 여기서는 그 결과를 본다. */
+const AUDIT_ACT = { set: '배정', change: '작가 변경', clear: '배정 해제', booking_deleted: '예약 삭제' };
+const AUDIT_FIELD = { assignee_id: '메인', sub_assignee_id: '서브' };
+
+async function renderAudit() {
+  const wrap = $('tab-audit');
+  if (!wrap) return;
+  const { data, error } = await sb.rpc('admin_assignment_audit', { p_days: 30 });
+  if (error) { wrap.innerHTML = '<p class="empty">불러오지 못했습니다. (' + esc(error.message) + ')</p>'; return; }
+  const d = data || {};
+  const now = d.now || {};
+  const last = d.last_check || {};
+  const items = Array.isArray(d.items) ? d.items : [];
+  const when = last.at ? new Date(last.at).toLocaleString('ko-KR') : '아직 없음';
+
+  const rows = items.length ? items.map((x) => {
+    const dt = new Date(x.at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const wd = x.wedding_date ? String(x.wedding_date).slice(0, 10).replace(/-/g, '.') : '';
+    const risky = x.action === 'clear' || x.action === 'booking_deleted';
+    const who = x.action === 'change' ? esc(x.old_staff_name || '-') + ' → ' + esc(x.new_staff_name || '-')
+      : x.action === 'set' ? esc(x.new_staff_name || '-') : esc(x.old_staff_name || '-');
+    return '<div class="au-row' + (risky ? ' risky' : '') + '">'
+      + '<span class="au-at">' + esc(dt) + '</span>'
+      + '<span class="au-act">' + esc((AUDIT_FIELD[x.field] || '') + ' ' + (AUDIT_ACT[x.action] || x.action)) + '</span>'
+      + '<span class="au-who">' + who + '</span>'
+      + '<span class="au-bk">' + esc(x.contractor_name || '-') + (wd ? ' · ' + esc(wd) : '') + '</span>'
+      + '</div>';
+  }).join('') : '<p class="empty">최근 30일 안에 배정이 바뀐 적이 없습니다.</p>';
+
+  wrap.innerHTML =
+    '<div class="st-cards">'
+    + '<div class="st-card"><span class="st-k">앞으로 예식</span><strong>' + (now.upcoming_total || 0) + '</strong><span class="st-sub">취소 제외</span></div>'
+    + '<div class="st-card"><span class="st-k">작가 배정됨</span><strong>' + (now.upcoming_assigned || 0) + '</strong><span class="st-sub">메인 기준</span></div>'
+    + '<div class="st-card"><span class="st-k">2주 내 미배정</span><strong>' + (now.unassigned_soon || 0) + '</strong><span class="st-sub">배정 필요</span></div>'
+    + '</div>'
+    + '<p class="st-note">매시간 자동 점검합니다. 배정 수가 줄어들면 대표님 폰으로 바로 알림이 갑니다. 마지막 점검: ' + esc(when) + '</p>'
+    + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>🕘 배정 변경 이력 <small>(최근 30일 · 최대 100건)</small></h3></div>'
+    + '<div class="au-list">' + rows + '</div></div>';
+}
+
 /* ===== 작가 스케줄 확인 알림톡 (작가 전용 채널) =====
    예약 건별이 아니라 작가 1명당 1통. 링크는 그 작가의 전체 일정 페이지로 간다.
    대상 = 앞으로 예식이 있는데 아직 확인(체크)을 안 한 작가. */
@@ -2541,11 +2584,13 @@ function showSubtab(st) {
   if ($('tab-staff')) $('tab-staff').hidden = st !== 'staff';
   if ($('tab-pricing')) $('tab-pricing').hidden = st !== 'pricing';
   if ($('tab-gallery')) $('tab-gallery').hidden = st !== 'gallery';
+  if ($('tab-audit')) $('tab-audit').hidden = st !== 'audit';
   document.querySelectorAll('.sub-tab').forEach((b) => b.classList.toggle('active', b.dataset.subtab === st));
   setHash('settings/' + st);
   if (st === 'staff') renderStaff();
   if (st === 'pricing') renderPricing();
   if (st === 'gallery') loadGallery();
+  if (st === 'audit') renderAudit();
 }
 const dashSubtabs = document.querySelector('.dash-subtabs');
 if (dashSubtabs) dashSubtabs.addEventListener('click', (e) => {
