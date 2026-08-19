@@ -67,10 +67,38 @@
   font-size: .82rem; font-family: var(--sans); cursor: pointer; color: var(--ink); }
 .btn-sm:hover { border-color: var(--gold); color: var(--gold-deep); }
 
+/* 폰에서는 달력이 한 화면에 들어오는 게 우선이다.
+   위아래로 붙어 있던 여백을 걷어내고 글자를 조금씩 줄인다. */
 @media (max-width: 600px) {
-  .sc-cell { min-height: 58px; }
-  .sc-tag { font-size: .58rem; }
-  .sc-nav span { min-width: 108px; font-size: 1.02rem; }
+  .sv-header { padding: 14px 20px 4px; }
+  .sv-logo { height: 24px; }
+  .sv-wrap { padding: 10px 12px 32px; }
+  .sv-card { padding: 16px 12px; }
+  .sv-greet { font-size: .88rem; }
+
+  .sc-nav { margin: 10px 0 8px; gap: 12px; }
+  .sc-nav span { min-width: 104px; font-size: .98rem; }
+  .btn-nav { width: 34px; height: 34px; font-size: 1rem; }
+
+  .sc-dows { gap: 3px; margin-bottom: 3px; }
+  .sc-dows span { font-size: .72rem; padding: 2px 0; }
+
+  .sc-grid { gap: 3px; }
+  .sc-cell { min-height: 52px; padding: 3px 2px; gap: 1px; }
+  .sc-d { font-size: .78rem; }
+  .sc-tag { font-size: .56rem; padding: 1px 2px; }
+
+  .sc-swipe { margin-top: 6px; font-size: .7rem; }
+  .sc-legend { margin-top: 8px; gap: 10px; font-size: .72rem; }
+
+  .sc-panel { margin-top: 14px; padding-top: 12px; }
+  .sc-a2hs-wrap { margin-top: 16px; padding-top: 12px; }
+}
+
+/* 아주 작은 화면(구형 폰)에서는 한 칸 더 줄인다 */
+@media (max-width: 360px) {
+  .sc-cell { min-height: 46px; }
+  .sc-tag { font-size: .52rem; }
 }
 
 /* 홈 화면에 추가 */
