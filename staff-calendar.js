@@ -27,6 +27,7 @@ const todayStr = ymd(new Date());
 let view = new Date();               // 보고 있는 달
 let data = { bookings: [], busy: [] };
 let openDay = null;
+let busyForm = false;                // '다른 촬영 있음'을 눌러 입력칸을 연 상태
 
 function opts(w) {
   const o = [];
@@ -81,7 +82,7 @@ function render() {
   }
   $('grid').innerHTML = html;
   $('grid').querySelectorAll('.sc-cell[data-d]').forEach((el) =>
-    el.addEventListener('click', () => { openDay = el.dataset.d; render(); renderPanel(); }));
+    el.addEventListener('click', () => { openDay = el.dataset.d; busyForm = false; render(); renderPanel(); }));
   if (openDay) renderPanel();
 }
 
@@ -119,14 +120,21 @@ function renderPanel() {
       ${busyHtml || ''}
       ${off ? `<div class="sc-item off"><div class="sc-item-h"><b>이 날은 촬영 불가</b><span class="sc-mine">내가 등록</span></div>
                  <button type="button" class="btn-sm sc-del" data-id="${off.id}">해제</button></div>` : ''}
-      ${bk.length ? '<p class="sc-hint">배정된 예식이 있는 날입니다. 불가로 바꾸시려면 먼저 대표에게 알려주세요.</p>' : ''}
+      ${bk.length ? '<p class="sc-hint">배정된 예식이 있는 날입니다. 촬영이 어려우시면 <b>대표에게 연락</b>해 주세요.</p>' : ''}
       <div class="sc-add">
-        ${off ? '' : `<button type="button" class="btn-sm sc-off">이 날 촬영 불가</button>`}
-        <div class="sc-busy-form">
-          <input type="time" id="bTime" />
-          <input type="text" id="bPlace" placeholder="장소 (예: 타사 촬영)" />
-          <button type="button" class="btn-sm sc-addbusy">다른 일정 추가</button>
+        <div class="sc-add-btns">
+          ${off || bk.length ? '' : '<button type="button" class="btn-sm sc-off">이 날 촬영 불가</button>'}
+          ${busyForm ? '' : '<button type="button" class="btn-sm sc-openbusy">다른 촬영 있음</button>'}
         </div>
+        ${busyForm ? `<div class="sc-busy-form">
+          <label class="sc-f">시간<input type="time" id="bTime" /></label>
+          <label class="sc-f">장소<input type="text" id="bPlace" placeholder="예: 아펠가모 광화문" /></label>
+          <div class="sc-form-btns">
+            <button type="button" class="btn-sm primary sc-addbusy">저장</button>
+            <button type="button" class="btn-sm sc-cancelbusy">취소</button>
+          </div>
+          <p class="sc-note">우리 예식과 <b>4시간 이상</b> 벌어지면 그날도 배정될 수 있습니다.</p>
+        </div>` : ''}
       </div>
       <p class="sc-status" id="scStatus"></p>
     </div>`;
@@ -134,6 +142,10 @@ function renderPanel() {
   p.querySelectorAll('.sc-del').forEach((btn) => btn.addEventListener('click', () => del(btn.dataset.id)));
   const offBtn = p.querySelector('.sc-off');
   if (offBtn) offBtn.addEventListener('click', () => add('off'));
+  const openBusy = p.querySelector('.sc-openbusy');
+  if (openBusy) openBusy.addEventListener('click', () => { busyForm = true; renderPanel(); });
+  const cancelBusy = p.querySelector('.sc-cancelbusy');
+  if (cancelBusy) cancelBusy.addEventListener('click', () => { busyForm = false; renderPanel(); });
   const addBtn = p.querySelector('.sc-addbusy');
   if (addBtn) addBtn.addEventListener('click', () => add('busy'));
 }
@@ -146,13 +158,12 @@ async function add(kind) {
     if (!time) { st.textContent = '시간을 입력해 주세요.'; return; }
     body.p_time = time;
     body.p_place = $('bPlace').value.trim();
-  } else if (data.bookings.some((b) => dayKey(b.wedding_date) === openDay)) {
-    if (!confirm('이 날은 이미 배정된 예식이 있습니다. 그래도 촬영 불가로 표시할까요?\n(대표에게 따로 알려주세요)')) return;
   }
   st.textContent = '저장 중…';
   const { error } = await sb.rpc('staff_busy_add', body);
-  if (error) { st.textContent = '저장 실패: ' + error.message; return; }
+  if (error) { st.textContent = error.message || '저장하지 못했습니다.'; return; }
   st.textContent = '';
+  busyForm = false;
   await load();
   renderPanel();
 }
@@ -163,6 +174,42 @@ async function del(id) {
   await load();
   renderPanel();
 }
+
+// ── 홈 화면에 추가 ──
+(function a2hs() {
+  const btn = $('a2hs'), modal = $('a2hsModal');
+  if (!btn || !modal) return;
+  const ua = navigator.userAgent || '';
+  const inApp = /KAKAOTALK|NAVER|Instagram|FBAN|FBAV|Line\//i.test(ua);
+  const iOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const android = /Android/i.test(ua);
+  const installed = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  if (installed) { btn.hidden = true; return; }   // 이미 홈 화면에서 연 경우
+
+  const steps = inApp
+    ? `<p class="a2-warn">지금은 <b>카카오톡 안</b>에서 보고 계십니다. 여기서는 홈 화면에 추가할 수 없어요.</p>
+       <ol><li>화면 오른쪽 <b>⋮ (또는 ···) 메뉴</b></li>
+           <li><b>다른 브라우저로 열기</b> ${iOS ? '(Safari)' : '(Chrome)'}</li>
+           <li>브라우저에서 이 버튼을 다시 눌러주세요</li></ol>`
+    : iOS
+    ? `<ol><li>화면 아래 <b>공유 버튼</b> <span class="a2-ic">⬆︎</span></li>
+           <li>목록에서 <b>홈 화면에 추가</b></li>
+           <li>오른쪽 위 <b>추가</b></li></ol>`
+    : android
+    ? `<ol><li>화면 오른쪽 위 <b>⋮ 메뉴</b></li>
+           <li><b>홈 화면에 추가</b> (또는 앱 설치)</li>
+           <li><b>추가</b></li></ol>`
+    : `<ol><li>브라우저 메뉴를 엽니다</li>
+           <li><b>바로가기 만들기</b> 또는 <b>홈 화면에 추가</b></li></ol>
+       <p class="a2-warn">휴대폰에서 열면 더 간단합니다.</p>`;
+
+  $('a2hsSteps').innerHTML = steps + '<p class="a2-note">추가해두시면 카톡을 찾지 않아도 바로 열 수 있습니다.</p>';
+  const open = () => { modal.hidden = false; };
+  const close = () => { modal.hidden = true; };
+  btn.addEventListener('click', open);
+  $('a2hsClose').addEventListener('click', close);
+  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+})();
 
 $('prevM').addEventListener('click', () => { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); openDay = null; $('dayPanel').hidden = true; load(); });
 $('nextM').addEventListener('click', () => { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); openDay = null; $('dayPanel').hidden = true; load(); });

@@ -49,7 +49,15 @@
 .sc-hint { font-size: .8rem; color: var(--gold-deep); margin: 6px 0 10px; }
 
 .sc-add { margin-top: 12px; display: grid; gap: 10px; }
-.sc-busy-form { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.sc-add-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn-sm.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+.btn-sm.primary:hover { background: var(--gold-deep); border-color: var(--gold-deep); color: #fff; }
+.sc-busy-form { display: grid; gap: 8px; margin-top: 10px; padding: 12px;
+  border: 1px solid var(--line); border-radius: 8px; background: #fbfaf8; }
+.sc-f { display: flex; align-items: center; gap: 8px; font-size: .85rem; color: var(--ink-soft); }
+.sc-f input { flex: 1; min-width: 0; }
+.sc-form-btns { display: flex; gap: 6px; }
+.sc-note { font-size: .78rem; color: var(--ink-soft); margin: 0; }
 .sc-busy-form input[type="time"] { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-family: var(--sans); }
 .sc-busy-form input[type="text"] { flex: 1; min-width: 140px; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-family: var(--sans); }
 .sc-busy-form input:focus { outline: none; border-color: var(--gold); }
@@ -64,3 +72,20 @@
   .sc-tag { font-size: .58rem; }
   .sc-nav span { min-width: 108px; font-size: 1.02rem; }
 }
+
+/* 홈 화면에 추가 */
+.sc-a2hs-wrap { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); text-align: center; }
+.sc-a2hs { background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 10px 20px;
+  font-family: var(--sans); font-size: .85rem; color: var(--ink); cursor: pointer; }
+.sc-a2hs:hover { border-color: var(--gold); color: var(--gold-deep); }
+.sc-modal { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex;
+  align-items: center; justify-content: center; padding: 20px; z-index: 60; }
+.sc-modal[hidden] { display: none; }
+.sc-modal-box { background: #fff; border-radius: 12px; padding: 24px 22px; max-width: 340px; width: 100%; }
+.sc-modal-box h3 { font-family: var(--kserif); font-size: 1.05rem; margin-bottom: 14px; }
+.sc-modal-box ol { margin: 0 0 4px 18px; padding: 0; }
+.sc-modal-box li { font-size: .88rem; line-height: 1.9; color: var(--ink); }
+.a2-ic { display: inline-block; border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
+.a2-warn { font-size: .85rem; color: var(--gold-deep); line-height: 1.6; margin-bottom: 10px; }
+.a2-note { font-size: .78rem; color: var(--ink-soft); margin-top: 12px; line-height: 1.6; }
+.sc-modal-close { width: 100%; margin-top: 16px; }

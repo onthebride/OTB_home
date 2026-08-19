@@ -6,12 +6,16 @@
   <title>온더브라이드 · 내 캘린더</title>
   <meta name="robots" content="noindex" />
   <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/favicon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="내 캘린더" />
+  <meta name="theme-color" content="#ffffff" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="survey.css" />
   <link rel="stylesheet" href="guide.css?v=20260819a" />
-  <link rel="stylesheet" href="staff-calendar.css?v=20260819a" />
+  <link rel="stylesheet" href="staff-calendar.css?v=20260819b" />
 </head>
 <body>
   <header class="sv-header">
@@ -51,11 +55,23 @@
       </div>
 
       <div id="dayPanel" hidden></div>
+
+      <div class="sc-a2hs-wrap">
+        <button type="button" class="sc-a2hs" id="a2hs">📱 홈 화면에 추가</button>
+      </div>
     </section>
+
+    <div class="sc-modal" id="a2hsModal" hidden>
+      <div class="sc-modal-box">
+        <h3>홈 화면에 추가</h3>
+        <div id="a2hsSteps"></div>
+        <button type="button" class="btn-sm sc-modal-close" id="a2hsClose">닫기</button>
+      </div>
+    </div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="staff-calendar.js?v=20260819a"></script>
+  <script src="staff-calendar.js?v=20260819b"></script>
 </body>
 </html>
