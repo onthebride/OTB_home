@@ -1567,7 +1567,6 @@ async function sendReminderBatch(btn) {
 
   if (failed.length) alert('보냄 ' + ok + '건 / 실패 ' + failed.length + '건\n\n' + failed.join('\n'));
   else { toast(ok + '건 보냈습니다'); await dismissReminder(btn.dataset.id); }
-  refreshStaffAtk();
 }
 
 async function dismissReminder(id) {
@@ -1587,7 +1586,6 @@ async function dismissAllReminders() {
 if ($('remDismissAll')) $('remDismissAll').addEventListener('click', dismissAllReminders);
 
 function renderDashboard() {
-  refreshStaffAtk();   // 작가 스케줄 미확인 현황
   if (!$('tab-dashboard')) return;
   renderAtkFail();
   const today = startOfToday();
@@ -2641,51 +2639,6 @@ async function renderAudit() {
     + '<p class="st-note">매시간 자동 점검합니다. 배정 수가 줄어들면 대표님 폰으로 바로 알림이 갑니다. 마지막 점검: ' + esc(when) + '</p>'
     + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>🕘 배정 변경 이력 <small>(최근 30일 · 최대 100건)</small></h3></div>'
     + '<div class="au-list">' + rows + '</div></div>';
-}
-
-/* ===== 작가 스케줄 확인 알림톡 (작가 전용 채널) =====
-   예약 건별이 아니라 작가 1명당 1통. 링크는 그 작가의 전체 일정 페이지로 간다.
-   대상 = 앞으로 예식이 있는데 아직 확인(체크)을 안 한 작가. */
-let staffAtkTargets = [];
-
-async function refreshStaffAtk() {
-  const btn = $('staffAtkSend');
-  if (!btn) return;
-  const { data, error } = await sb.rpc('admin_staff_check_targets');
-  staffAtkTargets = (!error && Array.isArray(data)) ? data : [];
-  const sendable = staffAtkTargets.filter((s) => s.has_phone);
-  btn.hidden = !sendable.length;
-  if (!sendable.length) return;
-  const unchecked = sendable.reduce((a, s) => a + Number(s.unchecked || 0), 0);
-  btn.textContent = '스케줄 톡 ' + sendable.length + '명';
-  btn.title = '2주 이내 예식 중 확인 안 된 ' + unchecked + '건 · '
-    + sendable.map((s) => s.name + ' ' + s.unchecked).join(', ');
-}
-
-if ($('staffAtkSend')) {
-  $('staffAtkSend').addEventListener('click', async () => {
-    const sendable = staffAtkTargets.filter((s) => s.has_phone);
-    if (!sendable.length) return;
-    const md = (d) => (d ? String(d).slice(5, 10).replace('-', '/') : '');
-    if (!confirm('2주 이내 예식 중 아직 확인 안 된 작가에게 스케줄 확인 알림톡을 보냅니다.\n'
-      + '(체크링크를 아직 안 보낸 건도 포함됩니다)\n\n'
-      + sendable.map((s) => '· ' + s.name + ' — 미확인 ' + s.unchecked + '건'
-          + (s.nearest ? ' (가장 가까운 예식 ' + md(s.nearest) + ')' : '')).join('\n'))) return;
-    const btn = $('staffAtkSend');
-    btn.disabled = true;
-    const before = btn.textContent;
-    let ok = 0; const failed = [];
-    for (const s of sendable) {
-      btn.textContent = '보내는 중 ' + (ok + failed.length + 1) + '/' + sendable.length;
-      const { error } = await sb.rpc('admin_send_staff_check', { p_staff_id: s.id });
-      if (error) failed.push(s.name + ' (' + error.message + ')'); else ok++;
-    }
-    btn.disabled = false;
-    btn.textContent = before;
-    await refreshStaffAtk();
-    if (failed.length) alert('보냄 ' + ok + '명 / 실패 ' + failed.length + '명\n\n' + failed.join('\n'));
-    else toast(ok + '명에게 보냈습니다');
-  });
 }
 
 /* ===== 작가 평가 (촬영 후 설문) =====
