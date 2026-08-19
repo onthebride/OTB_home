@@ -89,3 +89,16 @@
 .a2-warn { font-size: .85rem; color: var(--gold-deep); line-height: 1.6; margin-bottom: 10px; }
 .a2-note { font-size: .78rem; color: var(--ink-soft); margin-top: 12px; line-height: 1.6; }
 .sc-modal-close { width: 100%; margin-top: 16px; }
+
+/* 좌우로 밀어 달 넘기기 */
+.sc-cal { touch-action: pan-y; }          /* 세로 스크롤은 그대로, 가로는 우리가 받는다 */
+.sc-swipe { display: none; text-align: center; font-size: .74rem; color: var(--ink-soft); margin-top: 10px; }
+@media (hover: none) and (pointer: coarse) { .sc-swipe { display: block; } }
+
+@keyframes scInR { from { opacity: .35; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+@keyframes scInL { from { opacity: .35; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+.sc-grid.sc-in-r { animation: scInR .18s ease-out; }
+.sc-grid.sc-in-l { animation: scInL .18s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .sc-grid.sc-in-r, .sc-grid.sc-in-l { animation: none; }
+}

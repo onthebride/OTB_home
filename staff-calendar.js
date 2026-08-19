@@ -28,6 +28,7 @@ let view = new Date();               // 보고 있는 달
 let data = { bookings: [], busy: [] };
 let openDay = null;
 let busyForm = false;                // '다른 촬영 있음'을 눌러 입력칸을 연 상태
+let slideDir = '';                   // 달을 넘긴 방향(넘어온 티가 나게 살짝 밀어 넣는다)
 
 function opts(w) {
   const o = [];
@@ -80,7 +81,14 @@ function render() {
       ${off ? '<span class="sc-tag off">불가</span>' : ''}
     </button>`;
   }
-  $('grid').innerHTML = html;
+  const g = $('grid');
+  g.innerHTML = html;
+  if (slideDir) {
+    g.classList.remove('sc-in-l', 'sc-in-r');
+    void g.offsetWidth;                        // 같은 애니메이션을 다시 태우려면 한 번 끊어줘야 한다
+    g.classList.add(slideDir === 'next' ? 'sc-in-r' : 'sc-in-l');
+    slideDir = '';
+  }
   $('grid').querySelectorAll('.sc-cell[data-d]').forEach((el) =>
     el.addEventListener('click', () => { openDay = el.dataset.d; busyForm = false; render(); renderPanel(); }));
   if (openDay) renderPanel();
@@ -211,7 +219,45 @@ async function del(id) {
   modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
 })();
 
-$('prevM').addEventListener('click', () => { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); openDay = null; $('dayPanel').hidden = true; load(); });
-$('nextM').addEventListener('click', () => { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); openDay = null; $('dayPanel').hidden = true; load(); });
+function goMonth(step) {
+  view = new Date(view.getFullYear(), view.getMonth() + step, 1);
+  openDay = null;
+  busyForm = false;
+  $('dayPanel').hidden = true;
+  slideDir = step > 0 ? 'next' : 'prev';
+  load();
+}
+$('prevM').addEventListener('click', () => goMonth(-1));
+$('nextM').addEventListener('click', () => goMonth(1));
+
+// ── 좌우로 밀어 달 넘기기(폰) ──
+// 세로로 스크롤하려는 손짓과 헷갈리면 안 된다. 처음 움직인 방향으로 가로/세로를 정하고,
+// 가로로 정해졌을 때만 넘긴다. 날짜 상세 칸은 대상에서 빼서 글자 선택을 방해하지 않는다.
+(function swipeMonth() {
+  const el = $('calWrap');
+  if (!el) return;
+  const MIN = 45;                    // 이만큼은 밀어야 넘어간다
+  let x0 = null, y0 = null, axis = null;
+  el.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) { x0 = null; return; }
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; axis = null;
+  }, { passive: true });
+  el.addEventListener('touchmove', (e) => {
+    if (x0 === null || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - x0;
+    const dy = e.touches[0].clientY - y0;
+    if (axis === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+      axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    }
+  }, { passive: true });
+  el.addEventListener('touchend', (e) => {
+    if (x0 === null || axis !== 'x') { x0 = null; return; }
+    const dx = (e.changedTouches[0] || {}).clientX - x0;
+    x0 = null;
+    if (Math.abs(dx) < MIN) return;
+    goMonth(dx < 0 ? 1 : -1);        // 왼쪽으로 밀면 다음 달
+  }, { passive: true });
+  el.addEventListener('touchcancel', () => { x0 = null; }, { passive: true });
+})();
 
 load();

@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="survey.css" />
   <link rel="stylesheet" href="guide.css?v=20260819a" />
-  <link rel="stylesheet" href="staff-calendar.css?v=20260819b" />
+  <link rel="stylesheet" href="staff-calendar.css?v=20260819c" />
 </head>
 <body>
   <header class="sv-header">
@@ -39,19 +39,23 @@
         다른 촬영이 있는 날은 <b>시간과 장소</b>를 적어주시면, 4시간 이상 벌어질 때만 배정합니다.
       </p>
 
-      <div class="sc-nav">
-        <button type="button" class="btn-nav" id="prevM">‹</button>
-        <span id="monthLabel"></span>
-        <button type="button" class="btn-nav" id="nextM">›</button>
-      </div>
+      <div class="sc-cal" id="calWrap">
+        <div class="sc-nav">
+          <button type="button" class="btn-nav" id="prevM">‹</button>
+          <span id="monthLabel"></span>
+          <button type="button" class="btn-nav" id="nextM">›</button>
+        </div>
 
-      <div class="sc-dows"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
-      <div class="sc-grid" id="grid"></div>
+        <div class="sc-dows"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+        <div class="sc-grid" id="grid"></div>
 
-      <div class="sc-legend">
-        <span><i class="lg-book"></i> 배정된 예식</span>
-        <span><i class="lg-busy"></i> 다른 일정</span>
-        <span><i class="lg-off"></i> 촬영 불가</span>
+        <p class="sc-swipe">← 좌우로 밀어 달을 넘길 수 있어요 →</p>
+
+        <div class="sc-legend">
+          <span><i class="lg-book"></i> 배정된 예식</span>
+          <span><i class="lg-busy"></i> 다른 일정</span>
+          <span><i class="lg-off"></i> 촬영 불가</span>
+        </div>
       </div>
 
       <div id="dayPanel" hidden></div>
@@ -72,6 +76,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="staff-calendar.js?v=20260819b"></script>
+  <script src="staff-calendar.js?v=20260819c"></script>
 </body>
 </html>
