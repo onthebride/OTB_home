@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="survey.css" />
   <link rel="stylesheet" href="guide.css?v=20260819a" />
-  <link rel="stylesheet" href="staff-calendar.css?v=20260819c" />
+  <link rel="stylesheet" href="staff-calendar.css?v=20260819d" />
 </head>
 <body>
   <header class="sv-header">
@@ -46,8 +46,14 @@
           <button type="button" class="btn-nav" id="nextM">›</button>
         </div>
 
+        <div class="sc-tools">
+          <button type="button" class="btn-sm sc-multi" id="multiBtn">여러 날 한번에 고르기</button>
+        </div>
+
         <div class="sc-dows"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
         <div class="sc-grid" id="grid"></div>
+
+        <div id="pickBar" hidden></div>
 
         <p class="sc-swipe">← 좌우로 밀어 달을 넘길 수 있어요 →</p>
 
@@ -76,6 +82,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="staff-calendar.js?v=20260819c"></script>
+  <script src="staff-calendar.js?v=20260819d"></script>
 </body>
 </html>

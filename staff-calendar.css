@@ -102,3 +102,16 @@
 @media (prefers-reduced-motion: reduce) {
   .sc-grid.sc-in-r, .sc-grid.sc-in-l { animation: none; }
 }
+
+/* 여러 날 한번에 고르기 */
+.sc-tools { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+.sc-cell.picked { background: var(--ink); border-color: var(--ink); }
+.sc-cell.picked .sc-d { color: #fff; }
+.sc-cell.nopick { opacity: .45; cursor: default; }
+#pickBar { margin-top: 12px; padding: 12px 14px; border: 1px solid var(--line);
+  border-radius: 10px; background: #fbfaf8; }
+#pickBar[hidden] { display: none; }
+.pk-hint { font-size: .8rem; color: var(--ink-soft); margin: 0 0 10px; line-height: 1.6; }
+.pk-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.pk-n { font-size: .9rem; font-weight: 600; margin-right: auto; }
+.pk-save:disabled { opacity: .45; cursor: default; }

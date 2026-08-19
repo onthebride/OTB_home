@@ -29,6 +29,8 @@ let data = { bookings: [], busy: [] };
 let openDay = null;
 let busyForm = false;                // '다른 촬영 있음'을 눌러 입력칸을 연 상태
 let slideDir = '';                   // 달을 넘긴 방향(넘어온 티가 나게 살짝 밀어 넣는다)
+let multi = false;                   // 여러 날 고르는 중
+let picked = new Set();              // 고른 날짜들 (yyyy-mm-dd)
 
 function opts(w) {
   const o = [];
@@ -69,12 +71,16 @@ function render() {
     const it = byDay[key] || { bk: [], busy: [] };
     const off = it.busy.some((x) => x.kind === 'off');
     const past = key < todayStr;
+    // 고르는 중에는 '이미 불가'거나 '배정된 예식이 있는' 날은 고를 수 없다(서버도 거부한다)
+    const lockedForPick = multi && (off || it.bk.length > 0);
     const cls = ['sc-cell'];
     if (past) cls.push('past');
     if (off) cls.push('off');
     if (key === todayStr) cls.push('today');
-    if (key === openDay) cls.push('sel');
-    html += `<button type="button" class="${cls.join(' ')}" data-d="${key}"${past ? ' disabled' : ''}>
+    if (!multi && key === openDay) cls.push('sel');
+    if (multi && picked.has(key)) cls.push('picked');
+    if (lockedForPick) cls.push('nopick');
+    html += `<button type="button" class="${cls.join(' ')}" data-d="${key}"${past || lockedForPick ? ' disabled' : ''}>
       <span class="sc-d">${d}</span>
       ${it.bk.map((b) => `<span class="sc-tag bk">${esc(kTime(b.wedding_time) || '예식')}</span>`).join('')}
       ${it.busy.filter((x) => x.kind === 'busy').map((x) => `<span class="sc-tag busy">${esc(kTime(x.at_time))}</span>`).join('')}
@@ -89,14 +95,62 @@ function render() {
     g.classList.add(slideDir === 'next' ? 'sc-in-r' : 'sc-in-l');
     slideDir = '';
   }
-  $('grid').querySelectorAll('.sc-cell[data-d]').forEach((el) =>
-    el.addEventListener('click', () => { openDay = el.dataset.d; busyForm = false; render(); renderPanel(); }));
-  if (openDay) renderPanel();
+  g.querySelectorAll('.sc-cell[data-d]').forEach((el) =>
+    el.addEventListener('click', () => {
+      const d = el.dataset.d;
+      if (multi) {
+        if (picked.has(d)) picked.delete(d); else picked.add(d);
+        render();
+        return;
+      }
+      openDay = d; busyForm = false; render(); renderPanel();
+    }));
+  renderPickBar();
+  if (!multi && openDay) renderPanel();
+}
+
+// 여러 날 고르기 — 켜고 끄는 버튼과, 고른 개수·저장 막대
+function renderPickBar() {
+  const btn = $('multiBtn');
+  if (btn) btn.textContent = multi ? '고르기 그만' : '여러 날 한번에 고르기';
+  const bar = $('pickBar');
+  if (!bar) return;
+  if (!multi) { bar.hidden = true; bar.innerHTML = ''; return; }
+  bar.hidden = false;
+  const n = picked.size;
+  bar.innerHTML = `
+    <p class="pk-hint">촬영이 안 되는 날을 눌러서 고르세요. 배정된 예식이 있는 날은 고를 수 없습니다.</p>
+    <div class="pk-row">
+      <span class="pk-n">${n ? n + '일 선택' : '고른 날 없음'}</span>
+      <button type="button" class="btn-sm primary pk-save"${n ? '' : ' disabled'}>촬영 불가로 저장</button>
+      <button type="button" class="btn-sm pk-cancel">취소</button>
+    </div>
+    <p class="sc-status" id="pkStatus"></p>`;
+  const save = bar.querySelector('.pk-save');
+  if (save) save.addEventListener('click', savePicked);
+  const cancel = bar.querySelector('.pk-cancel');
+  if (cancel) cancel.addEventListener('click', () => { multi = false; picked.clear(); render(); });
+}
+
+async function savePicked() {
+  const st = $('pkStatus');
+  const dates = [...picked].sort();
+  if (!dates.length) return;
+  if (st) st.textContent = '저장 중…';
+  const { data, error } = await sb.rpc('staff_busy_add_many', { p_staff_id: staffId, p_dates: dates });
+  if (error) { if (st) st.textContent = error.message || '저장하지 못했습니다.'; return; }
+  const skipped = (data && data.skipped) || [];
+  multi = false; picked.clear();
+  await load();
+  if (skipped.length) {
+    const days = skipped.map((x) => String(x.d).slice(5).replace('-', '/')).join(', ');
+    alert(`${(data && data.ok) || 0}일 등록했습니다.\n\n${skipped.length}일은 등록하지 못했습니다 (${days})\n배정된 예식이 있거나 지난 날짜입니다.`);
+  }
 }
 
 function renderPanel() {
   const p = $('dayPanel');
-  if (!openDay) { p.hidden = true; return; }
+  if (multi || !openDay) { p.hidden = true; return; }
   const bk = data.bookings.filter((b) => dayKey(b.wedding_date) === openDay);
   const busy = data.busy.filter((x) => dayKey(x.the_date) === openDay);
   const off = busy.find((x) => x.kind === 'off');
@@ -223,10 +277,17 @@ function goMonth(step) {
   view = new Date(view.getFullYear(), view.getMonth() + step, 1);
   openDay = null;
   busyForm = false;
+  picked.clear();               // 달마다 따로 고른다 — 넘기면 비운다
   $('dayPanel').hidden = true;
   slideDir = step > 0 ? 'next' : 'prev';
   load();
 }
+if ($('multiBtn')) $('multiBtn').addEventListener('click', () => {
+  multi = !multi;
+  picked.clear();
+  openDay = null;
+  render();
+});
 $('prevM').addEventListener('click', () => goMonth(-1));
 $('nextM').addEventListener('click', () => goMonth(1));
 
