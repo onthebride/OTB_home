@@ -20,7 +20,7 @@ const dayKey = (v) => String(v).slice(0, 10);
 const kTime = (t) => {
   if (!t) return '';
   const [h, m] = String(t).split(':').map(Number);
-  return (h < 12 ? '오전 ' : '오후 ') + (h % 12 === 0 ? 12 : h % 12) + ':' + pad(m);
+  return (h % 12 === 0 ? 12 : h % 12) + ':' + pad(m) + (h < 12 ? 'a' : 'p');
 };
 const todayStr = ymd(new Date());
 
@@ -184,8 +184,8 @@ function renderPanel() {
       <div class="sc-add">
         <div class="sc-add-btns">
           ${off || bk.length ? '' : '<button type="button" class="btn-sm sc-off">이 날 촬영 불가</button>'}
-          ${busyForm ? '' : '<button type="button" class="btn-sm sc-openbusy">다른 촬영 있음</button>'}
-          ${off || bk.length ? '' : '<button type="button" class="btn-sm sc-multi">여러 날 고르기</button>'}
+          ${off || busyForm ? '' : '<button type="button" class="btn-sm sc-openbusy">다른 촬영 있음</button>'}
+          ${off && !bk.length ? '<button type="button" class="btn-sm primary sc-multi">다른 날짜 같이 선택하기</button>' : ''}
         </div>
         ${busyForm ? `<div class="sc-busy-form">
           <label class="sc-f">시간<input type="time" id="bTime" /></label>
@@ -204,11 +204,10 @@ function renderPanel() {
   const offBtn = p.querySelector('.sc-off');
   if (offBtn) offBtn.addEventListener('click', () => add('off'));
   const multiBtn = p.querySelector('.sc-multi');
-  // 지금 보고 있는 날짜를 담은 채로 고르기 모드로 넘어간다
+  // 이 버튼은 이미 불가로 찍은 날에만 나온다 → 그 날은 담을 필요가 없으니 빈 상태로 시작
   if (multiBtn) multiBtn.addEventListener('click', () => {
     multi = true;
     picked.clear();
-    picked.add(openDay);
     render();
   });
   const openBusy = p.querySelector('.sc-openbusy');

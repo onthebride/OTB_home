@@ -17,10 +17,10 @@
 .sc-cell.empty { border: none; background: none; cursor: default; }
 .sc-cell:hover:not(:disabled) { border-color: var(--gold); }
 .sc-cell.today { border-color: var(--gold-deep); }
-.sc-cell.sel { box-shadow: inset 0 0 0 2px var(--gold-deep); }
 .sc-cell.past { background: #f7f5f2; color: #b8b2aa; cursor: default; }
 .sc-cell.off { background: #fbeceb; border-color: #e0b6ae; }
-.sc-d { font-size: .82rem; font-weight: 600; }
+.sc-cell.sel { background: #f2e5c9; border-color: #d8c193; }
+.sc-d { font-size: .82rem; font-weight: 400; }
 .sc-tag { font-size: .62rem; border-radius: 3px; padding: 1px 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sc-tag.bk { background: var(--ink); color: #fff; }
 .sc-tag.busy { background: #dbeaf6; color: #1f4e73; }
@@ -31,6 +31,11 @@
 .lg-book { background: var(--ink); }
 .lg-busy { background: #9dc3e0; }
 .lg-off { background: #e6b0a6; }
+
+/* 맨 아래 작은 설명 — 색깔 안내와 선으로 나눈다 */
+.sc-help { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line);
+  font-size: .72rem; line-height: 1.7; color: var(--ink-soft); }
+.sc-help b { color: var(--ink); font-weight: 600; }
 
 .sc-panel { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 18px; }
 .sc-panel h3 { font-family: var(--kserif); font-size: 1.08rem; margin-bottom: 12px; }
@@ -90,6 +95,7 @@
 
   .sc-swipe { margin-top: 6px; font-size: .7rem; }
   .sc-legend { margin-top: 8px; gap: 10px; font-size: .72rem; }
+  .sc-help { margin-top: 8px; padding-top: 8px; font-size: .68rem; line-height: 1.6; }
 
   .sc-panel { margin-top: 14px; padding-top: 12px; }
   .sc-a2hs-wrap { margin-top: 16px; padding-top: 12px; }
