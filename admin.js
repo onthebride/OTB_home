@@ -2322,6 +2322,27 @@ if ($('schedShare')) {
 }
 
 /* ===== 담당자 관리 ===== */
+// 작가에게 보낼 캘린더 안내문. 링크는 작가마다 다르다.
+function staffCalMsg(id) {
+  const s = staffMap[id] || {};
+  const url = location.origin + '/staff-calendar?s=' + id;
+  return [
+    `[온더브라이드] ${s.name || ''} 작가님 전용 캘린더입니다.`,
+    '',
+    url,
+    '',
+    '· 배정된 예식의 날짜·시간·장소·신랑신부·촬영 옵션을 보실 수 있습니다',
+    '  (신랑신부 연락처는 예식 2주 전부터 보입니다)',
+    '· 촬영이 안 되는 날은 날짜를 눌러 [이 날 촬영 불가] 로 표시해 주세요',
+    '· 다른 촬영이 있는 날은 [다른 촬영 있음] 을 눌러 시간과 장소를 적어주세요.',
+    '  저희 예식과 4시간 이상 벌어질 때만 배정합니다',
+    '· 이미 배정된 날은 불가로 바꿀 수 없습니다. 어려우시면 저에게 연락 주세요',
+    '',
+    '링크는 작가님 전용이니 다른 분께 전달하지 말아 주세요.',
+    '휴대폰이시면 맨 아래 [홈 화면에 추가] 를 눌러두시면 찾기 편합니다.',
+  ].join('\n');
+}
+
 function renderStaff() {
   if (!$('staffList')) return;
   $('staffEmpty').hidden = allStaff.length > 0;
@@ -2338,17 +2359,17 @@ function renderStaff() {
       <label class="st-active"><input type="checkbox" class="st-rep" data-id="${s.id}" ${s.is_rep ? 'checked' : ''} /> 대표</label>
       <label class="st-active"><input type="checkbox" class="st-act" data-id="${s.id}" ${s.active ? 'checked' : ''} /> 활성</label>
       <a class="btn-sm st-cal" href="/staff-calendar?s=${s.id}" target="_blank" rel="noopener" title="작가 캘린더 열기">📅 캘린더</a>
-      <button class="btn-sm st-callink" data-id="${s.id}" title="작가에게 보낼 링크 복사">링크 복사</button>
+      <button class="btn-sm st-callink" data-id="${s.id}" title="작가에게 그대로 붙여넣을 안내문 복사">안내문 복사</button>
       <button class="btn-sm st-save" data-id="${s.id}">저장</button>
       <button class="btn-sm st-del" data-id="${s.id}">삭제</button>
     </div>`).join('');
 
-  // 작가에게 보낼 캘린더 링크 복사
+  // 작가에게 카톡으로 그대로 붙여넣을 안내문 (링크 포함)
   $('staffList').querySelectorAll('.st-callink').forEach((btn) =>
     btn.addEventListener('click', async () => {
-      const url = location.origin + '/staff-calendar?s=' + btn.dataset.id;
-      try { await navigator.clipboard.writeText(url); toast('캘린더 링크 복사됨 · 작가에게 보내세요'); }
-      catch (_) { prompt('아래 링크를 복사하세요:', url); }
+      const text = staffCalMsg(btn.dataset.id);
+      try { await navigator.clipboard.writeText(text); toast('안내문 복사됨 · 작가에게 붙여넣으세요'); }
+      catch (_) { prompt('아래 내용을 복사하세요:', text); }
     }));
 
   // '자동색' 체크 → 색 선택기 비활성(자동 팔레트), 해제 → 직접 지정 가능
