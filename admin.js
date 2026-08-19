@@ -2126,9 +2126,19 @@ function renderStaff() {
       </span>
       <label class="st-active"><input type="checkbox" class="st-rep" data-id="${s.id}" ${s.is_rep ? 'checked' : ''} /> 대표</label>
       <label class="st-active"><input type="checkbox" class="st-act" data-id="${s.id}" ${s.active ? 'checked' : ''} /> 활성</label>
+      <a class="btn-sm st-cal" href="/staff-calendar?s=${s.id}" target="_blank" rel="noopener" title="작가 캘린더 열기">📅 캘린더</a>
+      <button class="btn-sm st-callink" data-id="${s.id}" title="작가에게 보낼 링크 복사">링크 복사</button>
       <button class="btn-sm st-save" data-id="${s.id}">저장</button>
       <button class="btn-sm st-del" data-id="${s.id}">삭제</button>
     </div>`).join('');
+
+  // 작가에게 보낼 캘린더 링크 복사
+  $('staffList').querySelectorAll('.st-callink').forEach((btn) =>
+    btn.addEventListener('click', async () => {
+      const url = location.origin + '/staff-calendar?s=' + btn.dataset.id;
+      try { await navigator.clipboard.writeText(url); toast('캘린더 링크 복사됨 · 작가에게 보내세요'); }
+      catch (_) { prompt('아래 링크를 복사하세요:', url); }
+    }));
 
   // '자동색' 체크 → 색 선택기 비활성(자동 팔레트), 해제 → 직접 지정 가능
   $('staffList').querySelectorAll('.st-auto').forEach((cb) =>

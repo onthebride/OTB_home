@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>온더브라이드 · 내 캘린더</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="survey.css" />
+  <link rel="stylesheet" href="guide.css?v=20260819a" />
+  <link rel="stylesheet" href="staff-calendar.css?v=20260819a" />
+</head>
+<body>
+  <header class="sv-header">
+    <img src="assets/logo-black.png" alt="온더브라이드" class="sv-logo" />
+  </header>
+
+  <main class="sv-wrap">
+    <section class="sv-card sv-msg" id="errCard" hidden>
+      <h1>링크를 확인해 주세요</h1>
+      <p>카카오톡으로 보내드린 <b>내 캘린더 링크</b>로 접속해 주세요.</p>
+    </section>
+
+    <section class="sv-card sv-msg" id="loadCard">
+      <p>불러오는 중입니다…</p>
+    </section>
+
+    <section class="sv-card" id="mainCard" hidden>
+      <p class="sv-greet" id="greet"></p>
+      <p class="ss-guide">
+        촬영이 <b>불가능한 날</b>은 날짜를 눌러 표시해 주세요.<br />
+        다른 촬영이 있는 날은 <b>시간과 장소</b>를 적어주시면, 4시간 이상 벌어질 때만 배정합니다.
+      </p>
+
+      <div class="sc-nav">
+        <button type="button" class="btn-nav" id="prevM">‹</button>
+        <span id="monthLabel"></span>
+        <button type="button" class="btn-nav" id="nextM">›</button>
+      </div>
+
+      <div class="sc-dows"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+      <div class="sc-grid" id="grid"></div>
+
+      <div class="sc-legend">
+        <span><i class="lg-book"></i> 배정된 예식</span>
+        <span><i class="lg-busy"></i> 다른 일정</span>
+        <span><i class="lg-off"></i> 촬영 불가</span>
+      </div>
+
+      <div id="dayPanel" hidden></div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="staff-calendar.js?v=20260819a"></script>
+</body>
+</html>

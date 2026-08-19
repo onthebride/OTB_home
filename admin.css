@@ -834,3 +834,6 @@ td .muted { color: var(--ink-soft); }
 /* '오늘 할 일'의 발송 버튼 */
 .reminder-item .rem-send { margin-left: auto; }
 .reminder-item .rem-send + .rem-dismiss { margin-left: 0; }
+
+/* 작가관리 — 캘린더 링크 */
+.staff-item .st-cal { text-decoration: none; white-space: nowrap; }

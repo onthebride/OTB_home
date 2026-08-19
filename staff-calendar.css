@@ -1,0 +1,66 @@
+/* ===== 작가 개인 캘린더 ===== */
+.sc-nav { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 18px 0 12px; }
+.sc-nav span { font-family: var(--kserif); font-weight: 600; font-size: 1.15rem; min-width: 130px; text-align: center; }
+.btn-nav { background: #fff; border: 1px solid var(--line); border-radius: 8px; width: 38px; height: 38px;
+  font-size: 1.1rem; cursor: pointer; color: var(--ink); }
+.btn-nav:hover { border-color: var(--gold); color: var(--gold-deep); }
+
+.sc-dows { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 4px; }
+.sc-dows span { text-align: center; font-size: .78rem; color: var(--ink-soft); padding: 4px 0; }
+.sc-dows span:first-child { color: #c0392b; }
+.sc-dows span:last-child { color: #2c6b9b; }
+
+.sc-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.sc-cell { min-height: 64px; border: 1px solid var(--line); border-radius: 8px; background: #fff;
+  padding: 4px 3px; display: flex; flex-direction: column; align-items: stretch; gap: 2px;
+  font-family: var(--sans); cursor: pointer; text-align: left; }
+.sc-cell.empty { border: none; background: none; cursor: default; }
+.sc-cell:hover:not(:disabled) { border-color: var(--gold); }
+.sc-cell.today { border-color: var(--gold-deep); }
+.sc-cell.sel { box-shadow: inset 0 0 0 2px var(--gold-deep); }
+.sc-cell.past { background: #f7f5f2; color: #b8b2aa; cursor: default; }
+.sc-cell.off { background: #fbeceb; border-color: #e0b6ae; }
+.sc-d { font-size: .82rem; font-weight: 600; }
+.sc-tag { font-size: .62rem; border-radius: 3px; padding: 1px 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sc-tag.bk { background: var(--ink); color: #fff; }
+.sc-tag.busy { background: #dbeaf6; color: #1f4e73; }
+.sc-tag.off { background: #e6b0a6; color: #6b241a; text-align: center; }
+
+.sc-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; font-size: .78rem; color: var(--ink-soft); }
+.sc-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+.lg-book { background: var(--ink); }
+.lg-busy { background: #9dc3e0; }
+.lg-off { background: #e6b0a6; }
+
+.sc-panel { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 18px; }
+.sc-panel h3 { font-family: var(--kserif); font-size: 1.08rem; margin-bottom: 12px; }
+.sc-item { border: 1px solid var(--line); border-radius: 8px; padding: 11px 13px; margin-bottom: 8px; background: #fff; }
+.sc-item.bk { border-left: 3px solid var(--ink); }
+.sc-item.busy { border-left: 3px solid #9dc3e0; }
+.sc-item.off { border-left: 3px solid #e6b0a6; background: #fdf5f4; }
+.sc-item-h { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: .92rem; }
+.sc-item-b { font-size: .85rem; color: var(--ink-soft); margin-top: 4px; line-height: 1.6; }
+.sc-item .ss-opts { margin-top: 7px; }
+.sc-role { font-size: .72rem; font-weight: 700; border-radius: 999px; padding: 2px 9px; margin-left: auto; }
+.sc-role.main { background: var(--ink); color: #fff; }
+.sc-role.sub { background: #2c6b9b; color: #fff; }
+.sc-mine { font-size: .72rem; color: var(--ink-soft); margin-left: auto; }
+.sc-item .btn-sm { margin-top: 8px; }
+.sc-hint { font-size: .8rem; color: var(--gold-deep); margin: 6px 0 10px; }
+
+.sc-add { margin-top: 12px; display: grid; gap: 10px; }
+.sc-busy-form { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.sc-busy-form input[type="time"] { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-family: var(--sans); }
+.sc-busy-form input[type="text"] { flex: 1; min-width: 140px; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-family: var(--sans); }
+.sc-busy-form input:focus { outline: none; border-color: var(--gold); }
+.sc-status { margin-top: 8px; font-size: .85rem; color: var(--ink-soft); min-height: 1.2em; }
+
+.btn-sm { border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 7px 12px;
+  font-size: .82rem; font-family: var(--sans); cursor: pointer; color: var(--ink); }
+.btn-sm:hover { border-color: var(--gold); color: var(--gold-deep); }
+
+@media (max-width: 600px) {
+  .sc-cell { min-height: 58px; }
+  .sc-tag { font-size: .58rem; }
+  .sc-nav span { min-width: 108px; font-size: 1.02rem; }
+}
