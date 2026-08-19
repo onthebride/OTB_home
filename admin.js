@@ -1443,21 +1443,70 @@ function renderReminders() {
   if ($('remCount')) $('remCount').textContent = items.length;
   if (!items.length) { $('reminderList').innerHTML = ''; return; }
   $('reminderList').innerHTML = items.map((r) => {
-    const ico = r.kind === 'survey_share' ? '📋' : '🗓';
+    const ico = r.kind === 'staff_survey' ? '📋' : r.kind === 'survey_share' ? '📋' : '🗓';
     const openable = !!r.booking_id;
+    // 알림톡을 대표 승인으로 내보내는 항목 — 자동 발송은 하지 않는다
+    const sendable = r.kind === 'staff_survey' ? '설문 안내 발송'
+                   : r.kind === 'weekly_schedule' ? '스케줄 톡 발송' : '';
     return `
     <div class="reminder-item" data-id="${r.id}">
       <span class="reminder-ico">${ico}</span>
       <div class="reminder-text${openable ? ' rem-open' : ''}"${openable ? ` data-bid="${r.booking_id}"` : ''}>
         <b>${esc(r.title)}</b>${r.body ? `<span>${esc(r.body)}</span>` : ''}
       </div>
+      ${sendable ? `<button class="btn-sm btn-kakao-sm rem-send" data-id="${r.id}" data-kind="${esc(r.kind)}">${sendable}</button>` : ''}
       <button class="btn-sm rem-dismiss" data-id="${r.id}">✓ 확인</button>
     </div>`;
   }).join('');
+  $('reminderList').querySelectorAll('.rem-send').forEach((btn) =>
+    btn.addEventListener('click', (e) => { e.stopPropagation(); sendReminderBatch(btn); }));
   $('reminderList').querySelectorAll('.rem-dismiss').forEach((btn) =>
     btn.addEventListener('click', (e) => { e.stopPropagation(); dismissReminder(btn.dataset.id); }));
   $('reminderList').querySelectorAll('.rem-open').forEach((el) =>
     el.addEventListener('click', () => openDetail(el.dataset.bid)));
+}
+
+
+/* ===== '오늘 할 일'에서 알림톡 일괄 발송 =====
+   자동으로 나가는 알림톡은 없다. 대표가 이 버튼을 눌러야 나간다.
+   한 명씩 순서대로 보내고, 중간에 실패해도 나머지는 계속 보낸 뒤 결과를 알려준다. */
+async function sendReminderBatch(btn) {
+  const kind = btn.dataset.kind;
+  const isSurvey = kind === 'staff_survey';
+  const rpcList = isSurvey ? 'admin_staff_survey_targets' : 'admin_staff_check_targets';
+  const { data, error } = await sb.rpc(rpcList);
+  if (error) { alert('대상을 불러오지 못했습니다.\n' + error.message); return; }
+
+  let list = (Array.isArray(data) ? data : []).filter((x) => x.has_phone);
+  if (isSurvey) list = list.filter((x) => !x.sent);        // 이미 보낸 건 제외
+  if (!list.length) {
+    alert(isSurvey ? '보낼 대상이 없습니다. (이미 다 보냈거나 배정·연락처가 없습니다)'
+                   : '보낼 대상이 없습니다. (모두 확인했거나 연락처가 없습니다)');
+    return;
+  }
+
+  const lines = isSurvey
+    ? list.map((x) => '· ' + x.staff_name + ' (' + x.role + ') — ' + x.line + (x.has_survey ? '' : ' ※설문 미작성'))
+    : list.map((x) => '· ' + x.staff_name + ' — 미확인 ' + x.unchecked + '건');
+  if (!confirm((isSurvey ? '내일 예식 담당 작가에게 설문 안내를 보냅니다.' : '작가에게 스케줄 확인 톡을 보냅니다.')
+    + '\n\n' + lines.join('\n'))) return;
+
+  btn.disabled = true;
+  const before = btn.textContent;
+  let ok = 0; const failed = [];
+  for (const x of list) {
+    btn.textContent = '보내는 중 ' + (ok + failed.length + 1) + '/' + list.length;
+    const res = isSurvey
+      ? await sb.rpc('admin_send_staff_survey', { p_booking_id: x.booking_id, p_staff_id: x.staff_id })
+      : await sb.rpc('admin_send_staff_check', { p_staff_id: x.id });
+    if (res.error) failed.push(x.staff_name + ' (' + res.error.message + ')'); else ok++;
+  }
+  btn.disabled = false;
+  btn.textContent = before;
+
+  if (failed.length) alert('보냄 ' + ok + '건 / 실패 ' + failed.length + '건\n\n' + failed.join('\n'));
+  else { toast(ok + '건 보냈습니다'); await dismissReminder(btn.dataset.id); }
+  refreshStaffAtk();
 }
 
 async function dismissReminder(id) {

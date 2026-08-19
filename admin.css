@@ -830,3 +830,7 @@ td .muted { color: var(--ink-soft); }
 .au-who { color: var(--gold-deep); }
 .au-bk { color: var(--ink-soft); margin-left: auto; }
 @media (max-width: 600px) { .au-bk { margin-left: 0; width: 100%; } }
+
+/* '오늘 할 일'의 발송 버튼 */
+.reminder-item .rem-send { margin-left: auto; }
+.reminder-item .rem-send + .rem-dismiss { margin-left: 0; }
