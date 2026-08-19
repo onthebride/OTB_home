@@ -2552,7 +2552,10 @@ async function renderStats() {
     const v = Number(x.views) || 0;
     const md = String(x.d).slice(0, 10).slice(5).replace('-', '.');  // 'YYYY-MM-DD...' → 'MM.DD'
     const showLbl = (daily.length - 1 - i) % step === 0;
-    return '<div class="st-bar-col" title="' + esc(md + ' · 방문 ' + stNum(x.visits) + ' · 페이지뷰 ' + stNum(v)) + '">'
+    return '<div class="st-bar-col">'
+      + '<span class="st-tip"><b>' + esc(md) + '</b>'
+        + '<span>페이지뷰 ' + esc(stNum(v)) + '</span>'
+        + '<span>방문 ' + esc(stNum(x.visits)) + '</span></span>'
       + '<div class="st-bar-fill" style="height:' + Math.round((v / max) * 100) + '%"></div>'
       + (showLbl ? '<span class="st-bar-lbl' + (lblSeq++ % 2 ? ' alt' : '') + '">' + esc(md) + '</span>' : '') + '</div>';
   }).join('');

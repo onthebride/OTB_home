@@ -1,0 +1,15 @@
+-- 데이터베이스 시간대를 한국으로.
+--
+-- 무엇이 문제였나. 서버 시간대가 UTC 라서 current_date 가 한국 날짜와 9시간 어긋났다.
+-- 한국 시간 00:00~09:00 사이에는 DB 가 아직 '어제'였다. 대표가 아침에 관리자를 여는 시간대다.
+-- 실제로 확인한 순간: 한국 8/20 08:41 인데 DB 의 current_date 는 8/19.
+--
+-- 이미 KST 로 직접 환산해 쓰는 함수가 4개 있었다(generate_admin_reminders 등).
+-- 나머지 12개는 current_date 를 그냥 썼다. 같은 시스템 안에서 '오늘'이 두 개였던 셈이라,
+-- '오늘 할 일'에 뜬 대상과 실제 발송 대상이 아침 시간대에 하루 어긋날 수 있었다.
+--
+-- 크론 발화 시각은 그대로다 — pg_cron 은 cron.timezone(GMT)을 따로 본다.
+--   0 1 * * *  UTC = 한국 10:00 (알림톡 일일 발송)
+--   0 21 * * * UTC = 한국 06:00 (오늘 할 일 생성)
+-- 되돌리려면: alter database postgres set timezone = 'UTC';
+alter database postgres set timezone = 'Asia/Seoul';
