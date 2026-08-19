@@ -182,7 +182,7 @@ function renderPanel() {
       ${busyHtml || ''}
       ${off ? `<div class="sc-item off"><div class="sc-item-h"><b>이 날은 촬영 불가</b><span class="sc-mine">내가 등록</span></div>
                  <button type="button" class="btn-sm sc-del" data-id="${off.id}">해제</button></div>` : ''}
-      ${bk.length ? '<p class="sc-hint">배정된 예식이 있는 날입니다. 촬영이 어려우시면 <b>대표에게 연락</b>해 주세요.</p>' : ''}
+      ${bk.length ? '<p class="sc-hint">배정된 예식이 있는 날입니다.<br />촬영이 어려우시면 <b>대표에게 연락</b>해 주세요.</p>' : ''}
       <div class="sc-add">
         <div class="sc-add-btns">
           ${off || bk.length ? '' : '<button type="button" class="btn-sm sc-off">이 날 촬영 불가</button>'}
