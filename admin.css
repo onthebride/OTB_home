@@ -875,3 +875,6 @@ td .muted { color: var(--ink-soft); }
 @media (max-width: 640px) {
   .dc-load { flex: 1 1 100%; padding-left: 30px; }
 }
+
+.dc-more { display: block; width: 100%; margin-top: 10px; }
+.fb-sscore small, .fb-istar small { color: var(--ink-soft); font-weight: 400; font-size: .78em; }

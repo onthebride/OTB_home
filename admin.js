@@ -1907,7 +1907,7 @@ document.querySelectorAll('.cal-today').forEach((b) =>
    여기서는 보여주기만 한다. 순서: 가능한 사람 먼저 → 평점 → 최근 배정 적은 순 */
 function dcStar(s) {
   if (s.fb_avg == null) return '<span class="dc-none">평가 없음</span>';
-  return `★ ${Number(s.fb_avg).toFixed(1)}<small> · ${s.fb_n}건</small>`;
+  return `★ ${Number(s.fb_avg).toFixed(1)}<small>/10 · ${s.fb_n}건</small>`;
 }
 function dayCheckHtml(r) {
   const d = new Date(String(r.the_date).slice(0, 10) + 'T00:00:00');
@@ -1928,7 +1928,7 @@ function dayCheckHtml(r) {
     : '<p class="dc-sub">이 날 잡힌 예식은 없습니다.</p>';
 
   let rank = 0;
-  const rows = (r.staff || []).map((s) => {
+  const row = (s) => {
     const badge = s.status === 'ok' ? '<span class="dc-b ok">가능</span>'
       : s.status === 'off' ? '<span class="dc-b off">불가</span>'
       : '<span class="dc-b tight">겹침</span>';
@@ -1941,7 +1941,11 @@ function dayCheckHtml(r) {
       ${badge}
       ${s.detail ? `<span class="dc-detail">${esc(s.detail)}</span>` : ''}
     </li>`;
-  }).join('');
+  };
+  // 작가가 많으면 다 보기 불편하다 → 위 3명만 두고 나머지는 접는다
+  const list = r.staff || [];
+  const top = list.slice(0, 3).map(row).join('');
+  const rest = list.slice(3).map(row).join('');
 
   const notes = [];
   if (!r.at_time) notes.push('시간을 넣으면 4시간 규칙(겹침)까지 함께 봅니다.');
@@ -1949,7 +1953,10 @@ function dayCheckHtml(r) {
     notes.push(`촬영 후 설문이 아직 ${r.fb_total || 0}건이라 평점 순위는 참고만 해주세요.`
       + ' 평점이 없는 작가는 최근 배정이 적은 순으로 놓았습니다.');
   }
-  return head + weds + `<ol class="dc-staff">${rows}</ol>`
+  return head + weds
+    + `<ol class="dc-staff">${top}</ol>`
+    + (rest ? `<ol class="dc-staff" id="dcRest" hidden>${rest}</ol>
+         <button type="button" class="btn-sm dc-more" id="dcMore">나머지 ${list.length - 3}명 더보기</button>` : '')
     + (notes.length ? `<p class="dc-note">${notes.map(esc).join('<br />')}</p>` : '');
 }
 async function dayCheck() {
@@ -1961,6 +1968,12 @@ async function dayCheck() {
   const { data, error } = await sb.rpc('admin_day_check', { p_date: d, p_time: $('dcTime').value || null });
   if (error) { box.innerHTML = `<p class="dash-empty">${esc(error.message)}</p>`; return; }
   box.innerHTML = dayCheckHtml(data);
+  const more = $('dcMore');
+  if (more) more.addEventListener('click', () => {
+    const rest = $('dcRest');
+    rest.hidden = !rest.hidden;
+    more.textContent = rest.hidden ? `나머지 ${rest.children.length}명 더보기` : '접기';
+  });
 }
 if ($('dcGo')) {
   $('dcGo').addEventListener('click', dayCheck);
@@ -2625,7 +2638,10 @@ if ($('staffAtkSend')) {
 /* ===== 작가 평가 (촬영 후 설문) =====
    응답은 대표만 열람. 작가에게 자동으로 가지 않으며, 필요할 때 [공유] 로 대표가 직접 보낸다. */
 const ARRIVAL_TXT = { ontime: '제시간', late_small: '조금 늦음', late_big: '많이 늦음' };
-const stars = (n) => '★★★★★'.slice(0, Number(n) || 0) + '☆☆☆☆☆'.slice(0, 5 - (Number(n) || 0));
+// 점수는 10점 만점. 별은 5칸으로 줄여 그리고(÷2), 정확한 값은 옆에 숫자로 적는다
+const FB_LOW = 6;                       // 이 점수 이하면 눈에 띄게 표시
+const stars = (n) => { const k = Math.max(0, Math.min(5, Math.round((Number(n) || 0) / 2)));
+  return '★★★★★'.slice(0, k) + '☆☆☆☆☆'.slice(0, 5 - k); };
 const avg1 = (v) => (v == null ? '-' : Number(v).toFixed(1));
 let fbDays = 90;         // 응답 조회 기간 (기본 3개월)
 let fbStaff = null;      // 특정 작가만 보기
@@ -2668,7 +2684,7 @@ async function renderFeedback() {
     const on = fbStaff === s.staff_name;
     return '<div class="fb-srow' + (on ? ' on' : '') + '" data-staff="' + esc(s.staff_name) + '" title="누르면 이 작가 응답만 보기">'
       + '<span class="fb-sname">' + esc(s.staff_name) + '</span>'
-      + '<span class="fb-sscore">' + stars(Math.round(s.avg_overall)) + ' <b>' + avg1(s.avg_overall) + '</b></span>'
+      + '<span class="fb-sscore">' + stars(s.avg_overall) + ' <b>' + avg1(s.avg_overall) + '</b><small>/10</small></span>'
       + '<span class="fb-sdetail">친절 ' + avg1(s.avg_kindness) + ' · 요청 ' + avg1(s.avg_requests) + ' · 진행 ' + avg1(s.avg_flow) + '</span>'
       + '<span class="fb-sn">' + s.n + '건'
         + (Number(s.late_n) ? ' · 지각 ' + s.late_n : '')
@@ -2687,17 +2703,17 @@ async function renderFeedback() {
   const itemRows = paged.length ? paged.map((x) => {
     const wd = x.wedding_date ? String(x.wedding_date).slice(0, 10).replace(/-/g, '.') : '';
     const who = x.bride_name || x.contractor_name || '-';
-    const low = Number(x.overall) <= 3;
+    const low = Number(x.overall) <= FB_LOW;
     return '<div class="fb-item' + (low ? ' low' : '') + '" data-id="' + esc(x.booking_id) + '">'
       + '<div class="fb-ihead">'
-        + '<span class="fb-istar">' + stars(x.overall) + ' <b>' + x.overall + '</b></span>'
+        + '<span class="fb-istar">' + stars(x.overall) + ' <b>' + x.overall + '</b><small>/10</small></span>'
         + '<span class="fb-iwho">' + esc(x.staff_name) + ' <small>(' + esc(who) + (wd ? ' · ' + esc(wd) : '') + ')</small></span>'
       + '</div>'
       + '<div class="fb-chips">'
         + chip('도착 ' + (ARRIVAL_TXT[x.arrival] || x.arrival), null, x.arrival !== 'ontime')
-        + chip('친절', x.kindness, Number(x.kindness) <= 3)
-        + chip('요청', x.requests, Number(x.requests) <= 3)
-        + chip('진행', x.flow, Number(x.flow) <= 3)
+        + chip('친절', x.kindness, Number(x.kindness) <= FB_LOW)
+        + chip('요청', x.requests, Number(x.requests) <= FB_LOW)
+        + chip('진행', x.flow, Number(x.flow) <= FB_LOW)
       + '</div>'
       + (x.issue && x.issue_text ? '<div class="fb-iissue">⚠️ ' + esc(x.issue_text) + '</div>'
          : (x.issue ? '<div class="fb-iissue">⚠️ 불편했던 점 있음(내용 미작성)</div>' : ''))
@@ -2719,7 +2735,7 @@ async function renderFeedback() {
   wrap.innerHTML =
     '<div class="st-cards fb-top">'
     + '<div class="st-card"><span class="st-k">응답</span><strong>' + (d.count || 0) + '</strong><span class="st-sub">' + esc(fbRangeLabel()) + '</span></div>'
-    + '<div class="st-card"><span class="st-k">전체 평균</span><strong>' + avg1(d.avg_overall) + '</strong><span class="st-sub">5점 만점</span></div>'
+    + '<div class="st-card"><span class="st-k">전체 평균</span><strong>' + avg1(d.avg_overall) + '</strong><span class="st-sub">10점 만점</span></div>'
     + '<div class="st-card"><span class="st-k">설문 안 온 예식</span><strong>' + pendAll.length + '</strong><span class="st-sub">최근 60일 · 미응답</span></div>'
     + '</div>'
     + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>👤 작가별 <small>(평균 높은 순 · 누르면 그 작가 응답만)</small></h3></div>' + staffRows + '</div>'
@@ -2761,7 +2777,7 @@ async function renderFeedback() {
     const it = allItems.find((x) => x.booking_id === b.dataset.id);
     if (!it) return;
     const txt = ['[촬영 후 설문]',
-      '전체 ' + it.overall + '점 · 친절 ' + it.kindness + ' · 요청 ' + it.requests + ' · 진행 ' + it.flow,
+      '전체 ' + it.overall + '/10점 · 친절 ' + it.kindness + ' · 요청 ' + it.requests + ' · 진행 ' + it.flow,
       it.issue && it.issue_text ? '아쉬운 점: ' + it.issue_text : '',
       it.message ? '한마디: ' + it.message : ''].filter(Boolean).join(String.fromCharCode(10));
     navigator.clipboard?.writeText(txt);

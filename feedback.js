@@ -12,18 +12,22 @@ const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const esc = (s) => (s == null ? '' : String(s)).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const show = (el) => ['errCard', 'loadCard', 'mainCard', 'doneCard', 'thanksCard'].forEach((id) => ($(id).hidden = $(id) !== el));
 
-const STAR_TXT = ['', '많이 아쉬웠어요', '아쉬웠어요', '보통이었어요', '좋았어요', '정말 좋았어요'];
+// 1~10점. 5점일 때보다 가운데를 고를 자리가 넓어진다.
+const STAR_TXT = ['', '많이 아쉬웠어요', '많이 아쉬웠어요', '아쉬웠어요', '아쉬웠어요',
+  '보통이었어요', '보통이었어요', '좋았어요', '좋았어요', '정말 좋았어요', '더할 나위 없었어요'];
+const STAR_N = 10;
 const scores = {};   // { overall: 5, kindness: 4, ... }
 
-// 별점 5개를 버튼으로 그린다 (터치가 쉬운 크기, 선택하면 문구도 같이 표시)
+// 별점 10개를 버튼으로 그린다 (한 줄에 고르게 나눠 터치가 쉽게, 고르면 점수와 문구를 같이 표시)
 function buildStars() {
   document.querySelectorAll('.fb-stars').forEach((wrap) => {
     const k = wrap.dataset.k;
     wrap.innerHTML =
       '<div class="fb-star-row">'
-      + [1, 2, 3, 4, 5].map((n) =>
+      + Array.from({ length: STAR_N }, (_, i) => i + 1).map((n) =>
         `<button type="button" class="fb-star" data-n="${n}" aria-label="${n}점" role="radio" aria-checked="false">★</button>`).join('')
-      + '</div><span class="fb-star-txt"></span>';
+      + '</div><div class="fb-scale"><span>1 아쉬움</span><span>10 최고</span></div>'
+      + '<span class="fb-star-txt"></span>';
     wrap.addEventListener('click', (e) => {
       const btn = e.target.closest('.fb-star');
       if (!btn) return;
@@ -34,7 +38,7 @@ function buildStars() {
         b.classList.toggle('on', on);
         b.setAttribute('aria-checked', String(Number(b.dataset.n) === n));
       });
-      wrap.querySelector('.fb-star-txt').textContent = STAR_TXT[n];
+      wrap.querySelector('.fb-star-txt').textContent = n + '점 · ' + STAR_TXT[n];
       wrap.classList.remove('miss');
     });
   });

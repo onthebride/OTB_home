@@ -4,12 +4,16 @@
 .fb-req { color: var(--gold-deep); font-style: normal; }
 
 /* 별점 */
-.fb-stars { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
-.fb-star-row { display: inline-flex; gap: 2px; }
+/* 별 10칸 — 화면 폭을 고르게 나눠 갖는다(작은 폰에서도 한 줄) */
+.fb-stars { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
+.fb-star-row { display: flex; gap: 1px; width: 100%; max-width: 420px; }
 .fb-star {
-  background: none; border: none; cursor: pointer; padding: 4px 6px; line-height: 1;
-  font-size: 2.1rem; color: #e0d8cc; transition: color .12s, transform .12s;
+  flex: 1 1 0; min-width: 0; background: none; border: none; cursor: pointer;
+  padding: 6px 0; line-height: 1; font-size: clamp(1.15rem, 6.4vw, 1.9rem);
+  color: #e0d8cc; transition: color .12s, transform .12s;
 }
+.fb-scale { display: flex; justify-content: space-between; width: 100%; max-width: 420px;
+  font-size: .74rem; color: var(--ink-soft); margin-top: -2px; }
 .fb-star:hover { transform: translateY(-2px); }
 .fb-star.on { color: var(--gold); }
 .fb-star-txt { font-size: .88rem; color: var(--gold-deep); min-height: 1.2em; }
@@ -25,6 +29,5 @@
 .fb-thanks-sub { margin-top: 10px; color: var(--ink-soft); font-size: .9rem; }
 
 @media (max-width: 600px) {
-  .fb-star { font-size: 1.9rem; padding: 4px 4px; }
   .fb-star-txt { width: 100%; }
 }
