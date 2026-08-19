@@ -29,15 +29,15 @@ function person(name, phone) {
 }
 
 function renderWeddingInfo(d) {
+  // 현장 진행에 필요한 것만. 앨범·출장 같은 판매/정산 항목은 빼서 중요한 게 묻히지 않게 한다.
   const opts = [];
   if (d.option_reception) opts.push('연회장 인사촬영');
   if (d.option_pyebaek) opts.push('폐백촬영');
   if (d.option_part2) opts.push('2부 촬영');
-  if (d.option_album) opts.push('앨범 1권 추가');
   if (d.photographer === '2인 촬영') opts.push('2인 촬영');
-  if (d.rep_designation) opts.push('대표지정');
-  if (d.travel_fee) opts.push('출장');
-  const optText = opts.length ? opts.join(', ') : '없음';
+  const optHtml = opts.length
+    ? `<div class="ss-opts">${opts.map((x) => `<span class="ss-opt${x === '2인 촬영' ? ' two' : ''}">${esc(x)}</span>`).join('')}</div>`
+    : '<span class="sv-none">없음</span>';
 
   $('weddingInfo').innerHTML = `
     <h2>📷 촬영 정보</h2>
@@ -46,7 +46,8 @@ function renderWeddingInfo(d) {
       <li><b>예식 장소</b> ${esc(d.wedding_venue || '-')}</li>
       <li><b>신랑</b> ${person(d.groom_name, d.groom_phone)}</li>
       <li><b>신부</b> ${person(d.bride_name, d.bride_phone)}</li>
-      <li><b>촬영 옵션</b> ${esc(optText)}</li>
+      ${d.rep_designation ? '<li><b>촬영</b> 대표지정</li>' : ''}
+      <li><b>촬영 옵션</b> ${optHtml}</li>
     </ul>`;
 }
 

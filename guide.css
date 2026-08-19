@@ -85,6 +85,7 @@
 .ss-row { font-size: .94rem; line-height: 1.5; word-break: break-word; }
 .ss-row b { color: var(--ink-soft); font-weight: 600; }
 /* 옵션은 현장에서 놓치면 안 되는 항목이라 눈에 띄게 — 다만 카드 안에 또 박스를 만들지는 않는다 */
+.sv-none { color: var(--ink-soft); }
 .ss-opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .ss-opt { font-size: .88rem; font-weight: 700; color: #8a5a1a; background: #fbe6c4; border: 1px solid #e6c894;
   border-radius: 999px; padding: 4px 12px; white-space: nowrap; }
