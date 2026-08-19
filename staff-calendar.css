@@ -49,6 +49,7 @@
 .sc-item.off { border-left: 3px solid #e6b0a6; background: #fdf5f4; }
 .sc-item-h { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: .92rem; }
 .sc-item-b { font-size: .85rem; color: var(--ink-soft); margin-top: 4px; line-height: 1.6; }
+.sc-who { display: block; white-space: nowrap; }
 .sc-item .ss-opts { margin-top: 7px; }
 .sc-role { font-size: .72rem; font-weight: 700; border-radius: 999px; padding: 2px 9px; margin-left: auto; }
 .sc-role.main { background: var(--ink); color: #fff; }
