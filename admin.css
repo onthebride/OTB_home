@@ -842,3 +842,36 @@ td .muted { color: var(--ink-soft); }
 .sched-sels select optgroup, .md-sel optgroup, #e_assignee optgroup, #e_sub_assignee optgroup { font-size: .82rem; }
 .sched-sels select option:disabled, .md-sel option:disabled { color: #b3ada4; }
 #schedAllowConfWrap.is-on .sched-lock-txt { color: #b8860b; font-weight: 600; }
+
+/* 날짜 조회 · 배정 가능 작가 */
+.dc-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+.dc-form input { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-family: inherit; font-size: .9rem; }
+.dc-hint { font-size: .8rem; color: var(--ink-soft); }
+.dc-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px;
+  border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+.dc-head b { font-size: 1.02rem; }
+.dc-head.can { background: #eef6ee; color: #245c2b; }
+.dc-head.cant { background: #fbecea; color: #8c2f22; }
+.dc-sub { font-size: .84rem; color: var(--ink-soft); margin: 0 0 6px; }
+.dc-weds { list-style: none; margin: 0 0 14px; padding: 0; }
+.dc-weds li { font-size: .84rem; padding: 5px 0; border-bottom: 1px dashed var(--line); color: var(--ink); }
+.dc-weds li span { color: var(--ink-soft); margin-left: 6px; }
+.dc-staff { list-style: none; margin: 0; padding: 0; }
+.dc-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 9px 4px; border-bottom: 1px solid var(--line); font-size: .88rem; }
+.dc-row.off, .dc-row.tight { color: var(--ink-soft); }
+.dc-rank { width: 22px; text-align: center; font-weight: 700; color: var(--ink-soft); }
+.dc-name { min-width: 92px; font-weight: 600; }
+.dc-star { min-width: 96px; color: #b8860b; font-size: .84rem; }
+.dc-star small { color: var(--ink-soft); }
+.dc-none { color: #b3ada4; font-size: .8rem; }
+.dc-load { font-size: .8rem; color: var(--ink-soft); min-width: 92px; }
+.dc-b { font-size: .74rem; font-weight: 700; border-radius: 999px; padding: 2px 9px; }
+.dc-b.ok { background: #e3efe4; color: #245c2b; }
+.dc-b.tight { background: #fbf0dd; color: #8a6216; }
+.dc-b.off { background: #f7dedb; color: #8c2f22; }
+.dc-detail { flex: 1 1 100%; font-size: .78rem; color: var(--ink-soft); padding-left: 30px; }
+.dc-note { font-size: .8rem; color: var(--ink-soft); margin-top: 12px; line-height: 1.7; }
+@media (max-width: 640px) {
+  .dc-load { flex: 1 1 100%; padding-left: 30px; }
+}

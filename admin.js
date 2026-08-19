@@ -1901,6 +1901,80 @@ document.querySelectorAll('.cal-next').forEach((b) =>
 document.querySelectorAll('.cal-today').forEach((b) =>
   b.addEventListener('click', () => { const t = new Date(); calMonth = { y: t.getFullYear(), m: t.getMonth() }; renderCalendar(); renderSchedule(); }));
 
+/* ===== 날짜 조회 · 배정 가능 작가 =====
+   문의가 왔을 때 "그날 받을 수 있나"를 바로 보기 위한 화면.
+   가능 여부는 서버(admin_day_check → admin_staff_availability)가 판단하고,
+   여기서는 보여주기만 한다. 순서: 가능한 사람 먼저 → 평점 → 최근 배정 적은 순 */
+function dcStar(s) {
+  if (s.fb_avg == null) return '<span class="dc-none">평가 없음</span>';
+  return `★ ${Number(s.fb_avg).toFixed(1)}<small> · ${s.fb_n}건</small>`;
+}
+function dayCheckHtml(r) {
+  const d = new Date(String(r.the_date).slice(0, 10) + 'T00:00:00');
+  const label = `${d.getMonth() + 1}월 ${d.getDate()}일 (${WD[d.getDay()]})`
+    + (r.at_time ? ' ' + (kTimeShort(r.at_time) || r.at_time) : '');
+  const can = r.ok_n > 0;
+  const head = `<div class="dc-head ${can ? 'can' : 'cant'}">
+      <b>${esc(label)}</b>
+      <span>${can ? `배정 가능 ${r.ok_n}명 / ${r.total_n}명` : '배정 가능한 작가가 없습니다'}</span>
+    </div>`;
+
+  const w = r.weddings || [];
+  const weds = w.length
+    ? `<p class="dc-sub">이 날 예식 ${w.length}건</p>
+       <ul class="dc-weds">${w.map((x) => `<li><b>${esc(kTimeShort(x.wedding_time) || '-')}</b>
+         ${esc(x.contractor_name || '')} · ${esc(x.wedding_venue || '-')}
+         <span>${x.main_name ? esc(x.main_name) : '미배정'}${x.sub_name ? ' + ' + esc(x.sub_name) : ''}</span></li>`).join('')}</ul>`
+    : '<p class="dc-sub">이 날 잡힌 예식은 없습니다.</p>';
+
+  let rank = 0;
+  const rows = (r.staff || []).map((s) => {
+    const badge = s.status === 'ok' ? '<span class="dc-b ok">가능</span>'
+      : s.status === 'off' ? '<span class="dc-b off">불가</span>'
+      : '<span class="dc-b tight">겹침</span>';
+    if (s.status === 'ok') rank += 1;
+    return `<li class="dc-row ${esc(s.status)}">
+      <span class="dc-rank">${s.status === 'ok' ? rank : '·'}</span>
+      <span class="dc-name">${esc(s.name)}</span>
+      <span class="dc-star">${dcStar(s)}</span>
+      <span class="dc-load">최근 배정 ${s.load_n}건</span>
+      ${badge}
+      ${s.detail ? `<span class="dc-detail">${esc(s.detail)}</span>` : ''}
+    </li>`;
+  }).join('');
+
+  const notes = [];
+  if (!r.at_time) notes.push('시간을 넣으면 4시간 규칙(겹침)까지 함께 봅니다.');
+  if ((r.fb_total || 0) < 10) {
+    notes.push(`촬영 후 설문이 아직 ${r.fb_total || 0}건이라 평점 순위는 참고만 해주세요.`
+      + ' 평점이 없는 작가는 최근 배정이 적은 순으로 놓았습니다.');
+  }
+  return head + weds + `<ol class="dc-staff">${rows}</ol>`
+    + (notes.length ? `<p class="dc-note">${notes.map(esc).join('<br />')}</p>` : '');
+}
+async function dayCheck() {
+  const box = $('dcResult');
+  const d = $('dcDate') ? $('dcDate').value : '';
+  if (!box) return;
+  if (!d) { box.innerHTML = '<p class="dash-empty">날짜를 선택해 주세요.</p>'; return; }
+  box.innerHTML = '<p class="dash-empty">확인 중…</p>';
+  const { data, error } = await sb.rpc('admin_day_check', { p_date: d, p_time: $('dcTime').value || null });
+  if (error) { box.innerHTML = `<p class="dash-empty">${esc(error.message)}</p>`; return; }
+  box.innerHTML = dayCheckHtml(data);
+}
+if ($('dcGo')) {
+  $('dcGo').addEventListener('click', dayCheck);
+  ['dcDate', 'dcTime'].forEach((id) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener('change', dayCheck);
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter') dayCheck(); });
+  });
+  // 처음 열면 오늘 날짜만 채워두고, 조회는 누를 때 한다
+  const t = new Date();
+  $('dcDate').value = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+}
+
 /* ===== 월별 일정 · 담당자 배정 ===== */
 if ($('schedToggle')) {
   $('schedToggle').addEventListener('click', () => {

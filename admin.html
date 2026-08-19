@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="admin.css?v=20260819d" />
+  <link rel="stylesheet" href="admin.css?v=20260819e" />
 </head>
 <body>
 
@@ -117,6 +117,17 @@
       </div>
 
       <div id="tab-calendar" hidden>
+        <div class="dash-card dc-card">
+          <div class="dash-card-head"><h3>🔎 날짜 조회 · 배정 가능 작가</h3></div>
+          <div class="dc-form">
+            <input type="date" id="dcDate" />
+            <input type="time" id="dcTime" />
+            <button class="btn-sm dl-save" id="dcGo">확인</button>
+            <span class="dc-hint">문의 온 날짜를 넣어보세요</span>
+          </div>
+          <div id="dcResult"></div>
+        </div>
+
         <div class="dash-card cal-card">
           <div class="dash-card-head">
             <h3>📆 예식 캘린더</h3>
@@ -288,6 +299,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=20260819d"></script>
+  <script src="admin.js?v=20260819e"></script>
 </body>
 </html>
