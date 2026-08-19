@@ -63,22 +63,19 @@ function tint(hex, a) { // 작가 색을 옅은 배경(rgba)으로
 
 /* ===== Auth views ===== */
 const SAVED_EMAIL_KEY = 'otb_admin_email';
-const SAVED_PW_KEY = 'otb_admin_pw';
+const SAVED_PW_KEY = 'otb_admin_pw';   // 예전에 저장하던 자리 — 지우기만 한다
+// 예전 버전이 비밀번호를 이 브라우저에 남겨뒀을 수 있다. 열자마자 지운다.
+try { localStorage.removeItem(SAVED_PW_KEY); } catch (_) {}
 const showLogin = () => {
   $('loginView').hidden = false;
   $('dashView').hidden = true;
-  // 저장된 아이디/비밀번호 자동 입력 ('저장' 체크돼 있었으면)
-  let savedEmail = '', savedPw = '';
-  try {
-    savedEmail = localStorage.getItem(SAVED_EMAIL_KEY) || '';
-    savedPw = localStorage.getItem(SAVED_PW_KEY) || '';
-  } catch {}
+  // 아이디만 자동 입력한다 (비밀번호는 저장하지 않는다)
+  let savedEmail = '';
+  try { savedEmail = localStorage.getItem(SAVED_EMAIL_KEY) || ''; } catch (_) {}
   if (savedEmail) $('email').value = savedEmail;
-  if (savedPw) { try { $('password').value = decodeURIComponent(atob(savedPw)); } catch (_) {} }
-  if ($('saveCreds')) $('saveCreds').checked = !!(savedEmail && savedPw);
-  // 아이디만 저장됐으면 비번 칸으로 포커스
+  if ($('saveCreds')) $('saveCreds').checked = !!savedEmail;
   const pw = $('password');
-  if (savedEmail && !savedPw && pw) setTimeout(() => pw.focus(), 0);
+  if (savedEmail && pw) setTimeout(() => pw.focus(), 0);
 };
 const showDash = (email) => {
   $('loginView').hidden = true;
@@ -116,20 +113,19 @@ $('loginForm').addEventListener('submit', async (e) => {
   if (error) {
     msg.textContent = '로그인 실패: 이메일 또는 비밀번호를 확인해 주세요.';
   } else {
-    // 로그인 성공 시: '저장' 체크 ON이면 아이디·비밀번호 저장, OFF면 삭제
+    // '저장' 체크 ON이면 아이디만 남긴다. 비밀번호는 어떤 경우에도 저장하지 않는다.
     try {
-      if ($('saveCreds') && $('saveCreds').checked) {
-        localStorage.setItem(SAVED_EMAIL_KEY, email);
-        localStorage.setItem(SAVED_PW_KEY, btoa(encodeURIComponent($('password').value)));
-      } else {
-        localStorage.removeItem(SAVED_EMAIL_KEY);
-        localStorage.removeItem(SAVED_PW_KEY);
-      }
+      if ($('saveCreds') && $('saveCreds').checked) localStorage.setItem(SAVED_EMAIL_KEY, email);
+      else localStorage.removeItem(SAVED_EMAIL_KEY);
+      localStorage.removeItem(SAVED_PW_KEY);
     } catch (_) {}
   }
 });
 
-$('logoutBtn').addEventListener('click', () => sb.auth.signOut());
+$('logoutBtn').addEventListener('click', () => {
+  try { localStorage.removeItem(SAVED_PW_KEY); } catch (_) {}
+  sb.auth.signOut();
+});
 $('refreshBtn').addEventListener('click', () => loadBookings());
 
 /* ===== Load + render ===== */
