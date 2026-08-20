@@ -1008,3 +1008,7 @@ td .muted { color: var(--ink-soft); }
   .sel-log-row { flex-wrap: wrap; }
   .sel-log-row small { margin-left: 0; }
 }
+
+.sel-plan { margin: 8px 0; }
+.sel-bar { height: 6px; border-radius: 4px; background: rgba(0, 0, 0, .07); overflow: hidden; margin: 8px 0; }
+.sel-bar i { display: block; height: 100%; width: 0; background: var(--gold); transition: width .2s; }

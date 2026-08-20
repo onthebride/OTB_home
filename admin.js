@@ -2740,7 +2740,7 @@ function renderSelect() {
     + '<h2>셀렉 RAW 찾기</h2>'
     + '<p class="sel-lead">신부가 보낸 <b>셀렉 폴더를 여기 끌어다 놓으면</b> 폴더 이름으로 예식을 찾아,'
     + ' 그 예식 RAW 중에서 같은 사진을 골라 줍니다.<br />'
-    + '파일은 올라가지 않습니다 — 브라우저가 <b>이름만</b> 읽습니다.</p>'
+    + '셀렉 폴더를 새로 만들어 <b>신부가 보낸 JPG 와 찾은 RAW 를 함께</b> 넣습니다.</p>'
     + '</div>'
     + '<div class="sel-drop" id="selDrop">'
     + '<span class="sel-drop-ico">📂</span>'
@@ -2768,38 +2768,39 @@ function renderSelect() {
   }));
   dz.addEventListener('drop', async (e) => {
     const got = await selFromDrop(e.dataTransfer);
-    selStart(got.folder, got.names);
+    selStart(got.folder, got.items);
   });
 
   $('selDir').addEventListener('change', (e) => {
     const fs2 = Array.from(e.target.files || []);
     const rel = (fs2[0] && fs2[0].webkitRelativePath) || '';
-    selStart(rel.split('/')[0] || '', fs2.map((f) => f.name));
+    selStart(rel.split('/')[0] || '', fs2.map((f) => ({ name: f.name, file: f })));
     e.target.value = '';
   });
   $('selFiles').addEventListener('change', (e) => {
-    selStart('', Array.from(e.target.files || []).map((f) => f.name));
+    selStart('', Array.from(e.target.files || []).map((f) => ({ name: f.name, file: f })));
     e.target.value = '';
   });
   $('selTextGo').addEventListener('click', () => {
     const want = $('selText').value.split(/[\r\n,\t]+/).map((s) => s.trim()).filter(Boolean);
     if (!want.length) { toast('파일 이름을 붙여넣어 주세요'); return; }
-    selStart($('selWho').value.trim(), want);
+    // 이름만 왔으면 올릴 파일은 없다 — RAW 만 찾아 넣는다
+    selStart($('selWho').value.trim(), want.map((n) => ({ name: n, file: null })));
   });
   selRecent();
 }
 
-// 끌어다 놓은 것에서 폴더 이름과 파일 이름들을 꺼낸다
+// 끌어다 놓은 것에서 폴더 이름과 파일들을 꺼낸다
 function selFromDrop(dt) {
   const items = Array.from((dt && dt.items) || []);
   const ents = items.map((i) => (i.webkitGetAsEntry ? i.webkitGetAsEntry() : null)).filter(Boolean);
   const dir = ents.find((e) => e.isDirectory);
-  if (dir) return selReadDir(dir).then((names) => ({ folder: dir.name, names: names }));
+  if (dir) return selReadDir(dir).then((items2) => ({ folder: dir.name, items: items2 }));
   const files = Array.from((dt && dt.files) || []);
-  return Promise.resolve({ folder: '', names: files.map((f) => f.name) });
+  return Promise.resolve({ folder: '', items: files.map((f) => ({ name: f.name, file: f })) });
 }
 
-// 폴더 안 이름만 읽는다(한 번에 100개씩 오므로 끝까지 돈다). 하위 폴더도 한 겹 들어간다.
+// 폴더 안을 훑는다(한 번에 100개씩 오므로 끝까지 돈다). 하위 폴더도 두 겹까지 들어간다.
 function selReadDir(dir, depth) {
   return new Promise((done) => {
     const out = [];
@@ -2811,25 +2812,34 @@ function selReadDir(dir, depth) {
         return Promise.all(subs.map((s) => selReadDir(s, (depth || 0) + 1)))
           .then((rs) => done(out.concat.apply(out, rs)));
       }
-      es.forEach((e) => { if (e.isFile) out.push(e.name); else subs.push(e); });
+      es.forEach((e) => {
+        if (e.isFile) out.push({ name: e.name, entry: e });
+        else subs.push(e);
+      });
       step();
     }, () => done(out));
     step();
   });
 }
 
+// 끌어다 놓은 것은 알맹이를 따로 꺼내야 한다
+const selFile = (it) => (it.file ? Promise.resolve(it.file)
+  : it.entry ? new Promise((ok, no) => it.entry.file(ok, no)) : Promise.resolve(null));
+
 /* ── 폴더 이름으로 예식 찾기 ──────────────────────────────────── */
-function selStart(folder, names) {
+function selStart(folder, items) {
   const box = $('selWork');
   if (!box) return;
-  const want = (names || []).filter((n) => /\.(jpe?g|png|tiff?|heic|arw|cr[23]|nef|raf|dng)$/i.test(n) || !/\./.test(n));
+  // 사진이 아닌 것(.DS_Store, Thumbs.db, 메모 …)은 빼고 본다
+  const keep = (items || []).filter((it) =>
+    /\.(jpe?g|png|tiff?|heic|arw|cr[23]|nef|raf|dng)$/i.test(it.name) || !/\./.test(it.name));
   const p = selParse(folder);
   const cands = selCandidates(p, allBookings);
   const head = '<p class="dbx-msg">' + (folder ? '폴더 <b>' + esc(folder) + '</b>' : '고른 파일')
-    + ' · ' + want.length + '장</p>';
+    + ' · ' + keep.length + '장</p>';
 
   if (cands.length && (cands.length === 1 || cands[0].score > cands[1].score)) {
-    return selOpen({ b: cands[0].b, date: String(cands[0].b.wedding_date).slice(0, 10), folder: folder }, want);
+    return selOpen({ b: cands[0].b, date: String(cands[0].b.wedding_date).slice(0, 10), folder: folder }, keep);
   }
   if (cands.length) {
     box.innerHTML = head + '<div class="sel-panel"><p class="dbx-msg">어느 예식인가요?</p>'
@@ -2842,26 +2852,26 @@ function selStart(folder, names) {
         + '</button>').join('') + '</div></div>';
     box.querySelectorAll('.sel-cand').forEach((el2) => el2.addEventListener('click', () => {
       const c = cands[Number(el2.dataset.i)];
-      return selOpen({ b: c.b, date: String(c.b.wedding_date).slice(0, 10), folder: folder }, want);
+      return selOpen({ b: c.b, date: String(c.b.wedding_date).slice(0, 10), folder: folder }, keep);
     }));
     return;
   }
   if (p.date) {
     // 우리 시스템이 생기기 전 예식이면 예약이 없다 — 날짜만으로도 백업 폴더는 찾을 수 있다
-    return selOpen({ b: null, date: p.date, folder: folder }, want);
+    return selOpen({ b: null, date: p.date, folder: folder }, keep);
   }
   box.innerHTML = head
     + '<div class="sel-panel"><p class="dbx-msg err">폴더 이름에서 예식을 못 찾았습니다.</p>'
     + '<p class="dbx-msg">예식 날짜나 이름을 넣어주세요 — 예: <b>260822</b> 또는 <b>이솔</b></p>'
     + '<input type="text" class="sel-dest sel-find" placeholder="260822 이솔" />'
     + '<button type="button" class="btn-sm primary sel-find-go">찾기</button></div>';
-  const go = () => selStart(box.querySelector('.sel-find').value.trim(), want);
+  const go = () => selStart(box.querySelector('.sel-find').value.trim(), keep);
   box.querySelector('.sel-find-go').addEventListener('click', go);
   box.querySelector('.sel-find').addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
 }
 
 /* ── 고른 예식으로 RAW 찾아 보여주기 ──────────────────────────── */
-async function selOpen(ctx, want) {
+async function selOpen(ctx, items) {
   const box = $('selWork');
   if (!box) return;
   const who = ctx.b ? (ctx.b.contractor_name || '') : '';
@@ -2909,7 +2919,7 @@ async function selOpen(ctx, want) {
           + esc(f.name) + '</option>').join('') + '</select>'
       + (at < 0 ? '<span class="sel-warn">이름이 맞는 폴더가 없어 첫 번째를 골랐습니다</span>' : '')
       + '</div>'
-      + '<button type="button" class="btn-sm primary sel-go">이 폴더에서 RAW ' + want.length + '장 찾기</button>'
+      + '<button type="button" class="btn-sm primary sel-go">이 폴더에서 RAW ' + items.length + '장 찾기</button>'
       + '<p class="dbx-msg sel-fstat"></p>';
     fbox.querySelector('.sel-fsel').addEventListener('change', (e) => {
       cur = folders[Number(e.target.value)]; rbox.innerHTML = '';
@@ -2925,19 +2935,27 @@ async function selOpen(ctx, want) {
     btn.disabled = false;
     if (got.error) { stat.innerHTML = '<span class="err">' + esc(got.error) + '</span>'; return; }
     stat.textContent = got.rawName + ' 폴더 · ' + got.files.length.toLocaleString('ko-KR') + '장';
-    selShow(rbox, ctx, cur, got, want);
+    selShow(rbox, ctx, cur, got, items);
   }
 
   drawFolder();
-  if (want.length) return run();   // 파일까지 같이 왔으면 바로 찾는다
+  if (items.length) return run();   // 파일까지 같이 왔으면 바로 찾는다
 }
 
 /* ── 결과 ─────────────────────────────────────────────────────── */
-async function selShow(rbox, ctx, folder, got, want) {
+const selMB = (n) => (n >= 1024 * 1024 * 1024
+  ? (n / 1024 / 1024 / 1024).toFixed(1) + 'GB' : Math.round(n / 1024 / 1024) + 'MB');
+
+async function selShow(rbox, ctx, folder, got, items) {
+  const want = (items || []).map((it) => it.name);
+  const ups = (items || []).filter((it) => it.file || it.entry);   // 올릴 수 있는 것(알맹이가 있는 것)
   const { hit, miss, dup } = selMatch(want, got.files);
   if (!selRoots) selRoots = await selLoadRoots();
-  const roots = selRoots.length ? selRoots : ['/@ ' + String(ctx.date).slice(0, 4) + ' 셀렉파일'];
+  // 셀렉한 시점의 연도로 넣는다 — 예식 연도가 아니다
+  const thisYear = new Date().getFullYear() + ' 셀렉파일';
+  const roots = [ '/' + thisYear ].concat((selRoots || []).filter((p) => p !== '/' + thisYear));
   const name = selDestName(ctx.date, ctx.folder, ctx.b && ctx.b.contractor_name);
+  const bytes = ups.reduce((s, it) => s + ((it.file && it.file.size) || 0), 0);
 
   rbox.innerHTML =
     '<div class="sel-nums">'
@@ -2957,50 +2975,133 @@ async function selShow(rbox, ctx, folder, got, want) {
     + (hit.length
         ? '<details class="sel-hits"><summary>찾은 ' + hit.length + '장 보기</summary>'
           + '<div class="sel-names">' + hit.map((f) => '<code>' + esc(f.name) + '</code>').join('') + '</div></details>'
-          + '<div class="sel-dest-box">'
+        : '')
+    + ((hit.length || ups.length)
+        ? '<div class="sel-dest-box">'
           + '<div class="sel-row"><span class="sel-lab">넣을 곳</span>'
           + '<select class="sel-sel sel-root">' + roots.map((p, i) =>
               '<option value="' + esc(p) + '"' + (i === 0 ? ' selected' : '') + '>' + esc(p) + '</option>').join('')
           + '</select></div>'
           + '<input type="text" class="sel-dest sel-name" value="' + esc(name) + '" />'
-          + '<button type="button" class="btn-sm primary sel-copy">RAW ' + hit.length + '장 복사</button>'
+          + '<p class="dbx-msg sel-plan">이 폴더를 새로 만들고 '
+          + (ups.length ? '<b>신부 JPG ' + ups.length + '장</b>' + (bytes ? ' (' + selMB(bytes) + ')' : '') : '')
+          + (ups.length && hit.length ? ' 과 ' : '')
+          + (hit.length ? '<b>RAW ' + hit.length + '장</b>' : '')
+          + ' 을 넣습니다.</p>'
+          + '<button type="button" class="btn-sm primary sel-copy">셀렉 폴더 만들기</button>'
+          + '<div class="sel-bar" hidden><i></i></div>'
           + '<p class="dbx-msg sel-stat"></p></div>'
-        : '<p class="dbx-msg err">복사할 게 없습니다.</p>');
+        : '<p class="dbx-msg err">넣을 게 없습니다.</p>');
 
   const cp = rbox.querySelector('.sel-copy');
   if (!cp) return;
   cp.addEventListener('click', async () => {
     const dest = rbox.querySelector('.sel-root').value + '/' + rbox.querySelector('.sel-name').value.trim();
     const stat = rbox.querySelector('.sel-stat');
+    const bar = rbox.querySelector('.sel-bar');
+    const fill = bar && bar.querySelector('i');
     cp.disabled = true;
-    stat.textContent = '복사하는 중… (장수가 많으면 조금 걸립니다)';
+    if (bar) bar.hidden = false;
+    const prog = (a, b) => { if (fill) fill.style.width = Math.round((a / Math.max(b, 1)) * 100) + '%'; };
+
+    // ① 신부가 보낸 JPG 를 올린다 — 대표 PC 에서 드롭박스로 곧장 간다
+    let upDone = 0, warn = '';
+    if (ups.length) {
+      const r = await selUpload(dest, ups, (a) => {
+        upDone = a; prog(a, ups.length);
+        stat.textContent = '신부 JPG 올리는 중… ' + a + ' / ' + ups.length;
+      });
+      if (r.error) {
+        cp.disabled = false; if (bar) bar.hidden = true;
+        stat.innerHTML = '<span class="err">' + esc(r.error) + '</span>'; return;
+      }
+      upDone = r.done;
+      // 못 올린 게 있으면 마지막까지 들고 간다 — 끝났다는 말에 묻히면 안 된다
+      if (r.failed.length) {
+        warn = '<br /><span class="err">' + r.failed.length + '장을 못 올렸습니다: '
+          + esc(r.failed.slice(0, 10).join(', '))
+          + (r.failed.length > 10 ? ' 외 ' + (r.failed.length - 10) + '장' : '')
+          + '</span>';
+      }
+    }
+
+    // ② 찾은 RAW 를 복사한다
+    if (!hit.length) {
+      if (upDone) await sb.rpc('admin_dbx_up_log',
+        { p_booking_id: (ctx.b && ctx.b.id) || null, p_dest: dest, p_n: upDone });
+      if (bar) bar.hidden = true;
+      cp.textContent = '완료 ✓';
+      stat.innerHTML = '<b class="sel-ok">✓ JPG ' + upDone + '장 올렸습니다.</b><br />'
+        + '<a href="' + esc(selDbxUrl(dest)) + '" target="_blank" rel="noopener">' + esc(dest) + ' 열어보기 ↗</a>'
+        + warn;
+      toast('JPG ' + upDone + '장 올렸습니다');
+      selRecent();
+      return;
+    }
+
+    stat.textContent = 'RAW 복사하는 중… (장수가 많으면 조금 걸립니다)';
     const s = await sb.rpc('admin_dbx_copy_req',
       { p_booking_id: (ctx.b && ctx.b.id) || null, p_dest: dest, p_files: hit.map((f) => f.path) });
     if (s.error || (s.data && s.data.error)) {
-      cp.disabled = false;
+      cp.disabled = false; if (bar) bar.hidden = true;
       stat.innerHTML = '<span class="err">' + esc((s.error && s.error.message) || s.data.error) + '</span>';
       return;
     }
+    const args = { p_booking_id: (ctx.b && ctx.b.id) || null, p_dest: dest, p_n: s.data.n, p_up: upDone };
     let res = await dbxWait('admin_dbx_copy_res',
-      { p_req: s.data.req, p_booking_id: (ctx.b && ctx.b.id) || null, p_dest: dest, p_n: s.data.n, p_job: null }, 40000);
+      Object.assign({ p_req: s.data.req, p_job: null }, args), 40000);
     // 장수가 많으면 드롭박스가 뒤에서 처리한다 — 다 될 때까지 물어본다(최대 3분)
     const until = Date.now() + 180000;
     while (res.again && Date.now() < until) {
       await new Promise((x) => setTimeout(x, 1500));
-      stat.textContent = '복사하는 중… 드롭박스가 처리하고 있습니다';
+      stat.textContent = 'RAW 복사하는 중… 드롭박스가 처리하고 있습니다';
       res = await dbxWait('admin_dbx_copy_res',
-        { p_req: res.again, p_booking_id: (ctx.b && ctx.b.id) || null, p_dest: dest, p_n: s.data.n, p_job: res.job }, 60000);
+        Object.assign({ p_req: res.again, p_job: res.job }, args), 60000);
     }
     if (res.again) res = { error: '복사가 아직 진행 중입니다. 잠시 후 드롭박스에서 확인해 주세요.' };
-    cp.disabled = false;
-    if (res.error) { stat.innerHTML = '<span class="err">' + esc(res.error) + '</span>'; return; }
-    stat.innerHTML = '<b class="sel-ok">✓ ' + res.n + '장 복사했습니다.</b><br />'
-      + '<a href="' + esc(selDbxUrl(res.dest)) + '" target="_blank" rel="noopener">' + esc(res.dest) + ' 열어보기 ↗</a>';
-    cp.textContent = '복사 완료 ✓';
-    cp.disabled = true;
-    toast(res.n + '장 복사했습니다');
+    if (bar) bar.hidden = true;
+    if (res.error) { cp.disabled = false; stat.innerHTML = '<span class="err">' + esc(res.error) + '</span>'; return; }
+    stat.innerHTML = '<b class="sel-ok">✓ '
+      + (upDone ? 'JPG ' + upDone + '장 + ' : '') + 'RAW ' + res.n + '장 넣었습니다.</b><br />'
+      + '<a href="' + esc(selDbxUrl(res.dest)) + '" target="_blank" rel="noopener">' + esc(res.dest) + ' 열어보기 ↗</a>'
+      + warn;
+    cp.textContent = '완료 ✓';
+    toast((upDone ? upDone + '장 올리고 ' : '') + res.n + '장 복사했습니다');
     selRecent();
   });
+}
+
+/* 신부가 보낸 JPG 올리기.
+   파일은 우리 서버를 거치지 않는다 — 서버는 '이 경로에만 쓸 수 있는' 임시 링크만 내주고,
+   알맹이는 대표 PC 에서 드롭박스로 곧장 간다. 한 번에 8장씩 받는다(그 이상은 드롭박스가 막는다). */
+async function selUpload(dest, items, onProg) {
+  const failed = [];
+  let done = 0;
+  for (let i = 0; i < items.length; i += 8) {
+    const part = items.slice(i, i + 8);
+    const r = await sb.rpc('admin_dbx_up_req', { p_dest: dest, p_names: part.map((x) => x.name) });
+    if (r.error) return { error: r.error.message, done: done, failed: failed };
+    if (r.data && r.data.error) return { error: r.data.error, done: done, failed: failed };
+    const got = await dbxWait('admin_dbx_up_res', { p_reqs: r.data.reqs }, 30000);
+    if (got.error) return { error: got.error, done: done, failed: failed };
+    if (got.pending) return { error: '드롭박스가 응답하지 않습니다. 잠시 후 다시 해주세요.', done: done, failed: failed };
+
+    const byName = {};
+    (got.links || []).forEach((l) => { byName[l.name] = l; });
+    await Promise.all(part.map(async (it) => {
+      const l = byName[it.name];
+      if (!l || !l.url) { failed.push(it.name); return; }
+      try {
+        const blob = await selFile(it);
+        if (!blob) { failed.push(it.name); return; }
+        const up = await fetch(l.url, { method: 'POST',
+          headers: { 'Content-Type': 'application/octet-stream' }, body: blob });
+        if (!up.ok) failed.push(it.name); else done++;
+      } catch (e) { failed.push(it.name); }
+      if (onProg) onProg(done);
+    }));
+  }
+  return { done: done, failed: failed };
 }
 
 async function selLoadRoots() {
@@ -3019,7 +3120,8 @@ async function selRecent() {
   if (!rows.length) { el.innerHTML = ''; return; }
   el.innerHTML = '<div class="sel-log"><h3>최근에 복사한 것</h3>'
     + rows.map((x) =>
-        '<div class="sel-log-row"><span class="sel-log-n">' + x.n + '장</span>'
+        '<div class="sel-log-row"><span class="sel-log-n">'
+        + (x.up ? 'JPG ' + x.up + (x.n ? ' + RAW ' + x.n : '') : x.n + '장') + '</span>'
         + '<a href="' + esc(selDbxUrl(x.dest)) + '" target="_blank" rel="noopener">' + esc(x.dest) + '</a>'
         + '<small>' + esc(fmtDateTime(x.at)) + '</small></div>').join('')
     + '</div>';
