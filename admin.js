@@ -775,7 +775,9 @@ function renderView(b, flash) {
              <input type="text" class="dl-link dl-link-d" placeholder="다운로드 링크 붙여넣기" value="${esc(b.download_link || '')}" />
              <button class="btn-sm dl-save-btn" id="dlSaveD" data-id="${esc(b.id)}">저장</button>
            </div>
-           ${b.download_link ? `<a class="dl-open-d" href="${esc(b.download_link)}" target="_blank" rel="noopener">현재 링크 열기 ↗</a>` : '<span class="dl-empty-hint">아직 등록된 링크가 없어요</span>'}`
+           ${b.download_link ? `<a class="dl-open-d" href="${esc(b.download_link)}" target="_blank" rel="noopener">현재 링크 열기 ↗</a>` : '<span class="dl-empty-hint">아직 등록된 링크가 없어요</span>'}
+           <button class="btn-sm dbx-btn" id="dbxBtn">📦 드롭박스에서 공유</button>
+           <div id="dbxBox"></div>`
         : `<span class="dl-blocked-msg">🔒 잔금 입금 확인 후 입력 가능</span>`}
     </div>
 
@@ -799,6 +801,7 @@ function renderView(b, flash) {
       <button class="btn-del" id="mDelete">삭제</button>
     </div>`;
 
+  if ($('dbxBtn')) $('dbxBtn').addEventListener('click', () => dbxShare(b, $('dbxBtn')));
   $('modalClose').addEventListener('click', closeModal);
   $('mEdit').addEventListener('click', () => renderEdit(b));
   $('mDelete').addEventListener('click', () => deleteBooking(b.id));
@@ -2587,6 +2590,86 @@ async function renderStats() {
     + '<div id="clarityBox"></div>'
     + '<p class="st-note">방문 = 브라우저 한 번 열어 둘러본 단위. 구글 애널리틱스 숫자와 몇 % 다를 수 있습니다(광고 차단 사용 등). 기록은 180일 후 자동 삭제됩니다.</p>';
   renderClarity();
+}
+
+/* ===== 드롭박스에서 신부에게 공유 =====
+   앱 권한이 '읽기 + 공유 링크 만들기' 뿐이라 여기서 파일이 지워질 일은 없다.
+   pg_net 이 비동기라 '요청 → 잠깐 기다렸다 꺼내기' 두 단계로 돈다. */
+async function dbxWait(fn, args, ms = 20000) {
+  const until = Date.now() + ms;
+  while (Date.now() < until) {
+    await new Promise((r) => setTimeout(r, 600));
+    const { data, error } = await sb.rpc(fn, args);
+    if (error) return { error: error.message };
+    if (!data || !data.pending) return data || {};
+  }
+  return { error: '드롭박스가 응답하지 않습니다. 잠시 후 다시 눌러주세요.' };
+}
+
+async function dbxShare(b, btn) {
+  const box = $('dbxBox');
+  const say = (h) => { if (box) box.innerHTML = h; };
+  btn.disabled = true;
+  say('<p class="dbx-msg">드롭박스에서 폴더를 찾는 중…</p>');
+
+  const start = await sb.rpc('admin_dbx_list_req', { p_booking_id: b.id });
+  if (start.error) { say('<p class="dbx-msg err">' + esc(start.error.message) + '</p>'); btn.disabled = false; return; }
+  if (start.data && start.data.error) { say('<p class="dbx-msg err">' + esc(start.data.error) + '</p>'); btn.disabled = false; return; }
+
+  const list = await dbxWait('admin_dbx_list_res', { p_req: start.data.req });
+  btn.disabled = false;
+  if (list.error) { say('<p class="dbx-msg err">' + esc(list.error) + '</p>'); return; }
+  if (list.missing) {
+    say('<p class="dbx-msg err">드롭박스에 <b>' + esc(start.data.path) + '</b> 폴더가 없습니다.<br />아직 백업 전이거나 날짜 폴더 이름이 다릅니다.</p>');
+    return;
+  }
+  const folders = list.folders || [];
+  if (!folders.length) { say('<p class="dbx-msg err">그날 폴더 안에 예식 폴더가 없습니다.</p>'); return; }
+
+  // 계약자·신부 이름이 들어간 폴더를 먼저 고른다
+  const names = [b.contractor_name, b.bride_name].filter(Boolean);
+  const hit = folders.findIndex((f) => names.some((n) => String(f.name).includes(n)));
+  const sel = hit >= 0 ? hit : 0;
+  say('<p class="dbx-msg">어느 폴더를 보낼까요?</p>'
+    + '<div class="dbx-list">' + folders.map((f, i) =>
+        '<label class="dbx-item"><input type="radio" name="dbxPick" value="' + i + '"' + (i === sel ? ' checked' : '') + ' />'
+        + '<span>' + esc(f.name) + '</span></label>').join('') + '</div>'
+    + '<button type="button" class="btn-sm primary" id="dbxGo">이 폴더로 공유 링크 만들기</button>'
+    + '<p class="dbx-msg" id="dbxStat"></p>');
+
+  const go = $('dbxGo');
+  if (!go) return;
+  go.addEventListener('click', async () => {
+    const idx = Number((document.querySelector('input[name="dbxPick"]:checked') || {}).value || 0);
+    const f = folders[idx];
+    go.disabled = true;
+    $('dbxStat').textContent = '공유 링크를 만드는 중…';
+    const s = await sb.rpc('admin_dbx_share_req', { p_booking_id: b.id, p_path: f.path });
+    if (s.error || (s.data && s.data.error)) {
+      $('dbxStat').textContent = (s.error && s.error.message) || s.data.error; go.disabled = false; return;
+    }
+    const res = await dbxWait('admin_dbx_share_res', { p_req: s.data.req, p_booking_id: b.id, p_path: f.path });
+    go.disabled = false;
+    if (res.error) { $('dbxStat').textContent = res.error; return; }
+    b.download_link = res.url;
+    const i = allBookings.findIndex((x) => x.id === b.id);
+    if (i >= 0) allBookings[i].download_link = res.url;
+    const inp = document.querySelector('.dl-link-d');
+    if (inp) inp.value = res.url;
+    say('<p class="dbx-msg ok">공유 링크를 만들어 다운로드 칸에 넣었습니다.</p>'
+      + '<p class="dbx-url">' + esc(res.url) + '</p>'
+      + '<button type="button" class="btn-sm btn-kakao-sm" id="dbxAtk">신부에게 알림톡 보내기</button>');
+    const atk = $('dbxAtk');
+    if (atk) atk.addEventListener('click', async () => {
+      if (!confirm(esc(b.contractor_name || '') + '님께 촬영본 준비 안내(E)를 보냅니다.')) return;
+      atk.disabled = true;
+      const { error } = await sb.rpc('admin_send_alimtalk', { p_booking_id: b.id, p_template: 'E' });
+      atk.disabled = false;
+      if (error) { alert('발송 실패: ' + error.message); return; }
+      toast('알림톡을 보냈습니다.');
+      atk.textContent = '보냈습니다 ✓';
+    });
+  });
 }
 
 /* ===== 클래리티 — 손님이 어디서 막혔나 =====

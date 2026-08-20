@@ -913,3 +913,16 @@ td .muted { color: var(--ink-soft); }
 .cl-pages { margin-top: 14px; }
 .cl-h { font-size: .82rem; font-weight: 600; margin-bottom: 6px; }
 .cl-h small { font-weight: 400; color: var(--ink-soft); font-size: .74rem; }
+
+/* 드롭박스에서 공유 */
+.dbx-btn { margin-top: 8px; }
+#dbxBox { margin-top: 8px; }
+.dbx-msg { font-size: .84rem; color: var(--ink-soft); margin: 6px 0; line-height: 1.6; }
+.dbx-msg.err { color: #c0392b; }
+.dbx-msg.ok { color: #2f7d4f; font-weight: 600; }
+.dbx-list { display: grid; gap: 6px; margin: 8px 0; }
+.dbx-item { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line);
+  border-radius: 8px; padding: 9px 11px; font-size: .85rem; cursor: pointer; background: #fff; }
+.dbx-item:hover { border-color: var(--gold); }
+.dbx-item input { margin: 0; }
+.dbx-url { font-size: .74rem; color: var(--ink-soft); word-break: break-all; margin: 4px 0 8px; }
