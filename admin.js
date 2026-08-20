@@ -801,7 +801,8 @@ function renderView(b, flash) {
       <button class="btn-del" id="mDelete">삭제</button>
     </div>`;
 
-  if ($('dbxBtn')) $('dbxBtn').addEventListener('click', () => dbxShare(b, $('dbxBtn')));
+  if ($('dbxBtn')) $('dbxBtn').addEventListener('click', () =>
+    dbxShare(b, $('dbxBtn'), $('dbxBox'), document.querySelector('.dl-link-d')));
   $('modalClose').addEventListener('click', closeModal);
   $('mEdit').addEventListener('click', () => renderEdit(b));
   $('mDelete').addEventListener('click', () => deleteBooking(b.id));
@@ -1714,8 +1715,10 @@ function renderDashboard() {
           ? `<div class="dl-dlrow">
                <input type="text" class="dl-link" data-id="${b.id}" placeholder="다운로드 링크 붙여넣기" value="${esc(b.download_link || '')}" />
                <button class="btn-sm dl-save" data-id="${b.id}">저장</button>
+               <button class="btn-sm dbx-row-btn" data-id="${b.id}">📦 드롭박스</button>
                <button class="btn-sm btn-kakao-sm" data-send="${b.id}" data-tpl="E">카톡 전송</button>
-             </div>`
+             </div>
+             <div class="dbx-box" data-id="${b.id}"></div>`
           : `<div class="dl-dlrow dl-blocked">
                <span class="dl-blocked-msg">🔒 잔금 입금 확인 후 링크 입력 가능</span>
                <button class="btn-sm dl-paid" data-id="${b.id}" data-pay="balance">잔금 확인</button>
@@ -1805,6 +1808,19 @@ function bindDashEvents() {
       if (kind === 'deposit' && !(nb && nb.alimtalk_sent && nb.alimtalk_sent.F)) sendAlimtalk(id, 'F');
     })
   );
+  // 홈 목록에서 드롭박스 폴더 골라 공유
+  document.querySelectorAll('#tab-dashboard .dbx-row-btn').forEach((btn) =>
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const b = allBookings.find((x) => x.id === id);
+      if (!b) return;
+      dbxShare(b, btn,
+        document.querySelector('#tab-dashboard .dbx-box[data-id="' + id + '"]'),
+        document.querySelector('#tab-dashboard .dl-link[data-id="' + id + '"]'));
+    })
+  );
+
   // 다운로드 링크 저장
   document.querySelectorAll('#tab-dashboard .dl-save').forEach((btn) =>
     btn.addEventListener('click', async (e) => {
@@ -2606,9 +2622,10 @@ async function dbxWait(fn, args, ms = 20000) {
   return { error: '드롭박스가 응답하지 않습니다. 잠시 후 다시 눌러주세요.' };
 }
 
-async function dbxShare(b, btn) {
-  const box = $('dbxBox');
-  const say = (h) => { if (box) box.innerHTML = h; };
+async function dbxShare(b, btn, box, input) {
+  if (!box) return;
+  const say = (h) => { box.innerHTML = h; };
+  const pick = (sel) => box.querySelector(sel);
   btn.disabled = true;
   say('<p class="dbx-msg">드롭박스에서 폴더를 찾는 중…</p>');
 
@@ -2634,19 +2651,19 @@ async function dbxShare(b, btn) {
     + '<div class="dbx-list">' + folders.map((f, i) =>
         '<label class="dbx-item"><input type="radio" name="dbxPick" value="' + i + '"' + (i === sel ? ' checked' : '') + ' />'
         + '<span>' + esc(f.name) + '</span></label>').join('') + '</div>'
-    + '<button type="button" class="btn-sm primary" id="dbxGo">이 폴더로 공유 링크 만들기</button>'
-    + '<p class="dbx-msg" id="dbxStat"></p>');
+    + '<button type="button" class="btn-sm primary dbx-go">이 폴더로 공유 링크 만들기</button>'
+    + '<p class="dbx-msg dbx-stat"></p>');
 
-  const go = $('dbxGo');
+  const go = pick('.dbx-go');
   if (!go) return;
   go.addEventListener('click', async () => {
-    const idx = Number((document.querySelector('input[name="dbxPick"]:checked') || {}).value || 0);
+    const idx = Number((pick('input[name="dbxPick"]:checked') || {}).value || 0);
     const f = folders[idx];
     go.disabled = true;
-    $('dbxStat').textContent = '공유 링크를 만드는 중…';
+    pick('.dbx-stat').textContent = '공유 링크를 만드는 중…';
     const s = await sb.rpc('admin_dbx_share_req', { p_booking_id: b.id, p_path: f.path });
     if (s.error || (s.data && s.data.error)) {
-      $('dbxStat').textContent = (s.error && s.error.message) || s.data.error; go.disabled = false; return;
+      pick('.dbx-stat').textContent = (s.error && s.error.message) || s.data.error; go.disabled = false; return;
     }
     let res = await dbxWait('admin_dbx_share_res', { p_req: s.data.req, p_booking_id: b.id, p_path: f.path });
     // 이미 공유 링크가 있는 폴더면 서버가 기존 링크를 물어본다 — 그 답을 이어서 기다린다
@@ -2654,16 +2671,15 @@ async function dbxShare(b, btn) {
       res = await dbxWait('admin_dbx_share_res', { p_req: res.relist, p_booking_id: b.id, p_path: f.path });
     }
     go.disabled = false;
-    if (res.error) { $('dbxStat').textContent = res.error; return; }
+    if (res.error) { pick('.dbx-stat').textContent = res.error; return; }
     b.download_link = res.url;
     const i = allBookings.findIndex((x) => x.id === b.id);
     if (i >= 0) allBookings[i].download_link = res.url;
-    const inp = document.querySelector('.dl-link-d');
-    if (inp) inp.value = res.url;
+    if (input) input.value = res.url;
     say('<p class="dbx-msg ok">공유 링크를 만들어 다운로드 칸에 넣었습니다.</p>'
       + '<p class="dbx-url">' + esc(res.url) + '</p>'
-      + '<button type="button" class="btn-sm btn-kakao-sm" id="dbxAtk">신부에게 알림톡 보내기</button>');
-    const atk = $('dbxAtk');
+      + '<button type="button" class="btn-sm btn-kakao-sm dbx-atk">신부에게 알림톡 보내기</button>');
+    const atk = pick('.dbx-atk');
     if (atk) atk.addEventListener('click', async () => {
       if (!confirm(esc(b.contractor_name || '') + '님께 촬영본 준비 안내(E)를 보냅니다.')) return;
       atk.disabled = true;

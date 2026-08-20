@@ -926,3 +926,6 @@ td .muted { color: var(--ink-soft); }
 .dbx-item:hover { border-color: var(--gold); }
 .dbx-item input { margin: 0; }
 .dbx-url { font-size: .74rem; color: var(--ink-soft); word-break: break-all; margin: 4px 0 8px; }
+
+.dbx-box:empty { display: none; }
+.dbx-box { margin-top: 6px; }
