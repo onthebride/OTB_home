@@ -777,7 +777,9 @@ function renderView(b, flash) {
            </div>
            ${b.download_link ? `<a class="dl-open-d" href="${esc(b.download_link)}" target="_blank" rel="noopener">현재 링크 열기 ↗</a>` : '<span class="dl-empty-hint">아직 등록된 링크가 없어요</span>'}
            <button class="btn-sm dbx-btn" id="dbxBtn">📦 드롭박스에서 공유</button>
-           <div id="dbxBox"></div>`
+           <button class="btn-sm dbx-btn" id="selBtn">🖼 셀렉 RAW 찾기</button>
+           <div id="dbxBox"></div>
+           <div id="selBox"></div>`
         : `<span class="dl-blocked-msg">🔒 잔금 입금 확인 후 입력 가능</span>`}
     </div>
 
@@ -803,6 +805,7 @@ function renderView(b, flash) {
 
   if ($('dbxBtn')) $('dbxBtn').addEventListener('click', () =>
     dbxShare(b, $('dbxBtn'), $('dbxBox'), document.querySelector('.dl-link-d')));
+  if ($('selBtn')) $('selBtn').addEventListener('click', () => dbxSelect(b, $('selBox')));
   $('modalClose').addEventListener('click', closeModal);
   $('mEdit').addEventListener('click', () => renderEdit(b));
   $('mDelete').addEventListener('click', () => deleteBooking(b.id));
@@ -2608,9 +2611,148 @@ async function renderStats() {
   renderClarity();
 }
 
+/* ===== 셀렉 매칭 — 신부가 고른 40장의 RAW 찾아 복사 =====
+   파일은 올리지 않는다. 브라우저에서 이름만 읽어 쓴다. */
+const selBase = (n) => String(n || '').replace(/\.[^.]+$/, '').trim();   // 확장자 뺀 이름
+
+// 신부가 고른 이름들(want) 과 RAW 파일들(files) 을 맞춰본다.
+// 확장자는 무시하고 이름만 본다(M4200526.JPG ↔ M4200526.ARW). 대소문자도 무시.
+function selMatch(want, files) {
+  const byBase = {};
+  (files || []).forEach((f) => { byBase[selBase(f.name).toLowerCase()] = f; });
+  const seen = {}, hit = [], miss = [], dup = [];
+  (want || []).forEach((n) => {
+    const k = selBase(n).toLowerCase();
+    if (!k) return;
+    if (seen[k]) { dup.push(selBase(n)); return; }   // 같은 걸 두 번 고른 경우 — 한 번만 복사
+    seen[k] = true;
+    if (byBase[k]) hit.push(byBase[k]); else miss.push(selBase(n));
+  });
+  return { hit, miss, dup };
+}
+
+// 예식 폴더 안에서 RAW 폴더를 찾고, 그 안 파일 이름을 전부 모은다(이어보기 포함)
+async function dbxRawFiles(folderPath, say) {
+  say('예식 폴더를 여는 중…');
+  let r = await sb.rpc('admin_dbx_ls_req', { p_path: folderPath, p_cursor: null });
+  if (r.error) return { error: r.error.message };
+  if (r.data && r.data.error) return { error: r.data.error };
+  let res = await dbxWait('admin_dbx_ls_res', { p_req: r.data.req });
+  if (res.error || res.missing) return { error: res.error || '폴더를 찾지 못했습니다.' };
+
+  const raw = (res.entries || []).find((e) => e.dir && /raw/i.test(e.name));
+  if (!raw) return { error: '이 예식 폴더 안에 RAW 폴더가 없습니다.' };
+
+  const files = [];
+  let cursor = null;
+  for (let page = 0; page < 12; page++) {
+    say('RAW 목록을 읽는 중… ' + (files.length ? files.length + '장' : ''));
+    r = await sb.rpc('admin_dbx_ls_req', cursor ? { p_path: null, p_cursor: cursor } : { p_path: raw.path, p_cursor: null });
+    if (r.error) return { error: r.error.message };
+    res = await dbxWait('admin_dbx_ls_res', { p_req: r.data.req });
+    if (res.error) return { error: res.error };
+    (res.entries || []).forEach((e) => { if (!e.dir) files.push(e); });
+    if (!res.more) break;
+    cursor = res.cursor;
+  }
+  return { rawName: raw.name, files };
+}
+
+async function dbxSelect(b, box) {
+  const say = (h) => { box.innerHTML = '<p class="dbx-msg">' + h + '</p>'; };
+  const pick = (s) => box.querySelector(s);
+  // 예식 폴더는 공유할 때 골라둔 것을 쓴다
+  const known = (dbxPicked[b.id] || {}).path;
+  if (!known) {
+    say('먼저 <b>📦 드롭박스</b>로 이 예식의 폴더를 한 번 골라주세요. 그 폴더 안에서 RAW 를 찾습니다.');
+    return;
+  }
+  box.innerHTML =
+    '<p class="dbx-msg">신부가 보내온 <b>셀렉 파일</b>을 고르세요. 파일은 올라가지 않고 <b>이름만</b> 읽습니다.</p>'
+    + '<div class="sel-in">'
+    + '<label class="btn-sm sel-pick-lbl">📂 폴더 고르기<input type="file" class="sel-files" multiple webkitdirectory hidden /></label>'
+    + '<label class="btn-sm sel-pick-lbl">🖼 파일 고르기<input type="file" class="sel-files2" multiple hidden /></label>'
+    + '</div>'
+    + '<p class="dbx-msg">또는 파일 이름을 줄바꿈으로 붙여넣기</p>'
+    + '<textarea class="sel-text" rows="3" placeholder="M4200526.JPG&#10;M4200529.JPG"></textarea>'
+    + '<button type="button" class="btn-sm primary sel-go">RAW 찾기</button>'
+    + '<div class="sel-out"></div>';
+
+  const readNames = (list) => Array.from(list || []).map((f) => f.name);
+  let names = [];
+  const setNames = (arr) => {
+    names = arr;
+    pick('.sel-out').innerHTML = '<p class="dbx-msg">' + arr.length + '장 골랐습니다.</p>';
+  };
+  pick('.sel-files').addEventListener('change', (e) => setNames(readNames(e.target.files)));
+  pick('.sel-files2').addEventListener('change', (e) => setNames(readNames(e.target.files)));
+
+  pick('.sel-go').addEventListener('click', async () => {
+    const typed = pick('.sel-text').value.split(/[\r\n,]+/).map((s) => s.trim()).filter(Boolean);
+    const want = (names.length ? names : typed);
+    if (!want.length) { pick('.sel-out').innerHTML = '<p class="dbx-msg err">셀렉 파일을 고르거나 이름을 붙여넣어 주세요.</p>'; return; }
+    const out = pick('.sel-out');
+    const sayOut = (h) => { out.innerHTML = '<p class="dbx-msg">' + h + '</p>'; };
+    const got = await dbxRawFiles(known, sayOut);
+    if (got.error) { out.innerHTML = '<p class="dbx-msg err">' + esc(got.error) + '</p>'; return; }
+
+    const { hit, miss, dup } = selMatch(want, got.files);
+
+    const yy = String(b.wedding_date || '').slice(2, 10).replace(/-/g, '');
+    const year = String(b.wedding_date || '').slice(0, 4);
+    const dest = '/@ ' + year + ' 셀렉파일/' + yy + ' ' + (b.contractor_name || '') + ' 셀렉_' + hit.length + '장';
+    out.innerHTML =
+      '<div class="sel-sum">'
+      + '<span class="sel-ok">찾음 ' + hit.length + '장</span>'
+      + (miss.length ? '<span class="sel-miss">못 찾음 ' + miss.length + '장</span>' : '')
+      + (dup.length ? '<span class="sel-dup">중복 ' + dup.length + '장</span>' : '')
+      + '</div>'
+      + (miss.length ? '<p class="dbx-msg err">못 찾음: ' + esc(miss.slice(0, 20).join(', '))
+          + (miss.length > 20 ? ' 외 ' + (miss.length - 20) + '장' : '')
+          + '<br />이름이 바뀌었거나 다른 예식 파일일 수 있습니다.</p>' : '')
+      + (dup.length ? '<p class="dbx-msg">중복(한 번만 복사): ' + esc(dup.slice(0, 20).join(', ')) + '</p>' : '')
+      + (hit.length ? '<p class="dbx-msg">넣을 곳 — 없으면 새로 만듭니다</p>'
+          + '<input type="text" class="sel-dest" value="' + esc(dest) + '" />'
+          + '<button type="button" class="btn-sm primary sel-copy">RAW ' + hit.length + '장 복사</button>'
+          + '<p class="dbx-msg sel-stat"></p>' : '');
+
+    const cp = pick('.sel-copy');
+    if (!cp) return;
+    cp.addEventListener('click', async () => {
+      const destPath = pick('.sel-dest').value.trim();
+      cp.disabled = true;
+      pick('.sel-stat').textContent = '복사하는 중… (장수가 많으면 조금 걸립니다)';
+      const s = await sb.rpc('admin_dbx_copy_req',
+        { p_booking_id: b.id, p_dest: destPath, p_files: hit.map((f) => f.path) });
+      if (s.error || (s.data && s.data.error)) {
+        cp.disabled = false;
+        pick('.sel-stat').textContent = (s.error && s.error.message) || s.data.error; return;
+      }
+      let res = await dbxWait('admin_dbx_copy_res',
+        { p_req: s.data.req, p_booking_id: b.id, p_dest: destPath, p_n: s.data.n, p_job: null }, 40000);
+      // 장수가 많으면 드롭박스가 뒤에서 처리한다 — 다 될 때까지 물어본다(최대 3분)
+      const until = Date.now() + 180000;
+      while (res.again && Date.now() < until) {
+        await new Promise((r) => setTimeout(r, 1500));
+        pick('.sel-stat').textContent = '복사하는 중… 드롭박스가 처리하고 있습니다';
+        res = await dbxWait('admin_dbx_copy_res',
+          { p_req: res.again, p_booking_id: b.id, p_dest: destPath, p_n: s.data.n, p_job: res.job }, 60000);
+      }
+      if (res.again) res = { error: '복사가 아직 진행 중입니다. 드롭박스에서 확인해 주세요.' };
+      cp.disabled = false;
+      if (res.error) { pick('.sel-stat').textContent = res.error; return; }
+      pick('.sel-stat').innerHTML = '<b class="sel-ok">✓ ' + res.n + '장 복사했습니다.</b><br />' + esc(res.dest);
+      cp.textContent = '복사 완료 ✓';
+      toast(res.n + '장 복사했습니다');
+    });
+  });
+}
+
 /* ===== 드롭박스에서 신부에게 공유 =====
    앱 권한이 '읽기 + 공유 링크 만들기' 뿐이라 여기서 파일이 지워질 일은 없다.
    pg_net 이 비동기라 '요청 → 잠깐 기다렸다 꺼내기' 두 단계로 돈다. */
+const dbxPicked = {};   // { 예약id: {path, name} } — 공유할 때 고른 예식 폴더
+
 async function dbxWait(fn, args, ms = 20000) {
   const until = Date.now() + ms;
   while (Date.now() < until) {
@@ -2659,6 +2801,7 @@ async function dbxShare(b, btn, box, input) {
   go.addEventListener('click', async () => {
     const idx = Number((pick('input[name="dbxPick"]:checked') || {}).value || 0);
     const f = folders[idx];
+    dbxPicked[b.id] = f;
     go.disabled = true;
     pick('.dbx-stat').textContent = '공유 링크를 만드는 중…';
     const s = await sb.rpc('admin_dbx_share_req', { p_booking_id: b.id, p_path: f.path });

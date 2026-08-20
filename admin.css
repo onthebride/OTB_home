@@ -932,3 +932,17 @@ td .muted { color: var(--ink-soft); }
 
 .dbx-done { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .dbx-done a { text-decoration: none; }
+
+/* 셀렉 매칭 */
+#selBox { margin-top: 8px; }
+.sel-in { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.sel-pick-lbl { cursor: pointer; }
+.sel-text { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
+  font-family: var(--sans); font-size: .82rem; resize: vertical; }
+.sel-dest { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
+  font-family: var(--sans); font-size: .8rem; margin-bottom: 6px; }
+.sel-out { margin-top: 8px; }
+.sel-sum { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; font-size: .85rem; }
+.sel-ok { color: #2f7d4f; font-weight: 700; }
+.sel-miss { color: #c0392b; font-weight: 700; }
+.sel-dup { color: var(--gold-deep); font-weight: 700; }
