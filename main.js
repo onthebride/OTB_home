@@ -604,6 +604,19 @@ if (inquiryForm) {
   });
 }
 
+// 화면에 가까워질 때까지 기다린다. 안 내려가는 손님은 아예 안 받는다.
+// 다만 갤러리를 곧장 보러 온 손님(?g=예식장, #gallery)은 기다리지 않는다.
+function whenNear(el, margin) {
+  return new Promise((go) => {
+    if (!el || !('IntersectionObserver' in window)) return go();
+    if (new URLSearchParams(location.search).get('g') || location.hash === '#gallery') return go();
+    const io = new IntersectionObserver((es) => {
+      if (es.some((e) => e.isIntersecting)) { io.disconnect(); go(); }
+    }, { rootMargin: margin || '1200px' });
+    io.observe(el);
+  });
+}
+
 // ===== Gallery (custom: 태그 필터 + 라이트박스) =====
 (async function initGallery() {
   const grid = document.getElementById('galleryGrid');
@@ -612,7 +625,11 @@ if (inquiryForm) {
   if (!grid || typeof sb === 'undefined' || !sb) return;
   const esc = (s) => (s == null ? '' : String(s)).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-  const { data, error } = await sb.rpc('gallery_list');
+  await whenNear(document.getElementById('gallery'), '1200px');
+
+  // 홈은 사진 주소와 예식장만 있으면 된다. 관리자용 gallery_list 는 지우기에 쓸
+  // 파일 경로까지 실어 오는데, 671장이면 그것만 40KB 다.
+  const { data, error } = await sb.rpc('gallery_public');
   if (error) { console.error(error); return; }
   const photos = data || [];
   if (!photos.length) { if (emptyEl) emptyEl.hidden = false; return; }
@@ -672,17 +689,22 @@ if (inquiryForm) {
     html += `<button class="gpg nav" data-p="${page + 1}"${page === pages ? ' disabled' : ''}>›</button>`;
     pagerEl.innerHTML = html;
   };
-  // 썸네일: Supabase 이미지 변환으로 폭 지정 리사이즈 (원본 1400px). 고해상도 화면 대비 폭·품질 상향.
+  // 썸네일: Supabase 이미지 변환으로 폭 지정 리사이즈 (원본 1400px)
   const thumb = (url, w) =>
     url && url.includes('/object/public/')
       ? url.replace('/object/public/', '/render/image/public/') + `?width=${w}&quality=82`
       : url;
+  // 그리드 한 칸은 PC 285px, 폰 45vw(=약 175px). 폭 1000 을 받고 있었는데 3배 이상 과했다.
+  // 몇 가지 크기를 알려주고 화면 해상도에 맞는 것을 브라우저가 고르게 한다.
+  const TW = [300, 600, 900];
+  const srcset = (url) => TW.map((w) => `${thumb(url, w)} ${w}w`).join(', ');
+  const SIZES = '(max-width: 860px) 45vw, 285px';
   const renderGrid = () => {
     const list = visible();
     const start = (page - 1) * PER;
     grid.innerHTML = list
       .slice(start, start + PER)
-      .map((p, i) => `<button class="gthumb" data-i="${start + i}"><img src="${esc(thumb(p.image_url, 1000))}" alt="${esc(p.venue || '')}" loading="lazy" decoding="async" /></button>`)
+      .map((p, i) => `<button class="gthumb" data-i="${start + i}"><img src="${esc(thumb(p.image_url, 600))}" srcset="${esc(srcset(p.image_url))}" sizes="${SIZES}" alt="${esc(p.venue || '')}" loading="lazy" decoding="async" /></button>`)
       .join('');
     renderPager(list.length);
   };
@@ -765,4 +787,22 @@ if (inquiryForm) {
     else if (e.key === 'ArrowLeft') show(curIdx - 1);
     else if (e.key === 'ArrowRight') show(curIdx + 1);
   });
+})();
+
+
+// 인스타 위젯(snapwidget)은 22KB 에 468ms 나 걸린다. 갤러리 맨 아래에 있으니
+// 거기까지 내려왔을 때 부른다. 첫 화면에는 아무 영향도 주지 않는다.
+(async function initIgStrip() {
+  const strip = document.querySelector('.ig-strip');
+  if (!strip) return;
+  await whenNear(strip, '600px');
+  const f = strip.querySelector('iframe');
+  if (f && f.dataset.src && !f.src) f.src = f.dataset.src;
+  if (!document.querySelector('script[data-snapwidget]')) {
+    const s = document.createElement('script');
+    s.src = 'https://snapwidget.com/js/snapwidget.js';
+    s.async = true;
+    s.dataset.snapwidget = '1';
+    document.body.appendChild(s);
+  }
 })();
