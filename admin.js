@@ -2648,7 +2648,11 @@ async function dbxShare(b, btn) {
     if (s.error || (s.data && s.data.error)) {
       $('dbxStat').textContent = (s.error && s.error.message) || s.data.error; go.disabled = false; return;
     }
-    const res = await dbxWait('admin_dbx_share_res', { p_req: s.data.req, p_booking_id: b.id, p_path: f.path });
+    let res = await dbxWait('admin_dbx_share_res', { p_req: s.data.req, p_booking_id: b.id, p_path: f.path });
+    // 이미 공유 링크가 있는 폴더면 서버가 기존 링크를 물어본다 — 그 답을 이어서 기다린다
+    if (res.relist) {
+      res = await dbxWait('admin_dbx_share_res', { p_req: res.relist, p_booking_id: b.id, p_path: f.path });
+    }
     go.disabled = false;
     if (res.error) { $('dbxStat').textContent = res.error; return; }
     b.download_link = res.url;
