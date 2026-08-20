@@ -2676,18 +2676,33 @@ async function dbxShare(b, btn, box, input) {
     const i = allBookings.findIndex((x) => x.id === b.id);
     if (i >= 0) allBookings[i].download_link = res.url;
     if (input) input.value = res.url;
-    say('<p class="dbx-msg ok">공유 링크를 만들어 다운로드 칸에 넣었습니다.</p>'
+    const sent = !!(b.alimtalk_sent && b.alimtalk_sent.E);
+    say('<p class="dbx-msg ok">✓ 공유 링크를 만들어 저장했습니다.</p>'
       + '<p class="dbx-url">' + esc(res.url) + '</p>'
-      + '<button type="button" class="btn-sm btn-kakao-sm dbx-atk">신부에게 알림톡 보내기</button>');
+      + '<div class="dbx-done">'
+      + '<a class="btn-sm" href="' + esc(res.url) + '" target="_blank" rel="noopener">링크 열어보기 ↗</a>'
+      + '<button type="button" class="btn-sm btn-kakao-sm dbx-atk">'
+      + (sent ? '카톡 다시 보내기' : '📨 신부에게 카톡 보내기') + '</button>'
+      + '</div>'
+      + '<p class="dbx-msg dbx-stat2"></p>');
     const atk = pick('.dbx-atk');
     if (atk) atk.addEventListener('click', async () => {
-      if (!confirm(esc(b.contractor_name || '') + '님께 촬영본 준비 안내(E)를 보냅니다.')) return;
       atk.disabled = true;
+      const before = atk.textContent;
+      atk.textContent = '보내는 중…';
       const { error } = await sb.rpc('admin_send_alimtalk', { p_booking_id: b.id, p_template: 'E' });
-      atk.disabled = false;
-      if (error) { alert('발송 실패: ' + error.message); return; }
-      toast('알림톡을 보냈습니다.');
+      if (error) {
+        atk.disabled = false; atk.textContent = before;
+        const st = pick('.dbx-stat2'); if (st) st.textContent = '발송 실패: ' + error.message;
+        return;
+      }
       atk.textContent = '보냈습니다 ✓';
+      b.alimtalk_sent = Object.assign({}, b.alimtalk_sent, { E: new Date().toISOString() });
+      const i = allBookings.findIndex((x) => x.id === b.id);
+      if (i >= 0) allBookings[i] = b;
+      toast(esc(b.contractor_name || '') + '님께 보냈습니다');
+      // 보내고 나면 '다운로드 링크' 목록에서 빠져야 한다
+      renderDashboard();
     });
   });
 }

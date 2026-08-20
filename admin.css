@@ -929,3 +929,6 @@ td .muted { color: var(--ink-soft); }
 
 .dbx-box:empty { display: none; }
 .dbx-box { margin-top: 6px; }
+
+.dbx-done { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.dbx-done a { text-decoration: none; }
