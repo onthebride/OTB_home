@@ -40,8 +40,12 @@ const hashes = {};
 export function stampOf(file) {
   if (hashes[file] !== undefined) return hashes[file];
   const p = path.join(ROOT, file);
+  // 줄바꿈을 맞춰서 센다. 이 PC 는 git 이 CRLF 로 받아두는데(core.autocrlf=true)
+  // 실제로 배포되는 건 LF 판이다. 맞춰두지 않으면 받는 쪽 설정에 따라 도장이 달라진다.
   hashes[file] = fs.existsSync(p)
-    ? crypto.createHash('sha1').update(fs.readFileSync(p)).digest('hex').slice(0, 10)
+    ? crypto.createHash('sha1')
+        .update(fs.readFileSync(p, 'utf8').replace(/\r\n/g, '\n'))
+        .digest('hex').slice(0, 10)
     : null;
   return hashes[file];
 }
