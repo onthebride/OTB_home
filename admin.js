@@ -2635,7 +2635,7 @@ function clarityHtml(d) {
       + sig('빠른 이탈', L.quick_cnt, L.quick_pct, '들어왔다가 바로 뒤로 갔다')
       + sig('스크립트 오류', L.err_cnt, L.err_pct, '화면에서 뭔가 깨졌다')
     + '</div>'
-    + (pages ? '<div class="cl-pages"><p class="cl-h">클래리티가 센 페이지</p>' + pages + '</div>' : '')
+    + (pages ? '<div class="cl-pages"><p class="cl-h">페이지별 열린 횟수 <small>(사람 수가 아니라 열린 횟수)</small></p>' + pages + '</div>' : '')
     + '<p class="st-note">클래리티는 최근 3일치만 내려주기 때문에 매일 아침 받아서 쌓습니다. '
     + '녹화 영상과 AI 요약은 클래리티 화면에서만 볼 수 있습니다.</p>'
     + '</div>';

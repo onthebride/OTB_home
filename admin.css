@@ -912,3 +912,4 @@ td .muted { color: var(--ink-soft); }
 .cl-sig-w { grid-column: 1 / -1; font-size: .72rem; color: var(--ink-soft); line-height: 1.5; }
 .cl-pages { margin-top: 14px; }
 .cl-h { font-size: .82rem; font-weight: 600; margin-bottom: 6px; }
+.cl-h small { font-weight: 400; color: var(--ink-soft); font-size: .74rem; }
