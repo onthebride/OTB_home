@@ -2584,7 +2584,69 @@ async function renderStats() {
     + '<div class="dash-card"><div class="dash-card-head"><h3>🔗 어디서 들어왔나 <small>(방문 수)</small></h3></div>'
     + list(d.refs, (r) => refLabel(r.ref), (r) => r.visits, '아직 기록이 없습니다.') + '</div>'
     + '</div>'
+    + '<div id="clarityBox"></div>'
     + '<p class="st-note">방문 = 브라우저 한 번 열어 둘러본 단위. 구글 애널리틱스 숫자와 몇 % 다를 수 있습니다(광고 차단 사용 등). 기록은 180일 후 자동 삭제됩니다.</p>';
+  renderClarity();
+}
+
+/* ===== 클래리티 — 손님이 어디서 막혔나 =====
+   우리 자체 집계는 '몇 명이 왔나'를 보여주고, 이건 '와서 어땠나'를 보여준다.
+   매일 한 번 받아 쌓는다(클래리티 API 는 최근 3일치만 내주고 하루 10번 제한). */
+const clSec = (s) => {
+  const n = Number(s) || 0;
+  return n >= 60 ? Math.floor(n / 60) + '분 ' + (n % 60) + '초' : n + '초';
+};
+function clarityHtml(d) {
+  const L = d && d.latest;
+  if (!L) {
+    return '<div class="dash-card"><div class="dash-card-head"><h3>🖱 방문자 행동 <small>(클래리티)</small></h3></div>'
+      + '<p class="dash-empty">아직 받아온 기록이 없습니다. 매일 아침 9시 30분에 하루치가 쌓입니다.</p></div>';
+  }
+  const md = String(L.the_date).slice(5).replace('-', '.');
+  const num = (v) => (v == null ? '-' : stNum(v));
+  const card = (k, v, sub) => '<div class="st-card"><span class="st-k">' + k + '</span><strong>' + v
+    + '</strong><span class="st-sub">' + (sub || '') + '</span></div>';
+  // 답답함 신호 — 0이면 조용히, 있으면 눈에 띄게
+  const sig = (label, cnt, pct, why) => {
+    const on = Number(cnt) > 0;
+    return '<div class="cl-sig' + (on ? ' on' : '') + '">'
+      + '<span class="cl-sig-k">' + label + '</span>'
+      + '<b>' + num(cnt) + '회</b>'
+      + (on ? '<span class="cl-sig-p">세션의 ' + (Number(pct) || 0) + '%</span>' : '<span class="cl-sig-p">없음</span>')
+      + '<span class="cl-sig-w">' + why + '</span></div>';
+  };
+  const pages = (d.pages || []).map((p) => {
+    const u = String(p.url || '').replace(/^https?:\/\/[^/]+/, '') || '/';
+    const top = Number((d.pages[0] || {}).visits) || 1;
+    return '<div class="st-row"><span class="st-row-bar" style="width:' + Math.round((Number(p.visits) / top) * 100) + '%"></span>'
+      + '<span class="st-row-k">' + esc(u) + '</span><span class="st-row-v">' + stNum(p.visits) + '</span></div>';
+  }).join('');
+  return '<div class="dash-card st-chart-card">'
+    + '<div class="dash-card-head"><h3>🖱 방문자 행동 <small>(클래리티 · ' + esc(md) + ' 하루치)</small></h3></div>'
+    + '<div class="st-cards">'
+      + card('세션', num(L.sessions), (L.bots ? '봇 ' + num(L.bots) + ' 제외 전' : ''))
+      + card('순 방문자', num(L.users), '')
+      + card('평균 스크롤', (L.scroll_avg == null ? '-' : L.scroll_avg + '%'), '아래까지 내려봄')
+      + card('머문 시간', clSec(L.active_time), '실제로 움직인 시간')
+    + '</div>'
+    + '<div class="cl-sigs">'
+      + sig('죽은 클릭', L.dead_cnt, L.dead_pct, '눌러도 아무 일 없는 곳을 눌렀다')
+      + sig('분노 클릭', L.rage_cnt, L.rage_pct, '같은 자리를 연달아 눌렀다')
+      + sig('빠른 이탈', L.quick_cnt, L.quick_pct, '들어왔다가 바로 뒤로 갔다')
+      + sig('스크립트 오류', L.err_cnt, L.err_pct, '화면에서 뭔가 깨졌다')
+    + '</div>'
+    + (pages ? '<div class="cl-pages"><p class="cl-h">클래리티가 센 페이지</p>' + pages + '</div>' : '')
+    + '<p class="st-note">클래리티는 최근 3일치만 내려주기 때문에 매일 아침 받아서 쌓습니다. '
+    + '녹화 영상과 AI 요약은 클래리티 화면에서만 볼 수 있습니다.</p>'
+    + '</div>';
+}
+
+async function renderClarity() {
+  const box = $('clarityBox');
+  if (!box) return;
+  const { data, error } = await sb.rpc('admin_clarity', { p_days: 30 });
+  if (error) { box.innerHTML = ''; return; }
+  box.innerHTML = clarityHtml(data);
 }
 
 const stRange = document.querySelector('.st-range');

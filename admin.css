@@ -899,3 +899,16 @@ td .muted { color: var(--ink-soft); }
 .dc-role { font-size: .7rem; font-weight: 600; color: #2c6b9b; background: #e8f0f6;
   border-radius: 999px; padding: 1px 7px; margin-left: 6px; }
 .dc-row.subonly .dc-name { font-weight: 500; }
+
+/* 클래리티 — 손님이 어디서 막혔나 */
+.cl-sigs { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; margin-top: 14px; }
+.cl-sig { border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; background: #fff;
+  display: grid; grid-template-columns: auto auto 1fr; align-items: baseline; gap: 6px; }
+.cl-sig.on { border-color: #e0c08a; background: #fdf8ef; }
+.cl-sig-k { font-size: .82rem; font-weight: 600; }
+.cl-sig b { font-size: .95rem; color: var(--ink-soft); }
+.cl-sig.on b { color: var(--gold-deep); }
+.cl-sig-p { font-size: .74rem; color: var(--ink-soft); justify-self: end; }
+.cl-sig-w { grid-column: 1 / -1; font-size: .72rem; color: var(--ink-soft); line-height: 1.5; }
+.cl-pages { margin-top: 14px; }
+.cl-h { font-size: .82rem; font-weight: 600; margin-bottom: 6px; }
