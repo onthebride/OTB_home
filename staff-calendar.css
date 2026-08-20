@@ -66,6 +66,10 @@
   border: 1px solid var(--line); border-radius: 8px; background: #fbfaf8; }
 .sc-f { display: flex; align-items: center; gap: 8px; font-size: .85rem; color: var(--ink-soft); }
 .sc-f input { flex: 1; min-width: 0; }
+.sc-time { display: inline-flex; align-items: center; gap: 4px; }
+.sc-time select { border: 1px solid var(--line); border-radius: 6px; padding: 8px 6px;
+  font-family: var(--sans); font-size: .9rem; background: #fff; color: var(--ink); }
+.sc-time b { color: var(--ink-soft); }
 .sc-form-btns { display: flex; gap: 6px; }
 .sc-note { font-size: .78rem; color: var(--ink-soft); margin: 0; }
 .sc-busy-form input[type="time"] { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-family: var(--sans); }

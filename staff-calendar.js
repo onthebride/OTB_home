@@ -190,7 +190,14 @@ function renderPanel() {
           ${off && !bk.length ? '<button type="button" class="btn-sm primary sc-multi">다른 날짜 같이 선택하기</button>' : ''}
         </div>
         ${busyForm ? `<div class="sc-busy-form">
-          <label class="sc-f">시간<input type="time" id="bTime" /></label>
+          <label class="sc-f">시간
+            <span class="sc-time">
+              <select id="bH">${['<option value="">시</option>']
+                .concat(Array.from({ length: 24 }, (_, i) => `<option value="${pad(i)}">${pad(i)}</option>`)).join('')}</select>
+              <b>:</b>
+              <select id="bM">${Array.from({ length: 12 }, (_, i) => `<option value="${pad(i * 5)}">${pad(i * 5)}</option>`).join('')}</select>
+            </span>
+          </label>
           <label class="sc-f">장소<input type="text" id="bPlace" placeholder="예: 아펠가모 광화문" /></label>
           <div class="sc-form-btns">
             <button type="button" class="btn-sm primary sc-addbusy">저장</button>
@@ -224,9 +231,10 @@ async function add(kind) {
   const st = $('scStatus');
   const body = { p_staff_id: staffId, p_date: openDay, p_kind: kind };
   if (kind === 'busy') {
-    const time = $('bTime').value;
-    if (!time) { st.textContent = '시간을 입력해 주세요.'; return; }
-    body.p_time = time;
+    const h = $('bH') ? $('bH').value : '';
+    const m = $('bM') ? $('bM').value : '00';
+    if (!h) { st.textContent = '시간을 골라 주세요.'; return; }
+    body.p_time = h + ':' + m;
     body.p_place = $('bPlace').value.trim();
   }
   st.textContent = '저장 중…';
