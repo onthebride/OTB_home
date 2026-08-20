@@ -1,8 +1,33 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "_주석": [
+    "js·css 는 주소에 파일 내용 도장(?v=해시)이 붙는다(tools/stamp.mjs). 내용이 바뀌면 주소가 바뀌므로",
+    "'1년간 다시 묻지 마라'가 안전하다. 예전에는 전부 no-cache 라 페이지를 열 때마다 확인 왕복이 있었다.",
+    "config.js 는 설정이라 언제든 손으로 고칠 수 있어야 하고, sw.js 는 낡은 서비스워커가 남으면 곤란해서 뺐다.",
+    "목록을 하나하나 적은 이유: 모아서 걸면 config.js·sw.js 까지 덮어쓸 수 있다.",
+    "새 파일을 넣고 여기 안 적으면 그냥 매번 확인하는 기본값이 된다(안전한 쪽). 시험이 잡아준다."
+  ],
   "headers": [
-    { "source": "/(.*).js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
-    { "source": "/(.*).css", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+    { "source": "/config.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+    { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+
+    { "source": "/admin.js", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/admin.css", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/main.js", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/styles.css", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/analytics.js", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/blog.css", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/portal.js", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/portal.css", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/survey.js", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/survey.css", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/survey-view.js", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/guide.css", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/feedback.js", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/feedback.css", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/staff-calendar.js", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/staff-calendar.css", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/staff-schedule.js", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] }
   ]
 }
