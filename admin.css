@@ -946,3 +946,65 @@ td .muted { color: var(--ink-soft); }
 .sel-ok { color: #2f7d4f; font-weight: 700; }
 .sel-miss { color: #c0392b; font-weight: 700; }
 .sel-dup { color: var(--gold-deep); font-weight: 700; }
+
+/* ===== 셀렉 탭 ===== */
+.sel-head h2 { font-size: 1.15rem; font-weight: 600; margin: 0 0 6px; }
+.sel-lead { font-size: .84rem; color: var(--ink-soft); line-height: 1.7; margin: 0 0 14px; }
+.sel-drop { display: flex; flex-direction: column; align-items: center; gap: 8px;
+  border: 2px dashed var(--line); border-radius: 14px; padding: 30px 16px; text-align: center;
+  transition: border-color .15s, background .15s; }
+.sel-drop.over { border-color: var(--gold-deep); background: rgba(180, 150, 90, .07); }
+.sel-drop-ico { font-size: 1.7rem; }
+.sel-drop-t { font-weight: 600; font-size: .92rem; }
+.sel-drop-s { font-size: .78rem; color: var(--ink-soft); }
+.sel-drop-b { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.sel-manual { margin-top: 12px; }
+.sel-manual summary { cursor: pointer; font-size: .82rem; color: var(--ink-soft); }
+.sel-manual > * { margin-top: 8px; }
+.sel-panel { border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-top: 14px; }
+.sel-who { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.sel-who b { font-size: .95rem; }
+.sel-who span { font-weight: 600; }
+.sel-who small { color: var(--ink-soft); }
+.sel-who .sel-again { margin-left: auto; }
+.sel-step + .sel-step { margin-top: 12px; }
+.sel-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.sel-lab { font-size: .8rem; color: var(--ink-soft); min-width: 56px; }
+.sel-sel { flex: 1 1 220px; border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px;
+  font-family: var(--sans); font-size: .82rem; background: #fff; }
+.sel-warn { font-size: .76rem; color: #c07a00; }
+.sel-cands { display: flex; flex-direction: column; gap: 6px; }
+.sel-cand { display: flex; align-items: baseline; gap: 10px; text-align: left; width: 100%;
+  border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; background: #fff; cursor: pointer;
+  font-family: var(--sans); font-size: .84rem; }
+.sel-cand:hover { border-color: var(--gold-deep); background: rgba(180, 150, 90, .06); }
+.sel-cand small { color: var(--ink-soft); margin-left: auto; }
+.sel-nums { display: flex; gap: 8px; margin-bottom: 10px; }
+.sel-num { flex: 1; border: 1px solid var(--line); border-radius: 10px; padding: 10px; text-align: center; }
+.sel-num b { display: block; font-size: 1.5rem; font-weight: 600; line-height: 1.2; }
+.sel-num span { font-size: .76rem; color: var(--ink-soft); }
+.sel-num.ok b { color: #2f7d4f; }
+.sel-num.bad b { color: #c0392b; }
+.sel-num.warn b { color: var(--gold-deep); }
+.sel-miss-box { border: 1px solid #f0d4d0; background: #fdf6f5; border-radius: 10px;
+  padding: 10px 12px; margin-bottom: 10px; font-size: .82rem; }
+.sel-hits { margin-bottom: 10px; }
+.sel-hits summary { cursor: pointer; font-size: .82rem; color: var(--ink-soft); }
+.sel-names { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; max-height: 190px; overflow-y: auto; }
+.sel-names code { font-size: .74rem; background: rgba(0, 0, 0, .045); border-radius: 5px; padding: 2px 6px; }
+.sel-dest-box { border-top: 1px solid var(--line); padding-top: 10px; }
+.sel-log { margin-top: 20px; }
+.sel-log h3 { font-size: .88rem; font-weight: 600; margin: 0 0 8px; }
+.sel-log-row { display: flex; align-items: baseline; gap: 10px; padding: 6px 0;
+  border-bottom: 1px solid var(--line); font-size: .8rem; }
+.sel-log-n { font-weight: 600; min-width: 44px; }
+.sel-log-row a { color: var(--ink-soft); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sel-log-row a:hover { text-decoration: underline; }
+.sel-log-row small { color: var(--ink-soft); margin-left: auto; white-space: nowrap; }
+@media (max-width: 560px) {
+  .sel-drop { padding: 22px 12px; }
+  .sel-cand { flex-wrap: wrap; }
+  .sel-cand small { margin-left: 0; width: 100%; }
+  .sel-log-row { flex-wrap: wrap; }
+  .sel-log-row small { margin-left: 0; }
+}
