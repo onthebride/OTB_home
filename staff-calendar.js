@@ -27,7 +27,7 @@ const todayStr = ymd(new Date());
 let view = new Date();               // 보고 있는 달
 let data = { bookings: [], busy: [] };
 let openDay = null;
-let busyForm = false;                // '다른 촬영 있음'을 눌러 입력칸을 연 상태
+let busyForm = false;                // '다른일정등록'을 눌러 입력칸을 연 상태
 let slideDir = '';                   // 달을 넘긴 방향(넘어온 티가 나게 살짝 밀어 넣는다)
 let multi = false;                   // 여러 날 고르는 중
 let picked = new Set();              // 고른 날짜들 (yyyy-mm-dd)
@@ -185,8 +185,8 @@ function renderPanel() {
       ${bk.length ? '<p class="sc-hint">배정된 예식이 있는 날입니다.<br />촬영이 어려우시면 <b>대표에게 연락</b>해 주세요.</p>' : ''}
       <div class="sc-add">
         <div class="sc-add-btns">
-          ${off || bk.length ? '' : '<button type="button" class="btn-sm sc-off">이 날 촬영 불가</button>'}
-          ${off || busyForm ? '' : '<button type="button" class="btn-sm sc-openbusy">다른 촬영 있음</button>'}
+          ${off || bk.length ? '' : '<button type="button" class="btn-sm sc-off">촬영불가</button>'}
+          ${off || busyForm ? '' : '<button type="button" class="btn-sm sc-openbusy">다른일정등록</button>'}
           ${off && !bk.length ? '<button type="button" class="btn-sm primary sc-multi">다른 날짜 같이 선택하기</button>' : ''}
         </div>
         ${busyForm ? `<div class="sc-busy-form">
