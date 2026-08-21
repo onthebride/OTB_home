@@ -3126,7 +3126,7 @@ async function selShow(rbox, ctx, folder, got, items) {
           + (ups.length && hit.length ? ' 과 ' : '')
           + (hit.length ? '<b>RAW ' + hit.length + '장</b>' : '')
           + ' 을 넣습니다.</p>'
-          + '<button type="button" class="btn-sm primary sel-copy">셀렉 폴더 만들기</button>'
+          + '<button type="button" class="btn-sm primary sel-copy">업로드 &amp; 복사</button>'
           + '<div class="sel-bar" hidden><i></i></div>'
           + '<p class="dbx-msg sel-stat"></p></div>'
         : '<p class="dbx-msg err">넣을 게 없습니다.</p>');
