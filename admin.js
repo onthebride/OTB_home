@@ -10,6 +10,29 @@ const esc = (s) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
   );
 const won = (n) => (n == null ? '-' : Number(n).toLocaleString('ko-KR') + '만원');
+// 전화번호에 하이픈 넣기. 모르는 모양은 손대지 않는다(국제번호·자릿수 안 맞는 것).
+function fmtPhone(v) {
+  const s = String(v == null ? '' : v);
+  if (!s.trim()) return s;
+  const d = s.replace(/[^0-9]/g, '');
+  const cut = (a, b) => d.slice(0, a) + '-' + d.slice(a, a + b) + '-' + d.slice(a + b);
+  if (/^01[016789][0-9]{7}$/.test(d)) return cut(3, 3);
+  if (/^01[016789][0-9]{8}$/.test(d)) return cut(3, 4);
+  if (/^02[0-9]{7}$/.test(d)) return cut(2, 3);
+  if (/^02[0-9]{8}$/.test(d)) return cut(2, 4);
+  if (/^0[3-6][0-9]{8}$/.test(d)) return cut(3, 3);
+  if (/^0[3-6][0-9]{9}$/.test(d)) return cut(3, 4);
+  if (/^1[0-9]{7}$/.test(d)) return d.slice(0, 4) + '-' + d.slice(4);
+  return s;
+}
+// 칸을 벗어날 때 한 번 다듬는다 — 타이핑 중에 끼어들면 커서가 튄다
+function hookPhone(root2) {
+  (root2 || document).querySelectorAll('.js-phone').forEach((el) => {
+    if (el.dataset.phoneHooked) return;
+    el.dataset.phoneHooked = '1';
+    el.addEventListener('blur', () => { el.value = fmtPhone(el.value); });
+  });
+}
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString('ko-KR') : '-');
 const fmtDateShort = (s) => { if (!s) return '-'; const d = new Date(s); return `${String(d.getFullYear() % 100).padStart(2, '0')}. ${d.getMonth() + 1}. ${d.getDate()}.`; };
 const fmtDateTime = (s) =>
@@ -1002,7 +1025,7 @@ function renderEdit(b) {
     <h5 class="eg">계약자 정보</h5>
     <div class="edit-grid">
       <div class="field"><label>계약자 성함</label><input id="e_contractor_name" value="${v(b.contractor_name)}" /></div>
-      <div class="field"><label>연락처</label><input id="e_contractor_phone" value="${v(b.contractor_phone)}" /></div>
+      <div class="field"><label>연락처</label><input id="e_contractor_phone" class="js-phone" value="${v(b.contractor_phone)}" /></div>
       <div class="field full2"><label>이메일</label><input id="e_contractor_email" value="${v(b.contractor_email)}" /></div>
     </div>
 
@@ -1016,9 +1039,9 @@ function renderEdit(b) {
     <h5 class="eg">신랑 · 신부</h5>
     <div class="edit-grid">
       <div class="field"><label>신랑 성함</label><input id="e_groom_name" value="${v(b.groom_name)}" /></div>
-      <div class="field"><label>신랑 연락처</label><input id="e_groom_phone" value="${v(b.groom_phone)}" /></div>
+      <div class="field"><label>신랑 연락처</label><input id="e_groom_phone" class="js-phone" value="${v(b.groom_phone)}" /></div>
       <div class="field"><label>신부 성함</label><input id="e_bride_name" value="${v(b.bride_name)}" /></div>
-      <div class="field"><label>신부 연락처</label><input id="e_bride_phone" value="${v(b.bride_phone)}" /></div>
+      <div class="field"><label>신부 연락처</label><input id="e_bride_phone" class="js-phone" value="${v(b.bride_phone)}" /></div>
     </div>
 
     <h5 class="eg">상품 · 옵션 <small>(체크 시 합계 자동 변경)</small></h5>
@@ -1136,6 +1159,7 @@ function renderEdit(b) {
   });
   recalcEdit();
 
+  hookPhone($('modalCard'));
   $('modalClose').addEventListener('click', closeModal);
   $('mCancel').addEventListener('click', () => renderView(b));
   $('mSave').addEventListener('click', () => saveDetail(b.id, recalcEdit));
@@ -2396,7 +2420,7 @@ function renderStaff() {
   $('staffList').innerHTML = allStaff.map((s) => `
     <div class="staff-item${s.active ? '' : ' inactive'}" data-id="${s.id}">
       <input type="text" class="st-name" data-id="${s.id}" value="${esc(s.name || '')}" placeholder="이름" />
-      <input type="text" class="st-phone" data-id="${s.id}" value="${esc(s.phone || '')}" placeholder="연락처" />
+      <input type="text" class="st-phone js-phone" data-id="${s.id}" value="${esc(s.phone || '')}" placeholder="연락처" />
       <span class="st-color-wrap" title="달력·스케줄에 표시될 작가 색">
         <input type="color" class="st-color" data-id="${s.id}" value="${isHex(s.color) ? s.color : (staffColor(s.id) || '#888888')}" ${isHex(s.color) ? '' : 'disabled'} />
         <label class="st-active"><input type="checkbox" class="st-auto" data-id="${s.id}" ${isHex(s.color) ? '' : 'checked'} /> 자동색</label>
@@ -2410,6 +2434,8 @@ function renderStaff() {
       <button class="btn-sm st-save" data-id="${s.id}">저장</button>
       <button class="btn-sm st-del" data-id="${s.id}">삭제</button>
     </div>`).join('');
+
+  hookPhone($('staffList'));
 
   // 작가에게 카톡으로 그대로 붙여넣을 안내문 (링크 포함)
   $('staffList').querySelectorAll('.st-callink').forEach((btn) =>
