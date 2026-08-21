@@ -1015,3 +1015,13 @@ td .muted { color: var(--ink-soft); }
 
 .sel-from { color: var(--ink-soft); font-size: .76rem; }
 .sel-ok-in { font-size: .76rem; color: #2f7d4f; }
+
+/* 예식 폴더 고르기 — 2인 촬영이면 둘 다 골라야 한다 */
+.sel-folders { display: flex; flex-direction: column; gap: 4px; flex: 1 1 240px; }
+.sel-fold { display: flex; align-items: center; gap: 8px; font-size: .82rem;
+  border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; background: #fff; cursor: pointer; }
+.sel-fold.on { border-color: var(--gold-deep); background: rgba(180, 150, 90, .07); }
+.sel-fold input { width: 16px; height: 16px; flex: none; }
+.sel-fold > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sel-fn { font-size: .76rem; color: #2f7d4f; white-space: nowrap; }
+.sel-fn.none { color: var(--ink-soft); }

@@ -2964,26 +2964,28 @@ async function selOpen(ctx, items) {
   const folders = (day.entries || []).filter((e) => e.dir);
   if (!folders.length) { say('<span class="err">그날 폴더 안에 예식 폴더가 없습니다.</span>'); return; }
 
-  // 이름이 들어간 폴더를 먼저 고른다.
-  // 한글 이름을 못 뽑아냈으면 폴더 이름을 토막 내 그 조각으로도 맞춰본다
-  // («250824_정소민» 은 이름이 잡히지만 «250824» 만 들어오면 잡을 게 없다)
+  // 어느 폴더를 볼지 고른다. 하나가 아니라 여럿일 수 있다 —
+  // 2인 촬영이면 신부가 고른 사진이 메인·서브 폴더에 나뉘어 있다.
+  // (정소민 예식: 40장 중 홍창완 31장 / 최선종 9장)
   const chunks = String(ctx.folder || '')
     .split(/[^0-9A-Za-z가-힣]+/)
     .filter((x) => x.length >= 2 && !/^\d+$/.test(x));   // 날짜 같은 숫자 토막은 뺀다
   const hints = [who, ctx.b && ctx.b.bride_name, ctx.b && ctx.b.groom_name]
     .concat(selParse(ctx.folder).names).concat(chunks).filter(Boolean);
-  const at = hints.length
-    ? folders.findIndex((f) => hints.some((n) => String(f.name).indexOf(n) >= 0))
-    : -1;
-  let cur = folders[at >= 0 ? at : 0];
+  const byName = hints.length
+    ? folders.map((f, i) => (hints.some((n) => String(f.name).indexOf(n) >= 0) ? i : -1)).filter((i) => i >= 0)
+    : [];
+
+  // 그날 폴더가 하나뿐이면 고민할 게 없다
+  const on = new Set(folders.length === 1 ? [0] : byName);
+  let photo = null;                     // 사진으로 세어본 결과 {i: 몇 장}
 
   // 이름으로 못 맞췄으면 사진으로 맞춘다.
   // 신부가 준 파일 이름이 어느 폴더 RAW 에 실제로 들어 있는지 보면 확실하다.
-  // 폴더 이름이 제각각이어도(«250824» 만 넣었어도) 이건 어긋나지 않는다.
   async function matchByPhoto() {
     const want = (items || []).map((x) => selBase(x.name).toLowerCase()).filter(Boolean);
-    if (!want.length) return -1;
-    let best = -1, bestN = 0;
+    if (!want.length) return null;
+    const cnt = {};
     for (let i = 0; i < folders.length && i < 6; i++) {
       say('사진으로 맞춰보는 중… (' + (i + 1) + '/' + Math.min(folders.length, 6) + ')');
       const got = await dbxRawFiles(folders[i].path, () => {});
@@ -2991,54 +2993,70 @@ async function selOpen(ctx, items) {
       const have = {};
       got.files.forEach((f) => { have[selBase(f.name).toLowerCase()] = 1; });
       const n = want.filter((w) => have[w]).length;
-      if (n > bestN) { bestN = n; best = i; }
-      if (n === want.length) break;           // 전부 있으면 더 볼 것도 없다
+      if (n > 0) cnt[i] = n;
     }
-    return bestN > 0 ? { at: best, n: bestN, of: want.length } : -1;
+    return Object.keys(cnt).length ? cnt : null;
   }
 
   const drawFolder = () => {
+    const total = items.length;
     fbox.innerHTML =
       '<div class="sel-row"><span class="sel-lab">예식 폴더</span>'
-      + '<select class="sel-sel sel-fsel">' + folders.map((f, i) =>
-          '<option value="' + i + '"' + (f.path === cur.path ? ' selected' : '') + '>'
-          + esc(f.name) + '</option>').join('') + '</select>'
+      + '<div class="sel-folders">' + folders.map((f, i) =>
+          '<label class="sel-fold' + (on.has(i) ? ' on' : '') + '">'
+          + '<input type="checkbox" class="sel-fchk" data-i="' + i + '"' + (on.has(i) ? ' checked' : '') + ' />'
+          + '<span>' + esc(f.name) + '</span>'
+          + (photo && photo[i] ? '<b class="sel-fn">' + photo[i] + '장</b>'
+             : photo ? '<b class="sel-fn none">0장</b>' : '')
+          + '</label>').join('') + '</div></div>'
       + (photo
-          ? '<span class="sel-ok-in">✓ 사진으로 찾았습니다 — 고른 ' + photo.of + '장 중 '
-            + photo.n + '장이 이 폴더에 있습니다</span>'
-          : at < 0 && folders.length > 1
-          ? '<span class="sel-warn">⚠ 어느 예식인지 몰라 첫 번째를 놓았습니다 — 맞는지 확인하고 골라 주세요</span>'
+          ? '<p class="dbx-msg sel-ok-in">✓ 사진이 어느 폴더에 있는지 세어봤습니다.'
+            + (Object.keys(photo).length > 1 ? ' <b>두 폴더에 나뉘어 있어 둘 다 골랐습니다.</b>' : '') + '</p>'
+          : byName.length > 1
+          ? '<p class="dbx-msg sel-ok-in">✓ 이름이 맞는 폴더가 ' + byName.length + '개라 모두 골랐습니다'
+            + ' (2인 촬영이면 사진이 나뉘어 있습니다)</p>'
+          : !byName.length && folders.length > 1
+          ? '<p class="dbx-msg sel-warn">⚠ 어느 예식인지 몰라 못 골랐습니다 — 직접 골라 주세요</p>'
           : '')
-      + '</div>'
-      + '<button type="button" class="btn-sm primary sel-go">이 폴더에서 RAW ' + items.length + '장 찾기</button>'
+      + '<button type="button" class="btn-sm primary sel-go"' + (on.size ? '' : ' disabled') + '>'
+      + '고른 폴더에서 RAW ' + total + '장 찾기</button>'
       + '<p class="dbx-msg sel-fstat"></p>';
-    fbox.querySelector('.sel-fsel').addEventListener('change', (e) => {
-      cur = folders[Number(e.target.value)]; rbox.innerHTML = '';
-    });
+    fbox.querySelectorAll('.sel-fchk').forEach((el2) => el2.addEventListener('change', () => {
+      const i = Number(el2.dataset.i);
+      if (el2.checked) on.add(i); else on.delete(i);
+      rbox.innerHTML = '';
+      drawFolder();
+    }));
     fbox.querySelector('.sel-go').addEventListener('click', run);
   };
 
   async function run() {
+    if (!on.size) return;
     const btn = fbox.querySelector('.sel-go');
     btn.disabled = true;
     const stat = fbox.querySelector('.sel-fstat');
-    const got = await dbxRawFiles(cur.path, (h) => { stat.textContent = h; });
+    // 고른 폴더를 전부 훑어 RAW 를 한 자루에 담는다
+    const files = [];
+    const names = [];
+    for (const i of [...on].sort((x, y) => x - y)) {
+      const got = await dbxRawFiles(folders[i].path, (h) => { stat.textContent = folders[i].name + ' — ' + h; });
+      if (got.error) { btn.disabled = false; stat.innerHTML = '<span class="err">' + esc(got.error) + '</span>'; return; }
+      files.push.apply(files, got.files);
+      names.push(got.rawName + ' ' + got.files.length.toLocaleString('ko-KR') + '장');
+    }
     btn.disabled = false;
-    if (got.error) { stat.innerHTML = '<span class="err">' + esc(got.error) + '</span>'; return; }
-    stat.textContent = got.rawName + ' 폴더 · ' + got.files.length.toLocaleString('ko-KR') + '장';
-    selShow(rbox, ctx, cur, got, items);
+    stat.textContent = names.join(' + ') + (names.length > 1
+      ? ' = 모두 ' + files.length.toLocaleString('ko-KR') + '장' : '');
+    return selShow(rbox, ctx, folders[[...on][0]], { rawName: names.join(' + '), files: files }, items);
   }
 
-  let photo = null;
-  if (at < 0 && folders.length > 1 && items.length) {
-    // 이름으로 못 맞췄다 — 사진으로 맞춰본다
-    const m = await matchByPhoto();
-    if (m !== -1) { photo = m; cur = folders[m.at]; }
+  if (!byName.length && folders.length > 1 && items.length) {
+    const cnt = await matchByPhoto();
+    if (cnt) { photo = cnt; Object.keys(cnt).forEach((i) => on.add(Number(i))); }
   }
   drawFolder();
-  // 이름이든 사진이든 맞아떨어졌을 때만 바로 찾는다.
-  // 둘 다 안 되면 사람이 고르게 둔다 — 자동으로 넘어가면 엉뚱한 예식에서 RAW 를 뒤진다.
-  if (items.length && (at >= 0 || photo || folders.length === 1)) return run();
+  // 골라진 게 있으면 바로 찾는다. 아무것도 못 골랐으면 사람이 고르게 둔다.
+  if (items.length && on.size) return run();
 }
 
 /* ── 결과 ─────────────────────────────────────────────────────── */
