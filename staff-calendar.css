@@ -161,8 +161,14 @@
 /* 일정 한 줄 */
 .sc-title { font-weight: 600; }
 .sc-place { color: #6b635c; }
-.sc-lock { font-size: .72rem; color: #97743f; background: rgba(180, 150, 90, .12);
-  border-radius: 10px; padding: 1px 7px; white-space: nowrap; }
+.sc-kind { font-size: .72rem; border-radius: 10px; padding: 1px 7px; white-space: nowrap; }
+.sc-kind.busy { color: #97743f; background: rgba(180, 150, 90, .14); }
+.sc-kind.personal { color: #4a6b8a; background: rgba(74, 107, 138, .12); }
+.sc-item.pers { border-left: 3px solid rgba(74, 107, 138, .5); }
+.sc-tag.pers { background: rgba(74, 107, 138, .14); color: #3d5c78; }
+.sc-form-t { font-weight: 600; margin-bottom: 6px; }
+.sc-busy-form textarea { width: 100%; border: 1px solid var(--line, #e7ded3); border-radius: 8px;
+  padding: 8px 10px; font-family: inherit; font-size: .88rem; resize: vertical; }
 .sc-memo { color: #6b635c; font-size: .8rem; }
 .sc-item-btns { display: flex; gap: 6px; }
 .sc-check { flex-direction: row !important; align-items: center; gap: 7px; }
