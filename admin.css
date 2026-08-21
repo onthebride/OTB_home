@@ -1012,3 +1012,6 @@ td .muted { color: var(--ink-soft); }
 .sel-plan { margin: 8px 0; }
 .sel-bar { height: 6px; border-radius: 4px; background: rgba(0, 0, 0, .07); overflow: hidden; margin: 8px 0; }
 .sel-bar i { display: block; height: 100%; width: 0; background: var(--gold); transition: width .2s; }
+
+.sel-from { color: var(--ink-soft); font-size: .76rem; }
+.sel-ok-in { font-size: .76rem; color: #2f7d4f; }

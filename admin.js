@@ -2937,6 +2937,8 @@ async function selOpen(ctx, items) {
     '<div class="sel-panel">'
     + '<div class="sel-who"><b>' + esc(selDayLabel(ctx.date)) + '</b>'
     + '<span>' + esc(who || '(우리 예약에 없는 예식)') + '</span>'
+    + (ctx.folder ? '<small class="sel-from">넣은 폴더 · ' + esc(ctx.folder) + '</small>'
+                  : '<small class="sel-from">폴더 이름 없이 파일만 고르셨습니다</small>')
     + (ctx.b && ctx.b.wedding_venue ? '<small>' + esc(ctx.b.wedding_venue) + '</small>' : '')
     + '<button type="button" class="btn-sm sel-again">다시 고르기</button></div>'
     + '<div class="sel-step" id="selFolder"></div>'
@@ -2975,13 +2977,36 @@ async function selOpen(ctx, items) {
     : -1;
   let cur = folders[at >= 0 ? at : 0];
 
+  // 이름으로 못 맞췄으면 사진으로 맞춘다.
+  // 신부가 준 파일 이름이 어느 폴더 RAW 에 실제로 들어 있는지 보면 확실하다.
+  // 폴더 이름이 제각각이어도(«250824» 만 넣었어도) 이건 어긋나지 않는다.
+  async function matchByPhoto() {
+    const want = (items || []).map((x) => selBase(x.name).toLowerCase()).filter(Boolean);
+    if (!want.length) return -1;
+    let best = -1, bestN = 0;
+    for (let i = 0; i < folders.length && i < 6; i++) {
+      say('사진으로 맞춰보는 중… (' + (i + 1) + '/' + Math.min(folders.length, 6) + ')');
+      const got = await dbxRawFiles(folders[i].path, () => {});
+      if (got.error) continue;
+      const have = {};
+      got.files.forEach((f) => { have[selBase(f.name).toLowerCase()] = 1; });
+      const n = want.filter((w) => have[w]).length;
+      if (n > bestN) { bestN = n; best = i; }
+      if (n === want.length) break;           // 전부 있으면 더 볼 것도 없다
+    }
+    return bestN > 0 ? { at: best, n: bestN, of: want.length } : -1;
+  }
+
   const drawFolder = () => {
     fbox.innerHTML =
       '<div class="sel-row"><span class="sel-lab">예식 폴더</span>'
       + '<select class="sel-sel sel-fsel">' + folders.map((f, i) =>
           '<option value="' + i + '"' + (f.path === cur.path ? ' selected' : '') + '>'
           + esc(f.name) + '</option>').join('') + '</select>'
-      + (at < 0 && folders.length > 1
+      + (photo
+          ? '<span class="sel-ok-in">✓ 사진으로 찾았습니다 — 고른 ' + photo.of + '장 중 '
+            + photo.n + '장이 이 폴더에 있습니다</span>'
+          : at < 0 && folders.length > 1
           ? '<span class="sel-warn">⚠ 어느 예식인지 몰라 첫 번째를 놓았습니다 — 맞는지 확인하고 골라 주세요</span>'
           : '')
       + '</div>'
@@ -3004,10 +3029,16 @@ async function selOpen(ctx, items) {
     selShow(rbox, ctx, cur, got, items);
   }
 
+  let photo = null;
+  if (at < 0 && folders.length > 1 && items.length) {
+    // 이름으로 못 맞췄다 — 사진으로 맞춰본다
+    const m = await matchByPhoto();
+    if (m !== -1) { photo = m; cur = folders[m.at]; }
+  }
   drawFolder();
-  // 이름이 맞아떨어졌을 때만 바로 찾는다. 못 맞췄는데 그날 폴더가 여럿이면
-  // 사람이 고르게 둔다 — 자동으로 넘어가면 엉뚱한 예식에서 RAW 를 뒤지게 된다.
-  if (items.length && (at >= 0 || folders.length === 1)) return run();
+  // 이름이든 사진이든 맞아떨어졌을 때만 바로 찾는다.
+  // 둘 다 안 되면 사람이 고르게 둔다 — 자동으로 넘어가면 엉뚱한 예식에서 RAW 를 뒤진다.
+  if (items.length && (at >= 0 || photo || folders.length === 1)) return run();
 }
 
 /* ── 결과 ─────────────────────────────────────────────────────── */
