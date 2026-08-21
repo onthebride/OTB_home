@@ -2962,10 +2962,17 @@ async function selOpen(ctx, items) {
   const folders = (day.entries || []).filter((e) => e.dir);
   if (!folders.length) { say('<span class="err">그날 폴더 안에 예식 폴더가 없습니다.</span>'); return; }
 
-  // 이름이 들어간 폴더를 먼저 고른다
+  // 이름이 들어간 폴더를 먼저 고른다.
+  // 한글 이름을 못 뽑아냈으면 폴더 이름을 토막 내 그 조각으로도 맞춰본다
+  // («250824_정소민» 은 이름이 잡히지만 «250824» 만 들어오면 잡을 게 없다)
+  const chunks = String(ctx.folder || '')
+    .split(/[^0-9A-Za-z가-힣]+/)
+    .filter((x) => x.length >= 2 && !/^\d+$/.test(x));   // 날짜 같은 숫자 토막은 뺀다
   const hints = [who, ctx.b && ctx.b.bride_name, ctx.b && ctx.b.groom_name]
-    .concat(selParse(ctx.folder).names).filter(Boolean);
-  const at = folders.findIndex((f) => hints.some((n) => String(f.name).indexOf(n) >= 0));
+    .concat(selParse(ctx.folder).names).concat(chunks).filter(Boolean);
+  const at = hints.length
+    ? folders.findIndex((f) => hints.some((n) => String(f.name).indexOf(n) >= 0))
+    : -1;
   let cur = folders[at >= 0 ? at : 0];
 
   const drawFolder = () => {
@@ -2974,7 +2981,9 @@ async function selOpen(ctx, items) {
       + '<select class="sel-sel sel-fsel">' + folders.map((f, i) =>
           '<option value="' + i + '"' + (f.path === cur.path ? ' selected' : '') + '>'
           + esc(f.name) + '</option>').join('') + '</select>'
-      + (at < 0 ? '<span class="sel-warn">이름이 맞는 폴더가 없어 첫 번째를 골랐습니다</span>' : '')
+      + (at < 0 && folders.length > 1
+          ? '<span class="sel-warn">⚠ 어느 예식인지 몰라 첫 번째를 놓았습니다 — 맞는지 확인하고 골라 주세요</span>'
+          : '')
       + '</div>'
       + '<button type="button" class="btn-sm primary sel-go">이 폴더에서 RAW ' + items.length + '장 찾기</button>'
       + '<p class="dbx-msg sel-fstat"></p>';
@@ -2996,7 +3005,9 @@ async function selOpen(ctx, items) {
   }
 
   drawFolder();
-  if (items.length) return run();   // 파일까지 같이 왔으면 바로 찾는다
+  // 이름이 맞아떨어졌을 때만 바로 찾는다. 못 맞췄는데 그날 폴더가 여럿이면
+  // 사람이 고르게 둔다 — 자동으로 넘어가면 엉뚱한 예식에서 RAW 를 뒤지게 된다.
+  if (items.length && (at >= 0 || folders.length === 1)) return run();
 }
 
 /* ── 결과 ─────────────────────────────────────────────────────── */
