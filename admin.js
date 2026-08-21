@@ -3096,8 +3096,9 @@ async function selShow(rbox, ctx, folder, got, items) {
   const ups = (items || []).filter((it) => it.file || it.entry);   // 올릴 수 있는 것(알맹이가 있는 것)
   const { hit, miss, dup } = selMatch(want, got.files);
   if (!selRoots) selRoots = await selLoadRoots();
-  // 셀렉한 시점의 연도로 넣는다 — 예식 연도가 아니다
-  const thisYear = new Date().getFullYear() + ' 셀렉파일';
+  // 자동으로 넣는 것은 «YYYY 자동셀렉» 에 모은다 — 손으로 하던 «셀렉파일» 과 갈라둔다.
+  // 연도는 예식 연도가 아니라 셀렉한 시점이다. 해가 바뀌면 저절로 다음 해 폴더를 쓴다.
+  const thisYear = new Date().getFullYear() + ' 자동셀렉';
   const roots = [ '/' + thisYear ].concat((selRoots || []).filter((p) => p !== '/' + thisYear));
   const name = selDestName(ctx.date, ctx.folder, ctx.b && ctx.b.contractor_name);
   const bytes = ups.reduce((s, it) => s + ((it.file && it.file.size) || 0), 0);
