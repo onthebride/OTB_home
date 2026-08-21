@@ -2752,8 +2752,12 @@ function selCandidates(p, bookings) {
     const wd = String(b.wedding_date || '').slice(0, 10);
     if (!wd) return;
     let sc = 0;
-    if (p.date && wd === p.date) sc += 5;
-    else if (p.md && wd.slice(5) === p.md) sc += 3;
+    if (p.date) {
+      if (wd !== p.date) return;            // 연도까지 알면 그 날짜만 본다
+      sc += 5;
+    } else if (p.md && wd.slice(5) === p.md) {
+      sc += 3;                              // 연도를 못 읽었을 때만 월·일로 좁힌다
+    }
     const who = [b.contractor_name, b.bride_name, b.groom_name].filter(Boolean);
     if (p.names.some((n) => who.indexOf(n) >= 0)) sc += 4;
     else if (p.names.some((n) => who.some((w) => w.indexOf(n) >= 0 || n.indexOf(w) >= 0))) sc += 2;
@@ -3124,21 +3128,31 @@ async function selShow(rbox, ctx, folder, got, items) {
     // ① 신부가 보낸 JPG 를 올린다 — 대표 PC 에서 드롭박스로 곧장 간다
     let upDone = 0, warn = '';
     if (ups.length) {
-      const r = await selUpload(dest, ups, (a) => {
-        upDone = a; prog(a, ups.length);
-        stat.textContent = '신부 JPG 올리는 중… ' + a + ' / ' + ups.length;
+      const r = await selUpload(dest, ups, (a, bad) => {
+        upDone = a; prog(a + (bad || 0), ups.length);
+        stat.textContent = '신부 JPG 올리는 중… ' + a + ' / ' + ups.length
+          + (bad ? '  (못 올린 것 ' + bad + ')' : '');
       });
-      if (r.error) {
+      if (r.stopped) {
         cp.disabled = false; if (bar) bar.hidden = true;
-        stat.innerHTML = '<span class="err">' + esc(r.error) + '</span>'; return;
+        stat.innerHTML = '<span class="err">' + esc(r.stopped) + '</span>'; return;
       }
       upDone = r.done;
       // 못 올린 게 있으면 마지막까지 들고 간다 — 끝났다는 말에 묻히면 안 된다
       if (r.failed.length) {
-        warn = '<br /><span class="err">' + r.failed.length + '장을 못 올렸습니다: '
-          + esc(r.failed.slice(0, 10).join(', '))
-          + (r.failed.length > 10 ? ' 외 ' + (r.failed.length - 10) + '장' : '')
-          + '</span>';
+        // 못 올린 것만 한 번 더 — 회선이 잠깐 흔들린 경우가 대부분이다
+        const again = ups.filter((it) => r.failed.indexOf(it.name) >= 0);
+        stat.textContent = '못 올린 ' + again.length + '장을 다시 올리는 중…';
+        const r2 = await selUpload(dest, again, (a) => {
+          stat.textContent = '다시 올리는 중… ' + a + ' / ' + again.length;
+        });
+        upDone += r2.done;
+        if (r2.failed.length) {
+          warn = '<br /><span class="err">' + r2.failed.length + '장을 못 올렸습니다: '
+            + esc(r2.failed.slice(0, 10).join(', '))
+            + (r2.failed.length > 10 ? ' 외 ' + (r2.failed.length - 10) + '장' : '')
+            + '<br />드롭박스에서 확인하고 그것만 직접 올려주세요.</span>';
+        }
       }
     }
 
@@ -3192,33 +3206,48 @@ async function selShow(rbox, ctx, folder, got, items) {
    파일은 우리 서버를 거치지 않는다 — 서버는 '이 경로에만 쓸 수 있는' 임시 링크만 내주고,
    알맹이는 대표 PC 에서 드롭박스로 곧장 간다. 한 번에 8장씩 받는다(그 이상은 드롭박스가 막는다). */
 async function selUpload(dest, items, onProg) {
-  const failed = [];
+  const failed = [];      // 못 올린 것들 (이름)
   let done = 0;
-  for (let i = 0; i < items.length; i += 8) {
+  let stop = '';          // 아예 더 갈 수 없는 사정(연결 끊김 등)
+
+  for (let i = 0; i < items.length && !stop; i += 8) {
     const part = items.slice(i, i + 8);
-    const r = await sb.rpc('admin_dbx_up_req', { p_dest: dest, p_names: part.map((x) => x.name) });
-    if (r.error) return { error: r.error.message, done: done, failed: failed };
-    if (r.data && r.data.error) return { error: r.data.error, done: done, failed: failed };
-    const got = await dbxWait('admin_dbx_up_res', { p_reqs: r.data.reqs }, 30000);
-    if (got.error) return { error: got.error, done: done, failed: failed };
-    if (got.pending) return { error: '드롭박스가 응답하지 않습니다. 잠시 후 다시 해주세요.', done: done, failed: failed };
+    // 링크 받기 — 한 번 어긋나면 한 번 더 해본다(드롭박스가 잠깐 막을 때가 있다)
+    let got = null;
+    for (let tryN = 0; tryN < 2 && !got; tryN++) {
+      if (tryN) await new Promise((x) => setTimeout(x, 1500));
+      const r = await sb.rpc('admin_dbx_up_req', { p_dest: dest, p_names: part.map((x) => x.name) });
+      if (r.error) { if (tryN) stop = r.error.message; continue; }
+      if (r.data && r.data.error) { stop = r.data.error; break; }   // 경로가 막힌 것 — 다시 해도 소용없다
+      const res = await dbxWait('admin_dbx_up_res', { p_reqs: r.data.reqs }, 40000);
+      if (res && res.links) got = res;
+      else if (tryN) stop = (res && res.error) || '드롭박스가 응답하지 않습니다.';
+    }
+    if (!got) {
+      // 이 묶음은 건너뛴다. 뒤는 계속 올린다 — 통째로 그만두면 «올라가다 말고» 가 된다
+      part.forEach((it) => failed.push(it.name));
+      continue;
+    }
 
     const byName = {};
     (got.links || []).forEach((l) => { byName[l.name] = l; });
-    await Promise.all(part.map(async (it) => {
-      const l = byName[it.name];
-      if (!l || !l.url) { failed.push(it.name); return; }
-      try {
-        const blob = await selFile(it);
-        if (!blob) { failed.push(it.name); return; }
-        const up = await fetch(l.url, { method: 'POST',
-          headers: { 'Content-Type': 'application/octet-stream' }, body: blob });
-        if (!up.ok) failed.push(it.name); else done++;
-      } catch (e) { failed.push(it.name); }
-      if (onProg) onProg(done);
-    }));
+    // 한 묶음 안에서는 넷씩만 동시에 — 한꺼번에 여덟이면 회선이 막혀 더 느려진다
+    for (let k = 0; k < part.length; k += 4) {
+      await Promise.all(part.slice(k, k + 4).map(async (it) => {
+        const l = byName[it.name];
+        if (!l || !l.url) { failed.push(it.name); return; }
+        try {
+          const blob = await selFile(it);
+          if (!blob) { failed.push(it.name); return; }
+          const up = await fetch(l.url, { method: 'POST',
+            headers: { 'Content-Type': 'application/octet-stream' }, body: blob });
+          if (!up.ok) failed.push(it.name); else done++;
+        } catch (e) { failed.push(it.name); }
+        if (onProg) onProg(done, failed.length);
+      }));
+    }
   }
-  return { done: done, failed: failed };
+  return { done: done, failed: failed, stopped: stop };
 }
 
 async function selLoadRoots() {
