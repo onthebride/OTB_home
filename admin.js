@@ -2672,7 +2672,10 @@ async function renderStats() {
 
 /* ===== 셀렉 매칭 — 신부가 고른 40장의 RAW 찾아 복사 =====
    파일은 올리지 않는다. 브라우저에서 이름만 읽어 쓴다. */
-const selBase = (n) => String(n || '').replace(/\.[^.]+$/, '').trim();   // 확장자 뺀 이름
+// 맥에서 온 이름은 한글 자모가 풀려 있다(NFD). 드롭박스 쪽은 붙어 있다(NFC).
+// 눈에는 같아 보여도 글자로는 달라서, 맞춰보기 전에 한 모양으로 통일한다.
+const nfc = (s) => { try { return String(s == null ? '' : s).normalize('NFC'); } catch (e) { return String(s == null ? '' : s); } };
+const selBase = (n) => nfc(n).replace(/\.[^.]+$/, '').trim();   // 확장자 뺀 이름
 
 // 신부가 고른 이름들(want) 과 RAW 파일들(files) 을 맞춰본다.
 // 확장자는 무시하고 이름만 본다(M4200526.JPG ↔ M4200526.ARW). 대소문자도 무시.
@@ -2728,7 +2731,7 @@ const SEL_STOP = ['셀렉', '원본', '사진', '파일', '최종', '보정', '�
 const selPad = (n) => String(n).padStart(2, '0');
 
 function selParse(name) {
-  const s = String(name || '').replace(/[\\/]+/g, ' ');
+  const s = nfc(name).replace(/[\\/]+/g, ' ');
   let y = null, m = null, d = null, t;
   if ((t = s.match(/(20\d{2})\s*[.\-_/년]\s*(\d{1,2})\s*[.\-_/월]\s*(\d{1,2})/))) { y = +t[1]; m = +t[2]; d = +t[3]; }
   else if ((t = s.match(/(?:^|\D)(20\d{2})(\d{2})(\d{2})(?:\D|$)/))) { y = +t[1]; m = +t[2]; d = +t[3]; }
@@ -2971,18 +2974,19 @@ async function selOpen(ctx, items) {
   // 어느 폴더를 볼지 고른다. 하나가 아니라 여럿일 수 있다 —
   // 2인 촬영이면 신부가 고른 사진이 메인·서브 폴더에 나뉘어 있다.
   // (정소민 예식: 40장 중 홍창완 31장 / 최선종 9장)
-  const chunks = String(ctx.folder || '')
+  const chunks = nfc(ctx.folder)
     .split(/[^0-9A-Za-z가-힣]+/)
     .filter((x) => x.length >= 2 && !/^\d+$/.test(x));   // 날짜 같은 숫자 토막은 뺀다
   const hints = [who, ctx.b && ctx.b.bride_name, ctx.b && ctx.b.groom_name]
     .concat(selParse(ctx.folder).names).concat(chunks).filter(Boolean);
   const byName = hints.length
-    ? folders.map((f, i) => (hints.some((n) => String(f.name).indexOf(n) >= 0) ? i : -1)).filter((i) => i >= 0)
+    ? folders.map((f, i) => (hints.some((n) => nfc(f.name).indexOf(nfc(n)) >= 0) ? i : -1)).filter((i) => i >= 0)
     : [];
 
   // 그날 폴더가 하나뿐이면 고민할 게 없다
   const on = new Set(folders.length === 1 ? [0] : byName);
   let photo = null;                     // 사진으로 세어본 결과 {i: 몇 장}
+  let photoWeak = false;                // 조금밖에 안 겹쳐서 믿기 어려운 경우
 
   // 이름으로 못 맞췄으면 사진으로 맞춘다.
   // 신부가 준 파일 이름이 어느 폴더 RAW 에 실제로 들어 있는지 보면 확실하다.
@@ -3013,7 +3017,11 @@ async function selOpen(ctx, items) {
           + (photo && photo[i] ? '<b class="sel-fn">' + photo[i] + '장</b>'
              : photo ? '<b class="sel-fn none">0장</b>' : '')
           + '</label>').join('') + '</div></div>'
-      + (photo
+      + (photo && photoWeak
+          ? '<p class="dbx-msg sel-warn">⚠ 사진을 세어봤지만 조금밖에 안 맞습니다'
+            + ' — 같은 작가가 같은 카메라로 찍으면 번호가 우연히 겹칩니다.'
+            + '<br />맞는 폴더를 직접 골라 주세요.</p>'
+          : photo
           ? '<p class="dbx-msg sel-ok-in">✓ 사진이 어느 폴더에 있는지 세어봤습니다.'
             + (Object.keys(photo).length > 1 ? ' <b>두 폴더에 나뉘어 있어 둘 다 골랐습니다.</b>' : '') + '</p>'
           : byName.length > 1
@@ -3056,7 +3064,13 @@ async function selOpen(ctx, items) {
 
   if (!byName.length && folders.length > 1 && items.length) {
     const cnt = await matchByPhoto();
-    if (cnt) { photo = cnt; Object.keys(cnt).forEach((i) => on.add(Number(i))); }
+    if (cnt) {
+      photo = cnt;
+      // 다 합쳐 절반도 안 되면 우연히 번호가 겹친 것일 수 있다 — 정하지 말고 물어본다
+      const sum = Object.keys(cnt).reduce((a, k) => a + cnt[k], 0);
+      photoWeak = sum * 2 < items.length;
+      if (!photoWeak) Object.keys(cnt).forEach((i) => on.add(Number(i)));
+    }
   }
   drawFolder();
   // 골라진 게 있으면 바로 찾는다. 아무것도 못 골랐으면 사람이 고르게 둔다.
