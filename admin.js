@@ -2783,7 +2783,10 @@ const selDayPath = (dateStr) => {
   return '/온더브라이드 백업/' + s.slice(0, 4) + '년/' + s.slice(5, 7) + '월/'
     + s.slice(2, 4) + '.' + s.slice(5, 7) + '.' + s.slice(8, 10);
 };
-const selDbxUrl = (p) => 'https://www.dropbox.com/home' + encodeURI(String(p || ''));
+// 드롭박스 웹에서 그 폴더 열기.
+// /home/<경로> 를 뒤에 붙이는 옛 방식은 «제공된 경로는 지원되지 않습니다» 로 거부당한다(확인함).
+// 경로는 물음표 뒤에 실어 보낸다.
+const selDbxUrl = (p) => 'https://www.dropbox.com/home?path=' + encodeURIComponent(String(p || ''));
 
 /* ── 탭 그리기 ───────────────────────────────────────────────── */
 function selDayLabel(s) {
