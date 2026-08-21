@@ -3206,6 +3206,12 @@ async function selShow(rbox, ctx, folder, got, items) {
     if (res.again) res = { error: '복사가 아직 진행 중입니다. 잠시 후 드롭박스에서 확인해 주세요.' };
     if (bar) bar.hidden = true;
     if (res.error) { cp.disabled = false; stat.innerHTML = '<span class="err">' + esc(res.error) + '</span>'; return; }
+    // 드롭박스가 장마다 결과를 주는데, 일부만 실패해도 예전엔 다 됐다고 말했다
+    if (res.failed) {
+      warn += '<br /><span class="err">RAW ' + res.failed + '장은 복사되지 않았습니다'
+        + (res.why ? ' (' + esc(res.why) + ')' : '')
+        + '<br />폴더를 열어 확인하고 그것만 다시 해주세요.</span>';
+    }
     stat.innerHTML = '<b class="sel-ok">✓ '
       + (upDone ? 'JPG ' + upDone + '장 + ' : '') + 'RAW ' + res.n + '장 넣었습니다.</b><br />'
       + '<a href="' + esc(selDbxUrl(res.dest)) + '" target="_blank" rel="noopener">' + esc(res.dest) + ' 열어보기 ↗</a>'
