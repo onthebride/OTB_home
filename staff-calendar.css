@@ -65,8 +65,11 @@
 .btn-sm.primary:hover { background: var(--gold-deep); border-color: var(--gold-deep); color: #fff; }
 .sc-busy-form { display: grid; gap: 8px; margin-top: 10px; padding: 12px;
   border: 1px solid var(--line); border-radius: 8px; background: #fbfaf8; }
-.sc-f { display: flex; align-items: center; gap: 8px; font-size: .85rem; color: var(--ink-soft); }
-.sc-f input { flex: 1; min-width: 0; }
+.sc-f { display: grid; grid-template-columns: 68px 1fr; align-items: center; gap: 8px;
+  font-size: .85rem; color: var(--ink-soft); }
+.sc-f > span:first-child, .sc-f > .sc-lab { white-space: nowrap; }
+.sc-f input, .sc-f textarea, .sc-f select { min-width: 0; width: 100%; }
+.sc-f-wide { grid-template-columns: 1fr; }
 .sc-time { display: inline-flex; align-items: center; gap: 4px; }
 .sc-time select { border: 1px solid var(--line); border-radius: 6px; padding: 8px 6px;
   font-family: var(--sans); font-size: .9rem; background: #fff; color: var(--ink); }
@@ -74,7 +77,7 @@
 .sc-form-btns { display: flex; gap: 6px; }
 .sc-note { font-size: .78rem; color: var(--ink-soft); margin: 0; }
 .sc-busy-form input[type="time"] { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-family: var(--sans); }
-.sc-busy-form input[type="text"] { flex: 1; min-width: 140px; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-family: var(--sans); }
+.sc-busy-form input[type="text"] { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-family: var(--sans); }
 .sc-busy-form input:focus { outline: none; border-color: var(--gold); }
 .sc-status { margin-top: 8px; font-size: .85rem; color: var(--ink-soft); min-height: 1.2em; }
 
@@ -168,15 +171,18 @@
 .sc-item.pers { border-left: 3px solid rgba(74, 107, 138, .5); }
 .sc-tag.pers { background: rgba(74, 107, 138, .14); color: #3d5c78; }
 .sc-form-t { font-weight: 600; margin-bottom: 6px; }
-.sc-busy-form textarea { width: 100%; border: 1px solid var(--line, #e7ded3); border-radius: 8px;
-  padding: 8px 10px; font-family: inherit; font-size: .88rem; resize: vertical; }
-.sc-memo { color: #6b635c; font-size: .8rem; }
+.sc-busy-form textarea { border: 1px solid var(--line, #e7ded3); border-radius: 8px;
+  padding: 8px 10px; font-family: inherit; font-size: .88rem;
+  resize: none; overflow: hidden; line-height: 1.5; }
+.sc-memo { color: #6b635c; font-size: .8rem; white-space: pre-wrap; }
 .sc-item-btns { display: flex; gap: 6px; }
-.sc-check { flex-direction: row !important; align-items: center; gap: 7px; }
-.sc-check input { width: 17px; height: 17px; }
+/* 체크 줄도 다른 줄과 같은 자리에 — 전엔 체크가 가운데 떠 있고 글자가 오른쪽 끝에 붙었다 */
+.sc-check input { width: 18px; height: 18px; justify-self: start; margin: 2px 0; }
+.sc-hint-row { grid-column: 2; font-size: .74rem; color: #8a8178; margin-top: -4px; }
 .sc-priv-note { margin-top: -2px; }
 
 .sc-span { font-size: .78rem; color: #3d5c78; font-weight: 600; }
 .sc-until-h { display: block; font-size: .72rem; color: #8a8178; margin-top: 3px; }
 .sc-busy-form input[type="date"] { border: 1px solid var(--line, #e7ded3); border-radius: 8px;
   padding: 7px 9px; font-family: inherit; font-size: .88rem; }
+.sc-until-h { display: none; }

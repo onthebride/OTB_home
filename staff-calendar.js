@@ -219,15 +219,16 @@ function renderPanel() {
         </div>
         ${formKind ? `<div class="sc-busy-form">
           <p class="sc-form-t">${KIND_NAME[formKind]} ${editing ? '수정' : '등록'}</p>
-          <label class="sc-f">할 일<input type="text" id="bTitle"
+          <label class="sc-f"><span>할 일</span><input type="text" id="bTitle"
             placeholder="${formKind === 'personal' ? '예: 병원 / 가족모임 / 휴가' : '예: OO웨딩홀 본식'}"
             value="${editing ? esc(editing.title || '') : ''}" /></label>
           ${formKind === 'personal' && !editing
-            ? '<label class="sc-f">언제까지<input type="date" id="bUntil" value="' + openDay + '" min="' + openDay + '" />'
-              + '<small class="sc-until-h">하루면 그대로 두세요</small></label>'
+            ? '<label class="sc-f"><span>언제까지</span>'
+              + '<input type="date" id="bUntil" value="' + openDay + '" min="' + openDay + '" /></label>'
+              + '<p class="sc-hint-row">하루면 그대로 두세요</p>'
             : ''}
-          <label class="sc-f sc-check"><input type="checkbox" id="bAllDay"${editing && editing.all_day ? ' checked' : ''} /> 종일</label>
-          <label class="sc-f" id="bTimeRow">시간
+          <label class="sc-f sc-check"><span>종일</span><input type="checkbox" id="bAllDay"${editing && editing.all_day ? ' checked' : ''} /></label>
+          <label class="sc-f" id="bTimeRow"><span>시간</span>
             <span class="sc-time">
               <select id="bH">${['<option value="">시</option>']
                 .concat(Array.from({ length: 24 }, (_, i) =>
@@ -237,9 +238,9 @@ function renderPanel() {
                 `<option value="${pad(i * 5)}"${editing && String(editing.at_time || '').slice(3, 5) === pad(i * 5) ? ' selected' : ''}>${pad(i * 5)}</option>`).join('')}</select>
             </span>
           </label>
-          <label class="sc-f">장소<input type="text" id="bPlace" placeholder="예: 아펠가모 광화문"
+          <label class="sc-f"><span>장소</span><input type="text" id="bPlace" placeholder="예: 아펠가모 광화문"
             value="${editing ? esc(editing.place || '') : ''}" /></label>
-          <label class="sc-f">메모<textarea id="bNote" rows="3" placeholder="여러 줄로 적으셔도 됩니다">${editing ? esc(editing.note || '') : ''}</textarea></label>
+          <label class="sc-f"><span>메모</span><textarea id="bNote" rows="2" placeholder="여러 줄로 적으셔도 됩니다">${editing ? esc(editing.note || '') : ''}</textarea></label>
           <div class="sc-form-btns">
             <button type="button" class="btn-sm primary sc-addbusy">${editing ? '수정' : '저장'}</button>
             <button type="button" class="btn-sm sc-cancelbusy">취소</button>
@@ -275,6 +276,13 @@ function renderPanel() {
     const it = busy.find((x) => String(x.id) === String(btn.dataset.id));
     editId = btn.dataset.id; formKind = (it && it.kind) || 'busy'; renderPanel();
   }));
+  // 메모는 줄이 늘면 칸이 같이 늘어난다 — 스크롤이 생기면 적어둔 게 안 보인다
+  const note = p.querySelector('#bNote');
+  if (note) {
+    const grow = () => { note.style.height = 'auto'; note.style.height = (note.scrollHeight + 2) + 'px'; };
+    note.addEventListener('input', grow);
+    grow();
+  }
   // 종일이면 시간 고를 일이 없다
   const allDay = p.querySelector('#bAllDay');
   const timeRow = p.querySelector('#bTimeRow');
