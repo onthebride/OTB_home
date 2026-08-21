@@ -446,3 +446,14 @@ $('nextM').addEventListener('click', () => goMonth(1));
 })();
 
 load();
+
+// 사용안내는 처음엔 펼쳐 둔다. 한 번 접으면 그 기기에서는 계속 접혀 있다.
+(function helpFold() {
+  const el = $('scHelp');
+  if (!el) return;
+  const KEY = 'otb_sc_help';
+  try { if (localStorage.getItem(KEY) === 'shut') el.open = false; } catch (e) { /* 저장이 막힌 기기 */ }
+  el.addEventListener('toggle', () => {
+    try { localStorage.setItem(KEY, el.open ? 'open' : 'shut'); } catch (e) { /* 무시 */ }
+  });
+})();

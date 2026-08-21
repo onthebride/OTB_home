@@ -194,3 +194,13 @@
 .sc-busy-form input[type="date"] { border: 1px solid var(--line, #e7ded3); border-radius: 8px;
   padding: 7px 9px; font-family: inherit; font-size: .88rem; }
 .sc-until-h { display: none; }
+
+/* 사용안내 — 처음엔 펼쳐두고, 접으면 그 기기에서 계속 접혀 있다 */
+.sc-help-box { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
+.sc-help-box > summary { cursor: pointer; list-style: none; font-size: .82rem; font-weight: 600;
+  color: var(--ink-soft); padding: 2px 0; user-select: none; }
+.sc-help-box > summary::-webkit-details-marker { display: none; }
+.sc-help-box > summary::before { content: '▾ '; font-size: .8em; }
+.sc-help-box:not([open]) > summary::before { content: '▸ '; }
+.sc-help-box > summary:hover { color: var(--ink); }
+.sc-help-box .sc-help { margin-top: 6px; }
