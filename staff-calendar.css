@@ -157,3 +157,14 @@
 .pk-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .pk-n { font-size: .9rem; font-weight: 600; margin-right: auto; }
 .pk-save:disabled { opacity: .45; cursor: default; }
+
+/* 일정 한 줄 */
+.sc-title { font-weight: 600; }
+.sc-place { color: #6b635c; }
+.sc-lock { font-size: .72rem; color: #97743f; background: rgba(180, 150, 90, .12);
+  border-radius: 10px; padding: 1px 7px; white-space: nowrap; }
+.sc-memo { color: #6b635c; font-size: .8rem; }
+.sc-item-btns { display: flex; gap: 6px; }
+.sc-check { flex-direction: row !important; align-items: center; gap: 7px; }
+.sc-check input { width: 17px; height: 17px; }
+.sc-priv-note { margin-top: -2px; }

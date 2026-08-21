@@ -28,6 +28,10 @@ let view = new Date();               // 보고 있는 달
 let data = { bookings: [], busy: [] };
 let openDay = null;
 let busyForm = false;                // '다른일정등록'을 눌러 입력칸을 연 상태
+let editId = null;                   // 고치는 중인 일정 (없으면 새로 등록)
+
+// 달력 한 칸에 들어갈 짧은 이름. 좁으니 제목이 있으면 제목만.
+const cellTag = (x) => (x.title ? x.title : (x.all_day ? '종일' : kTime(x.at_time)));
 let slideDir = '';                   // 달을 넘긴 방향(넘어온 티가 나게 살짝 밀어 넣는다)
 let multi = false;                   // 여러 날 고르는 중
 let picked = new Set();              // 고른 날짜들 (yyyy-mm-dd)
@@ -83,7 +87,7 @@ function render() {
     html += `<button type="button" class="${cls.join(' ')}" data-d="${key}"${past || lockedForPick ? ' disabled' : ''}>
       <span class="sc-d">${d}</span>
       ${it.bk.map((b) => `<span class="sc-tag bk">${esc(kTime(b.wedding_time) || '예식')}</span>`).join('')}
-      ${it.busy.filter((x) => x.kind === 'busy').map((x) => `<span class="sc-tag busy">${esc(kTime(x.at_time))}</span>`).join('')}
+      ${it.busy.filter((x) => x.kind === 'busy').map((x) => `<span class="sc-tag busy">${esc(cellTag(x))}</span>`).join('')}
       ${off ? '<span class="sc-tag off">불가</span>' : ''}
     </button>`;
   }
@@ -103,7 +107,7 @@ function render() {
         render();
         return;
       }
-      openDay = d; busyForm = false; render(); renderPanel();
+      openDay = d; busyForm = false; editId = null; render(); renderPanel();
     }));
   renderPickBar();
   if (!multi && openDay) renderPanel();
@@ -170,9 +174,20 @@ function renderPanel() {
 
   const busyHtml = busy.filter((x) => x.kind === 'busy').map((x) => `
     <div class="sc-item busy">
-      <div class="sc-item-h"><b>${esc(kTime(x.at_time))}</b> ${esc(x.place || '')}<span class="sc-mine">내가 등록</span></div>
-      <button type="button" class="btn-sm sc-del" data-id="${x.id}">지우기</button>
+      <div class="sc-item-h">
+        <b>${esc(x.all_day ? '종일' : kTime(x.at_time))}</b>
+        ${x.title ? '<span class="sc-title">' + esc(x.title) + '</span>' : ''}
+        ${x.place ? '<span class="sc-place">' + esc(x.place) + '</span>' : ''}
+        ${x.is_private ? '<span class="sc-lock" title="대표님께는 «일정 있음»으로만 보입니다">🔒 나만 보기</span>' : ''}
+        <span class="sc-mine">내가 등록</span>
+      </div>
+      ${x.note ? '<div class="sc-item-b sc-memo">' + esc(x.note) + '</div>' : ''}
+      <div class="sc-item-btns">
+        <button type="button" class="btn-sm sc-edit" data-id="${x.id}">고치기</button>
+        <button type="button" class="btn-sm sc-del" data-id="${x.id}">지우기</button>
+      </div>
     </div>`).join('');
+  const editing = editId ? busy.find((x) => String(x.id) === String(editId)) : null;
 
   p.hidden = false;
   p.innerHTML = `
@@ -190,17 +205,27 @@ function renderPanel() {
           ${off && !bk.length ? '<button type="button" class="btn-sm primary sc-multi">다른 날짜 같이 선택하기</button>' : ''}
         </div>
         ${busyForm ? `<div class="sc-busy-form">
-          <label class="sc-f">시간
+          <label class="sc-f">할 일<input type="text" id="bTitle" placeholder="예: OO웨딩홀 촬영 / 병원 / 가족모임"
+            value="${editing ? esc(editing.title || '') : ''}" /></label>
+          <label class="sc-f sc-check"><input type="checkbox" id="bAllDay"${editing && editing.all_day ? ' checked' : ''} /> 종일</label>
+          <label class="sc-f" id="bTimeRow">시간
             <span class="sc-time">
               <select id="bH">${['<option value="">시</option>']
-                .concat(Array.from({ length: 24 }, (_, i) => `<option value="${pad(i)}">${pad(i)}</option>`)).join('')}</select>
+                .concat(Array.from({ length: 24 }, (_, i) =>
+                  `<option value="${pad(i)}"${editing && String(editing.at_time || '').slice(0, 2) === pad(i) ? ' selected' : ''}>${pad(i)}</option>`)).join('')}</select>
               <b>:</b>
-              <select id="bM">${Array.from({ length: 12 }, (_, i) => `<option value="${pad(i * 5)}">${pad(i * 5)}</option>`).join('')}</select>
+              <select id="bM">${Array.from({ length: 12 }, (_, i) =>
+                `<option value="${pad(i * 5)}"${editing && String(editing.at_time || '').slice(3, 5) === pad(i * 5) ? ' selected' : ''}>${pad(i * 5)}</option>`).join('')}</select>
             </span>
           </label>
-          <label class="sc-f">장소<input type="text" id="bPlace" placeholder="예: 아펠가모 광화문" /></label>
+          <label class="sc-f">장소<input type="text" id="bPlace" placeholder="예: 아펠가모 광화문"
+            value="${editing ? esc(editing.place || '') : ''}" /></label>
+          <label class="sc-f">메모<input type="text" id="bNote" placeholder="남겨두실 말 (선택)"
+            value="${editing ? esc(editing.note || '') : ''}" /></label>
+          <label class="sc-f sc-check"><input type="checkbox" id="bPrivate"${editing && editing.is_private ? ' checked' : ''} /> 나만 보기</label>
+          <p class="sc-note sc-priv-note">켜두시면 대표님 화면에는 시간만 «일정 있음»으로 보입니다. 무슨 일인지는 안 보입니다.</p>
           <div class="sc-form-btns">
-            <button type="button" class="btn-sm primary sc-addbusy">저장</button>
+            <button type="button" class="btn-sm primary sc-addbusy">${editing ? '고치기' : '저장'}</button>
             <button type="button" class="btn-sm sc-cancelbusy">취소</button>
           </div>
           <p class="sc-note">우리 예식과 <b>4시간 이상</b> 벌어지면 그날도 배정될 수 있습니다.</p>
@@ -220,28 +245,50 @@ function renderPanel() {
     render();
   });
   const openBusy = p.querySelector('.sc-openbusy');
-  if (openBusy) openBusy.addEventListener('click', () => { busyForm = true; renderPanel(); });
+  if (openBusy) openBusy.addEventListener('click', () => { busyForm = true; editId = null; renderPanel(); });
   const cancelBusy = p.querySelector('.sc-cancelbusy');
-  if (cancelBusy) cancelBusy.addEventListener('click', () => { busyForm = false; renderPanel(); });
+  if (cancelBusy) cancelBusy.addEventListener('click', () => { busyForm = false; editId = null; renderPanel(); });
   const addBtn = p.querySelector('.sc-addbusy');
   if (addBtn) addBtn.addEventListener('click', () => add('busy'));
+  p.querySelectorAll('.sc-edit').forEach((btn) => btn.addEventListener('click', () => {
+    editId = btn.dataset.id; busyForm = true; renderPanel();
+  }));
+  // 종일이면 시간 고를 일이 없다
+  const allDay = p.querySelector('#bAllDay');
+  const timeRow = p.querySelector('#bTimeRow');
+  if (allDay && timeRow) {
+    const sync = () => { timeRow.hidden = allDay.checked; };
+    allDay.addEventListener('change', sync);
+    sync();
+  }
 }
 
 async function add(kind) {
   const st = $('scStatus');
   const body = { p_staff_id: staffId, p_date: openDay, p_kind: kind };
   if (kind === 'busy') {
+    const allDay = !!($('bAllDay') && $('bAllDay').checked);
     const h = $('bH') ? $('bH').value : '';
     const m = $('bM') ? $('bM').value : '00';
-    if (!h) { st.textContent = '시간을 골라 주세요.'; return; }
-    body.p_time = h + ':' + m;
-    body.p_place = $('bPlace').value.trim();
+    if (!allDay && !h) { st.textContent = '시간을 골라 주세요. (하루 종일이면 [종일] 을 켜주세요)'; return; }
+    body.p_time = allDay ? null : h + ':' + m;
+    body.p_place = $('bPlace') ? $('bPlace').value.trim() : '';
+    body.p_note = $('bNote') ? $('bNote').value.trim() : '';
+    body.p_title = $('bTitle') ? $('bTitle').value.trim() : '';
+    body.p_all_day = allDay;
+    body.p_private = !!($('bPrivate') && $('bPrivate').checked);
   }
   st.textContent = '저장 중…';
-  const { error } = await sb.rpc('staff_busy_add', body);
+  const { error } = editId
+    ? await sb.rpc('staff_busy_upd', {
+        p_staff_id: staffId, p_id: Number(editId),
+        p_time: body.p_time, p_place: body.p_place, p_note: body.p_note,
+        p_title: body.p_title, p_all_day: body.p_all_day, p_private: body.p_private })
+    : await sb.rpc('staff_busy_add', body);
   if (error) { st.textContent = error.message || '저장하지 못했습니다.'; return; }
   st.textContent = '';
   busyForm = false;
+  editId = null;
   await load();
   renderPanel();
 }
