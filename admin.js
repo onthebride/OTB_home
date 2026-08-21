@@ -2784,9 +2784,13 @@ const selDayPath = (dateStr) => {
     + s.slice(2, 4) + '.' + s.slice(5, 7) + '.' + s.slice(8, 10);
 };
 // 드롭박스 웹에서 그 폴더 열기.
-// /home/<경로> 를 뒤에 붙이는 옛 방식은 «제공된 경로는 지원되지 않습니다» 로 거부당한다(확인함).
-// 경로는 물음표 뒤에 실어 보낸다.
-const selDbxUrl = (p) => 'https://www.dropbox.com/home?path=' + encodeURIComponent(String(p || ''));
+// 우리는 팀 계정이라 보는 자리가 두 군데다 —
+//   API 가 보는 곳 : /2026 셀렉파일/…
+//   웹에서 보는 곳 : /byunghoon kim/2026 셀렉파일/…  (팀 공간 아래 내 폴더)
+// 그래서 웹 링크에는 내 폴더 이름을 앞에 붙여야 한다(admin_dbx_home 이 알려준다).
+let selHome = '';                       // 예: '/byunghoon kim'
+const selDbxUrl = (p) =>
+  'https://www.dropbox.com/home?path=' + encodeURIComponent(selHome + String(p || ''));
 
 /* ── 탭 그리기 ───────────────────────────────────────────────── */
 function selDayLabel(s) {
@@ -2855,6 +2859,9 @@ function renderSelect() {
     selStart($('selWho').value.trim(), want.map((n) => ({ name: n, file: null })));
   });
   selRecent();
+  if (!selHome) {
+    sb.rpc('admin_dbx_home').then((r) => { if (r && r.data) selHome = r.data; });
+  }
 }
 
 // 끌어다 놓은 것에서 폴더 이름과 파일들을 꺼낸다
