@@ -1970,7 +1970,8 @@ function dayCheckHtml(r) {
   const row = (s) => {
     const badge = s.status === 'ok' ? '<span class="dc-b ok">가능</span>'
       : s.status === 'off' ? '<span class="dc-b off">불가</span>'
-      : '<span class="dc-b tight">겹침</span>';
+      : r.at_time ? '<span class="dc-b tight">겹침</span>'
+      : '<span class="dc-b tight">일정 있음</span>';
     // 순위는 '메인을 맡을 수 있고 그날 되는' 작가에게만 매긴다
     const main = s.can_main !== false;
     const ranked = s.status === 'ok' && main;
@@ -1990,7 +1991,10 @@ function dayCheckHtml(r) {
   const rest = list.slice(3).map(row).join('');
 
   const notes = [];
-  if (!r.at_time) notes.push('시간을 넣으면 4시간 규칙(겹침)까지 함께 봅니다.');
+  if (!r.at_time) {
+    notes.push('시간을 안 넣으면 그날 일정이 있는 작가는 모두 «일정 있음»으로 둡니다.'
+      + ' 시간을 넣으면 4시간 규칙으로 정확히 봅니다.');
+  }
   if ((r.fb_total || 0) < 10) {
     notes.push(`촬영 후 설문이 아직 ${r.fb_total || 0}건이라 평점 순위는 참고만 해주세요.`
       + ' 평점이 없는 작가는 최근 배정이 적은 순으로 놓았습니다.');
