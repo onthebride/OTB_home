@@ -34,6 +34,7 @@
 .sc-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
 .lg-book { background: var(--ink); }
 .lg-busy { background: #9dc3e0; }
+.lg-pers { background: #4a6b8a; }
 .lg-off { background: #e6b0a6; }
 
 /* 맨 아래 작은 설명 — 색깔 안내와 선으로 나눈다 */
@@ -174,3 +175,8 @@
 .sc-check { flex-direction: row !important; align-items: center; gap: 7px; }
 .sc-check input { width: 17px; height: 17px; }
 .sc-priv-note { margin-top: -2px; }
+
+.sc-span { font-size: .78rem; color: #3d5c78; font-weight: 600; }
+.sc-until-h { display: block; font-size: .72rem; color: #8a8178; margin-top: 3px; }
+.sc-busy-form input[type="date"] { border: 1px solid var(--line, #e7ded3); border-radius: 8px;
+  padding: 7px 9px; font-family: inherit; font-size: .88rem; }

@@ -33,6 +33,10 @@ let editId = null;                   // 수정 중인 일정 (없으면 새로 �
 
 const KIND_NAME = { busy: '다른 촬영', personal: '개인 일정' };
 
+// 여러 날짜리 개인 일정이면 "8/25~8/28 (4일)" 처럼 보여준다
+const mdy = (s) => { const [, m, d] = String(s).slice(0, 10).split('-'); return Number(m) + '/' + Number(d); };
+const spanText = (x) => (x.group_id && x.g_n > 1 ? mdy(x.g_from) + '~' + mdy(x.g_to) + ' (' + x.g_n + '일)' : '');
+
 // 달력 한 칸에 들어갈 짧은 이름. 좁으니 제목이 있으면 제목만.
 const cellTag = (x) => (x.title ? x.title
   : (x.kind === 'personal' ? '개인' : (x.all_day ? '종일' : kTime(x.at_time))));
@@ -185,12 +189,14 @@ function renderPanel() {
         <b>${esc(x.all_day ? '종일' : (kTime(x.at_time) || '시간 미정'))}</b>
         ${x.title ? '<span class="sc-title">' + esc(x.title) + '</span>' : ''}
         ${x.place ? '<span class="sc-place">' + esc(x.place) + '</span>' : ''}
+        ${spanText(x) ? '<span class="sc-span">' + esc(spanText(x)) + '</span>' : ''}
         <span class="sc-kind ${x.kind}">${KIND_NAME[x.kind]}</span>
       </div>
       ${x.note ? '<div class="sc-item-b sc-memo">' + esc(x.note) + '</div>' : ''}
       <div class="sc-item-btns">
         <button type="button" class="btn-sm sc-edit" data-id="${x.id}">수정</button>
-        <button type="button" class="btn-sm sc-del" data-id="${x.id}">지우기</button>
+        <button type="button" class="btn-sm sc-del" data-id="${x.id}"
+          data-group="${x.group_id && x.g_n > 1 ? x.group_id : ''}">${x.group_id && x.g_n > 1 ? '전부 지우기' : '지우기'}</button>
       </div>
     </div>`).join('');
   const editing = editId ? busy.find((x) => String(x.id) === String(editId)) : null;
@@ -216,6 +222,10 @@ function renderPanel() {
           <label class="sc-f">할 일<input type="text" id="bTitle"
             placeholder="${formKind === 'personal' ? '예: 병원 / 가족모임 / 휴가' : '예: OO웨딩홀 본식'}"
             value="${editing ? esc(editing.title || '') : ''}" /></label>
+          ${formKind === 'personal' && !editing
+            ? '<label class="sc-f">언제까지<input type="date" id="bUntil" value="' + openDay + '" min="' + openDay + '" />'
+              + '<small class="sc-until-h">하루면 그대로 두세요</small></label>'
+            : ''}
           <label class="sc-f sc-check"><input type="checkbox" id="bAllDay"${editing && editing.all_day ? ' checked' : ''} /> 종일</label>
           <label class="sc-f" id="bTimeRow">시간
             <span class="sc-time">
@@ -242,7 +252,8 @@ function renderPanel() {
       <p class="sc-status" id="scStatus"></p>
     </div>`;
 
-  p.querySelectorAll('.sc-del').forEach((btn) => btn.addEventListener('click', () => del(btn.dataset.id)));
+  p.querySelectorAll('.sc-del').forEach((btn) =>
+    btn.addEventListener('click', () => del(btn.dataset.id, btn.dataset.group)));
   const offBtn = p.querySelector('.sc-off');
   if (offBtn) offBtn.addEventListener('click', () => add('off'));
   const multiBtn = p.querySelector('.sc-multi');
@@ -292,13 +303,36 @@ async function add(kind) {
     body.p_all_day = allDay || (kind === 'personal' && !h);
   }
   st.textContent = '저장 중…';
-  const { error } = editId
-    ? await sb.rpc('staff_busy_upd', {
-        p_staff_id: staffId, p_id: Number(editId),
-        p_time: body.p_time, p_place: body.p_place, p_note: body.p_note,
-        p_title: body.p_title, p_all_day: body.p_all_day })
-    : await sb.rpc('staff_busy_add', body);
-  if (error) { st.textContent = error.message || '저장하지 못했습니다.'; return; }
+  const cur = editId ? (data.busy || []).find((x) => String(x.id) === String(editId)) : null;
+  const until = $('bUntil') ? $('bUntil').value : '';
+  let res;
+  if (editId && cur && cur.group_id && cur.g_n > 1) {
+    // 여러 날짜리는 묶음 통째로 고친다
+    res = await sb.rpc('staff_busy_upd_group', {
+      p_staff_id: staffId, p_group: cur.group_id,
+      p_title: body.p_title, p_note: body.p_note,
+      p_time: body.p_time, p_place: body.p_place, p_all_day: body.p_all_day });
+  } else if (editId) {
+    res = await sb.rpc('staff_busy_upd', {
+      p_staff_id: staffId, p_id: Number(editId),
+      p_time: body.p_time, p_place: body.p_place, p_note: body.p_note,
+      p_title: body.p_title, p_all_day: body.p_all_day });
+  } else if (kind === 'personal' && until && until > openDay) {
+    res = await sb.rpc('staff_busy_add_range', {
+      p_staff_id: staffId, p_from: openDay, p_to: until,
+      p_title: body.p_title, p_note: body.p_note,
+      p_time: body.p_time, p_place: body.p_place, p_all_day: body.p_all_day });
+  } else {
+    res = await sb.rpc('staff_busy_add', body);
+  }
+  if (res.error) { st.textContent = res.error.message || '저장하지 못했습니다.'; return; }
+  const skipped = (res.data && res.data.skipped) || [];
+  if (skipped.length) {
+    alert(((res.data && res.data.n) || 0) + '일 등록했습니다.\n\n'
+      + skipped.length + '일은 등록하지 못했습니다 ('
+      + skipped.map((x) => String(x.d).slice(5).replace('-', '/')).join(', ') + ')\n'
+      + '배정된 예식이 있거나 지난 날짜입니다.');
+  }
   st.textContent = '';
   formKind = null;
   editId = null;
@@ -306,9 +340,16 @@ async function add(kind) {
   renderPanel();
 }
 
-async function del(id) {
-  const { error } = await sb.rpc('staff_busy_del', { p_staff_id: staffId, p_id: Number(id) });
-  if (error) { alert('삭제 실패: ' + error.message); return; }
+async function del(id, group) {
+  // 여러 날짜리면 통째로 지운다 — 하루씩 지우게 하면 번거롭다
+  if (group) {
+    if (!confirm('이 일정이 걸린 날을 전부 지울까요?')) return;
+    const { error } = await sb.rpc('staff_busy_del_group', { p_staff_id: staffId, p_group: group });
+    if (error) { alert('삭제 실패: ' + error.message); return; }
+  } else {
+    const { error } = await sb.rpc('staff_busy_del', { p_staff_id: staffId, p_id: Number(id) });
+    if (error) { alert('삭제 실패: ' + error.message); return; }
+  }
   await load();
   renderPanel();
 }

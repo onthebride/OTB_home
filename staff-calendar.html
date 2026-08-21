@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="survey.css?v=f01442be73" />
   <link rel="stylesheet" href="guide.css?v=7467a883fa" />
-  <link rel="stylesheet" href="staff-calendar.css?v=305910dc18" />
+  <link rel="stylesheet" href="staff-calendar.css?v=4abbf0d1e9" />
 </head>
 <body>
   <header class="sv-header">
@@ -50,13 +50,18 @@
 
         <div class="sc-legend">
           <span><i class="lg-book"></i> 배정된 예식</span>
-          <span><i class="lg-busy"></i> 다른 일정</span>
+          <span><i class="lg-busy"></i> 다른 촬영</span>
+          <span><i class="lg-pers"></i> 개인 일정</span>
           <span><i class="lg-off"></i> 촬영 불가</span>
         </div>
 
         <p class="sc-help">
-          촬영이 <b>불가능한 날</b>은 날짜를 눌러 표시해 주세요.<br />
-          다른 촬영이 있는 날은 <b>시간과 장소</b>를 적어주시면, 저희 예식과 4시간 이상 벌어질 때만 배정합니다.
+          촬영이 <b>불가능한 날</b>은 날짜를 눌러 <b>[촬영불가]</b>로 표시해 주세요.<br />
+          다른 촬영이 있는 날은 <b>[다른촬영등록]</b>에 시간과 장소를 적어주시면,
+          저희 예식과 4시간 이상 벌어지면 저희 촬영도 가능한 날로 등록됩니다.<br />
+          병원·가족 일 같은 개인 일정은 <b>[개인일정등록]</b>에 적어두시면 달력에서 함께 보실 수 있습니다.
+          <b>개인 일정은 대표가 볼 수 없습니다</b> — 「개인 일정」이라고만 보이고,
+          그날은 촬영 불가로 보아 배정에서 빠집니다. 여러 날도 한 번에 넣을 수 있습니다.
         </p>
       </div>
 
@@ -78,6 +83,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="staff-calendar.js?v=dbe7a795a0"></script>
+  <script src="staff-calendar.js?v=8f897af374"></script>
 </body>
 </html>
