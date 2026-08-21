@@ -63,7 +63,8 @@
 .sc-add-btns { display: flex; flex-wrap: wrap; gap: 8px; }
 .btn-sm.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
 .btn-sm.primary:hover { background: var(--gold-deep); border-color: var(--gold-deep); color: #fff; }
-.sc-busy-form { display: grid; gap: 8px; margin-top: 10px; padding: 12px;
+.sc-busy-form { position: relative; display: grid; grid-template-columns: 1fr; gap: 8px;
+  margin-top: 10px; padding: 12px 14px;
   border: 1px solid var(--line); border-radius: 8px; background: #fbfaf8; }
 .sc-f { display: grid; grid-template-columns: 68px 1fr; align-items: center; gap: 8px;
   font-size: .85rem; color: var(--ink-soft); }
@@ -178,7 +179,14 @@
 .sc-item-btns { display: flex; gap: 6px; }
 /* 체크 줄도 다른 줄과 같은 자리에 — 전엔 체크가 가운데 떠 있고 글자가 오른쪽 끝에 붙었다 */
 .sc-check input { width: 18px; height: 18px; justify-self: start; margin: 2px 0; }
-.sc-hint-row { grid-column: 2; font-size: .74rem; color: #8a8178; margin-top: -4px; }
+/* 라벨 칸(68px) + 사이 여백(8px) 만큼 들여써서 입력칸 아래에 붙는다 */
+.sc-hint-row { margin: -4px 0 0 76px; font-size: .74rem; color: #8a8178; }
+/* 오른쪽 위 닫기 — '취소' 만으로는 눈에 잘 안 띈다는 대표 지적 */
+.sc-close { position: absolute; top: 6px; right: 8px; width: 30px; height: 30px; line-height: 1;
+  border: none; background: none; color: var(--ink-soft); font-size: 1.35rem; cursor: pointer;
+  border-radius: 8px; }
+.sc-close:hover { background: rgba(0, 0, 0, .06); color: var(--ink); }
+.sc-form-t { padding-right: 30px; }
 .sc-priv-note { margin-top: -2px; }
 
 .sc-span { font-size: .78rem; color: #3d5c78; font-weight: 600; }

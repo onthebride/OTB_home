@@ -218,6 +218,7 @@ function renderPanel() {
           ${off && !bk.length ? '<button type="button" class="btn-sm primary sc-multi">다른 날짜 같이 선택하기</button>' : ''}
         </div>
         ${formKind ? `<div class="sc-busy-form">
+          <button type="button" class="sc-close" aria-label="닫기" title="닫기">×</button>
           <p class="sc-form-t">${KIND_NAME[formKind]} ${editing ? '수정' : '등록'}</p>
           <label class="sc-f"><span>할 일</span><input type="text" id="bTitle"
             placeholder="${formKind === 'personal' ? '예: 병원 / 가족모임 / 휴가' : '예: OO웨딩홀 본식'}"
@@ -268,8 +269,11 @@ function renderPanel() {
   if (openBusy) openBusy.addEventListener('click', () => { formKind = 'busy'; editId = null; renderPanel(); });
   const openPers = p.querySelector('.sc-openpers');
   if (openPers) openPers.addEventListener('click', () => { formKind = 'personal'; editId = null; renderPanel(); });
+  const shut = () => { formKind = null; editId = null; renderPanel(); };
   const cancelBusy = p.querySelector('.sc-cancelbusy');
-  if (cancelBusy) cancelBusy.addEventListener('click', () => { formKind = null; editId = null; renderPanel(); });
+  if (cancelBusy) cancelBusy.addEventListener('click', shut);
+  const closeBtn = p.querySelector('.sc-close');
+  if (closeBtn) closeBtn.addEventListener('click', shut);
   const addBtn = p.querySelector('.sc-addbusy');
   if (addBtn) addBtn.addEventListener('click', () => add(formKind));
   p.querySelectorAll('.sc-edit').forEach((btn) => btn.addEventListener('click', () => {
