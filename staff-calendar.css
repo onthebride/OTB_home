@@ -38,8 +38,9 @@
 .lg-off { background: #e6b0a6; }
 
 /* 맨 아래 작은 설명 — 색깔 안내와 선으로 나눈다 */
-.sc-help { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line);
-  font-size: .72rem; line-height: 1.7; color: var(--ink-soft); }
+.sc-help { margin: 0; font-size: .72rem; line-height: 1.7; color: var(--ink-soft); }
+.sc-help p { margin: 0 0 .9em; }
+.sc-help p:last-child { margin-bottom: 0; }
 .sc-help b { color: var(--ink); font-weight: 600; }
 
 .sc-panel { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 18px; }
@@ -109,7 +110,8 @@
 
   .sc-swipe { margin-top: 6px; font-size: .7rem; }
   .sc-legend { margin-top: 8px; gap: 10px; font-size: .72rem; }
-  .sc-help { margin-top: 8px; padding-top: 8px; font-size: .68rem; line-height: 1.6; }
+  .sc-help { font-size: .68rem; line-height: 1.6; }
+  .sc-help p { margin-bottom: .8em; }
 
   .sc-panel { margin-top: 14px; padding-top: 12px; }
   .sc-a2hs-wrap { margin-top: 16px; padding-top: 12px; }
@@ -196,11 +198,11 @@
 .sc-until-h { display: none; }
 
 /* 사용안내 — 처음엔 펼쳐두고, 접으면 그 기기에서 계속 접혀 있다 */
-.sc-help-box { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
+.sc-help-box { margin: 10px 0 0; border-top: 1px solid var(--line); padding-top: 8px; }
 .sc-help-box > summary { cursor: pointer; list-style: none; font-size: .82rem; font-weight: 600;
   color: var(--ink-soft); padding: 2px 0; user-select: none; }
 .sc-help-box > summary::-webkit-details-marker { display: none; }
 .sc-help-box > summary::before { content: '▾ '; font-size: .8em; }
 .sc-help-box:not([open]) > summary::before { content: '▸ '; }
 .sc-help-box > summary:hover { color: var(--ink); }
-.sc-help-box .sc-help { margin-top: 6px; }
+.sc-help-box .sc-help { margin-top: 8px; }
