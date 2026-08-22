@@ -6,9 +6,11 @@
 /* ── 달력 한 판 ────────────────────────────────────────────
    달 넘기는 줄부터 색깔 안내까지를 한 판으로 묶어 카드 위에 살짝 띄운다 (대표 요청).
    판은 크림, 칸은 흰색 — 칸이 판 위에 떠 있는 것처럼 보인다 */
-.sc-board { background: var(--cream); border: 1px solid var(--line); border-radius: 16px;
-  padding: 6px 14px 16px; margin: 16px 0 0;
-  box-shadow: 0 4px 16px rgba(43,39,36,.06), 0 1px 2px rgba(43,39,36,.04); }
+.sc-board { background: #fbf8f4; border: none; border-radius: 16px;
+  padding: 6px 14px 16px; margin: 18px 0 0;
+  /* 테두리 대신 그림자로 띄운다 — 선을 두르면 「붙어 있는 칸」처럼 보인다.
+     아래로 길게 퍼지는 그림자 + 가장자리에 붙는 짧은 그림자, 두 겹 */
+  box-shadow: 0 12px 28px -10px rgba(43,39,36,.20), 0 3px 8px -3px rgba(43,39,36,.10); }
 
 /* ── 달 넘기는 줄 ──────────────────────────────────────────
    연도는 작게 위에, 달은 크게 세리프로. 화살표는 테두리 없이 조용하게 */
