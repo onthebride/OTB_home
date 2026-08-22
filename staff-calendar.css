@@ -50,12 +50,15 @@
 .sc-item.busy { border-left: 3px solid #9dc3e0; }
 .sc-item.off { border-left: 3px solid #e6b0a6; background: #fdf5f4; }
 .sc-item-h { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: .92rem; }
-.sc-item-b { font-size: .85rem; color: var(--ink-soft); margin-top: 4px; line-height: 1.6; }
+/* 시간·장소 줄과 신랑 줄 사이를 조금 더 띄운다 (대표 요청) */
+.sc-item-b { font-size: .85rem; color: var(--ink-soft); margin-top: 10px; line-height: 1.6; }
 /* 신랑·신부 줄. 붙어 있어 읽기 답답했다(대표 지적) — 줄 사이를 띄우고
    이름과 번호도 한 칸 벌린다. 이름 칸을 맞춰 번호가 세로로 정렬되게 */
 .sc-item-b .sc-who { display: flex; align-items: center; gap: 10px; white-space: nowrap; margin-top: 7px; }
 .sc-item-b .sc-who:first-child { margin-top: 6px; }
-.sc-who-l { flex: 0 0 auto; min-width: 84px; color: var(--ink); display: flex; align-items: center; gap: 6px; }
+/* 이름은 굵게 (대표 요청). 딱지는 제 굵기를 따로 쥐고 있어 영향받지 않는다 */
+.sc-who-l { flex: 0 0 auto; min-width: 84px; color: var(--ink); font-weight: 600;
+  display: flex; align-items: center; gap: 6px; }
 /* 「신랑」「신부」 를 작은 딱지로. 글자만 있으니 심심하다는 대표 지적.
    이모지는 안 쓴다 — 전화기·클립보드 이모지를 뺀 것과 결이 맞게.
    ⚠️ .sc-tag 는 달력 칸 안의 작은 딱지가 이미 쓰고 있다. 이름이 겹치면
