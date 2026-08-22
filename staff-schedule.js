@@ -57,6 +57,9 @@ function card(w) {
         <div class="ss-opts">${o.map((x) => `<span class="ss-opt${x === '2인 촬영' ? ' two' : ''}">${esc(x)}</span>`).join('')}</div></div>` : ''}
       ${w.sub_name ? `<div class="ss-grp"><div class="ss-row"><b>서브작가</b> : ${esc(w.sub_name)}${w.sub_phone ? ' 📞 ' + esc(w.sub_phone) : ''}</div></div>` : ''}
       ${w.rep_designation ? '<div class="ss-grp"><div class="ss-row"><b>촬영</b> : 대표지정</div></div>' : ''}
+      <div class="ss-grp ss-survey-row">${w.has_survey
+        ? `<a class="ss-survey" href="survey-view?b=${esc(w.booking_id)}" target="_blank" rel="noopener">📋 신부 설문 보기</a>`
+        : '<span class="ss-survey none">신부 설문 아직 없음</span>'}</div>
     </div>
     <div class="ss-checks">
       <label class="ss-chk"><input type="checkbox" data-k="attend" ${c.attend ? 'checked' : ''} /> <span>참석 / 스케줄 확정 <em>*</em></span></label>

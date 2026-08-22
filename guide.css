@@ -90,6 +90,15 @@
 .ss-opt { font-size: .88rem; font-weight: 700; color: #8a5a1a; background: #fbe6c4; border: 1px solid #e6c894;
   border-radius: 999px; padding: 4px 12px; white-space: nowrap; }
 .ss-opt.two { color: #1f4e73; background: #dbeaf6; border-color: #b6d2e8; }
+/* 신부가 낸 촬영 설문 — 아래 «옵션·요청사항 숙지» 체크가 가리키는 바로 그 내용이다.
+   전엔 대표가 링크를 따로 보내줘야 볼 수 있었다 */
+.ss-survey-row { margin-top: 2px; }
+.ss-survey { display: inline-block; justify-self: start; text-decoration: none;
+  font-size: .9rem; font-weight: 600; color: var(--ink);
+  border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; background: #fff; }
+.ss-survey:hover { border-color: var(--gold); color: var(--gold-deep); }
+.ss-survey.none { color: #a09890; background: #f6f4f1; font-weight: 400; cursor: default; }
+.ss-survey.none:hover { border-color: var(--line); color: #a09890; }
 .ss-checks { display: grid; gap: 10px; margin: 16px 0; }
 .ss-chk { display: flex; align-items: flex-start; gap: 9px; font-size: .92rem; cursor: pointer; }
 .ss-chk em { color: #c0392b; font-style: normal; }

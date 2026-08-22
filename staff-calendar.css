@@ -59,6 +59,10 @@
 .sc-mine { font-size: .72rem; color: var(--ink-soft); margin-left: auto; }
 .sc-item .btn-sm { margin-top: 8px; }
 .sc-hint { font-size: .8rem; color: var(--gold-deep); margin: 6px 0 10px; }
+/* 신부가 낸 촬영 설문 열기 — 아직 안 냈으면 누를 수 없는 회색 딱지로 둔다 */
+.sc-survey { display: inline-block; text-decoration: none; color: var(--ink); }
+.sc-survey.none { color: #a09890; background: #f6f4f1; cursor: default; }
+.sc-survey.none:hover { border-color: var(--line); color: #a09890; }
 
 .sc-add { margin-top: 12px; display: grid; gap: 10px; }
 .sc-add-btns { display: flex; flex-wrap: wrap; gap: 8px; }

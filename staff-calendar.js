@@ -180,6 +180,9 @@ function renderPanel() {
       </div>
       ${o.length ? `<div class="ss-opts">${o.map((x) => `<span class="ss-opt${x === '2인 촬영' ? ' two' : ''}">${esc(x)}</span>`).join('')}</div>` : ''}
       ${b.rep_designation ? '<div class="sc-item-b">촬영 : 대표지정</div>' : ''}
+      <div class="sc-item-btns">${b.has_survey
+        ? `<a class="btn-sm sc-survey" href="survey-view?b=${esc(b.booking_id)}" target="_blank" rel="noopener">📋 신부 설문 보기</a>`
+        : '<span class="btn-sm sc-survey none">신부 설문 아직 없음</span>'}</div>
     </div>`;
   }).join('');
 
