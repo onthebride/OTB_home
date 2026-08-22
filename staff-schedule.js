@@ -19,7 +19,7 @@ const tel = (phone) => {
   if (!phone) return '';
   const dial = String(phone).replace(/[^0-9+]/g, '');
   if (!dial) return '';
-  return ` <a class="ss-tel" href="tel:${esc(dial)}">📞 ${esc(phone)}</a>`;
+  return ` <a class="ss-tel" href="tel:${esc(dial)}">${esc(phone)}</a>`;
 };
 
 const WD = ['일', '월', '화', '수', '목', '금', '토'];
