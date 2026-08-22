@@ -647,7 +647,10 @@ td .muted { color: var(--ink-soft); }
 .dl-open-d:hover { background: #faf4ea; }
 .dl-empty-hint { display: inline-block; margin-top: 10px; font-size: .82rem; color: var(--ink-soft); }
 
-.dl-datehdr { font-size: .8rem; font-weight: 700; color: var(--gold-deep); padding: 6px 2px 2px; margin-top: 6px; border-bottom: 1px solid var(--line); }
+/* 날짜가 바뀌는 자리를 확실히 띄운다 — 붙어 있어 어느 날 것인지 헷갈렸다 (대표 지적).
+   목록 자체가 gap 8px 이라 여기 margin-top 을 더해 한 칸 비는 것처럼 보이게 한다 */
+.dl-datehdr { font-size: .82rem; font-weight: 700; color: var(--gold-deep);
+  padding: 8px 2px 5px; margin-top: 22px; border-bottom: 1px solid var(--gold); }
 .dl-datehdr:first-child { margin-top: 0; }
 
 .chk-confirmed { font-size: .72rem; color: #fff; background: #2f7d4f; border-radius: 6px; padding: 2px 8px; font-weight: 600; }
