@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="survey.css?v=16e26445f9" />
   <link rel="stylesheet" href="guide.css?v=965c82c6d6" />
-  <link rel="stylesheet" href="staff-calendar.css?v=50184b74b2" />
+  <link rel="stylesheet" href="staff-calendar.css?v=050e22a0e4" />
 </head>
 <body>
   <header class="sv-header">
@@ -32,7 +32,9 @@
       <p>불러오는 중입니다…</p>
     </section>
 
-    <section class="sv-card" id="mainCard" hidden>
+    <!-- 제일 바깥 상자는 두지 않는다 (대표 요청) — 달력 판과 스케줄 카드가
+         바탕 위에 바로 떠 보이게. sv-card 는 다른 화면들이 함께 쓰므로 여기서만 벗긴다 -->
+    <section class="sv-card sc-bare" id="mainCard" hidden>
       <p class="sv-greet" id="greet"></p>
       <!-- 사용안내는 팝업으로. 처음 오면 저절로 뜨고, [그만 띄우기] 를 누르면
            인사말 옆 아이콘으로 접힌다. 아이콘을 누르면 다시 열린다 (대표 요청) -->

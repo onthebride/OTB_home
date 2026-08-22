@@ -1,4 +1,7 @@
 /* ===== 작가 개인 캘린더 ===== */
+/* 제일 바깥 상자를 벗긴다 (대표 요청). 상자 안에 상자가 겹치면 뜬 느낌이 죽는다.
+   .sv-card 는 설문·배정안내 화면도 함께 쓰므로 이 화면에서만 벗긴다 */
+.sv-card.sc-bare { background: none; border: none; box-shadow: none; padding: 0; }
 /* 상단 인사말 — 가운데로, 아래 선으로 달력과 나눈다 */
 .sv-greet { text-align: center; font-size: .95rem; padding-bottom: 14px;
   border-bottom: 1px solid var(--line); }
@@ -73,14 +76,15 @@
 .sc-help p:last-child { margin-bottom: 0; }
 .sc-help b { color: var(--ink); font-weight: 600; }
 
-/* 날짜를 누르면 뜨는 스케줄 칸 — 달력 판과 같은 방식으로 띄운다 (대표 요청).
-   위에 선을 긋던 것을 걷어내고 판으로 만든다 */
-.sc-panel { margin-top: 18px; background: #fbf8f4; border: none; border-radius: 16px;
-  padding: 18px 16px 16px;
-  box-shadow: 0 12px 28px -10px rgba(43,39,36,.20), 0 3px 8px -3px rgba(43,39,36,.10); }
-.sc-panel h3 { font-family: var(--kserif); font-size: 1.14rem; margin-bottom: 14px; letter-spacing: -.01em; }
-/* 안쪽 여백. 글자가 테두리에 붙어 답답하다는 대표 지적으로 좌우를 넓혔다 */
-.sc-item { border: 1px solid var(--line); border-radius: 8px; padding: 13px 16px; margin-bottom: 8px; background: #fff; }
+/* 날짜를 누르면 뜨는 자리. 여기는 상자로 두르지 않는다 —
+   뜨는 건 그 안의 카드 하나하나다 (대표 요청) */
+.sc-panel { margin-top: 20px; }
+.sc-panel h3 { font-family: var(--kserif); font-size: 1.14rem; margin-bottom: 14px; letter-spacing: -.01em;
+  padding-left: 2px; }
+/* 스케줄 카드 — 이것들이 바탕 위에 뜬다 (대표 요청).
+   테두리 대신 그림자로. 안쪽 여백은 글자가 붙지 않게 넉넉히 */
+.sc-item { border: none; border-radius: 12px; padding: 15px 17px; margin-bottom: 10px; background: #fff;
+  box-shadow: 0 10px 24px -12px rgba(43,39,36,.22), 0 2px 6px -2px rgba(43,39,36,.10); }
 .sc-item.bk { border-left: 3px solid var(--ink); }
 .sc-item.busy { border-left: 3px solid #9dc3e0; }
 .sc-item.off { border-left: 3px solid #e6b0a6; background: #fdf5f4; }
