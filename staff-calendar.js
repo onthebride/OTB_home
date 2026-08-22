@@ -14,6 +14,15 @@ const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const esc = (s) => (s == null ? '' : String(s)).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const show = (el) => ['errCard', 'loadCard', 'mainCard'].forEach((id) => ($(id).hidden = $(id) !== el));
 
+// 전화번호는 눌러서 바로 걸리게 (대표 요청). 거는 번호에서는 하이픈을 빼고,
+// 보이는 글자는 받은 그대로 둔다. 번호가 없으면 아무것도 안 붙인다.
+const tel = (phone) => {
+  if (!phone) return '';
+  const dial = String(phone).replace(/[^0-9+]/g, '');
+  if (!dial) return '';
+  return ` <a class="sc-tel" href="tel:${esc(dial)}">📞 ${esc(phone)}</a>`;
+};
+
 const pad = (n) => String(n).padStart(2, '0');
 const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const dayKey = (v) => String(v).slice(0, 10);
@@ -175,8 +184,8 @@ function renderPanel() {
       <div class="sc-item-h"><b>${esc(kTime(b.wedding_time) || '시간 미정')}</b> · ${esc(b.wedding_venue || '-')}
         <span class="sc-role ${b.role === '서브' ? 'sub' : 'main'}">${esc(b.role)}</span></div>
       <div class="sc-item-b">
-        <span class="sc-who">신랑 ${esc(b.groom_name || '-')}${b.groom_phone ? ' 📞 ' + esc(b.groom_phone) : ''}</span>
-        <span class="sc-who">신부 ${esc(b.bride_name || '-')}${b.bride_phone ? ' 📞 ' + esc(b.bride_phone) : ''}</span>
+        <span class="sc-who">신랑 ${esc(b.groom_name || '-')}${tel(b.groom_phone)}</span>
+        <span class="sc-who">신부 ${esc(b.bride_name || '-')}${tel(b.bride_phone)}</span>
       </div>
       ${o.length ? `<div class="ss-opts">${o.map((x) => `<span class="ss-opt${x === '2인 촬영' ? ' two' : ''}">${esc(x)}</span>`).join('')}</div>` : ''}
       ${b.rep_designation ? '<div class="sc-item-b">촬영 : 대표지정</div>' : ''}

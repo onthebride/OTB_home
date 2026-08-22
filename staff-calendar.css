@@ -59,6 +59,9 @@
 .sc-mine { font-size: .72rem; color: var(--ink-soft); margin-left: auto; }
 .sc-item .btn-sm { margin-top: 8px; }
 .sc-hint { font-size: .8rem; color: var(--gold-deep); margin: 6px 0 10px; }
+/* 눌러서 바로 거는 전화번호 — 손가락으로 짚기 쉽게 위아래를 조금 넓힌다 */
+.sc-tel { color: inherit; font-weight: 500; text-decoration: underline; text-underline-offset: 2px;
+  white-space: nowrap; padding: 2px 0; }
 /* 신부가 낸 촬영 설문 열기 — 아직 안 냈으면 누를 수 없는 회색 딱지로 둔다 */
 .sc-survey { display: inline-block; text-decoration: none; color: var(--ink); }
 .sc-survey.none { color: #a09890; background: #f6f4f1; cursor: default; }

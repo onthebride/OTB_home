@@ -13,6 +13,15 @@ const esc = (s) => (s == null ? '' : String(s)).replace(/[&<>"']/g, (c) => ({ '&
 
 const show = (el) => ['errCard', 'loadCard', 'mainCard'].forEach((id) => ($(id).hidden = $(id) !== el));
 
+// 전화번호는 눌러서 바로 걸리게 (대표 요청). 거는 번호에서는 하이픈을 빼고,
+// 보이는 글자는 받은 그대로 둔다. 번호가 없으면 아무것도 안 붙인다.
+const tel = (phone) => {
+  if (!phone) return '';
+  const dial = String(phone).replace(/[^0-9+]/g, '');
+  if (!dial) return '';
+  return ` <a class="ss-tel" href="tel:${esc(dial)}">📞 ${esc(phone)}</a>`;
+};
+
 const WD = ['일', '월', '화', '수', '목', '금', '토'];
 function fmt(d) {
   if (!d) return '-';
@@ -50,12 +59,12 @@ function card(w) {
         <div class="ss-row"><b>예식장</b> : ${esc(w.wedding_venue || '-')}</div>
       </div>
       <div class="ss-grp">
-        <div class="ss-row"><b>신랑</b> : ${esc(w.groom_name || '-')}${w.groom_phone ? ' 📞 ' + esc(w.groom_phone) : ''}</div>
-        <div class="ss-row"><b>신부</b> : ${esc(w.bride_name || '-')}${w.bride_phone ? ' 📞 ' + esc(w.bride_phone) : ''}</div>
+        <div class="ss-row"><b>신랑</b> : ${esc(w.groom_name || '-')}${tel(w.groom_phone)}</div>
+        <div class="ss-row"><b>신부</b> : ${esc(w.bride_name || '-')}${tel(w.bride_phone)}</div>
       </div>
       ${o.length ? `<div class="ss-grp"><div class="ss-row"><b>옵션</b></div>
         <div class="ss-opts">${o.map((x) => `<span class="ss-opt${x === '2인 촬영' ? ' two' : ''}">${esc(x)}</span>`).join('')}</div></div>` : ''}
-      ${w.sub_name ? `<div class="ss-grp"><div class="ss-row"><b>서브작가</b> : ${esc(w.sub_name)}${w.sub_phone ? ' 📞 ' + esc(w.sub_phone) : ''}</div></div>` : ''}
+      ${w.sub_name ? `<div class="ss-grp"><div class="ss-row"><b>서브작가</b> : ${esc(w.sub_name)}${tel(w.sub_phone)}</div></div>` : ''}
       ${w.rep_designation ? '<div class="ss-grp"><div class="ss-row"><b>촬영</b> : 대표지정</div></div>' : ''}
       <div class="ss-grp ss-survey-row">${w.has_survey
         ? `<a class="ss-survey" href="survey-view?b=${esc(w.booking_id)}" target="_blank" rel="noopener">📋 신부 설문 보기</a>`
