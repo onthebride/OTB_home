@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="admin.css?v=67b17d8a3c" />
+  <link rel="stylesheet" href="admin.css?v=48d9ba904c" />
 </head>
 <body>
 
@@ -119,11 +119,16 @@
       <div id="tab-calendar" hidden>
         <div class="dash-card dc-card">
           <div class="dash-card-head"><h3>🔎 날짜 조회 · 배정 가능 작가</h3></div>
+          <!-- 문의 글을 그대로 붙여넣으면 아래 날짜 칸이 채워진다 -->
+          <div class="dc-paste-row">
+            <input type="text" id="dcPaste" placeholder="문의 내용을 붙여넣으세요 — 예) 10월 3일 오후 2시 예식인데 가능할까요?" />
+            <span class="dc-read" id="dcRead"></span>
+          </div>
           <div class="dc-form">
             <input type="date" id="dcDate" />
             <input type="time" id="dcTime" />
             <button class="btn-sm dl-save" id="dcGo">확인</button>
-            <span class="dc-hint">문의 온 날짜를 넣어보세요</span>
+            <span class="dc-hint">직접 골라도 됩니다</span>
           </div>
           <div id="dcResult"></div>
         </div>
@@ -301,6 +306,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=f691b71dda"></script>
+  <script src="admin.js?v=c94b6c3860"></script>
 </body>
 </html>

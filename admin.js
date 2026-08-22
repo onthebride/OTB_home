@@ -2047,6 +2047,67 @@ function dayCheckHtml(r) {
          <button type="button" class="btn-sm dc-more" id="dcMore">나머지 ${list.length - 3}명 더보기</button>` : '')
     + (notes.length ? `<p class="dc-note">${notes.map(esc).join('<br />')}</p>` : '');
 }
+/* ── 문의 글에서 날짜·시간 읽어내기 (대표 요청) ──────────────
+   카톡으로 온 문의를 그대로 붙여넣으면 날짜 칸을 채워준다.
+   AI 를 부르지 않고 규칙으로 읽는다 — 즉시 나오고, 돈이 안 들고, 늘 같은 답을 준다.
+   대신 «이렇게 읽었습니다» 를 화면에 보여줘서 대표가 눈으로 확인하게 한다. */
+function dcParse(text, today) {
+  const now = today || new Date();
+  let s = String(text || '');
+  // 전화번호·금액·장수를 먼저 걷어낸다 — 010-3931-1365 를 날짜로 읽으면 안 된다
+  s = s.replace(/01[016-9][-. ]?\d{3,4}[-. ]?\d{4}/g, ' ')
+       .replace(/\d+\s*만\s*원|\d+\s*원|\d+\s*장|\d+\s*명|\d+\s*인/g, ' ');
+
+  let y = null, mo = null, d = null;
+  const pick = (yy, mm, dd) => { y = yy; mo = mm; d = dd; };
+  let m;
+  // 2026-10-03 · 2026.10.3 · 2026/10/03 · 2026년 10월 3일
+  if ((m = s.match(/(20\d{2})\s*[-./년]\s*(\d{1,2})\s*[-./월]\s*(\d{1,2})/))) pick(+m[1], +m[2], +m[3]);
+  // 26.10.03 · 26년 10월 3일
+  else if ((m = s.match(/(?:^|[^\d])(\d{2})\s*[-./년]\s*(\d{1,2})\s*[-./월]\s*(\d{1,2})(?!\d)/))) pick(2000 + +m[1], +m[2], +m[3]);
+  // 20261003 · 261003
+  else if ((m = s.match(/(?:^|[^\d])(20\d{2})(\d{2})(\d{2})(?!\d)/))) pick(+m[1], +m[2], +m[3]);
+  else if ((m = s.match(/(?:^|[^\d])(\d{2})(\d{2})(\d{2})(?!\d)/))) pick(2000 + +m[1], +m[2], +m[3]);
+  // 10월 3일 · 10/3 · 10.3  (연도는 아래서 정한다)
+  else if ((m = s.match(/(\d{1,2})\s*월\s*(\d{1,2})\s*일?/))) pick(null, +m[1], +m[2]);
+  else if ((m = s.match(/(?:^|[^\d])(\d{1,2})\s*[/.]\s*(\d{1,2})(?!\d)/))) pick(null, +m[1], +m[2]);
+  // 오늘·내일·모레
+  else if (/글피/.test(s)) { const t = new Date(now); t.setDate(t.getDate() + 3); pick(t.getFullYear(), t.getMonth() + 1, t.getDate()); }
+  else if (/모레/.test(s)) { const t = new Date(now); t.setDate(t.getDate() + 2); pick(t.getFullYear(), t.getMonth() + 1, t.getDate()); }
+  else if (/내일/.test(s)) { const t = new Date(now); t.setDate(t.getDate() + 1); pick(t.getFullYear(), t.getMonth() + 1, t.getDate()); }
+  else if (/오늘/.test(s)) pick(now.getFullYear(), now.getMonth() + 1, now.getDate());
+
+  if (mo == null || mo < 1 || mo > 12 || d == null || d < 1 || d > 31) return { date: null, time: null };
+  // 연도를 안 적었으면 «앞으로 오는 그날» 로 — 예식 문의는 지난 날을 묻지 않는다
+  if (y == null) {
+    y = now.getFullYear();
+    const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (new Date(y, mo - 1, d) < today0) y += 1;
+  }
+  const dt = new Date(y, mo - 1, d);
+  if (dt.getMonth() !== mo - 1 || dt.getDate() !== d) return { date: null, time: null };  // 2월 30일 같은 것
+  const date = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+  /* ── 시간 ── */
+  let hh = null, mi = 0, ampm = null;
+  if (/오전|아침/.test(s)) ampm = 'am';
+  else if (/오후|저녁|낮/.test(s)) ampm = 'pm';
+  // 날짜로 이미 쓴 부분은 시간 후보에서 뺀다
+  const rest = m ? s.replace(m[0], ' ') : s;
+  let t2;
+  if ((t2 = rest.match(/(\d{1,2})\s*:\s*(\d{2})/))) { hh = +t2[1]; mi = +t2[2]; }
+  else if ((t2 = rest.match(/(\d{1,2})\s*시\s*(?:(\d{1,2})\s*분|(반))?/))) {
+    hh = +t2[1]; mi = t2[3] ? 30 : (t2[2] ? +t2[2] : 0);
+  }
+  if (hh == null) return { date, time: null };
+  if (ampm === 'pm' && hh < 12) hh += 12;
+  else if (ampm === 'am' && hh === 12) hh = 0;
+  // 오전·오후를 안 적은 한 자리 시각은 낮으로 본다 — 예식은 새벽에 없다
+  else if (ampm == null && hh >= 1 && hh <= 7) hh += 12;
+  if (hh > 23 || mi > 59) return { date, time: null };
+  return { date, time: `${String(hh).padStart(2, '0')}:${String(mi).padStart(2, '0')}` };
+}
+
 async function dayCheck() {
   const box = $('dcResult');
   const d = $('dcDate') ? $('dcDate').value : '';
@@ -2063,8 +2124,35 @@ async function dayCheck() {
     more.textContent = rest.hidden ? `나머지 ${rest.children.length}명 더보기` : '접기';
   });
 }
+// 붙여넣은 글에서 날짜를 읽어 칸을 채우고 바로 조회한다
+function dcFromPaste() {
+  const inp = $('dcPaste'), read = $('dcRead');
+  if (!inp || !read) return;
+  const txt = inp.value.trim();
+  if (!txt) { read.textContent = ''; read.className = 'dc-read'; return; }
+  const r = dcParse(txt);
+  if (!r.date) {
+    read.textContent = '날짜를 못 찾았어요. 아래에서 직접 골라주세요.';
+    read.className = 'dc-read miss';
+    return;
+  }
+  $('dcDate').value = r.date;
+  $('dcTime').value = r.time || '';
+  const d = new Date(r.date + 'T00:00:00');
+  read.textContent = `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${WD[d.getDay()]})`
+    + (r.time ? ' ' + kTimeShort(r.time) : ' · 시간 없음') + ' 로 읽었어요';
+  read.className = 'dc-read ok';
+  dayCheck();
+}
+
 if ($('dcGo')) {
   $('dcGo').addEventListener('click', dayCheck);
+  if ($('dcPaste')) {
+    // 붙여넣기는 값이 들어온 다음에 읽어야 한다
+    $('dcPaste').addEventListener('paste', () => setTimeout(dcFromPaste, 0));
+    $('dcPaste').addEventListener('input', dcFromPaste);
+    $('dcPaste').addEventListener('keydown', (e) => { if (e.key === 'Enter') dcFromPaste(); });
+  }
   ['dcDate', 'dcTime'].forEach((id) => {
     const el = $(id);
     if (!el) return;

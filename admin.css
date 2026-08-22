@@ -887,6 +887,15 @@ td .muted { color: var(--ink-soft); }
 #schedAllowConfWrap.is-on .sched-lock-txt { color: #b8860b; font-weight: 600; }
 
 /* 날짜 조회 · 배정 가능 작가 */
+/* 문의 글 붙여넣는 칸 — 여기에 넣으면 아래 날짜 칸이 저절로 채워진다 (대표 요청) */
+.dc-paste-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 10px; }
+.dc-paste-row input { flex: 1 1 260px; min-width: 0; border: 1px solid var(--line); border-radius: 8px;
+  padding: 9px 12px; font-family: inherit; font-size: .9rem; }
+.dc-paste-row input:focus { outline: none; border-color: var(--gold); }
+.dc-read { font-size: .82rem; color: var(--ink-soft); }
+.dc-read.ok { color: var(--gold-deep); font-weight: 600; }
+.dc-read.miss { color: #b5462f; }
+
 .dc-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
 .dc-form input { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-family: inherit; font-size: .9rem; }
 .dc-hint { font-size: .8rem; color: var(--ink-soft); }
