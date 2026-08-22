@@ -184,8 +184,8 @@ function renderPanel() {
       <div class="sc-item-h"><b>${esc(kTime(b.wedding_time) || '시간 미정')}</b> · ${esc(b.wedding_venue || '-')}
         <span class="sc-role ${b.role === '서브' ? 'sub' : 'main'}">${esc(b.role)}</span></div>
       <div class="sc-item-b">
-        <span class="sc-who">신랑 ${esc(b.groom_name || '-')}${tel(b.groom_phone)}</span>
-        <span class="sc-who">신부 ${esc(b.bride_name || '-')}${tel(b.bride_phone)}</span>
+        <span class="sc-who"><span class="sc-who-l">신랑 ${esc(b.groom_name || '-')}</span>${tel(b.groom_phone)}</span>
+        <span class="sc-who"><span class="sc-who-l">신부 ${esc(b.bride_name || '-')}</span>${tel(b.bride_phone)}</span>
       </div>
       ${o.length ? `<div class="ss-opts">${o.map((x) => `<span class="ss-opt${x === '2인 촬영' ? ' two' : ''}">${esc(x)}</span>`).join('')}</div>` : ''}
       ${b.rep_designation ? '<div class="sc-item-b">촬영 : 대표지정</div>' : ''}

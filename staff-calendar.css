@@ -51,7 +51,11 @@
 .sc-item.off { border-left: 3px solid #e6b0a6; background: #fdf5f4; }
 .sc-item-h { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: .92rem; }
 .sc-item-b { font-size: .85rem; color: var(--ink-soft); margin-top: 4px; line-height: 1.6; }
-.sc-who { display: block; white-space: nowrap; }
+/* 신랑·신부 줄. 붙어 있어 읽기 답답했다(대표 지적) — 줄 사이를 띄우고
+   이름과 번호도 한 칸 벌린다. 이름 칸을 맞춰 번호가 세로로 정렬되게 */
+.sc-item-b .sc-who { display: flex; align-items: baseline; gap: 10px; white-space: nowrap; margin-top: 7px; }
+.sc-item-b .sc-who:first-child { margin-top: 6px; }
+.sc-who-l { flex: 0 0 auto; min-width: 74px; color: var(--ink); }
 .sc-item .ss-opts { margin-top: 7px; }
 .sc-role { font-size: .72rem; font-weight: 700; border-radius: 999px; padding: 2px 9px; margin-left: auto; }
 .sc-role.main { background: var(--ink); color: #fff; }
@@ -186,6 +190,8 @@
   resize: none; overflow: hidden; line-height: 1.5; }
 .sc-memo { color: #6b635c; font-size: .8rem; white-space: pre-wrap; }
 .sc-item-btns { display: flex; gap: 6px; }
+/* 예식 칸의 [설문 보기] 는 오른쪽 아래로 (대표 요청) */
+.sc-item.bk .sc-item-btns { justify-content: flex-end; margin-top: 2px; }
 /* 체크 줄도 다른 줄과 같은 자리에 — 전엔 체크가 가운데 떠 있고 글자가 오른쪽 끝에 붙었다 */
 .sc-check input { width: 18px; height: 18px; justify-self: start; margin: 2px 0; }
 /* 라벨 칸(68px) + 사이 여백(8px) 만큼 들여써서 입력칸 아래에 붙는다 */
