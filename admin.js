@@ -661,8 +661,9 @@ function renderChecks(b, checks) {
     if (!sid) return '';
     const name = staffName(sid);
     const c = byName[name];
-    const ok = c && c.attend && c.arrival && c.options;
-    const items = c ? `참석 ${c.attend ? '✓' : '✕'} · 도착 ${c.arrival ? '✓' : '✕'} · 옵션 ${c.options ? '✓' : '✕'}` : '';
+    // 완료 판정은 서버(check_done)가 준다 — 신부 설문이 없는 예식은 설문 칸을 안 따진다
+    const ok = c && (c.done != null ? c.done : (c.attend && c.arrival && c.options));
+    const items = c ? `참석 ${c.attend ? '✓' : '✕'} · 도착 ${c.arrival ? '✓' : '✕'} · 옵션 ${c.options ? '✓' : '✕'} · 설문 ${c.survey ? '✓' : '✕'}` : '';
     const st = c ? (ok ? '✔ 확인완료' : '△ 일부확인') : '미확인';
     return `<div class="chk-line ${ok ? 'ok' : c ? 'partial' : 'none'}">
       <div class="chk-head">
