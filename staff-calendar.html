@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="survey.css?v=16e26445f9" />
   <link rel="stylesheet" href="guide.css?v=965c82c6d6" />
-  <link rel="stylesheet" href="staff-calendar.css?v=c5f569f165" />
+  <link rel="stylesheet" href="staff-calendar.css?v=1b9186f591" />
 </head>
 <body>
   <header class="sv-header">
@@ -35,6 +35,8 @@
     <section class="sv-card" id="mainCard" hidden>
       <p class="sv-greet" id="greet"></p>
       <div class="sc-cal" id="calWrap">
+       <!-- 달력만 한 판으로 묶어 카드 위에 살짝 떠 보이게 (대표 요청) -->
+       <div class="sc-board">
         <div class="sc-nav">
           <button type="button" class="btn-nav" id="prevM">‹</button>
           <span id="monthLabel"></span>
@@ -54,6 +56,7 @@
           <span><i class="lg-pers"></i> 개인 일정</span>
           <span><i class="lg-off"></i> 촬영 불가</span>
         </div>
+       </div>
 
         <details class="sc-help-box" id="scHelp" open>
           <summary>사용안내</summary>
