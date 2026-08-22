@@ -20,7 +20,7 @@ const tel = (phone) => {
   if (!phone) return '';
   const dial = String(phone).replace(/[^0-9+]/g, '');
   if (!dial) return '';
-  return ` <a class="sc-tel" href="tel:${esc(dial)}">📞 ${esc(phone)}</a>`;
+  return ` <a class="sc-tel" href="tel:${esc(dial)}">${esc(phone)}</a>`;
 };
 
 const pad = (n) => String(n).padStart(2, '0');
