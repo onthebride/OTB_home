@@ -182,18 +182,21 @@ function renderPanel() {
 
   const bkHtml = bk.map((b) => {
     const o = opts(b);
+    // 설문 단추는 «맨 마지막 줄» 오른쪽 끝에 붙는다. 줄 하나를 혼자 차지하거나
+    // 옵션 줄만 아래에 남으면 동떨어져 보인다 (대표 지적)
+    const sv = b.has_survey
+      ? `<a class="btn-sm sc-survey" href="survey-view?b=${esc(b.booking_id)}&s=${esc(staffId)}" target="_blank" rel="noopener">설문 보기</a>`
+      : '<span class="btn-sm sc-survey none">설문 아직 없음</span>';
+    const last = b.rep_designation ? 'rep' : (o.length ? 'opt' : 'who');
     return `<div class="sc-item bk">
       <div class="sc-item-h"><b>${esc(kTime(b.wedding_time) || '시간 미정')}</b> · ${esc(b.wedding_venue || '-')}
         <span class="sc-role ${b.role === '서브' ? 'sub' : 'main'}">${esc(b.role)}</span></div>
       <div class="sc-item-b">
         <span class="sc-who"><span class="sc-who-l"><span class="sc-ptag g">신랑</span>${esc(b.groom_name || '-')}</span>${tel(b.groom_phone)}</span>
-        <span class="sc-who"><span class="sc-who-l"><span class="sc-ptag b">신부</span>${esc(b.bride_name || '-')}</span>${tel(b.bride_phone)}
-          ${b.has_survey
-            ? `<a class="btn-sm sc-survey" href="survey-view?b=${esc(b.booking_id)}&s=${esc(staffId)}" target="_blank" rel="noopener">설문 보기</a>`
-            : '<span class="btn-sm sc-survey none">설문 아직 없음</span>'}</span>
+        <span class="sc-who"><span class="sc-who-l"><span class="sc-ptag b">신부</span>${esc(b.bride_name || '-')}</span>${tel(b.bride_phone)}${last === 'who' ? sv : ''}</span>
       </div>
-      ${o.length ? `<div class="ss-opts">${o.map((x) => `<span class="ss-opt${x === '2인 촬영' ? ' two' : ''}">${esc(x)}</span>`).join('')}</div>` : ''}
-      ${b.rep_designation ? '<div class="sc-item-b">촬영 : 대표지정</div>' : ''}
+      ${o.length ? `<div class="ss-opts sc-lastrow">${o.map((x) => `<span class="ss-opt${x === '2인 촬영' ? ' two' : ''}">${esc(x)}</span>`).join('')}${last === 'opt' ? sv : ''}</div>` : ''}
+      ${b.rep_designation ? `<div class="sc-item-b sc-lastrow">촬영 : 대표지정${sv}</div>` : ''}
     </div>`;
   }).join('');
 

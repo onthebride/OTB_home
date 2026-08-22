@@ -79,9 +79,12 @@
 .sc-item-b .sc-who { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 10px;
   white-space: nowrap; margin-top: 7px; }
 .sc-item-b .sc-who:first-child { margin-top: 6px; }
-/* 설문 단추는 마지막 줄(신부) 오른쪽 끝에. 따로 한 줄을 차지하니 동떨어져 보였다 (대표 지적).
+/* 설문 단추는 «맨 마지막 줄» 오른쪽 끝에 붙는다 (대표 지적).
+   옵션이 있으면 옵션 줄에, 대표지정이 있으면 그 줄에, 없으면 신부 줄에.
    칸이 좁으면 그때만 아래로 내려간다 */
-.sc-item-b .sc-who .sc-survey { margin-left: auto; }
+.sc-item-b .sc-who .sc-survey,
+.sc-lastrow .sc-survey { margin-left: auto; }
+.sc-lastrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 /* 이름은 굵게 (대표 요청). 딱지는 제 굵기를 따로 쥐고 있어 영향받지 않는다 */
 .sc-who-l { flex: 0 0 auto; min-width: 84px; color: var(--ink); font-weight: 600;
   display: flex; align-items: center; gap: 6px; }
