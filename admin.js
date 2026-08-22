@@ -1663,12 +1663,16 @@ function renderDashboard() {
       const d = wDate(b);
       const dleft = Math.round((d - today) / 86400000);
       const dtag = dleft === 0 ? '오늘' : 'D-' + dleft;
-      const asgBadge = b.assignee_id
-        ? `<span class="dl-asg" style="color:${staffColor(b.assignee_id)}">● ${esc(staffName(b.assignee_id))}</span>`
-        : '<span class="dl-asg none">미배정</span>';
       const mainSent = !!b.check_sent_at;
       const subSent = !!b.sub_check_sent_at;
       const needsSub = b.photographer === '2인 촬영' && !!b.sub_assignee_id;
+      // 2인 촬영이면 서브작가도 함께 보여준다 (대표 요청) — 누가 같이 가는지 목록에서 바로 보이게
+      const asgBadge = b.assignee_id
+        ? `<span class="dl-asgs">
+             <span class="dl-asg" style="color:${staffColor(b.assignee_id)}">● ${esc(staffName(b.assignee_id))}</span>
+             ${needsSub ? `<span class="dl-asg sub" style="color:${staffColor(b.sub_assignee_id)}">＋ ${esc(staffName(b.sub_assignee_id))}</span>` : ''}
+           </span>`
+        : '<span class="dl-asg none">미배정</span>';
       const conf = confMap[b.id];
       const mainOk = !!(conf && conf.main_ok);
       const subOk = !!(conf && conf.sub_ok);

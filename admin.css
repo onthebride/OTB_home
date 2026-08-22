@@ -503,9 +503,14 @@ td .muted { color: var(--ink-soft); }
 .atk-copy:hover { border-color: var(--gold); background: #faf4ea; }
 
 /* 상세 상단 작가 배정 (컴팩트) */
-.md-assignee { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; background: #faf7f2; border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; }
+/* 라벨 한 칸 + 고르는 칸 한 칸으로 줄을 맞춘다.
+   flex + wrap 이던 때는 메인 select 가 늘어나면서 「서브작가」 라벨만 첫 줄 끝에 남고
+   그 select 만 다음 줄로 넘어가 어긋났다 (대표 화면에서 확인) */
+.md-assignee { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center;
+  gap: 8px 10px; background: #faf7f2; border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px 12px; margin-bottom: 14px; }
 .md-asg-label { font-size: .8rem; color: var(--ink-soft); font-weight: 600; white-space: nowrap; }
-.md-sel { border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font-size: .85rem; background: #fff; color: var(--ink); }
+.md-sel { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font-size: .85rem; background: #fff; color: var(--ink); }
 .md-sel:focus { outline: none; border-color: var(--gold); }
 
 /* 입금 토글 */
@@ -610,6 +615,9 @@ td .muted { color: var(--ink-soft); }
 .dl-toprow { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .dl-asg { flex: none; font-size: .8rem; font-weight: 700; white-space: nowrap; }
 .dl-asg.none { color: var(--ink-soft); font-weight: 500; }
+/* 2인 촬영이면 메인 아래에 서브를 한 줄 더. 좁으면 줄이 바뀌게 둔다 */
+.dl-asgs { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.dl-asg.sub { font-weight: 600; opacity: .85; }
 #listUpcoming .dl-actions { flex-direction: column; align-items: stretch; gap: 8px; }
 #listUpcoming .chk-rolerow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 #listUpcoming .dl-actions .sv-copy { align-self: flex-end; margin-left: 0; }
