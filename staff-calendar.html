@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="survey.css?v=16e26445f9" />
   <link rel="stylesheet" href="guide.css?v=965c82c6d6" />
-  <link rel="stylesheet" href="staff-calendar.css?v=1b9186f591" />
+  <link rel="stylesheet" href="staff-calendar.css?v=71b1a609e7" />
 </head>
 <body>
   <header class="sv-header">
@@ -34,6 +34,25 @@
 
     <section class="sv-card" id="mainCard" hidden>
       <p class="sv-greet" id="greet"></p>
+      <!-- 사용안내는 팝업으로. 처음 오면 저절로 뜨고, [그만 띄우기] 를 누르면
+           인사말 옆 아이콘으로 접힌다. 아이콘을 누르면 다시 열린다 (대표 요청) -->
+      <div class="sc-modal" id="helpModal" hidden>
+        <div class="sc-modal-box sc-help-modal">
+          <button type="button" class="sc-modal-x" id="helpX" aria-label="닫기">&times;</button>
+          <h3>캘린더 사용안내</h3>
+          <div class="sc-help">
+            <p>촬영이 <b>불가능한 날</b>은 날짜를 눌러 <b>[촬영불가]</b>로 표시해 주세요.</p>
+            <p>다른 촬영이 있는 날은 <b>[다른촬영등록]</b>에 시간과 장소를 적어주시면, 저희 예식과 4시간 이상 벌어지면 저희 촬영도 가능한 날로 등록됩니다.</p>
+            <p>개인 일정은 <b>[개인일정등록]</b>에 적어두시면 달력에서 함께 보실 수 있습니다.</p>
+            <p><b>개인 일정은 대표가 볼 수 없습니다</b> 「개인 일정」이라고만 보이고, 그날은 촬영 불가로 보아 배정에서 빠집니다.</p>
+            <p>여러 날도 한 번에 넣을 수 있습니다.</p>
+          </div>
+          <div class="sc-help-acts">
+            <button type="button" class="btn-sm" id="helpStop">그만 띄우기</button>
+            <button type="button" class="btn-sm primary" id="helpClose">닫기</button>
+          </div>
+        </div>
+      </div>
       <div class="sc-cal" id="calWrap">
        <!-- 달력만 한 판으로 묶어 카드 위에 살짝 떠 보이게 (대표 요청) -->
        <div class="sc-board">
@@ -58,16 +77,6 @@
         </div>
        </div>
 
-        <details class="sc-help-box" id="scHelp" open>
-          <summary>사용안내</summary>
-          <div class="sc-help">
-            <p>촬영이 <b>불가능한 날</b>은 날짜를 눌러 <b>[촬영불가]</b>로 표시해 주세요.</p>
-            <p>다른 촬영이 있는 날은 <b>[다른촬영등록]</b>에 시간과 장소를 적어주시면, 저희 예식과 4시간 이상 벌어지면 저희 촬영도 가능한 날로 등록됩니다.</p>
-            <p>개인 일정은 <b>[개인일정등록]</b>에 적어두시면 달력에서 함께 보실 수 있습니다.</p>
-            <p><b>개인 일정은 대표가 볼 수 없습니다</b> 「개인 일정」이라고만 보이고, 그날은 촬영 불가로 보아 배정에서 빠집니다.</p>
-            <p>여러 날도 한 번에 넣을 수 있습니다.</p>
-          </div>
-        </details>
       </div>
 
       <div id="dayPanel" hidden></div>
@@ -88,6 +97,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="staff-calendar.js?v=0d1d797c45"></script>
+  <script src="staff-calendar.js?v=0420e8c0c3"></script>
 </body>
 </html>

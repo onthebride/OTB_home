@@ -265,11 +265,20 @@
 .sc-until-h { display: none; }
 
 /* 사용안내 — 처음엔 펼쳐두고, 접으면 그 기기에서 계속 접혀 있다 */
-.sc-help-box { margin: 18px 0 0; border-top: 1px solid var(--line); padding-top: 12px; }
-.sc-help-box > summary { cursor: pointer; list-style: none; font-size: .82rem; font-weight: 600;
-  color: var(--ink-soft); padding: 2px 0; user-select: none; }
-.sc-help-box > summary::-webkit-details-marker { display: none; }
-.sc-help-box > summary::before { content: '▾ '; font-size: .8em; }
-.sc-help-box:not([open]) > summary::before { content: '▸ '; }
-.sc-help-box > summary:hover { color: var(--ink); }
-.sc-help-box .sc-help { margin-top: 8px; }
+/* 사용안내 팝업 (대표 요청) — 인사말 옆 ? 아이콘으로 열고 닫는다.
+ * 전에는 달력 아래 접었다 펴는 칸이었다 */
+.sc-help-ic { margin-left: 8px; width: 21px; height: 21px; border-radius: 50%;
+  border: 1px solid var(--line); background: #fff; color: var(--ink-soft);
+  font-family: var(--sans); font-size: .74rem; font-weight: 700; line-height: 1;
+  cursor: pointer; vertical-align: 1px; padding: 0; }
+.sc-help-ic:hover { border-color: var(--gold); color: var(--gold-deep); }
+/* 글이 길어 작은 폰에서 넘칠 수 있다 — 상자 안에서만 굴러가게 */
+.sc-help-modal { position: relative; max-width: 400px; text-align: left;
+  max-height: calc(100vh - 60px); overflow-y: auto; }
+.sc-help-modal h3 { margin-bottom: 12px; padding-right: 28px; }
+.sc-help-modal .sc-help { font-size: .82rem; line-height: 1.75; }
+.sc-help-modal .sc-help p { margin-bottom: 1em; }
+.sc-modal-x { position: absolute; top: 10px; right: 12px; width: 30px; height: 30px;
+  border: none; background: none; font-size: 1.5rem; line-height: 1; color: var(--ink-soft); cursor: pointer; }
+.sc-modal-x:hover { color: var(--ink); }
+.sc-help-acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }

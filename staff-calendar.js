@@ -71,7 +71,9 @@ async function load() {
   });
   if (error || !res) { show($('errCard')); return; }
   data = { bookings: res.bookings || [], busy: res.busy || [] };
-  $('greet').innerHTML = `<b>${esc(res.staff_name || '')}</b> 작가님의 캘린더`;
+  $('greet').innerHTML = `<b>${esc(res.staff_name || '')}</b> 작가님의 캘린더`
+    + '<button type="button" class="sc-help-ic" id="helpIc" title="사용안내" aria-label="사용안내">?</button>';
+  helpInit();
   render();
   show($('mainCard'));
 }
@@ -464,13 +466,27 @@ $('nextM').addEventListener('click', () => goMonth(1));
 
 load();
 
-// 사용안내는 처음엔 펼쳐 둔다. 한 번 접으면 그 기기에서는 계속 접혀 있다.
-(function helpFold() {
-  const el = $('scHelp');
-  if (!el) return;
-  const KEY = 'otb_sc_help';
-  try { if (localStorage.getItem(KEY) === 'shut') el.open = false; } catch (e) { /* 저장이 막힌 기기 */ }
-  el.addEventListener('toggle', () => {
-    try { localStorage.setItem(KEY, el.open ? 'open' : 'shut'); } catch (e) { /* 무시 */ }
+/* 사용안내 팝업 (대표 요청)
+   · 처음 오면 저절로 뜬다. 닫아도 다음에 또 뜬다 — 작가가 규칙을 알아야 해서
+   · [그만 띄우기] 를 누른 기기에서만 저절로 뜨지 않는다
+   · 어느 경우든 인사말 옆 ? 아이콘을 누르면 다시 열린다
+   저장이 막힌 기기(사파리 비공개 모드 등)에서도 화면은 그대로 돌아가야 한다 */
+const HELP_KEY = 'otb_sc_help';
+const helpMuted = () => { try { return localStorage.getItem(HELP_KEY) === 'shut'; } catch (e) { return false; } };
+
+function helpInit() {
+  const modal = $('helpModal'), ic = $('helpIc');
+  if (!modal || !ic || modal.dataset.bound) return;
+  modal.dataset.bound = '1';
+  const open = () => { modal.hidden = false; };
+  const close = () => { modal.hidden = true; };
+  ic.addEventListener('click', open);
+  $('helpClose').addEventListener('click', close);
+  $('helpX').addEventListener('click', close);
+  $('helpStop').addEventListener('click', () => {
+    try { localStorage.setItem(HELP_KEY, 'shut'); } catch (e) { /* 저장이 막힌 기기 */ }
+    close();
   });
-})();
+  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+  if (!helpMuted()) open();
+}
