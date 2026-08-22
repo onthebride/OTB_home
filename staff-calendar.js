@@ -47,8 +47,12 @@ const mdy = (s) => { const [, m, d] = String(s).slice(0, 10).split('-'); return 
 const spanText = (x) => (x.group_id && x.g_n > 1 ? mdy(x.g_from) + '~' + mdy(x.g_to) + ' (' + x.g_n + '일)' : '');
 
 // 달력 한 칸에 들어갈 짧은 이름. 좁으니 제목이 있으면 제목만.
-const cellTag = (x) => (x.title ? x.title
-  : (x.kind === 'personal' ? '개인' : (x.all_day ? '종일' : kTime(x.at_time))));
+// 달력 칸에 넣을 짧은 글. 제목이 길면 다섯 자에서 자른다 (대표 요청) —
+// 칸은 좁은데 제목은 얼마든지 길어질 수 있다. 전체 제목은 날짜를 눌러 열면 보인다
+const cellTag = (x) => {
+  if (x.title) return x.title.length > 5 ? x.title.slice(0, 5) + '…' : x.title;
+  return x.kind === 'personal' ? '개인' : (x.all_day ? '종일' : kTime(x.at_time));
+};
 let slideDir = '';                   // 달을 넘긴 방향(넘어온 티가 나게 살짝 밀어 넣는다)
 let multi = false;                   // 여러 날 고르는 중
 let picked = new Set();              // 고른 날짜들 (yyyy-mm-dd)

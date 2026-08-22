@@ -39,8 +39,10 @@
 /* ── 달력 칸 ───────────────────────────────────────────────
    칸마다 테두리를 두르면 표처럼 보인다. 바탕(크림) 위에 흰 칸을 얹고
    테두리는 아주 옅게만 남긴다. 오늘·고른 날은 색으로 알린다 */
-.sc-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
-.sc-cell { min-height: 66px; border: 1px solid #efe8de; border-radius: 10px; background: #fff;
+/* minmax(0, 1fr) 이어야 한다. 그냥 1fr 은 minmax(auto, 1fr) 이라
+   칸 안에 긴 글(개인 일정 제목)이 들어오면 그 칸만 늘어나 달력이 어긋난다 (대표 화면에서 확인) */
+.sc-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+.sc-cell { min-height: 66px; min-width: 0; border: 1px solid #efe8de; border-radius: 10px; background: #fff;
   padding: 6px 4px 5px; display: flex; flex-direction: column; align-items: stretch; gap: 2px;
   font-family: var(--sans); cursor: pointer; text-align: left;
   transition: border-color .15s ease, background .15s ease, box-shadow .15s ease; }
@@ -54,8 +56,9 @@
 .sc-cell.off { background: #fbeceb; border-color: #eccdc6; }
 .sc-cell.sel { background: #f4e7cb; border-color: var(--gold); box-shadow: 0 1px 6px rgba(176,141,87,.2); }
 .sc-d { font-size: .8rem; font-weight: 400; letter-spacing: -.01em; }
+/* 칸보다 길면 …로 자른다. min-width: 0 이 없으면 글자가 칸을 밀어낸다 */
 .sc-tag { font-size: .62rem; font-weight: 500; border-radius: 4px; padding: 1px 4px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sc-tag.bk { background: var(--ink); color: #fff; }
 .sc-tag.busy { background: #dbeaf6; color: #1f4e73; }
 .sc-tag.off { background: #e6b0a6; color: #6b241a; text-align: center; }
