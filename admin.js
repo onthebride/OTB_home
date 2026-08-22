@@ -780,7 +780,7 @@ function renderView(b, flash) {
       ${field('신랑님', (b.groom_name || '') + ' / ' + (b.groom_phone || ''))}
       ${field('신부님', (b.bride_name || '') + ' / ' + (b.bride_phone || ''))}
       <div class="full2"><p class="dl">상품 · 옵션</p>${productOptionsHtml(b)}</div>
-      ${b.photo_usage_agree ? field('촬영본 사용동의', 'YES') : ''}
+      <div><p class="dl">촬영본 사용동의</p><p class="dv"><span class="usage-${b.photo_usage_agree ? 'yes' : 'no'}">${b.photo_usage_agree ? 'YES' : 'NO'}</span></p></div>
       ${field('합계', won(b.total_price))}
       <div><p class="dl">계약금</p><p class="dv">${won(10)} · <span class="pay-st ${b.deposit_paid ? 'paid' : ''}">${b.deposit_paid ? '입금완료 ✓' : '미입금'}</span> <button class="pay-toggle" data-pay="deposit">${b.deposit_paid ? '해제' : '입금확인'}</button></p></div>
       ${evDc(b) > 0 ? `<div><p class="dl">이벤트 할인</p><p class="dv" style="color:#2f7d4f;font-weight:600">−${evDc(b)}만원</p></div>` : ''}
@@ -1679,6 +1679,8 @@ function renderDashboard() {
       const roleFlag = (sent, ok, role) => ok
         ? `<span class="chk-confirmed">${role} 확인 ✓</span>`
         : (sent ? '<span class="chk-sentflag">보냄 ✓</span>' : '');
+      // 설문 복사는 첫 줄 오른쪽 끝에 붙인다 — 아래로 한 줄 더 내려가지 않게 (대표 요청)
+      const svCopyBtn = (x) => `<button class="btn-sm sv-copy${surveyIds.has(x.id) ? '' : ' muted'}" data-id="${x.id}">${surveyIds.has(x.id) ? '설문 복사' : '설문 복사(미작성)'}</button>`;
       return `
       <div class="dl-item soon" data-id="${b.id}">
         <div class="dl-main">
@@ -1694,14 +1696,14 @@ function renderDashboard() {
                  <button class="btn-sm chk-send" data-id="${b.id}" data-staff="${b.assignee_id}" data-role="메인">${mainSent ? '메인 재전송' : '메인 체크'}</button>
                  <button class="btn-sm btn-kakao-sm chk-share" data-id="${b.id}" data-staff="${b.assignee_id}" data-role="메인" title="카톡으로 공유">공유</button>
                  ${roleFlag(mainSent, mainOk, '메인')}
+                 ${svCopyBtn(b)}
                </div>
                ${needsSub ? `<div class="chk-rolerow">
                  <button class="btn-sm chk-send" data-id="${b.id}" data-staff="${b.sub_assignee_id}" data-role="서브">${subSent ? '서브 재전송' : '서브 체크'}</button>
                  <button class="btn-sm btn-kakao-sm chk-share" data-id="${b.id}" data-staff="${b.sub_assignee_id}" data-role="서브" title="카톡으로 공유">공유</button>
                  ${roleFlag(subSent, subOk, '서브')}
                </div>` : ''}`
-            : '<span class="dl-na">작가 미배정</span>'}
-          <button class="btn-sm sv-copy${surveyIds.has(b.id) ? '' : ' muted'}" data-id="${b.id}">${surveyIds.has(b.id) ? '설문 복사' : '설문 복사(미작성)'}</button>
+            : `<div class="chk-rolerow"><span class="dl-na">작가 미배정</span>${svCopyBtn(b)}</div>`}
         </div>
       </div>`;
     })

@@ -322,6 +322,11 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 /* 신규 예약: 계약안내 전송 버튼을 이름과 같은 높이로 오른쪽 배치 */
 #listNew .dl-item { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
 #listNew .dl-actions { margin-top: 0; flex-shrink: 0; }
+/* 미입금도 같은 방식 — [잔금 확인] 을 아래로 내리지 말고 그 줄 오른쪽에 붙인다.
+   자리가 모자랄 때만(연체 건은 단추가 셋이다) 줄이 바뀐다 (대표 요청) */
+#listUnpaid .dl-item { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 10px; }
+#listUnpaid .dl-main { flex: 1 1 auto; min-width: 0; }
+#listUnpaid .dl-actions { margin-top: 0; flex: 0 0 auto; justify-content: flex-end; }
 .chk-sentflag { font-size: .72rem; color: #2f7d4f; font-weight: 600; }
 .dl-na { font-size: .8rem; color: var(--ink-soft); }
 .dl-dlrow { margin-top: 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
@@ -514,6 +519,11 @@ td .muted { color: var(--ink-soft); }
 .md-sel:focus { outline: none; border-color: var(--gold); }
 
 /* 입금 토글 */
+/* 촬영본 사용동의는 YES/NO 를 늘 보여준다.
+   YES 일 때만 칸을 만들었더니 예약마다 칸 수가 달라져 잔금 자리가 왔다갔다 했다 (대표 지적) */
+.usage-yes { color: #2f7d4f; font-weight: 600; }
+.usage-no { color: var(--ink-soft); }
+
 .pay-st.paid { color: #2f7d4f; font-weight: 600; }
 .pay-toggle { margin-left: 6px; font-size: .72rem; border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 2px 9px; cursor: pointer; color: var(--ink-soft); vertical-align: middle; }
 .pay-toggle:hover { border-color: var(--gold); color: var(--ink); }
@@ -620,7 +630,8 @@ td .muted { color: var(--ink-soft); }
 .dl-asg.sub { font-weight: 600; opacity: .85; }
 #listUpcoming .dl-actions { flex-direction: column; align-items: stretch; gap: 8px; }
 #listUpcoming .chk-rolerow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-#listUpcoming .dl-actions .sv-copy { align-self: flex-end; margin-left: 0; }
+/* 설문 복사는 첫 줄 오른쪽 끝. 자리가 모자라면 그때만 아래로 내려간다 (대표 요청) */
+#listUpcoming .chk-rolerow .sv-copy { margin-left: auto; }
 
 .dl-blocked { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .dl-blocked-msg { font-size: .84rem; color: #b5462f; }
