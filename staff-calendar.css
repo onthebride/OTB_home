@@ -73,7 +73,11 @@
 .sc-help p:last-child { margin-bottom: 0; }
 .sc-help b { color: var(--ink); font-weight: 600; }
 
-.sc-panel { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 20px; }
+/* 날짜를 누르면 뜨는 스케줄 칸 — 달력 판과 같은 방식으로 띄운다 (대표 요청).
+   위에 선을 긋던 것을 걷어내고 판으로 만든다 */
+.sc-panel { margin-top: 18px; background: #fbf8f4; border: none; border-radius: 16px;
+  padding: 18px 16px 16px;
+  box-shadow: 0 12px 28px -10px rgba(43,39,36,.20), 0 3px 8px -3px rgba(43,39,36,.10); }
 .sc-panel h3 { font-family: var(--kserif); font-size: 1.14rem; margin-bottom: 14px; letter-spacing: -.01em; }
 /* 안쪽 여백. 글자가 테두리에 붙어 답답하다는 대표 지적으로 좌우를 넓혔다 */
 .sc-item { border: 1px solid var(--line); border-radius: 8px; padding: 13px 16px; margin-bottom: 8px; background: #fff; }
@@ -180,7 +184,7 @@
   .sc-help { font-size: .68rem; line-height: 1.6; }
   .sc-help p { margin-bottom: .8em; }
 
-  .sc-panel { margin-top: 14px; padding-top: 12px; }
+  .sc-panel { margin-top: 14px; padding: 14px 12px 12px; border-radius: 14px; }
   .sc-a2hs-wrap { margin-top: 16px; padding-top: 12px; }
 }
 
