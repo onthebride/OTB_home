@@ -125,6 +125,10 @@ body {
 .pt-btn:active { opacity: .85; }
 .pt-btn.gold { background: var(--gold-deep); }
 .pt-btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+/* 아직 열리지 않은 단추 — 예식 한 달 전부터 열리는 설문 */
+.pt-btn.locked { background: #f4f1ec; color: #a09890; border: 1px solid var(--line);
+  cursor: default; font-weight: 400; }
+.pt-btn.locked:active { opacity: 1; }
 .pt-btn.full { display: block; width: 100%; }
 .pt-btn[disabled] { background: #cfc8bf; cursor: default; }
 

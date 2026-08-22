@@ -170,10 +170,20 @@ function render() {
   ];
   $('stepsBox').innerHTML = steps.map(([t, d]) => `<li><span class="st">${t}</span><span class="sd">${d}</span></li>`).join('');
 
-  // 설문
+  // 설문 — 예식 한 달 전부터 연다. 그 전엔 잠가두고 언제부터인지 알려준다
+  // (예약하자마자 써야 하냐는 문의가 잦았다. 일찍 쓰면 그때 가서 다 바뀐다)
   const surveyBtn = $('surveyBtn');
   surveyBtn.href = `survey?b=${bookingId}`;
-  if (info.survey_done) {
+  const open = info.survey_open !== false;
+  if (!open) {
+    const from = info.survey_open_at ? new Date(String(info.survey_open_at).slice(0, 10) + 'T00:00:00') : null;
+    const fromTxt = from ? `${from.getMonth() + 1}월 ${from.getDate()}일` : '예식 한 달 전';
+    $('surveyDesc').innerHTML = `<b>${esc(fromTxt)}</b>부터 작성하실 수 있어요.<br />`
+      + '예식이 가까워지면 알려드릴게요. 지금 미리 쓰지 않으셔도 됩니다.';
+    surveyBtn.textContent = `${fromTxt}부터 열려요`;
+    surveyBtn.classList.add('locked');
+    surveyBtn.removeAttribute('href');
+  } else if (info.survey_done) {
     $('surveyDesc').innerHTML = '설문을 작성해 주셔서 감사합니다 🤍 내용은 언제든 수정할 수 있어요.';
     surveyBtn.textContent = '설문 수정하기';
     surveyBtn.classList.add('ghost');
