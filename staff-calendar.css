@@ -45,7 +45,8 @@
 
 .sc-panel { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 18px; }
 .sc-panel h3 { font-family: var(--kserif); font-size: 1.08rem; margin-bottom: 12px; }
-.sc-item { border: 1px solid var(--line); border-radius: 8px; padding: 11px 13px; margin-bottom: 8px; background: #fff; }
+/* 안쪽 여백. 글자가 테두리에 붙어 답답하다는 대표 지적으로 좌우를 넓혔다 */
+.sc-item { border: 1px solid var(--line); border-radius: 8px; padding: 13px 16px; margin-bottom: 8px; background: #fff; }
 .sc-item.bk { border-left: 3px solid var(--ink); }
 .sc-item.busy { border-left: 3px solid #9dc3e0; }
 .sc-item.off { border-left: 3px solid #e6b0a6; background: #fdf5f4; }
@@ -54,8 +55,12 @@
 .sc-item-b { font-size: .85rem; color: var(--ink-soft); margin-top: 10px; line-height: 1.6; }
 /* 신랑·신부 줄. 붙어 있어 읽기 답답했다(대표 지적) — 줄 사이를 띄우고
    이름과 번호도 한 칸 벌린다. 이름 칸을 맞춰 번호가 세로로 정렬되게 */
-.sc-item-b .sc-who { display: flex; align-items: center; gap: 10px; white-space: nowrap; margin-top: 7px; }
+.sc-item-b .sc-who { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 10px;
+  white-space: nowrap; margin-top: 7px; }
 .sc-item-b .sc-who:first-child { margin-top: 6px; }
+/* 설문 단추는 마지막 줄(신부) 오른쪽 끝에. 따로 한 줄을 차지하니 동떨어져 보였다 (대표 지적).
+   칸이 좁으면 그때만 아래로 내려간다 */
+.sc-item-b .sc-who .sc-survey { margin-left: auto; }
 /* 이름은 굵게 (대표 요청). 딱지는 제 굵기를 따로 쥐고 있어 영향받지 않는다 */
 .sc-who-l { flex: 0 0 auto; min-width: 84px; color: var(--ink); font-weight: 600;
   display: flex; align-items: center; gap: 6px; }
@@ -203,9 +208,9 @@
   padding: 8px 10px; font-family: inherit; font-size: .88rem;
   resize: none; overflow: hidden; line-height: 1.5; }
 .sc-memo { color: #6b635c; font-size: .8rem; white-space: pre-wrap; }
+/* 다른 촬영·개인 일정 칸의 [수정] [지우기] 줄.
+   예식 칸에는 이 줄이 없다 — 설문 단추가 신부 줄 오른쪽으로 들어갔다 */
 .sc-item-btns { display: flex; gap: 6px; }
-/* 예식 칸의 [설문 보기] 는 오른쪽 아래로 (대표 요청) */
-.sc-item.bk .sc-item-btns { justify-content: flex-end; margin-top: 2px; }
 /* 체크 줄도 다른 줄과 같은 자리에 — 전엔 체크가 가운데 떠 있고 글자가 오른쪽 끝에 붙었다 */
 .sc-check input { width: 18px; height: 18px; justify-self: start; margin: 2px 0; }
 /* 라벨 칸(68px) + 사이 여백(8px) 만큼 들여써서 입력칸 아래에 붙는다 */

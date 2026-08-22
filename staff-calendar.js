@@ -185,13 +185,13 @@ function renderPanel() {
         <span class="sc-role ${b.role === '서브' ? 'sub' : 'main'}">${esc(b.role)}</span></div>
       <div class="sc-item-b">
         <span class="sc-who"><span class="sc-who-l"><span class="sc-ptag g">신랑</span>${esc(b.groom_name || '-')}</span>${tel(b.groom_phone)}</span>
-        <span class="sc-who"><span class="sc-who-l"><span class="sc-ptag b">신부</span>${esc(b.bride_name || '-')}</span>${tel(b.bride_phone)}</span>
+        <span class="sc-who"><span class="sc-who-l"><span class="sc-ptag b">신부</span>${esc(b.bride_name || '-')}</span>${tel(b.bride_phone)}
+          ${b.has_survey
+            ? `<a class="btn-sm sc-survey" href="survey-view?b=${esc(b.booking_id)}&s=${esc(staffId)}" target="_blank" rel="noopener">설문 보기</a>`
+            : '<span class="btn-sm sc-survey none">설문 아직 없음</span>'}</span>
       </div>
       ${o.length ? `<div class="ss-opts">${o.map((x) => `<span class="ss-opt${x === '2인 촬영' ? ' two' : ''}">${esc(x)}</span>`).join('')}</div>` : ''}
       ${b.rep_designation ? '<div class="sc-item-b">촬영 : 대표지정</div>' : ''}
-      <div class="sc-item-btns">${b.has_survey
-        ? `<a class="btn-sm sc-survey" href="survey-view?b=${esc(b.booking_id)}&s=${esc(staffId)}" target="_blank" rel="noopener">설문 보기</a>`
-        : '<span class="btn-sm sc-survey none">설문 아직 없음</span>'}</div>
     </div>`;
   }).join('');
 
