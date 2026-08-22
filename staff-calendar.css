@@ -55,7 +55,13 @@
    이름과 번호도 한 칸 벌린다. 이름 칸을 맞춰 번호가 세로로 정렬되게 */
 .sc-item-b .sc-who { display: flex; align-items: baseline; gap: 10px; white-space: nowrap; margin-top: 7px; }
 .sc-item-b .sc-who:first-child { margin-top: 6px; }
-.sc-who-l { flex: 0 0 auto; min-width: 74px; color: var(--ink); }
+.sc-who-l { flex: 0 0 auto; min-width: 84px; color: var(--ink); }
+/* 「신랑」「신부」 를 작은 딱지로. 글자만 있으니 심심하다는 대표 지적.
+   이모지는 안 쓴다 — 전화기·클립보드 이모지를 뺀 것과 결이 맞게 */
+.sc-tag { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 999px;
+  font-size: .7rem; font-weight: 700; letter-spacing: .02em; vertical-align: 1px; }
+.sc-tag.g { color: #3d5a75; background: #e8eef4; }
+.sc-tag.b { color: #8a4a5c; background: #f7e9ec; }
 .sc-item .ss-opts { margin-top: 7px; }
 .sc-role { font-size: .72rem; font-weight: 700; border-radius: 999px; padding: 2px 9px; margin-left: auto; }
 .sc-role.main { background: var(--ink); color: #fff; }
