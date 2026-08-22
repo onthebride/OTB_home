@@ -77,7 +77,9 @@ async function load() {
 }
 
 function render() {
-  $('monthLabel').textContent = `${view.getFullYear()}년 ${view.getMonth() + 1}월`;
+  // 연도는 작게 위에, 달은 크게 — 숫자를 세리프로 보여준다
+  $('monthLabel').innerHTML =
+    `<i>${view.getFullYear()}</i><b>${view.getMonth() + 1}<em>월</em></b>`;
   const first = new Date(view.getFullYear(), view.getMonth(), 1);
   const days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
 
