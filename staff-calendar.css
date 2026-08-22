@@ -48,10 +48,9 @@
   transition: border-color .15s ease, background .15s ease, box-shadow .15s ease; }
 .sc-cell.empty { border: none; background: none; cursor: default; }
 .sc-cell:hover:not(:disabled):not(.empty) { border-color: var(--gold); box-shadow: 0 1px 6px rgba(176,141,87,.14); }
-/* 오늘 — 날짜 숫자에 금색 알약을 씌워 한눈에 */
+/* 오늘 — 숫자를 금색으로 굵게 (대표 요청. 전에는 알약을 씌웠다) */
 .sc-cell.today { border-color: #e2d3ba; }
-.sc-cell.today .sc-d { background: var(--gold-deep); color: #fff; border-radius: 999px;
-  padding: 1px 7px; margin: -1px -1px 1px; align-self: flex-start; }
+.sc-cell.today .sc-d { color: var(--gold-deep); font-weight: 700; }
 .sc-cell.past { background: #f4f1ec; border-color: #eae2d7; color: #bdb7af; cursor: default; }
 .sc-cell.off { background: #fbeceb; border-color: #eccdc6; }
 .sc-cell.sel { background: #f4e7cb; border-color: var(--gold); box-shadow: 0 1px 6px rgba(176,141,87,.2); }
@@ -181,7 +180,6 @@
   .sc-grid { gap: 3px; }
   .sc-cell { min-height: 54px; padding: 4px 3px 3px; gap: 1px; border-radius: 8px; }
   .sc-d { font-size: .78rem; }
-  .sc-cell.today .sc-d { padding: 1px 6px; }
   .sc-tag { font-size: .56rem; padding: 1px 2px; }
 
   .sc-swipe { margin-top: 6px; font-size: .7rem; }
