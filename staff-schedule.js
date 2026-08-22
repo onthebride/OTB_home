@@ -68,16 +68,13 @@ function card(w) {
       ${w.sub_name ? `<div class="ss-grp"><div class="ss-row"><b>서브작가</b> : ${esc(w.sub_name)}${tel(w.sub_phone)}</div></div>` : ''}
       ${w.rep_designation ? '<div class="ss-grp"><div class="ss-row"><b>촬영</b> : 대표지정</div></div>' : ''}
       <div class="ss-grp ss-survey-row">${w.has_survey
-        ? `<a class="ss-survey" href="survey-view?b=${esc(w.booking_id)}" target="_blank" rel="noopener">📋 신부 설문 보기</a>`
+        ? `<a class="ss-survey" href="survey-view?b=${esc(w.booking_id)}&s=${esc(staffId)}" target="_blank" rel="noopener">📋 신부 설문 보기</a>`
         : '<span class="ss-survey none">신부 설문 아직 없음</span>'}</div>
     </div>
     <div class="ss-checks">
       <label class="ss-chk"><input type="checkbox" data-k="attend" ${c.attend ? 'checked' : ''} /> <span>참석 / 스케줄 확정 <em>*</em></span></label>
       <label class="ss-chk"><input type="checkbox" data-k="arrival" ${c.arrival ? 'checked' : ''} /> <span>도착 시간 숙지 (예식 1시간 30분 전) <em>*</em></span></label>
-      <label class="ss-chk"><input type="checkbox" data-k="options" ${c.options ? 'checked' : ''} /> <span>옵션 · 요청사항 숙지 <em>*</em></span></label>
-      ${w.has_survey
-        ? `<label class="ss-chk"><input type="checkbox" data-k="survey" ${c.survey ? 'checked' : ''} /> <span>신부 설문 확인 <em>*</em></span></label>`
-        : '<label class="ss-chk off"><input type="checkbox" data-k="survey" checked disabled /> <span>신부 설문 확인 <i>— 아직 안 들어와 확인할 것이 없습니다</i></span></label>'}
+      <label class="ss-chk"><input type="checkbox" data-k="options" ${c.options ? 'checked' : ''} /> <span>촬영 옵션 확인 <em>*</em></span></label>
     </div>
     <div class="ss-foot">
       <span class="ss-status">${c.checked_at ? '최근 확인: ' + new Date(c.checked_at).toLocaleString('ko-KR') : ''}</span>
@@ -119,15 +116,14 @@ function bind() {
       const btn = e.currentTarget;
       const bid = el.dataset.bid;
       const get = (k) => el.querySelector(`input[data-k="${k}"]`).checked;
-      // 설문이 아직 안 들어온 예식은 넷째 칸이 잠긴 채 켜져 있다 — 막지 않는다
-      const need = ['attend', 'arrival', 'options', 'survey'];
-      if (!need.every(get)) {
-        alert(need.length + '가지 항목을 모두 체크해야 확인이 완료됩니다.');
+      // 신부 설문 확인은 여기 없다 — 예식 전날 설문 링크를 받고 그 화면에서 따로 누른다
+      if (!(get('attend') && get('arrival') && get('options'))) {
+        alert('3가지 항목을 모두 체크해야 확인이 완료됩니다.');
         return;
       }
       btn.disabled = true;
       const { error } = await sb.rpc('submit_assignment_check', {
-        payload: { booking_id: bid, staff_id: staffId, attend: true, arrival: true, options: true, survey: true },
+        payload: { booking_id: bid, staff_id: staffId, attend: true, arrival: true, options: true },
       });
       btn.disabled = false;
       if (error) { alert('저장 실패: 잠시 후 다시 시도해 주세요.'); return; }

@@ -220,6 +220,21 @@ textarea { resize: vertical; }
   white-space: nowrap;
 }
 
+/* 작가가 «봤다» 고 남기는 자리 — 예식 하루 전 설문 링크를 받고 누른다.
+   링크에 작가 번호가 없으면(대표가 그냥 열면) 아예 안 나온다 */
+.sv-ack { margin-top: 26px; padding-top: 24px; border-top: 1px solid var(--line); text-align: center; }
+.sv-ack-lead { margin: 0 0 14px; font-size: .96rem; color: var(--ink-soft); word-break: keep-all; }
+.sv-ack-btn {
+  width: 100%; max-width: 320px; padding: 14px 20px;
+  font-family: inherit; font-size: 1rem; font-weight: 600;
+  color: #fff; background: var(--ink); border: 1px solid var(--ink);
+  border-radius: 6px; cursor: pointer;
+}
+.sv-ack-btn:hover { background: var(--gold-deep); border-color: var(--gold-deep); }
+.sv-ack-btn:disabled { opacity: .55; cursor: default; }
+.sv-ack-done { margin: 0; font-size: 1rem; font-weight: 600; color: var(--gold-deep); }
+.sv-ack-done span { display: block; margin-top: 5px; font-size: .86rem; font-weight: 400; color: var(--ink-soft); }
+
 /* 모바일 입력 시 자동 확대 방지 (iOS) */
 @media (max-width: 640px) {
   input, select, textarea, .sv-field input { font-size: 16px; }

@@ -93,8 +93,8 @@
 /* 눌러서 바로 거는 전화번호 — 손가락으로 짚기 쉽게 위아래를 조금 넓힌다 */
 .ss-tel { color: inherit; font-weight: 500; text-decoration: underline; text-underline-offset: 2px;
   white-space: nowrap; padding: 2px 0; }
-/* 신부가 낸 촬영 설문 — 아래 «옵션·요청사항 숙지» 체크가 가리키는 바로 그 내용이다.
-   전엔 대표가 링크를 따로 보내줘야 볼 수 있었다 */
+/* 신부가 낸 촬영 설문 열기. 그 화면 맨 아래에서 «확인했습니다» 를 누른다
+   (배정 체크와는 시점이 달라 따로 둔다 — 설문은 보통 예식 하루 전에 나간다) */
 .ss-survey-row { margin-top: 2px; }
 .ss-survey { display: inline-block; justify-self: start; text-decoration: none;
   font-size: .9rem; font-weight: 600; color: var(--ink);
@@ -106,9 +106,6 @@
 .ss-chk { display: flex; align-items: flex-start; gap: 9px; font-size: .92rem; cursor: pointer; }
 .ss-chk em { color: #c0392b; font-style: normal; }
 .ss-chk input { width: 20px; height: 20px; margin-top: 1px; accent-color: var(--gold-deep); flex: 0 0 auto; }
-/* 신부 설문이 아직 안 들어온 예식 — 확인할 게 없으니 잠가두고 이유를 적어 둔다 */
-.ss-chk.off { cursor: default; color: var(--ink-soft); }
-.ss-chk.off i { font-style: normal; font-size: .86rem; color: #a09890; }
 .ss-note { width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 9px 11px; font-family: var(--sans); font-size: .9rem; resize: vertical; min-height: 44px; }
 .ss-note:focus { outline: none; border-color: var(--gold); }
 .ss-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 14px; }

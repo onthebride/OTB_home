@@ -661,9 +661,13 @@ function renderChecks(b, checks) {
     if (!sid) return '';
     const name = staffName(sid);
     const c = byName[name];
-    // 완료 판정은 서버(check_done)가 준다 — 신부 설문이 없는 예식은 설문 칸을 안 따진다
+    // 완료 판정은 서버(check_done)가 준다 — 배정 체크 셋만 본다
     const ok = c && (c.done != null ? c.done : (c.attend && c.arrival && c.options));
-    const items = c ? `참석 ${c.attend ? '✓' : '✕'} · 도착 ${c.arrival ? '✓' : '✕'} · 옵션 ${c.options ? '✓' : '✕'} · 설문 ${c.survey ? '✓' : '✕'}` : '';
+    const items = c ? `참석 ${c.attend ? '✓' : '✕'} · 도착 ${c.arrival ? '✓' : '✕'} · 옵션 ${c.options ? '✓' : '✕'}` : '';
+    // 설문 확인은 따로 — 예식 하루 전 설문 링크를 받고 그 화면에서 누른다
+    const sv = c && c.survey_ack_at
+      ? `<div class="chk-sv ok">📝 설문 확인 <small>${esc(fmtDateTime(c.survey_ack_at))}</small></div>`
+      : (c ? '<div class="chk-sv">📝 설문 미확인</div>' : '');
     const st = c ? (ok ? '✔ 확인완료' : '△ 일부확인') : '미확인';
     return `<div class="chk-line ${ok ? 'ok' : c ? 'partial' : 'none'}">
       <div class="chk-head">
@@ -672,6 +676,7 @@ function renderChecks(b, checks) {
         <button class="btn-sm chk-link" data-bid="${esc(b.id)}" data-staff="${esc(sid)}" data-role="${esc(role)}">${ok ? '재전송' : '체크 링크'}</button>
       </div>
       ${items ? `<div class="chk-items">${esc(items)}</div>` : ''}
+      ${sv}
       ${c && c.note ? `<div class="chk-note">📝 ${esc(c.note)}</div>` : ''}
     </div>`;
   };
@@ -692,7 +697,10 @@ function renderSurvey(s, bid) {
     ? `<div class="sv-row col"><span class="sv-l">레퍼런스 (${refs.length})</span>
         <div class="sv-refs">${refs.map((u, i) => `<img src="${esc(u)}" data-i="${i}" alt="레퍼런스" />`).join('')}</div></div>`
     : '';
-  const shareUrl = location.origin + '/survey-view?b=' + bid;
+  // 배정된 작가를 실어 보내야 그 작가가 [확인했습니다] 를 누를 수 있다
+  const sb0 = allBookings.find((x) => x.id === bid);
+  const shareUrl = location.origin + '/survey-view?b=' + bid
+    + (sb0 && sb0.assignee_id ? '&s=' + sb0.assignee_id : '');
   return `
     <div class="survey-box">
       <div class="survey-bar">
@@ -1437,7 +1445,10 @@ async function sendAlimtalk(id, tpl) {
 // 작가 공유용 설문(읽기전용) 링크 복사 — 예식날짜·성함을 링크 위에 함께 복사
 function copySurveyShare(id) {
   const b = allBookings.find((x) => x.id === id);
-  const url = location.origin + '/survey-view?b=' + id;
+  // 배정된 작가를 링크에 실어야 그 작가 화면에 [확인했습니다] 단추가 뜬다.
+  // 배정 전이면 그냥 읽기 전용 링크가 된다
+  const url = location.origin + '/survey-view?b=' + id
+    + (b && b.assignee_id ? '&s=' + b.assignee_id : '');
   const head = b ? `${fmtDate(b.wedding_date)} ${b.contractor_name || ''}`.trim() + ' 예식 설문' : '';
   const text = head ? `${head}\n${url}` : url;
   if (navigator.clipboard) navigator.clipboard.writeText(text);

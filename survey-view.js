@@ -5,7 +5,9 @@ const sb =
     : null;
 
 const $ = (id) => document.getElementById(id);
-const bookingId = new URLSearchParams(location.search).get('b');
+const qs = new URLSearchParams(location.search);
+const bookingId = qs.get('b');
+const staffId = qs.get('s');   // 작가 번호가 실려 있으면 «확인했습니다» 단추가 붙는다
 const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const esc = (s) =>
@@ -94,9 +96,48 @@ function renderSurvey(d) {
   });
 }
 
+/* ── 작가가 «봤다» 고 남기는 자리 ──────────────────────────
+   예식 하루 전쯤 대표가 이 링크를 보내면, 작가가 읽고 아래 단추를 누른다.
+   링크에 작가 번호(&s=)가 실려 있을 때만 나온다 — 대표가 그냥 열어보면 안 나온다. */
+const fmtAck = (iso) => {
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  return `${d.getMonth() + 1}월 ${d.getDate()}일 ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+};
+
+function renderAck(d) {
+  const box = $('ackBox');
+  if (!d.can_ack) return;
+  box.hidden = false;
+  const draw = (at) => {
+    box.innerHTML = at
+      ? `<p class="sv-ack-done">✓ 확인하셨습니다 <span>${esc(fmtAck(at))}</span></p>`
+      : `<p class="sv-ack-lead">${esc(d.staff_name || '')} 작가님, 위 내용을 확인하셨으면 눌러주세요.</p>`
+        + '<button type="button" class="sv-ack-btn" id="ackBtn">확인했습니다</button>';
+    const btn = $('ackBtn');
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      btn.textContent = '저장 중…';
+      const { data, error } = await sb.rpc('survey_ack', { p_booking_id: bookingId, p_staff_id: staffId });
+      if (error || !data) {
+        btn.disabled = false;
+        btn.textContent = '확인했습니다';
+        alert('저장하지 못했어요. 잠시 후 다시 눌러주세요.');
+        return;
+      }
+      draw(data.at);
+    });
+  };
+  draw(d.ack_at);
+}
+
 async function init() {
   if (!sb || !bookingId || !uuidRe.test(bookingId)) { show($('errCard')); return; }
-  const { data, error } = await sb.rpc('survey_view', { p_booking_id: bookingId });
+  const { data, error } = await sb.rpc('survey_view', {
+    p_booking_id: bookingId,
+    p_staff_id: staffId && uuidRe.test(staffId) ? staffId : null,
+  });
   if (error || !data) { show($('errCard')); return; }
   renderWeddingInfo(data);
   if (data.has_survey) {
@@ -104,6 +145,7 @@ async function init() {
   } else {
     $('surveyBody').innerHTML = `<section class="sv-sec" style="border-bottom:none"><p class="sv-sub">아직 신부님이 설문을 작성하지 않았어요.</p></section>`;
   }
+  renderAck(data);
   show($('viewCard'));
 }
 

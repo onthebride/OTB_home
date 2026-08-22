@@ -527,6 +527,10 @@ td .muted { color: var(--ink-soft); }
 .chk-line.none .chk-st { color: #b5462f; }
 .chk-st small { color: var(--ink-soft); font-weight: 400; }
 .chk-items { font-size: .8rem; color: var(--ink-soft); margin-top: 3px; }
+/* 설문 확인은 배정 체크와 시점이 달라 한 줄 띄워 따로 보여준다 */
+.chk-sv { font-size: .8rem; color: #a09890; margin-top: 4px; }
+.chk-sv.ok { color: var(--gold-deep); font-weight: 600; }
+.chk-sv small { font-weight: 400; color: var(--ink-soft); }
 .chk-note { font-size: .82rem; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 6px 9px; margin-top: 5px; }
 .unconf-who { color: #b5462f; font-weight: 600; }
 
