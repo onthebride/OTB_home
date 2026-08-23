@@ -84,16 +84,70 @@ function renderSurvey(d) {
       </div>
     </section>`;
 
-  // 레퍼런스 라이트박스
-  $('surveyBody').addEventListener('click', (e) => {
-    const im = e.target.closest('.sv-vrefs img');
+  // 레퍼런스 크게 보기 — 좌우로 밀어 넘길 수 있다
+  bindRefLightbox($('surveyBody'), '.sv-vrefs img');
+}
+
+/* ── 레퍼런스 사진 크게 보기 ────────────────────────────────
+   한 장만 띄우던 것을 여러 장 넘겨보게 바꿨다 (대표 요청).
+   폰은 좌우로 밀어서, 컴퓨터는 ‹ › 나 화살표 키로. 배경을 누르면 닫힌다.
+   사진 자체를 눌러도 안 닫는다 — 밀다가 손을 떼면 눌린 것으로 잡혀 꺼져버린다 */
+function bindRefLightbox(root, sel) {
+  if (!root || root.dataset.lbBound) return;
+  root.dataset.lbBound = '1';
+  root.addEventListener('click', (e) => {
+    const im = e.target.closest(sel);
     if (!im) return;
-    const lb = document.createElement('div');
-    lb.className = 'sv-lb';
-    lb.innerHTML = `<img src="${im.src}" alt="" />`;
-    lb.addEventListener('click', () => lb.remove());
-    document.body.appendChild(lb);
+    const list = Array.from(root.querySelectorAll(sel)).map((x) => x.src);
+    openRefLightbox(list, list.indexOf(im.src));
   });
+}
+
+function openRefLightbox(list, start) {
+  if (!list.length) return;
+  let i = Math.max(0, start);
+  const lb = document.createElement('div');
+  lb.className = 'sv-lb';
+  lb.innerHTML = '<img alt="레퍼런스" />'
+    + (list.length > 1 ? '<button type="button" class="sv-lb-nav prev" aria-label="이전">‹</button>'
+      + '<button type="button" class="sv-lb-nav next" aria-label="다음">›</button>'
+      + '<span class="sv-lb-n"></span>' : '')
+    + '<button type="button" class="sv-lb-x" aria-label="닫기">&times;</button>';
+  const img = lb.querySelector('img');
+  const cnt = lb.querySelector('.sv-lb-n');
+  const draw = () => {
+    img.src = list[i];
+    if (cnt) cnt.textContent = `${i + 1} / ${list.length}`;
+  };
+  const go = (step) => { i = (i + step + list.length) % list.length; draw(); };
+  const close = () => { lb.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = (e) => {
+    if (e.key === 'Escape') close();
+    else if (e.key === 'ArrowRight') go(1);
+    else if (e.key === 'ArrowLeft') go(-1);
+  };
+  lb.addEventListener('click', (e) => {
+    if (e.target.closest('.sv-lb-x')) return close();
+    if (e.target.closest('.sv-lb-nav.prev')) return go(-1);
+    if (e.target.closest('.sv-lb-nav.next')) return go(1);
+    if (e.target === lb) close();          // 배경만. 사진을 눌러서는 안 닫힌다
+  });
+  // 좌우로 밀어 넘기기 — 세로로 긁는 손짓과 헷갈리지 않게 가로가 더 클 때만
+  let x0 = null, y0 = null;
+  lb.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) { x0 = null; return; }
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+  }, { passive: true });
+  lb.addEventListener('touchend', (e) => {
+    if (x0 === null) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - x0, dy = t.clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
+  }, { passive: true });
+  document.addEventListener('keydown', onKey);
+  draw();
+  document.body.appendChild(lb);
 }
 
 /* ── 작가가 «봤다» 고 남기는 자리 ──────────────────────────

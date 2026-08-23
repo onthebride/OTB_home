@@ -210,6 +210,34 @@ textarea { resize: vertical; }
   padding: 30px;
 }
 .sv-lb img { max-width: 100%; max-height: 100%; border-radius: 6px; }
+/* 여러 장을 넘겨본다 (대표 요청) — 폰은 좌우로 밀어서, 컴퓨터는 ‹ › 나 화살표 키로.
+   사진 자체를 눌러서는 안 닫힌다(밀다 손 떼면 눌린 것으로 잡힌다). 배경이나 X 로 닫는다 */
+.sv-lb { cursor: zoom-out; }
+.sv-lb img { cursor: default; }
+.sv-lb-nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 46px; height: 46px; border-radius: 50%;
+  border: none; background: rgba(255,255,255,.14); color: #fff;
+  font-size: 1.7rem; line-height: 1; cursor: pointer; padding: 0;
+}
+.sv-lb-nav:hover { background: rgba(255,255,255,.26); }
+.sv-lb-nav.prev { left: 10px; }
+.sv-lb-nav.next { right: 10px; }
+.sv-lb-n {
+  position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+  color: rgba(255,255,255,.85); font-size: .84rem; letter-spacing: .04em;
+  background: rgba(0,0,0,.35); border-radius: 999px; padding: 4px 12px;
+}
+.sv-lb-x {
+  position: absolute; top: 10px; right: 12px; width: 42px; height: 42px;
+  border: none; background: none; color: rgba(255,255,255,.8);
+  font-size: 2rem; line-height: 1; cursor: pointer; padding: 0;
+}
+.sv-lb-x:hover { color: #fff; }
+@media (max-width: 560px) {
+  /* 폰에서는 밀어서 넘기니 화살표를 감춘다 — 사진을 가리기만 한다 */
+  .sv-lb-nav { display: none; }
+}
 
 /* 연락처 탭 → 바로 전화 */
 .sv-tel {
