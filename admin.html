@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="admin.css?v=bf0b1206c8" />
+  <link rel="stylesheet" href="admin.css?v=33a166f713" />
 </head>
 <body>
 
@@ -45,12 +45,13 @@
     <!-- 탭바: 헤더 바로 아래 붙여 고정(스크롤 위치와 무관하게 항상 같은 자리) -->
     <div class="dash-tabwrap">
       <div class="dash-tabs">
+        <!-- 대표가 제일 많이 보는 순서: 홈 → 통계 (2026-08-23) -->
         <button class="dtab active" data-tab="dashboard">홈</button>
+        <button class="dtab" data-tab="stats">통계</button>
         <button class="dtab" data-tab="calendar">캘린더</button>
         <button class="dtab" data-tab="bookings">예약</button>
         <button class="dtab" data-tab="events">이벤트<span class="dtab-badge" id="evBadge" hidden>0</span></button>
         <button class="dtab" data-tab="select">셀렉</button>
-        <button class="dtab" data-tab="stats">통계</button>
         <button class="dtab" data-tab="settings">설정</button>
       </div>
     </div>
@@ -102,17 +103,12 @@
           </div>
         </div>
 
-        <div class="dash-card cal-card">
-          <div class="dash-card-head">
-            <h3>📆 예식 캘린더</h3>
-            <div class="cal-nav">
-              <button class="btn-ghost cal-prev">‹</button>
-              <span class="cal-label"></span>
-              <button class="btn-ghost cal-next">›</button>
-              <button class="btn-sm cal-today">오늘</button>
-            </div>
-          </div>
-          <div class="calendar cal-mount"></div>
+        <!-- 예식 캘린더는 캘린더 탭에 같은 것이 있어 여기서는 뺐다 (대표: 홈에선 잘 안 보게 된다).
+             그 자리에 통계 요약을 둔다 — 누르면 통계 탭으로 넘어간다 -->
+        <div class="dash-card st-mini-card" id="homeStats">
+          <div class="dash-card-head"><h3>📈 한눈에</h3>
+            <button class="btn-sm st-mini-more" id="homeStatsMore">통계 자세히 →</button></div>
+          <div class="st-mini" id="homeStatsBody"><p class="empty sm">불러오는 중…</p></div>
         </div>
       </div>
 
@@ -306,6 +302,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=bc2352aeef"></script>
+  <script src="admin.js?v=a1782cfb75"></script>
 </body>
 </html>

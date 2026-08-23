@@ -1686,6 +1686,7 @@ if ($('remDismissAll')) $('remDismissAll').addEventListener('click', dismissAllR
 function renderDashboard() {
   if (!$('tab-dashboard')) return;
   renderAtkFail();
+  renderHomeStats();          // 홈의 「한눈에」 — 늦게 와도 되니 기다리지 않는다
   const today = startOfToday();
 
   // 🔔 신규 예약 (계약안내 보내기 전)
@@ -2740,7 +2741,8 @@ if (dashTabs) {
     if (tab === 'calendar') { renderCalendar(); renderSchedule(); }
     if (tab === 'events') loadEvents();
     if (tab === 'select') renderSelect();
-    if (tab === 'stats') renderStats();
+    // 통계를 열면 홈의 「한눈에」 숫자도 같이 새로 받아둔다
+    if (tab === 'stats') { renderStats(); renderHomeStats(true); }
     if (tab === 'settings') showSubtab(currentSubtab);
     setHash(tab === 'settings' ? 'settings/' + currentSubtab : tab);
     if (window.scrollY > 0) window.scrollTo({ top: 0 });  // 새 탭 내용을 처음부터 보이게
@@ -2775,6 +2777,44 @@ function pathLabel(p) {
   return p;
 }
 const stNum = (n) => Number(n || 0).toLocaleString('ko-KR');
+
+/* ── 홈의 「한눈에」 요약 (대표 요청 2026-08-23) ──────────────
+   홈에 있던 예식 캘린더를 빼고 그 자리에 넣는다. 캘린더는 캘린더 탭에 같은 것이 있고,
+   대표가 홈에서는 잘 안 보게 된다고 해서.
+   여기서는 숫자만 훑고, 자세히 볼 일은 통계 탭에서 한다. */
+let homeStatsAt = 0;
+async function renderHomeStats(force) {
+  const box = $('homeStatsBody');
+  if (!box) return;
+  // 새로고침을 눌러도 1분 안에는 다시 안 부른다 — 홈을 그릴 때마다 세 번씩 물을 이유가 없다
+  if (!force && homeStatsAt && Date.now() - homeStatsAt < 60000) return;
+  const [an, fb, pd] = await Promise.all([
+    sb.rpc('admin_analytics', { p_days: 7 }),
+    sb.rpc('admin_feedback', { p_days: 90 }),
+    sb.rpc('admin_feedback_pending'),
+  ]);
+  if (an.error && fb.error) { box.innerHTML = '<p class="empty sm">통계를 불러오지 못했습니다.</p>'; return; }
+  homeStatsAt = Date.now();
+  const a = an.data || {}, f = fb.data || {};
+  const pend = Array.isArray(pd.data) ? pd.data.filter((x) => !x.done) : [];
+  const tile = (k, v, sub, warn) =>
+    '<div class="st-mini-t' + (warn ? ' warn' : '') + '"><span class="st-k">' + esc(k) + '</span>'
+    + '<strong>' + v + '</strong><span class="st-sub">' + esc(sub) + '</span></div>';
+  box.innerHTML =
+    tile('오늘 방문', stNum(a.today && a.today.visits), '페이지뷰 ' + stNum(a.today && a.today.views))
+    + tile('최근 7일', stNum(a.week && a.week.visits), '페이지뷰 ' + stNum(a.week && a.week.views))
+    + tile('모바일', stNum(a.mobile_pct) + '%', '휴대폰으로 본 비율')
+    + tile('작가 평가', (f.avg_score == null ? '-' : f.avg_score), '100점 만점 · ' + (f.count || 0) + '건')
+    + tile('설문 미응답', pend.length, '최근 60일 예식', pend.length > 0);
+}
+
+// 「통계 자세히 →」 — 홈에서 통계 탭으로
+if ($('homeStatsMore')) {
+  $('homeStatsMore').addEventListener('click', () => {
+    const t = document.querySelector('.dtab[data-tab="stats"]');
+    if (t) t.click();
+  });
+}
 
 async function renderStats() {
   const wrap = $('statsBody');
