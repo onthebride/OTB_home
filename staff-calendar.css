@@ -102,6 +102,10 @@
    칸이 좁으면 그때만 아래로 내려간다 */
 .sc-item-b .sc-who .sc-survey,
 .sc-lastrow .sc-survey { margin-left: auto; }
+/* 단추가 글자보다 커서, 단추가 들어간 줄만 키가 커진다.
+   그래서 옵션이 없는 카드는 신랑·신부 사이가 더 벌어져 보였다 (대표 지적).
+   위아래 여백을 그만큼 되돌려 두 줄의 키를 맞춘다 */
+.sc-item-b .sc-who .sc-survey { margin-block: -5px; }
 .sc-lastrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 /* 이름은 굵게 (대표 요청). 딱지는 제 굵기를 따로 쥐고 있어 영향받지 않는다 */
 .sc-who-l { flex: 0 0 auto; min-width: 84px; color: var(--ink); font-weight: 600;
