@@ -787,6 +787,19 @@ td .muted { color: var(--ink-soft); }
   .st-mini-t { padding: 10px 11px; }
   .st-mini-t strong { font-size: 1.2rem; } }
 
+/* 홈의 「최근 후기」 — 신부님이 설문에 남긴 글 세 개 */
+.hr-list { display: grid; gap: 10px; }
+.hr-item { border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; background: var(--paper); }
+.hr-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 8px; margin-bottom: 5px; }
+.hr-who { font-weight: 600; font-size: .9rem; }
+.hr-staff { font-size: .76rem; color: var(--ink-soft); }
+.hr-score { margin-left: auto; font-size: .76rem; font-weight: 700; color: var(--gold-deep); }
+.hr-msg { font-size: .86rem; line-height: 1.6; color: var(--ink); word-break: break-word; }
+/* 「다음에 부탁」 은 고칠 거리라 눈에 띄게 */
+.hr-next { font-size: .86rem; line-height: 1.6; color: var(--gold-deep);
+  background: #faf4ea; border: 1px solid #ecdcc3; border-radius: 6px;
+  padding: 7px 10px; margin-bottom: 6px; word-break: break-word; }
+
 .st-chart-card { margin-bottom: 16px; }
 .st-chart { display: flex; align-items: flex-end; gap: 3px; height: 150px; padding: 8px 16px 0; }
 .st-bar-col { position: relative; flex: 1 1 0; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 16px; }

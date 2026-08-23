@@ -2806,15 +2806,44 @@ async function renderHomeStats(force) {
     + tile('모바일', stNum(a.mobile_pct) + '%', '휴대폰으로 본 비율')
     + tile('작가 평가', (f.avg_score == null ? '-' : f.avg_score), '100점 만점 · ' + (f.count || 0) + '건')
     + tile('설문 미응답', pend.length, '최근 60일 예식', pend.length > 0);
+
+  renderHomeReviews(Array.isArray(f.items) ? f.items : []);
 }
 
-// 「통계 자세히 →」 — 홈에서 통계 탭으로
-if ($('homeStatsMore')) {
-  $('homeStatsMore').addEventListener('click', () => {
-    const t = document.querySelector('.dtab[data-tab="stats"]');
-    if (t) t.click();
-  });
+/* 신부님들이 설문에 남긴 글 세 개. 위에서 이미 받아온 것을 나눠 쓴다 — 따로 안 부른다 */
+const HOME_REV_N = 3;
+function renderHomeReviews(items) {
+  const box = $('homeReviewsBody');
+  if (!box) return;
+  const said = items.filter((x) => x.next_req || x.message).slice(0, HOME_REV_N);
+  if (!said.length) { box.innerHTML = '<p class="empty sm">아직 남겨주신 글이 없습니다.</p>'; return; }
+  box.innerHTML = said.map((x) => {
+    const wd = x.wedding_date ? String(x.wedding_date).slice(0, 10).replace(/-/g, '.') : '';
+    const who = x.bride_name || x.contractor_name || '';
+    return '<div class="hr-item" data-id="' + esc(x.booking_id) + '">'
+      + '<div class="hr-head">'
+        + '<span class="hr-who">' + esc(who) + '</span>'
+        + '<span class="hr-staff">' + esc(x.staff_name || '') + (wd ? ' · ' + esc(wd) : '') + '</span>'
+        + (x.score == null ? '' : '<span class="hr-score">' + x.score + '점</span>')
+      + '</div>'
+      // 「다음에 부탁」이 있으면 그걸 먼저 — 고칠 거리라서
+      + (x.next_req ? '<p class="hr-next">📝 ' + esc(x.next_req) + '</p>' : '')
+      + (x.message ? '<p class="hr-msg">' + esc(x.message) + '</p>' : '')
+      + '</div>';
+  }).join('');
 }
+
+// 홈에서 통계 탭으로. 후기 쪽은 「작가 평가」 칸까지 열어준다
+function goStats(sub) {
+  const t = document.querySelector('.dtab[data-tab="stats"]');
+  if (t) t.click();
+  if (sub) {
+    const tg = document.querySelector('.st-tg[data-sttab="' + sub + '"]');
+    if (tg && !tg.classList.contains('active')) tg.click();
+  }
+}
+if ($('homeStatsMore')) $('homeStatsMore').addEventListener('click', () => goStats());
+if ($('homeReviewsMore')) $('homeReviewsMore').addEventListener('click', () => goStats('feedback'));
 
 async function renderStats() {
   const wrap = $('statsBody');
