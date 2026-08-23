@@ -826,8 +826,11 @@ td .muted { color: var(--ink-soft); }
 .fb-srow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
 .fb-srow:last-child { border-bottom: none; }
 .fb-sname { font-weight: 700; min-width: 68px; }
-.fb-sscore { color: var(--gold); letter-spacing: 1px; }
-.fb-sscore b { color: var(--ink); margin-left: 4px; letter-spacing: 0; }
+/* 순위 점수는 100점 만점 가중 점수. 별 대신 숫자로 크게 */
+.fb-sscore { color: var(--gold); letter-spacing: 0; white-space: nowrap; }
+.fb-sscore b { color: var(--ink); margin-left: 0; font-size: 1.06rem; }
+.fb-sscore .fb-sold { display: block; font-style: normal; font-size: .72rem;
+  color: var(--ink-soft); font-weight: 400; margin-top: 1px; }
 .fb-sdetail { font-size: .82rem; color: var(--ink-soft); }
 .fb-sn { font-size: .78rem; color: var(--ink-soft); margin-left: auto; white-space: nowrap; }
 

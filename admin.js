@@ -2040,9 +2040,10 @@ document.querySelectorAll('.cal-today').forEach((b) =>
    문의가 왔을 때 "그날 받을 수 있나"를 바로 보기 위한 화면.
    가능 여부는 서버(admin_day_check → admin_staff_availability)가 판단하고,
    여기서는 보여주기만 한다. 순서: 가능한 사람 먼저 → 평점 → 최근 배정 적은 순 */
+// 평점은 100점 만점 가중 점수다 (도착25·친절25·요청15·진행15·하객20, 전체만족도는 뺌)
 function dcStar(s) {
   if (s.fb_avg == null) return '<span class="dc-none">평가 없음</span>';
-  return `★ ${Number(s.fb_avg).toFixed(1)}<small>/10 · ${s.fb_n}건</small>`;
+  return `<b>${Number(s.fb_avg).toFixed(1)}</b><small>점 · ${s.fb_n}건</small>`;
 }
 function dayCheckHtml(r) {
   const d = new Date(String(r.the_date).slice(0, 10) + 'T00:00:00');
@@ -3741,7 +3742,10 @@ async function renderFeedback() {
     const on = fbStaff === s.staff_name;
     return '<div class="fb-srow' + (on ? ' on' : '') + '" data-staff="' + esc(s.staff_name) + '" title="누르면 이 작가 응답만 보기">'
       + '<span class="fb-sname">' + esc(s.staff_name) + '</span>'
-      + '<span class="fb-sscore">' + stars(s.avg_overall) + ' <b>' + avg1(s.avg_overall) + '</b><small>/10</small></span>'
+      // 순위는 100점 만점 가중 점수로 (도착25·친절25·요청15·진행15·하객20).
+      // 1번 전체 만족도는 점수에서 뺐지만 참고로 옆에 같이 보여준다
+      + '<span class="fb-sscore"><b>' + (s.avg_score == null ? '-' : s.avg_score) + '</b><small>점</small>'
+        + '<i class="fb-sold">만족 ' + avg1(s.avg_overall) + '</i></span>'
       + '<span class="fb-sdetail">친절 ' + avg1(s.avg_kindness) + ' · 요청 ' + avg1(s.avg_requests) + ' · 진행 ' + avg1(s.avg_flow)
         + (s.avg_family == null ? '' : ' · 하객 ' + avg1(s.avg_family))
         + (s.req_n ? ' · <b>부탁 ' + s.req_n + '건</b>' : '') + '</span>'
@@ -3798,10 +3802,12 @@ async function renderFeedback() {
   wrap.innerHTML =
     '<div class="st-cards fb-top">'
     + '<div class="st-card"><span class="st-k">응답</span><strong>' + (d.count || 0) + '</strong><span class="st-sub">' + esc(fbRangeLabel()) + '</span></div>'
-    + '<div class="st-card"><span class="st-k">전체 평균</span><strong>' + avg1(d.avg_overall) + '</strong><span class="st-sub">10점 만점</span></div>'
+    + '<div class="st-card"><span class="st-k">평균 점수</span><strong>' + (d.avg_score == null ? '-' : d.avg_score) + '</strong><span class="st-sub">100점 만점 · 가중</span></div>'
     + '<div class="st-card"><span class="st-k">설문 안 온 예식</span><strong>' + pendAll.length + '</strong><span class="st-sub">최근 60일 · 미응답</span></div>'
     + '</div>'
-    + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>👤 작가별 <small>(평균 높은 순 · 누르면 그 작가 응답만)</small></h3></div>' + staffRows + '</div>'
+    + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>👤 작가별 <small>(점수 높은 순 · 누르면 그 작가 응답만)</small></h3></div>'
+      + '<p class="st-note">점수 = 도착 25 · 친절 25 · 요청 15 · 진행 15 · 하객 20 (100점 만점). 전체 만족도는 점수에서 빼고 참고로만 봅니다.</p>'
+      + staffRows + '</div>'
     + '<div class="dash-card">'
       + '<div class="dash-card-head"><h3>💬 받은 응답 <small>(최근순)</small></h3>'
         + '<span class="fb-rangebar">' + rangeBtn(90, '3개월') + rangeBtn(365, '1년') + rangeBtn(3650, '전체') + '</span></div>'
