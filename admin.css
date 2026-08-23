@@ -852,6 +852,10 @@ td .muted { color: var(--ink-soft); }
 .fb-pager .btn-sm:disabled { opacity: .35; cursor: default; }
 .fb-iissue { margin-top: 8px; font-size: .88rem; color: #b5462f; line-height: 1.6; }
 .fb-imsg { margin-top: 8px; font-size: .88rem; line-height: 1.6; }
+/* 「다음에 부탁드리고 싶은 것」 — 점수는 만점인데 여기에만 적히는 경우가 있다.
+   실제로 고칠 거리라 눈에 띄게 둔다 */
+.fb-inext { margin-top: 8px; font-size: .88rem; line-height: 1.6; color: var(--gold-deep);
+  background: #faf4ea; border: 1px solid #ecdcc3; border-radius: 6px; padding: 8px 11px; }
 .fb-share { margin-top: 10px; }
 
 @media (max-width: 600px) {

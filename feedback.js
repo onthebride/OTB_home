@@ -8,6 +8,8 @@ const sb = window.supabase && window.OTB_CONFIG
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const bookingId = params.get('b');
+// 미리보기 — 예약 없이 설문 모양만 본다. 저장하지 않는다 (대표가 보려고)
+const demo = params.get('demo') === '1';
 const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const esc = (s) => (s == null ? '' : String(s)).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const show = (el) => ['errCard', 'loadCard', 'mainCard', 'doneCard', 'thanksCard'].forEach((id) => ($(id).hidden = $(id) !== el));
@@ -45,6 +47,18 @@ function buildStars() {
 }
 
 async function load() {
+  if (demo) {                       // 예약을 찾지 않고 보기용 값으로 채운다
+    $('fbName').textContent = '김소연';
+    $('fbStaff').textContent = '황지성';
+    $('fbMeta').textContent = '2026. 08. 23 · 스텐포드 호텔 서울';
+    const note = document.querySelector('.sv-note');
+    if (note) note.insertAdjacentHTML('afterend',
+      '<p class="sv-note" style="background:#f4f1ec;border-color:#e0d8cc;color:#6b635c">'
+      + '미리보기 화면입니다. 여기서 보내도 저장되지 않습니다.</p>');
+    buildStars();
+    show($('mainCard'));
+    return;
+  }
   if (!sb || !bookingId || !uuidRe.test(bookingId)) { show($('errCard')); return; }
   const { data, error } = await sb.rpc('feedback_ctx', { p_booking_id: bookingId });
   if (error || !data) { show($('errCard')); return; }
@@ -59,16 +73,10 @@ async function load() {
   show($('mainCard'));
 }
 
-// '있었어요' 고르면 입력칸 열기
-document.addEventListener('change', (e) => {
-  if (e.target.name === 'issue') $('issueBox').hidden = e.target.value !== '1';
-});
-
 $('fbSubmit').addEventListener('click', async () => {
   const btn = $('fbSubmit');
   const st = $('fbStatus');
   const arrival = document.querySelector('input[name="arrival"]:checked');
-  const issueEl = document.querySelector('input[name="issue"]:checked');
 
   // 빠뜨린 항목 표시 후 그 자리로 이동
   let firstMiss = null;
@@ -77,7 +85,7 @@ $('fbSubmit').addEventListener('click', async () => {
     w.classList.toggle('miss', bad);
     if (bad && !firstMiss) firstMiss = w;
   });
-  [['arrivalWrap', !arrival], ['issueWrap', !issueEl]].forEach(([id, bad]) => {
+  [['arrivalWrap', !arrival]].forEach(([id, bad]) => {
     $(id).classList.toggle('miss', bad);
     if (bad && !firstMiss) firstMiss = $(id);
   });
@@ -97,10 +105,17 @@ $('fbSubmit').addEventListener('click', async () => {
     kindness: scores.kindness,
     requests: scores.requests,
     flow: scores.flow,
-    issue: issueEl.value === '1',
-    issue_text: issueEl.value === '1' ? $('f_issue_text').value.trim() : '',
+    family: scores.family,
+    next_req: $('f_next_req').value.trim(),
     message: $('f_message').value.trim(),
   };
+  // 미리보기(?demo=1)로 연 화면은 저장하지 않는다 — 대표가 모양만 볼 때 쓴다
+  if (demo) {
+    st.className = 'fb-status';
+    st.textContent = '미리보기라서 저장하지 않았습니다.';
+    btn.disabled = false;
+    return;
+  }
   const { data, error } = await sb.rpc('feedback_submit', { p_booking_id: bookingId, payload });
   if (error) {
     btn.disabled = false;

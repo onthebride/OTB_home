@@ -3742,7 +3742,9 @@ async function renderFeedback() {
     return '<div class="fb-srow' + (on ? ' on' : '') + '" data-staff="' + esc(s.staff_name) + '" title="누르면 이 작가 응답만 보기">'
       + '<span class="fb-sname">' + esc(s.staff_name) + '</span>'
       + '<span class="fb-sscore">' + stars(s.avg_overall) + ' <b>' + avg1(s.avg_overall) + '</b><small>/10</small></span>'
-      + '<span class="fb-sdetail">친절 ' + avg1(s.avg_kindness) + ' · 요청 ' + avg1(s.avg_requests) + ' · 진행 ' + avg1(s.avg_flow) + '</span>'
+      + '<span class="fb-sdetail">친절 ' + avg1(s.avg_kindness) + ' · 요청 ' + avg1(s.avg_requests) + ' · 진행 ' + avg1(s.avg_flow)
+        + (s.avg_family == null ? '' : ' · 하객 ' + avg1(s.avg_family))
+        + (s.req_n ? ' · <b>부탁 ' + s.req_n + '건</b>' : '') + '</span>'
       + '<span class="fb-sn">' + s.n + '건'
         + (Number(s.late_n) ? ' · 지각 ' + s.late_n : '')
         + (Number(s.issue_n) ? ' · 불편 ' + s.issue_n : '') + '</span>'
@@ -3771,11 +3773,15 @@ async function renderFeedback() {
         + chip('친절', x.kindness, Number(x.kindness) <= FB_LOW)
         + chip('요청', x.requests, Number(x.requests) <= FB_LOW)
         + chip('진행', x.flow, Number(x.flow) <= FB_LOW)
+        + (x.family == null ? '' : chip('하객', x.family, Number(x.family) <= FB_LOW))
       + '</div>'
+      // 「다음에 부탁드리고 싶은 것」 — 점수는 만점인데 여기에만 적히는 경우가 있다.
+      // 실제로 고칠 거리라 제일 눈에 띄게 둔다
+      + (x.next_req ? '<div class="fb-inext">📝 다음엔 — ' + esc(x.next_req) + '</div>' : '')
       + (x.issue && x.issue_text ? '<div class="fb-iissue">⚠️ ' + esc(x.issue_text) + '</div>'
          : (x.issue ? '<div class="fb-iissue">⚠️ 불편했던 점 있음(내용 미작성)</div>' : ''))
       + (x.message ? '<div class="fb-imsg">💬 ' + esc(x.message) + '</div>' : '')
-      + (x.message || x.issue_text ? '<button class="btn-sm fb-share" data-id="' + esc(x.booking_id) + '">작가에게 공유</button>' : '')
+      + (x.message || x.issue_text || x.next_req ? '<button class="btn-sm fb-share" data-id="' + esc(x.booking_id) + '">작가에게 공유</button>' : '')
       + '</div>';
   }).join('') : '<p class="empty">' + (fbStaff ? '이 작가의 응답이 없습니다.' : '아직 응답이 없습니다.') + '</p>';
 

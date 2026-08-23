@@ -83,19 +83,23 @@
       </section>
 
       <section class="sv-sec">
-        <h2 class="sv-h">6. 불편하거나 부담스러운 점이 있었나요? <em class="fb-req">*</em></h2>
-        <div class="sv-choices" id="issueWrap">
-          <label class="sv-pill"><input type="radio" name="issue" value="0" /><span>없었어요</span></label>
-          <label class="sv-pill"><input type="radio" name="issue" value="1" /><span>있었어요</span></label>
-        </div>
-        <div class="sv-field full fb-issue" id="issueBox" hidden>
-          <label>어떤 점이 불편하셨나요?</label>
-          <textarea id="f_issue_text" rows="3" placeholder="편하게 적어주세요."></textarea>
+        <h2 class="sv-h">6. 가족·하객분들을 편하게 이끌어 주셨나요? <em class="fb-req">*</em></h2>
+        <p class="sv-sub">원판이나 단체사진 찍을 때 어떠셨는지</p>
+        <div class="fb-stars" data-k="family" role="radiogroup" aria-label="가족·하객 응대"></div>
+      </section>
+
+      <!-- 불만이 아니라 «부탁» 을 묻는다. 같은 정보가 나오는데 신부님도 편히 쓰시고,
+           작가에게 전할 때도 지적이 아니라 부탁이 된다 (대표 요청) -->
+      <section class="sv-sec">
+        <h2 class="sv-h">7. 다음에 또 촬영하신다면, 미리 부탁드리고 싶은 게 있으실까요? <small>(선택)</small></h2>
+        <p class="sv-sub">사소한 것이라도 좋습니다. 다음 촬영에 그대로 반영하겠습니다.</p>
+        <div class="sv-field full">
+          <textarea id="f_next_req" rows="3" placeholder="예) 신부대기실에 조금 더 일찍 와주시면 좋겠어요"></textarea>
         </div>
       </section>
 
       <section class="sv-sec">
-        <h2 class="sv-h">7. 작가님께 한마디 <small>(선택)</small></h2>
+        <h2 class="sv-h">8. 작가님께 한마디 <small>(선택)</small></h2>
         <div class="sv-field full">
           <textarea id="f_message" rows="3" placeholder="고마웠던 점이나 기억에 남는 순간이 있다면 적어주세요."></textarea>
         </div>
@@ -110,6 +114,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="feedback.js?v=3fe809c5f0"></script>
+  <script src="feedback.js?v=2ea34939b5"></script>
 </body>
 </html>
