@@ -12,10 +12,14 @@
 --                    ─────
 --                     100점
 --
--- 도착은 별점이 아니라 셋 중 하나라 이렇게 환산한다.
+-- 도착은 별점이 아니라 셋 중 하나라 따로 환산한다.
 --   제시간   25점
---   조금 늦음 12.5점 (절반)
---   많이 늦음  0점
+--   조금 늦음 20점 (-5)
+--   많이 늦음 15점 (-10)
+--
+-- 처음엔 12.5 / 0 으로 뒀는데 너무 셌다. 신부님들이 별점은 웬만하면 8~10점을 주셔서
+-- 별점 항목은 실제로 2~5점밖에 안 움직이는데, 「조금 늦음」 체크 하나가 12.5점을 가져갔다.
+-- 지각을 무겁게 보되 한 번으로 바닥까지 가지는 않게 대표가 다시 정했다.
 --
 -- ── 답이 없는 항목은? ──────────────────────────────────────
 -- 6번은 2026-08-23 에 생겼다. 그 전 응답에는 없다.
@@ -29,7 +33,7 @@ returns numeric language sql immutable as $fn$
   select case when tot = 0 then null else round(got / tot * 100, 1) end
   from (
     select
-      (case f.arrival when 'ontime' then 25 when 'late_small' then 12.5 else 0 end)
+      (case f.arrival when 'ontime' then 25 when 'late_small' then 20 else 15 end)
         + coalesce(f.kindness, 0) / 10.0 * 25
         + coalesce(f.requests, 0) / 10.0 * 15
         + coalesce(f.flow,     0) / 10.0 * 15

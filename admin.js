@@ -2043,7 +2043,8 @@ document.querySelectorAll('.cal-today').forEach((b) =>
 // 평점은 100점 만점 가중 점수다 (도착25·친절25·요청15·진행15·하객20, 전체만족도는 뺌)
 function dcStar(s) {
   if (s.fb_avg == null) return '<span class="dc-none">평가 없음</span>';
-  return `<b>${Number(s.fb_avg).toFixed(1)}</b><small>점 · ${s.fb_n}건</small>`;
+  return `<b>${Number(s.fb_avg).toFixed(1)}</b><small>점 · ${s.fb_n}건</small>`
+    + (s.fb_n < FB_THIN ? '<small class="dc-thin">응답 적음</small>' : '');
 }
 function dayCheckHtml(r) {
   const d = new Date(String(r.the_date).slice(0, 10) + 'T00:00:00');
@@ -3698,6 +3699,9 @@ async function renderAudit() {
 const ARRIVAL_TXT = { ontime: '제시간', late_small: '조금 늦음', late_big: '많이 늦음' };
 // 점수는 10점 만점. 별은 5칸으로 줄여 그리고(÷2), 정확한 값은 옆에 숫자로 적는다
 const FB_LOW = 6;                       // 이 점수 이하면 눈에 띄게 표시
+// 응답이 두어 건뿐이면 한 사람 답에 점수가 크게 흔들린다 — 곧이곧대로 보지 않게 표시한다.
+// 날짜 조회(dcStar)와 통계 화면이 함께 쓴다
+const FB_THIN = 3;
 const stars = (n) => { const k = Math.max(0, Math.min(5, Math.round((Number(n) || 0) / 2)));
   return '★★★★★'.slice(0, k) + '☆☆☆☆☆'.slice(0, 5 - k); };
 const avg1 = (v) => (v == null ? '-' : Number(v).toFixed(1));
@@ -3745,7 +3749,7 @@ async function renderFeedback() {
       // 순위는 100점 만점 가중 점수로 (도착25·친절25·요청15·진행15·하객20).
       // 1번 전체 만족도는 점수에서 뺐지만 참고로 옆에 같이 보여준다
       + '<span class="fb-sscore"><b>' + (s.avg_score == null ? '-' : s.avg_score) + '</b><small>점</small>'
-        + '<i class="fb-sold">만족 ' + avg1(s.avg_overall) + '</i></span>'
+        + '<i class="fb-sold">' + (Number(s.n) < FB_THIN ? '<em>응답 적음</em>' : '만족 ' + avg1(s.avg_overall)) + '</i></span>'
       + '<span class="fb-sdetail">친절 ' + avg1(s.avg_kindness) + ' · 요청 ' + avg1(s.avg_requests) + ' · 진행 ' + avg1(s.avg_flow)
         + (s.avg_family == null ? '' : ' · 하객 ' + avg1(s.avg_family))
         + (s.req_n ? ' · <b>부탁 ' + s.req_n + '건</b>' : '') + '</span>'

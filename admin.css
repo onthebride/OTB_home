@@ -831,6 +831,9 @@ td .muted { color: var(--ink-soft); }
 .fb-sscore b { color: var(--ink); margin-left: 0; font-size: 1.06rem; }
 .fb-sscore .fb-sold { display: block; font-style: normal; font-size: .72rem;
   color: var(--ink-soft); font-weight: 400; margin-top: 1px; }
+/* 응답이 두어 건뿐이면 한 사람 답에 점수가 크게 흔들린다 — 곧이곧대로 보지 않게 */
+.fb-sscore .fb-sold em { font-style: normal; color: #b5462f; }
+.dc-thin { display: block; color: #b5462f; font-size: .72rem; font-weight: 400; }
 .fb-sdetail { font-size: .82rem; color: var(--ink-soft); }
 .fb-sn { font-size: .78rem; color: var(--ink-soft); margin-left: auto; white-space: nowrap; }
 
