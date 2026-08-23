@@ -355,6 +355,13 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 #listUnpaid .dl-item { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 10px; }
 #listUnpaid .dl-main { flex: 1 1 auto; min-width: 0; }
 #listUnpaid .dl-actions { margin-top: 0; flex: 0 0 auto; justify-content: flex-end; }
+/* 폰에서는 이름·예식장이 길어 단추가 들쭉날쭉 내려갔다 (대표 화면에서 확인).
+   어떤 줄은 오른쪽에 붙고 어떤 줄은 왼쪽으로 떨어져 어수선했다.
+   좁은 화면에서는 아예 아래 한 줄로 내리고 오른쪽에 맞춰 모양을 고정한다 */
+@media (max-width: 640px) {
+  #listUnpaid .dl-item { flex-direction: column; align-items: stretch; gap: 10px; }
+  #listUnpaid .dl-actions { justify-content: flex-end; }
+}
 .chk-sentflag { font-size: .72rem; color: #2f7d4f; font-weight: 600; }
 .dl-na { font-size: .8rem; color: var(--ink-soft); }
 .dl-dlrow { margin-top: 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
