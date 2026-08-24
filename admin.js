@@ -192,12 +192,27 @@ async function refreshEventBadge() {
   await loadEvents();
 }
 
+// 작가 평가 점수를 받아둔다 — 배정 드롭다운에서 이름 옆에 보여준다 (대표 요청 2026-08-24).
+// 전체 기간으로 본다. 배정할 때 궁금한 건 «이 사람이 어떤 작가인가» 라 기간을 좁힐 이유가 없다
+async function loadStaffScores() {
+  const { data, error } = await sb.rpc('admin_feedback', { p_days: 3650 });
+  if (error || !data) return;
+  const byName = {};
+  (data.staff || []).forEach((x) => { byName[x.staff_name] = x; });
+  staffScore = {};
+  allStaff.forEach((s) => {
+    const v = byName[s.name];
+    if (v) staffScore[s.id] = { score: v.avg_score, n: Number(v.n) || 0 };
+  });
+}
+
 async function loadStaff() {
   const { data } = await sb.rpc('admin_staff_list');
   allStaff = data || [];
   staffMap = {};
   allStaff.forEach((s) => { staffMap[s.id] = s; });
   populateAssigneeSelects();
+  loadStaffScores();          // 늦게 와도 된다 — 오면 다음에 그릴 때 붙는다
 }
 const staffName = (id) => (id && staffMap[id] ? staffMap[id].name : '');
 
@@ -225,6 +240,17 @@ function confOf(b) { return confMap[b && b.id] || null; }
 
 // slot: 'main' | 'sub' — 그 자리를 맡을 수 있는 작가를 위로 올린다.
 // 역할이 안 맞아도 잠그지는 않는다. 겹침과 달리 '못 하는 것'이 아니라 '보통 안 하는 것'이라서.
+// 작가 평가 점수 — 배정할 때 같이 보이게 (대표 요청 2026-08-24).
+// { 작가id: { score: 99.1, n: 2 } }. loadStaffScores() 가 채운다
+let staffScore = {};
+// 이름 뒤에 붙일 점수. 응답이 적으면 그렇다고 적는다 — 한 건짜리 100점을 곧이곧대로
+// 보면 안 된다. 아직 평가가 없는 작가는 «-» 로 두고 만점으로 채우지 않는다
+function scoreTag(id) {
+  const v = staffScore[id];
+  if (!v || v.score == null) return ' · 평가 -';
+  return ' · ' + v.score + '점' + (v.n < FB_THIN ? '(응답 ' + v.n + ')' : '');
+}
+
 function assigneeOptions(selId, conf, slot) {
   const one = (s, extra, dis) =>
     `<option value="${s.id}"${s.id === selId ? ' selected' : ''}${dis ? ' disabled' : ''}>${esc(s.name)}${extra}</option>`;
@@ -234,11 +260,19 @@ function assigneeOptions(selId, conf, slot) {
   }
   const fits = (s) => !slot || (slot === 'sub' ? s.can_sub !== false : s.can_main !== false);
   const ok = [], bad = [], other = [], off = [];
-  allStaff.forEach((s) => {
+  // 배정 가능한 사람은 점수 높은 순으로. 평가가 없는 사람은 뒤로 —
+  // 만점으로 쳐서 위로 올리면 거짓말이 된다
+  const byScore = allStaff.slice().sort((a, b) => {
+    const x = staffScore[a.id], y = staffScore[b.id];
+    const xs = x && x.score != null ? Number(x.score) : -1;
+    const ys = y && y.score != null ? Number(y.score) : -1;
+    return ys - xs;
+  });
+  byScore.forEach((s) => {
     if (!s.active) { off.push(one(s, ' (비활성)', false)); return; }
-    if (!fits(s)) { other.push(one(s, '', false)); return; }
+    if (!fits(s)) { other.push(one(s, scoreTag(s.id), false)); return; }
     const v = conf ? conf[s.id] : null;
-    if (!v) { ok.push(one(s, '', false)); return; }
+    if (!v) { ok.push(one(s, scoreTag(s.id), false)); return; }
     const why = v.s === 'off' ? '불가' : '겹침';
     const d = v.d ? String(v.d) : '';
     const shortD = d.length > 16 ? d.slice(0, 16) + '…' : d;
@@ -247,7 +281,7 @@ function assigneeOptions(selId, conf, slot) {
   });
   const grp = (label, arr) => (arr.length ? `<optgroup label="${label}">${arr.join('')}</optgroup>` : '');
   return '<option value="">미배정</option>'
-    + grp(`배정 가능 ${ok.length}명`, ok)
+    + grp(`배정 가능 ${ok.length}명 (점수 높은 순)`, ok)
     + grp(`겹침·불가 ${bad.length}명`, bad)
     + grp(`${slot === 'sub' ? '메인 전용' : '서브 전용'} ${other.length}명`, other)
     + grp('비활성', off);
