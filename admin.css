@@ -516,8 +516,8 @@ td .muted { color: var(--ink-soft); }
    ⚠ flex-basis 만 줄이면 안 줄어든다. 가로로 늘어선 칸은 min-width 가 auto 라
    «내용이 요구하는 최소 너비» 아래로는 안 내려가는데, input 은 그 값이 꽤 크다.
    min-width: 0 을 같이 줘야 실제로 줄어든다. 여백은 아래쪽 규칙에서 다시 잡는다 */
-.staff-item input.st-name { flex: 0 0 96px; width: 96px; min-width: 0; }
-.staff-item input.st-phone { flex: 0 0 128px; width: 128px; min-width: 0; }
+.staff-item input.st-name { flex: 0 0 124px; width: 124px; min-width: 0; }
+.staff-item input.st-phone { flex: 0 0 152px; width: 152px; min-width: 0; }
 .staff-item input[type="text"] { border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font-size: .9rem; color: var(--ink); background: var(--cream); transition: all .15s; }
 .staff-item input[type="text"]:focus { outline: none; border-color: var(--gold); background: #fff; }
 .staff-item .st-active { font-size: .82rem; display: flex; align-items: center; gap: 4px; white-space: nowrap; color: var(--ink-soft); }
