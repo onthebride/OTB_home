@@ -607,6 +607,11 @@ td .muted { color: var(--ink-soft); }
 
 @media (max-width: 760px) {
   .dash-cards { flex-direction: column; }
+  /* 세로로 쌓을 땐 너비를 꽉 채운다. 위의 .st-two { align-items: flex-start } 는
+     가로로 놓을 때 «키를 억지로 안 맞추려고» 준 것인데, 세로가 되면 그게 너비를 줄인다.
+     그래서 「많이 본 페이지」·「어디서 들어왔나」 박스만 좁게 떠 있었다 (2026-08-24).
+     세로 전환이 여기(760px)라 이 줄도 여기 있어야 한다 — 600px 에 두면 그 사이가 빈다 */
+  .st-two { align-items: stretch; }
   .dash-col-left, .dash-col-right { width: 100%; min-width: 0; }
   .dash-col-right { display: block; }
   .dash-col-right .dash-card { flex: none; width: 100%; }
