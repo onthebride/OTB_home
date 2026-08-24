@@ -2715,10 +2715,7 @@ function applyHash() {
       const sb2 = document.querySelector('.sub-tab[data-subtab="' + sub + '"]');
       if (sb2) sb2.click();
     }
-    if (tab === 'stats') {
-      const tg = document.querySelector('.st-tg[data-sttab="' + (sub === 'feedback' ? 'feedback' : 'visits') + '"]');
-      if (tg && !tg.classList.contains('active')) tg.click();
-    }
+    if (tab === 'stats' && (sub || 'sales') !== stCur) stSub(sub || 'sales');
   } finally { applyingHash = false; }
 }
 window.addEventListener('hashchange', applyHash);
@@ -2742,7 +2739,7 @@ if (dashTabs) {
     if (tab === 'events') loadEvents();
     if (tab === 'select') renderSelect();
     // 통계를 열면 홈의 「한눈에」 숫자도 같이 새로 받아둔다
-    if (tab === 'stats') { renderStats(); renderHomeStats(true); }
+    if (tab === 'stats') { stSub(stCur); renderHomeStats(true); }
     if (tab === 'settings') showSubtab(currentSubtab);
     setHash(tab === 'settings' ? 'settings/' + currentSubtab : tab);
     if (window.scrollY > 0) window.scrollTo({ top: 0 });  // 새 탭 내용을 처음부터 보이게
@@ -2837,10 +2834,7 @@ function renderHomeReviews(items) {
 function goStats(sub) {
   const t = document.querySelector('.dtab[data-tab="stats"]');
   if (t) t.click();
-  if (sub) {
-    const tg = document.querySelector('.st-tg[data-sttab="' + sub + '"]');
-    if (tg && !tg.classList.contains('active')) tg.click();
-  }
+  if (sub) stSub(sub);
 }
 if ($('homeStatsMore')) $('homeStatsMore').addEventListener('click', () => goStats());
 if ($('homeReviewsMore')) $('homeReviewsMore').addEventListener('click', () => goStats('feedback'));
@@ -3943,20 +3937,148 @@ async function renderFeedback() {
   }));
 }
 
+/* ===== 예약·매출 (대표 요청 2026-08-23) =====
+   매출은 예식일 기준 총액(계약금+잔금), 순이익은 거기서 작가비를 뺀 것.
+   작가비 규칙은 admin_sales() 안에 있고 여기서는 받은 값을 적기만 한다. */
+let salesLoaded = false;
+
+// 만원 단위를 사람이 읽는 말로. 10754 → '1억 754만'
+function manwon(n) {
+  const v = Math.round(Number(n) || 0), a = Math.abs(v), sign = v < 0 ? '-' : '';
+  if (a < 10000) return sign + a.toLocaleString('ko-KR') + '만';
+  const rest = a % 10000;
+  return sign + Math.floor(a / 10000) + '억' + (rest ? ' ' + rest.toLocaleString('ko-KR') + '만' : '');
+}
+
+// 막대 한 줄 (많이 본 페이지 목록과 같은 모양을 쓴다)
+function slBar(label, sub, value, ratio) {
+  return '<div class="st-row"><span class="st-row-bar" style="width:' + Math.max(2, Math.round(ratio * 100)) + '%"></span>'
+    + '<span class="st-row-k">' + label + (sub ? ' <small>' + sub + '</small>' : '') + '</span>'
+    + '<span class="st-row-v">' + value + '</span></div>';
+}
+
+async function renderSales() {
+  const wrap = $('salesBody');
+  if (!wrap) return;
+  if (!salesLoaded) wrap.innerHTML = '<p class="empty">불러오는 중…</p>';
+  const { data, error } = await sb.rpc('admin_sales');
+  if (error || !data) {
+    wrap.innerHTML = '<p class="empty">불러오지 못했습니다. (' + esc(error ? error.message : '') + ')</p>';
+    return;
+  }
+  salesLoaded = true;
+  const y = data.year || {}, c = data.cost || {};
+  const months = (data.months || []).filter((m) => m.n > 0);
+  const left = Math.max(0, (y.n || 0) - (y.done || 0));
+  const rate = y.rev ? Math.round((y.profit / y.rev) * 1000) / 10 : null;
+  const card = (k, v, sub) => '<div class="st-card"><span class="st-k">' + k + '</span><strong>' + v
+    + '</strong><span class="st-sub">' + (sub || '') + '</span></div>';
+
+  const maxRev = Math.max(1, ...months.map((m) => Number(m.rev) || 0));
+  const rows = months.map((m) => {
+    const now = m.m === data.this_m;
+    return '<div class="sl-row' + (now ? ' now' : '') + '">'
+      + '<span class="sl-m">' + esc(m.m.slice(2).replace('-', '.')) + '</span>'
+      + '<span class="sl-n">' + m.n + '건</span>'
+      + '<span class="sl-bwrap"><i class="sl-b" style="width:' + Math.round((m.rev / maxRev) * 100) + '%"></i>'
+      + '<b class="sl-rev">' + manwon(m.rev) + '</b></span>'
+      + '<span class="sl-pf">' + manwon(m.profit) + '</span>'
+      + '<span class="sl-un">' + (m.unassigned ? '<em>미배정 ' + m.unassigned + '</em>' : '') + '</span>'
+      + '</div>';
+  }).join('');
+
+  const opts = data.options || [];
+  const optMax = Math.max(1, ...opts.map((o) => Number(o.rev) || 0));
+  const optRows = opts.map((o) => slBar(esc(o.name), o.n + '건', manwon(o.rev), o.rev / optMax)).join('');
+  const disc = (data.discounts || []).map((d) => esc(d.name) + ' ' + d.n + '건 ' + manwon(d.rev)).join(' · ');
+
+  const vens = data.venues || [];
+  const venMax = Math.max(1, ...vens.map((v) => Number(v.n) || 0));
+  const venRows = vens.length
+    ? vens.map((v) => slBar(esc(v.venue) + (v.names > 1 ? ' <em class="sl-alias">이름 ' + v.names + '가지</em>' : ''),
+        manwon(v.rev), v.n + '건', v.n / venMax)).join('')
+    : '<p class="empty sm">아직 기록이 없습니다.</p>';
+
+  const L = data.lead || {};
+  const bMax = Math.max(1, ...((L.buckets || []).map((b) => Number(b.n) || 0)));
+  const lead = L.n
+    ? '<div class="sl-lead"><strong>' + L.median + '일 전</strong>'
+      + '<span>약 ' + (Math.round((L.median / 30) * 10) / 10) + '개월 · 가운뎃값 · ' + L.n + '건 기준</span></div>'
+      + (L.buckets || []).map((b) => slBar(esc(b.k), '', b.n + '건', b.n / bMax)).join('')
+      + '<p class="st-note">가장 빠른 건 ' + L.min + '일 전, 가장 이른 건 ' + L.max + '일 전에 잡혔습니다. '
+      + '데이터 이전으로 하루에 몰려 들어온 건은 접수일이 진짜가 아니라 뺐습니다.</p>'
+    : '<p class="empty sm">아직 셀 만큼 쌓이지 않았습니다.</p>';
+
+  const fn = data.funnel || [];
+  const funnel = fn.length
+    ? fn.map((f) => '<div class="sl-fn"><span class="sl-fm">' + esc(String(f.m).replace('-', '.')) + '</span>'
+        + '<span class="sl-fv">방문 ' + stNum(f.visits) + '</span><span class="sl-fa">→</span>'
+        + '<span class="sl-fv">예약 ' + stNum(f.bk) + '</span>'
+        + '<b class="sl-fp">' + (f.pct == null ? '-' : f.pct + '%') + '</b></div>').join('')
+      + '<p class="st-note">방문 기록은 2026년 8월부터 쌓기 시작했습니다. 달이 몇 번 더 지나야 오르내림이 보입니다. '
+      + '카톡·전화로 바로 오신 분은 방문에 안 잡혀 실제 전환은 이보다 낮습니다.</p>'
+    : '<p class="empty sm">아직 방문 기록이 없습니다.</p>';
+
+  wrap.innerHTML =
+    '<div class="st-cards">'
+    + card(y.y + '년 예식', stNum(y.n) + '건', '치른 ' + stNum(y.done) + ' · 남은 ' + stNum(left))
+    + card('매출', manwon(y.rev), '예식일 기준 총액')
+    + card('순이익', manwon(y.profit), rate == null ? '' : '매출의 ' + rate + '%')
+    + card('한 건 평균', manwon(y.avg), '옵션까지 넣은 값')
+    + '</div>'
+
+    + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>📅 달마다 <small>(예식일 기준 · 지난 6달~앞으로 1년)</small></h3></div>'
+    + '<div class="sl-head"><span class="sl-m">달</span><span class="sl-n">예식</span>'
+    + '<span class="sl-bwrap">매출</span><span class="sl-pf">순이익</span><span class="sl-un"></span></div>'
+    + '<div class="sl-list">' + (rows || '<p class="empty sm">예식이 없습니다.</p>') + '</div>'
+    + '<p class="st-note">작가비 ' + c.staff + '만 · 경기 출장 +' + c.travel + '만 · 2인 촬영 +' + c.sub + '만, '
+    + esc(c.rep || '대표') + ' 작가님이 찍은 건은 전액 이익으로 잡습니다. '
+    + '아직 작가가 안 정해진 건도 ' + c.staff + '만 나가는 것으로 미리 빼둡니다(보수적으로). '
+    + '<b>앨범 원가는 아직 안 뺐습니다.</b></p></div>'
+
+    + '<div class="dash-cards st-two">'
+    + '<div class="dash-card"><div class="dash-card-head"><h3>🎁 옵션 <small>(매출의 ' + (data.opt_pct == null ? '-' : data.opt_pct + '%') + ')</small></h3></div>'
+    + (optRows || '<p class="empty sm">아직 기록이 없습니다.</p>')
+    + (disc ? '<p class="st-note">할인으로 나간 것 — ' + disc + '</p>' : '') + '</div>'
+    + '<div class="dash-card"><div class="dash-card-head"><h3>🏛 많이 간 예식장</h3></div>'
+    + venRows
+    + '<p class="st-note">같은 곳인데 이름을 달리 적은 것(홀 이름·앞뒤 순서)은 하나로 묶었습니다.</p></div>'
+    + '</div>'
+
+    + '<div class="dash-cards st-two">'
+    + '<div class="dash-card"><div class="dash-card-head"><h3>⏳ 언제 예약하나</h3></div>' + lead + '</div>'
+    + '<div class="dash-card"><div class="dash-card-head"><h3>🔄 방문 → 예약</h3></div>' + funnel + '</div>'
+    + '</div>';
+}
+
+/* 통계 안의 세 칸 — 예약·매출 / 방문 통계 / 작가 평가.
+   대표가 제일 먼저 보는 것이 장사 숫자라 「예약·매출」을 첫 칸으로 두고 기본으로 연다. */
+let stCur = 'sales';
+function stSub(sub) {
+  const box = $('stToggle');
+  if (!box) return;
+  const btns = [].slice.call(box.querySelectorAll('button[data-sttab]'));
+  let i = 0;
+  btns.forEach((x, k) => { if (x.dataset.sttab === sub) i = k; });
+  const cur = btns[i] ? btns[i].dataset.sttab : 'sales';
+  stCur = cur;
+  btns.forEach((x, k) => x.classList.toggle('active', k === i));
+  box.style.setProperty('--st-i', i);                 // 표시등을 그 칸으로 밀어줌
+  $('salesBody').hidden = cur !== 'sales';
+  $('statsBody').hidden = cur !== 'visits';
+  $('fbBody').hidden = cur !== 'feedback';
+  const bar = document.querySelector('.st-bar');
+  if (bar) bar.hidden = cur !== 'visits';             // 기간 버튼·바로가기는 방문 통계 전용
+  setHash(cur === 'sales' ? 'stats' : 'stats/' + cur);
+  if (cur === 'sales') renderSales();
+  if (cur === 'visits') renderStats();
+  if (cur === 'feedback') renderFeedback();
+}
 const stToggle = $('stToggle');
 if (stToggle) {
   stToggle.addEventListener('click', (e) => {
     const b = e.target.closest('button[data-sttab]');
-    if (!b) return;
-    const isFb = b.dataset.sttab === 'feedback';
-    stToggle.querySelectorAll('button').forEach((x) => x.classList.toggle('active', x === b));
-    stToggle.classList.toggle('on', isFb);            // 표시등을 오른쪽으로 밀어줌
-    $('statsBody').hidden = isFb;
-    $('fbBody').hidden = !isFb;
-    const bar = document.querySelector('.st-bar');
-    if (bar) bar.hidden = isFb;                       // 기간 버튼·바로가기는 방문 통계 전용
-    setHash(isFb ? 'stats/feedback' : 'stats');
-    if (isFb) renderFeedback();
+    if (b) stSub(b.dataset.sttab);
   });
 }
 

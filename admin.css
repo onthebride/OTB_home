@@ -832,6 +832,42 @@ td .muted { color: var(--ink-soft); }
 .st-row-v { position: relative; font-size: .85rem; font-weight: 600; color: var(--gold-deep); }
 .st-note { margin-top: 14px; font-size: .76rem; color: var(--ink-soft); line-height: 1.6; }
 
+/* ── 예약·매출 (2026-08-23) ── */
+/* 달마다 한 줄. 여섯 칸이 위아래로 딱 맞아야 읽힌다 */
+.sl-head, .sl-row { display: grid; grid-template-columns: 46px 44px minmax(0, 1fr) 84px 74px;
+  align-items: center; gap: 8px; padding: 6px 4px; }
+.sl-head { font-size: .74rem; color: var(--ink-soft); border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.sl-row { border-bottom: 1px solid #f0ebe4; font-size: .86rem; }
+.sl-row:last-child { border-bottom: none; }
+.sl-row.now { background: #fbf6ee; border-radius: 6px; }
+.sl-row.now .sl-m { font-weight: 700; color: var(--gold-deep); }
+.sl-m { font-variant-numeric: tabular-nums; }
+.sl-n { color: var(--ink-soft); font-size: .8rem; text-align: right; }
+.sl-bwrap { position: relative; display: flex; align-items: center; min-width: 0; height: 20px; }
+.sl-b { position: absolute; left: 0; top: 2px; bottom: 2px; background: #f4ece0; border-radius: 4px; }
+.sl-rev { position: relative; font-weight: 600; font-size: .84rem; padding-left: 7px; white-space: nowrap; }
+.sl-pf { text-align: right; font-weight: 700; color: var(--gold-deep); white-space: nowrap; }
+.sl-un { text-align: right; }
+.sl-un em { font-style: normal; font-size: .72rem; color: #b5462f; white-space: nowrap; }
+.sl-list { margin-top: 4px; }
+.st-row-k .sl-alias { font-style: normal; font-size: .72rem; color: var(--ink-soft); }
+
+.sl-lead { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.sl-lead strong { font-size: 1.5rem; font-weight: 700; }
+.sl-lead span { font-size: .76rem; color: var(--ink-soft); }
+
+.sl-fn { display: flex; align-items: baseline; gap: 8px; padding: 8px 4px; border-bottom: 1px solid var(--line); font-size: .85rem; }
+.sl-fn:last-of-type { border-bottom: none; }
+.sl-fm { font-variant-numeric: tabular-nums; color: var(--ink-soft); font-size: .8rem; }
+.sl-fa { color: var(--ink-soft); }
+.sl-fp { margin-left: auto; color: var(--gold-deep); font-size: 1rem; }
+
+@media (max-width: 560px) {
+  .sl-head, .sl-row { grid-template-columns: 40px 38px minmax(0, 1fr) 68px; gap: 6px; font-size: .8rem; }
+  .sl-un { display: none; }              /* 좁으면 미배정은 접는다 — 달마다 표에서 덜 급하다 */
+  .sl-rev { font-size: .78rem; }
+}
+
 @media (max-width: 600px) {
   .st-cards { grid-template-columns: repeat(2, 1fr); }
   .st-card strong { font-size: 1.3rem; }
@@ -844,11 +880,12 @@ td .muted { color: var(--ink-soft); }
 
 /* ===== 작가 평가 (촬영 후 설문) ===== */
 /* 방문 통계 ↔ 작가 평가 전환 스위치 (표시등이 좌우로 미끄러짐) */
-.st-toggle { position: relative; display: grid; grid-template-columns: 1fr 1fr; max-width: 320px;
+/* 칸이 셋(예약·매출 / 방문 통계 / 작가 평가). 표시등은 --st-i 번째 칸으로 미끄러진다 */
+.st-toggle { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); max-width: 430px;
   background: var(--cream); border: 1px solid var(--line); border-radius: 999px; padding: 3px; margin-bottom: 16px; }
-.st-tg-ind { position: absolute; top: 3px; bottom: 3px; left: 3px; right: 50%;
-  background: var(--ink); border-radius: 999px; transition: left .22s ease, right .22s ease; }
-.st-toggle.on .st-tg-ind { left: 50%; right: 3px; }
+.st-tg-ind { position: absolute; top: 3px; bottom: 3px;
+  left: calc(3px + var(--st-i, 0) * (100% - 6px) / 3); width: calc((100% - 6px) / 3);
+  background: var(--ink); border-radius: 999px; transition: left .22s ease; }
 .st-tg { position: relative; z-index: 1; background: none; border: none; cursor: pointer;
   font-family: var(--sans); font-size: .9rem; color: var(--ink-soft); padding: 9px 8px; border-radius: 999px;
   transition: color .18s; white-space: nowrap; }
