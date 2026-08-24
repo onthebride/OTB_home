@@ -1342,3 +1342,9 @@ td .muted { color: var(--ink-soft); }
 .sel-nobody { background: #fcf3f1; border: 1px solid #e0b6ae; border-radius: 8px;
   padding: 9px 11px; color: #b5462f; line-height: 1.6; margin-top: 8px; }
 .sel-nobody b { color: #8f3524; }
+
+/* 셀렉 기록에서 JPG·RAW 수가 어긋난 줄 (대표 2026-08-24 «40장 40장이 들어가 있어야해») */
+.sel-log-row.odd { background: #fcf3f1; border-radius: 6px; }
+.sel-log-row.odd .sel-log-n { color: #b5462f; font-weight: 700; }
+.sel-log-row .sel-log-n em { display: block; font-style: normal; font-size: .72rem;
+  color: #b5462f; font-weight: 600; }

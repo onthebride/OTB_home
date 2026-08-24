@@ -3501,6 +3501,13 @@ async function selShow(rbox, ctx, folder, got, items) {
         + (res.why ? ' (' + esc(res.why) + ')' : '')
         + '<br />폴더를 열어 확인하고 그것만 다시 해주세요.</span>';
     }
+    // 셀렉은 기본 40장이라 JPG 와 RAW 수가 같아야 한다 (대표 2026-08-24).
+    // 어긋나면 어딘가 빠진 것이니 «넣었습니다» 로 끝내지 않고 짚어준다
+    if (upDone && res.n && upDone !== res.n) {
+      warn += '<br /><span class="err">⚠ JPG ' + upDone + '장 · RAW ' + res.n
+        + '장 — <b>' + Math.abs(upDone - res.n) + '장이 어긋납니다.</b>'
+        + '<br />셀렉은 짝이 맞아야 합니다. 폴더를 열어 모자란 쪽을 채워주세요.</span>';
+    }
     stat.innerHTML = '<b class="sel-ok">✓ '
       + (upDone ? 'JPG ' + upDone + '장 + ' : '') + 'RAW ' + res.n + '장 넣었습니다.</b><br />'
       + '<a href="' + esc(selDbxUrl(res.dest)) + '" target="_blank" rel="noopener">' + esc(res.dest) + ' 열어보기 ↗</a>'
@@ -3585,11 +3592,18 @@ async function selRecent() {
   const rows = Array.isArray(data) ? data : [];
   if (!rows.length) { el.innerHTML = ''; return; }
   el.innerHTML = '<div class="sel-log"><h3>최근에 복사한 것</h3>'
-    + rows.map((x) =>
-        '<div class="sel-log-row"><span class="sel-log-n">'
-        + (x.up ? 'JPG ' + x.up + (x.n ? ' + RAW ' + x.n : '') : x.n + '장') + '</span>'
-        + '<a href="' + esc(selDbxUrl(x.dest)) + '" target="_blank" rel="noopener">' + esc(x.dest) + '</a>'
-        + '<small>' + esc(fmtDateTime(x.at)) + '</small></div>').join('')
+    + rows.map((x) => {
+        // 셀렉은 기본 40장이라 JPG 와 RAW 수가 같아야 한다 (대표 2026-08-24).
+        // 어긋난 줄은 붉게 짚어준다 — 251129 백다은 건이 JPG 38 · RAW 40 으로
+        // 조용히 지나갔다. 목록에서 눈에 띄었으면 바로 알았을 것이다
+        const odd = x.up && x.n && Number(x.up) !== Number(x.n);
+        return '<div class="sel-log-row' + (odd ? ' odd' : '') + '"><span class="sel-log-n">'
+          + (x.up ? 'JPG ' + x.up + (x.n ? ' + RAW ' + x.n : '') : x.n + '장')
+          + (odd ? '<em title="JPG 와 RAW 수가 다릅니다">⚠ ' + Math.abs(x.up - x.n) + '장 차이</em>' : '')
+          + '</span>'
+          + '<a href="' + esc(selDbxUrl(x.dest)) + '" target="_blank" rel="noopener">' + esc(x.dest) + '</a>'
+          + '<small>' + esc(fmtDateTime(x.at)) + '</small></div>';
+      }).join('')
     + '</div>';
 }
 
