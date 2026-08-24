@@ -2778,7 +2778,7 @@ function applyHash() {
       const sb2 = document.querySelector('.sub-tab[data-subtab="' + sub + '"]');
       if (sb2) sb2.click();
     }
-    if (tab === 'stats' && (sub || 'sales') !== stCur) stSub(sub || 'sales');
+    if (tab === 'stats' && (sub || stFirst()) !== stCur) stSub(sub || stFirst());
   } finally { applyingHash = false; }
 }
 window.addEventListener('hashchange', applyHash);
@@ -4241,9 +4241,14 @@ async function renderSales() {
   }));
 }
 
-/* 통계 안의 세 칸 — 예약·매출 / 방문 통계 / 작가 평가.
-   대표가 제일 먼저 보는 것이 장사 숫자라 「예약·매출」을 첫 칸으로 두고 기본으로 연다. */
-let stCur = 'sales';
+/* 통계 안의 세 칸. 순서는 admin.html 의 단추 차례가 정한다 —
+   대표가 순서를 바꿔달라고 할 때 화면만 고치면 되게 (2026-08-25).
+   맨 앞 칸이 곧 «기본으로 열리는 칸» 이고, 그 칸만 주소가 짧다(#stats). */
+const stFirst = () => {
+  const b = document.querySelector('.st-tg[data-sttab]');
+  return b ? b.dataset.sttab : 'feedback';
+};
+let stCur = '';                     // 아직 아무 칸도 안 열었다는 뜻
 function stSub(sub) {
   const box = $('stToggle');
   if (!box) return;
@@ -4259,7 +4264,7 @@ function stSub(sub) {
   $('fbBody').hidden = cur !== 'feedback';
   const bar = document.querySelector('.st-bar');
   if (bar) bar.hidden = cur !== 'visits';             // 기간 버튼·바로가기는 방문 통계 전용
-  setHash(cur === 'sales' ? 'stats' : 'stats/' + cur);
+  setHash(cur === stFirst() ? 'stats' : 'stats/' + cur);
   if (cur === 'sales') renderSales();
   if (cur === 'visits') renderStats();
   if (cur === 'feedback') renderFeedback();

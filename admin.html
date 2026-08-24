@@ -291,9 +291,10 @@
       <div id="tab-stats" hidden>
         <div class="st-toggle" id="stToggle">
           <span class="st-tg-ind" aria-hidden="true"></span>
-          <button type="button" class="st-tg active" data-sttab="sales">예약·매출</button>
+          <!-- 순서는 대표가 정한다 (2026-08-25). 맨 앞 칸이 곧 기본으로 열리는 칸 -->
+          <button type="button" class="st-tg active" data-sttab="feedback">작가 평가</button>
           <button type="button" class="st-tg" data-sttab="visits">방문 통계</button>
-          <button type="button" class="st-tg" data-sttab="feedback">작가 평가</button>
+          <button type="button" class="st-tg" data-sttab="sales">예약·매출</button>
         </div>
         <div class="st-bar" hidden>
           <div class="st-range">
@@ -306,9 +307,10 @@
             <a class="btn-sm" href="https://clarity.microsoft.com/" target="_blank" rel="noopener">클래리티(화면 녹화) ↗</a>
           </div>
         </div>
-        <div id="salesBody"><p class="empty">불러오는 중…</p></div>
+        <!-- 맨 앞 칸(작가 평가)만 펴둔다. 나머지는 골랐을 때 그린다 -->
+        <div id="fbBody"><p class="empty">불러오는 중…</p></div>
         <div id="statsBody" hidden><p class="empty">불러오는 중…</p></div>
-        <div id="fbBody" hidden><p class="empty">불러오는 중…</p></div>
+        <div id="salesBody" hidden><p class="empty">불러오는 중…</p></div>
       </div>
 
       <div id="tab-settings" hidden>
@@ -375,6 +377,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=d49ccd6385"></script>
+  <script src="admin.js?v=22451325a5"></script>
 </body>
 </html>
