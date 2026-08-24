@@ -838,7 +838,12 @@ td .muted { color: var(--ink-soft); }
 .st-row { position: relative; display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; margin-bottom: 4px; overflow: hidden; }
 .st-row-bar { position: absolute; left: 0; top: 0; bottom: 0; background: #f4ece0; border-radius: 6px; }
 .st-row-k { position: relative; flex: 1; min-width: 0; font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.st-row-v { position: relative; font-size: .85rem; font-weight: 600; color: var(--gold-deep); }
+/* 숫자를 한 줄로 세운다 (대표 요청 2026-08-24 «칸 맞춰줘»).
+   자리를 정해 두고 오른쪽으로 붙이고, 숫자 폭이 같은 글꼴 설정을 쓴다.
+   안 그러면 자릿수가 다를 때마다 338·79·13 이 들쭉날쭉해 보인다.
+   자리를 못 박고 «최소 너비» 로만 잡는다 — 예약·매출 쪽은 «2,783만» 처럼 긴 값이 온다 */
+.st-row-v { position: relative; min-width: 46px; text-align: right; white-space: nowrap;
+  font-variant-numeric: tabular-nums; font-size: .85rem; font-weight: 600; color: var(--gold-deep); }
 .st-note { margin-top: 14px; font-size: .76rem; color: var(--ink-soft); line-height: 1.6; }
 
 /* ── 예약·매출 (2026-08-23) ── */
