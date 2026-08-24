@@ -2594,7 +2594,8 @@ function renderStaff() {
       </span>
       <label class="st-active" title="메인 작가로 배정할 수 있음"><input type="checkbox" class="st-main" data-id="${s.id}" ${s.can_main !== false ? 'checked' : ''} /> 메인</label>
       <label class="st-active" title="2인 촬영 서브로 배정할 수 있음"><input type="checkbox" class="st-sub" data-id="${s.id}" ${s.can_sub !== false ? 'checked' : ''} /> 서브</label>
-      <label class="st-active"><input type="checkbox" class="st-rep" data-id="${s.id}" ${s.is_rep ? 'checked' : ''} /> 대표</label>
+      <button type="button" class="st-rep${s.is_rep ? ' on' : ''}" data-id="${s.id}"
+        title="${s.is_rep ? '대표입니다' : '이 분을 대표로 지정'}">대표</button>
       <label class="st-active"><input type="checkbox" class="st-act" data-id="${s.id}" ${s.active ? 'checked' : ''} /> 활성</label>
       <a class="btn-sm st-cal" href="/staff-calendar?s=${s.id}" target="_blank" rel="noopener" title="작가 캘린더 열기">📅 캘린더</a>
       <button class="btn-sm st-callink" data-id="${s.id}" title="작가에게 그대로 붙여넣을 안내문 복사">안내문 복사</button>
@@ -2612,6 +2613,31 @@ function renderStaff() {
       catch (_) { prompt('아래 내용을 복사하세요:', text); }
     }));
 
+  // 대표는 한 명뿐이라 줄마다 네모를 두지 않는다 (대표 요청 2026-08-24).
+  // 누르면 그 자리에서 바로 옮겨간다 — 저장을 따로 안 눌러도 된다.
+  // 서버(admin_staff_update)가 나머지 사람의 대표 표시를 알아서 내린다.
+  $('staffList').querySelectorAll('.st-rep').forEach((el) =>
+    el.addEventListener('click', async () => {
+      if (el.classList.contains('on')) { toast('이미 대표로 되어 있습니다.'); return; }
+      const id = el.dataset.id;
+      const q = (c) => $('staffList').querySelector(`.${c}[data-id="${id}"]`);
+      const auto = q('st-auto').checked;
+      el.disabled = true;
+      // 이 줄에 손대던 값이 있으면 그대로 함께 보낸다 (대표만 바꾸다 다른 걸 날리지 않게)
+      const { error } = await sb.rpc('admin_staff_update', {
+        p_id: id, p_name: q('st-name').value.trim(), p_phone: q('st-phone').value.trim(),
+        p_active: q('st-act').checked, p_rep: true,
+        p_color: auto ? '' : q('st-color').value,
+        p_can_main: q('st-main').checked, p_can_sub: q('st-sub').checked });
+      el.disabled = false;
+      if (error) { alert('대표 지정 실패: ' + error.message); return; }
+      await loadStaff();
+      invalidateConf();
+      renderStaff();
+      renderDashboard();
+      toast((staffMap[id] || {}).name + ' 작가님을 대표로 지정했습니다.');
+    }));
+
   // '자동색' 체크 → 색 선택기 비활성(자동 팔레트), 해제 → 직접 지정 가능
   $('staffList').querySelectorAll('.st-auto').forEach((cb) =>
     cb.addEventListener('change', () => {
@@ -2626,7 +2652,7 @@ function renderStaff() {
       const name = $('staffList').querySelector(`.st-name[data-id="${id}"]`).value.trim();
       const phone = $('staffList').querySelector(`.st-phone[data-id="${id}"]`).value.trim();
       const active = $('staffList').querySelector(`.st-act[data-id="${id}"]`).checked;
-      const rep = $('staffList').querySelector(`.st-rep[data-id="${id}"]`).checked;
+      const rep = $('staffList').querySelector(`.st-rep[data-id="${id}"]`).classList.contains('on');
       const auto = $('staffList').querySelector(`.st-auto[data-id="${id}"]`).checked;
       const color = auto ? '' : $('staffList').querySelector(`.st-color[data-id="${id}"]`).value; // ''=자동, #RRGGBB=지정
       const canMain = $('staffList').querySelector(`.st-main[data-id="${id}"]`).checked;

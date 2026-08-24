@@ -510,8 +510,9 @@ td .muted { color: var(--ink-soft); }
 .staff-list { display: flex; flex-direction: column; gap: 8px; }
 .staff-item { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
 .staff-item.inactive { opacity: .55; }
-.staff-item input.st-name { flex: 0 0 140px; }
-.staff-item input.st-phone { flex: 1; min-width: 140px; }
+/* 단추가 늘어나 줄이 빡빡해졌다 — 이름·번호 칸을 줄여 자리를 내준다 (대표 요청 2026-08-24) */
+.staff-item input.st-name { flex: 0 0 96px; padding-left: 9px; padding-right: 9px; }
+.staff-item input.st-phone { flex: 0 0 128px; padding-left: 9px; padding-right: 9px; }
 .staff-item input[type="text"] { border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font-size: .9rem; color: var(--ink); background: var(--cream); transition: all .15s; }
 .staff-item input[type="text"]:focus { outline: none; border-color: var(--gold); background: #fff; }
 .staff-item .st-active { font-size: .82rem; display: flex; align-items: center; gap: 4px; white-space: nowrap; color: var(--ink-soft); }
@@ -1269,3 +1270,13 @@ td .muted { color: var(--ink-soft); }
   border-radius: 8px; font-size: .82rem; color: var(--ink-soft); line-height: 1.6; }
 .fb-silent b { color: var(--ink); }
 .fb-silent small { display: block; font-size: .74rem; margin-top: 3px; }
+
+/* 대표는 한 명뿐 — 줄마다 네모를 두지 않고 글자 하나로 (대표 요청 2026-08-24).
+   누르면 그 사람이 대표가 되고 앞사람은 자동으로 풀린다 */
+.staff-item .st-rep { border: none; background: none; font-family: var(--sans); font-size: .82rem;
+  color: #cec6bb; cursor: pointer; padding: 4px 9px; border-radius: 999px; white-space: nowrap;
+  transition: color .15s, background .15s; }
+.staff-item .st-rep:hover { color: var(--gold-deep); background: #fbf6ee; }
+.staff-item .st-rep.on { background: var(--gold-deep); color: #fff; font-weight: 700; cursor: default; }
+.staff-item .st-rep.on:hover { background: var(--gold-deep); color: #fff; }
+.staff-item .st-rep:disabled { opacity: .5; cursor: default; }
