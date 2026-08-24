@@ -9,14 +9,14 @@ let staffId = params.get('s');
 let bookingId = params.get('b');
 const shortCode = params.get('k');
 const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-// 이 화면은 두 가지로 쓰인다.
-//   ① 월요일 주간 스케줄 톡 — 그 주 예식이 여러 건 (b 없음)
-//   ② 예식 전날 설문 안내 톡 — 그 한 건만 (b 있음)
-// 신부 설문은 ②에서만 보여준다. 대표 요청 2026-08-24:
+// 이 화면에는 신부 설문이 없다. 대표 요청 2026-08-24:
 //   "월요일에 나가는 작가들 스케줄 체크에는 신부 설문들은 안보이게 해줘
 //    설문은 예식 전날 최종 체크할때 설문 보내주는걸로"
-// 주간 톡은 일주일 전에 나가서, 그때는 신부가 설문을 아직 안 쓴 경우가 대부분이다.
-let oneOnly = false;
+//   "월요일에는 작가가 이번주 스케줄을 우리랑 확인하는 과정이야"
+// 이 화면이 하는 일은 «이번 주 스케줄 확인» 하나다.
+// 신부 설문은 예식 전날 대표가 「다가오는 예식」에서 survey-view 링크를 따로 보낸다.
+// (작가 알림톡 S·T 가 아직 승인 전이라 손으로 보낸다. 승인되면 그 톡에 실린다)
+// 주소에 b 가 있으면 한 건만, 없으면 그 주 전체를 보여주는 것은 그대로다.
 const esc = (s) => (s == null ? '' : String(s)).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 const show = (el) => ['errCard', 'loadCard', 'mainCard'].forEach((id) => ($(id).hidden = $(id) !== el));
@@ -75,9 +75,6 @@ function card(w) {
         <div class="ss-opts">${o.map((x) => `<span class="ss-opt${x === '2인 촬영' ? ' two' : ''}">${esc(x)}</span>`).join('')}</div></div>` : ''}
       ${w.sub_name ? `<div class="ss-grp"><div class="ss-row"><b>서브작가</b> : ${esc(w.sub_name)}${tel(w.sub_phone)}</div></div>` : ''}
       ${w.rep_designation ? '<div class="ss-grp"><div class="ss-row"><b>촬영</b> : 대표지정</div></div>' : ''}
-      ${oneOnly ? `<div class="ss-grp ss-survey-row">${w.has_survey
-        ? `<a class="ss-survey" href="survey-view?b=${esc(w.booking_id)}&s=${esc(staffId)}" target="_blank" rel="noopener">📋 신부 설문 보기</a>`
-        : '<span class="ss-survey none">신부 설문 아직 없음</span>'}</div>` : ''}
     </div>
     <div class="ss-checks">
       <label class="ss-chk"><input type="checkbox" data-k="attend" ${c.attend ? 'checked' : ''} /> <span>참석 / 스케줄 확정 <em>*</em></span></label>
@@ -102,7 +99,6 @@ async function init() {
   }
   if (!staffId || !uuidRe.test(staffId)) { show($('errCard')); return; }
   const single = bookingId && uuidRe.test(bookingId);
-  oneOnly = !!single;                 // 설문은 이때만 보여준다 (예식 전날 안내)
   const { data, error } = single
     ? await sb.rpc('staff_one', { p_booking_id: bookingId, p_staff_id: staffId })
     : await sb.rpc('staff_schedule', { p_staff_id: staffId });

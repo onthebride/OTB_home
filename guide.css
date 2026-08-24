@@ -95,13 +95,8 @@
   white-space: nowrap; padding: 2px 0; }
 /* 신부가 낸 촬영 설문 열기. 그 화면 맨 아래에서 «확인했습니다» 를 누른다
    (배정 체크와는 시점이 달라 따로 둔다 — 설문은 보통 예식 하루 전에 나간다) */
-.ss-survey-row { margin-top: 2px; }
-.ss-survey { display: inline-block; justify-self: start; text-decoration: none;
-  font-size: .9rem; font-weight: 600; color: var(--ink);
-  border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; background: #fff; }
-.ss-survey:hover { border-color: var(--gold); color: var(--gold-deep); }
-.ss-survey.none { color: #a09890; background: #f6f4f1; font-weight: 400; cursor: default; }
-.ss-survey.none:hover { border-color: var(--line); color: #a09890; }
+/* 신부 설문 단추는 이 화면에서 뺐다 (대표 요청 2026-08-24) — 스케줄 확인만 하는 화면.
+   설문은 예식 전날 survey-view 링크를 따로 받는다 */
 .ss-checks { display: grid; gap: 10px; margin: 16px 0; }
 .ss-chk { display: flex; align-items: flex-start; gap: 9px; font-size: .92rem; cursor: pointer; }
 .ss-chk em { color: #c0392b; font-style: normal; }
