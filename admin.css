@@ -1348,3 +1348,8 @@ td .muted { color: var(--ink-soft); }
 .sel-log-row.odd .sel-log-n { color: #b5462f; font-weight: 700; }
 .sel-log-row .sel-log-n em { display: block; font-style: normal; font-size: .72rem;
   color: #b5462f; font-weight: 600; }
+
+/* 서브 작가 별점 (대표 요청 2026-08-24) — 메인의 100점 만점과 섞지 않고 따로 보여준다 */
+.fb-sn .fb-subrate { display: block; font-style: normal; font-size: .74rem; color: var(--gold-deep); margin-top: 2px; }
+.fb-subs { border-color: #e0d4bd; background: #fbf6ee; }
+.fb-subs b { color: var(--gold-deep); }

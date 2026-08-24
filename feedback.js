@@ -21,14 +21,20 @@ const STAR_N = 10;
 const scores = {};   // { overall: 5, kindness: 4, ... }
 
 // 별점 10개를 버튼으로 그린다 (한 줄에 고르게 나눠 터치가 쉽게, 고르면 점수와 문구를 같이 표시)
+// 서브 작가 별점은 다섯 칸이다 (대표 요청 2026-08-24). 메인 문항과 섞지 않으려고
+// 눈에도 다르게 보이게 두었다 — 10칸짜리와 나란히 두면 같은 잣대로 착각한다
+const STAR5_TXT = ['', '많이 아쉬웠어요', '아쉬웠어요', '보통이었어요', '좋았어요', '정말 좋았어요'];
+
 function buildStars() {
   document.querySelectorAll('.fb-stars').forEach((wrap) => {
     const k = wrap.dataset.k;
+    const max = Number(wrap.dataset.max) || STAR_N;
+    const txt = max === 5 ? STAR5_TXT : STAR_TXT;
     wrap.innerHTML =
-      '<div class="fb-star-row">'
-      + Array.from({ length: STAR_N }, (_, i) => i + 1).map((n) =>
+      '<div class="fb-star-row' + (max === 5 ? ' five' : '') + '">'
+      + Array.from({ length: max }, (_, i) => i + 1).map((n) =>
         `<button type="button" class="fb-star" data-n="${n}" aria-label="${n}점" role="radio" aria-checked="false">★</button>`).join('')
-      + '</div><div class="fb-scale"><span>1 아쉬움</span><span>10 최고</span></div>'
+      + '</div><div class="fb-scale"><span>1 아쉬움</span><span>' + max + ' 최고</span></div>'
       + '<span class="fb-star-txt"></span>';
     wrap.addEventListener('click', (e) => {
       const btn = e.target.closest('.fb-star');
@@ -40,7 +46,7 @@ function buildStars() {
         b.classList.toggle('on', on);
         b.setAttribute('aria-checked', String(Number(b.dataset.n) === n));
       });
-      wrap.querySelector('.fb-star-txt').textContent = n + '점 · ' + STAR_TXT[n];
+      wrap.querySelector('.fb-star-txt').textContent = n + '점 · ' + txt[n];
       wrap.classList.remove('miss');
     });
   });
@@ -51,6 +57,7 @@ async function load() {
     $('fbName').textContent = '김소연';
     $('fbStaff').textContent = '황지성';
     $('fbMeta').textContent = '2026. 08. 23 · 스텐포드 호텔 서울';
+    subSetup('황지성', '최선종(서브)');
     const note = document.querySelector('.sv-note');
     if (note) note.insertAdjacentHTML('afterend',
       '<p class="sv-note" style="background:#f4f1ec;border-color:#e0d8cc;color:#6b635c">'
@@ -69,8 +76,20 @@ async function load() {
   $('fbStaff').textContent = data.staff_name || '담당';
   const d = data.wedding_date ? String(data.wedding_date).slice(0, 10).replace(/-/g, '. ') : '';
   $('fbMeta').textContent = [d, data.wedding_venue].filter(Boolean).join(' · ');
+  subSetup(data.staff_name, data.sub_name);
   buildStars();
   show($('mainCard'));
+}
+
+// 서브 작가가 배정된 예식에서만 별점 한 칸을 더 띄운다 (대표 요청 2026-08-24).
+// 위 문항들이 «메인에 대한 것» 이라는 안내도 그때만 붙는다 —
+// 두 분이 안 가신 예식에는 괜히 헷갈리는 말이 된다
+function subSetup(mainName, subName) {
+  if (!subName) return;
+  $('fbSubName').textContent = subName;
+  $('fbStaff2').textContent = mainName || '담당';
+  $('fbSubSec').hidden = false;
+  $('fbMainOnly').hidden = false;
 }
 
 $('fbSubmit').addEventListener('click', async () => {
@@ -81,6 +100,8 @@ $('fbSubmit').addEventListener('click', async () => {
   // 빠뜨린 항목 표시 후 그 자리로 이동
   let firstMiss = null;
   document.querySelectorAll('.fb-stars').forEach((w) => {
+    // 서브 작가 별점은 선택이라 안 골라도 넘어간다
+    if (w.dataset.k === 'sub_stars') return;
     const bad = !scores[w.dataset.k];
     w.classList.toggle('miss', bad);
     if (bad && !firstMiss) firstMiss = w;
@@ -106,6 +127,7 @@ $('fbSubmit').addEventListener('click', async () => {
     requests: scores.requests,
     flow: scores.flow,
     family: scores.family,
+    sub_stars: scores.sub_stars || null,
     next_req: $('f_next_req').value.trim(),
     message: $('f_message').value.trim(),
   };

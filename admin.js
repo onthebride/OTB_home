@@ -3897,6 +3897,7 @@ async function renderFeedback() {
         + (s.req_n ? ' · <b>부탁 ' + s.req_n + '건</b>' : '') + '</span>'
       // 응답률 — 점수는 다들 만점 언저리라, 실제로 벌어지는 건 이쪽이다 (대표 요청 2026-08-24)
       + '<span class="fb-sn">' + s.n + '건'
+        + (s.sub_n ? '<i class="fb-subrate">서브 ★' + s.sub_avg + ' (' + s.sub_n + '건)</i>' : '')
         + (s.target ? '<i class="fb-rate' + (Number(s.rate) < FB_RATE_LOW ? ' low' : '') + '">'
             + '지난 예식 ' + s.target + '건 중 ' + (s.rate == null ? '-' : s.rate + '%') + '</i>' : '')
         + (Number(s.late_n) ? ' · 지각 ' + s.late_n : '')
@@ -3911,6 +3912,16 @@ async function renderFeedback() {
     ? '<div class="fb-silent">아직 응답이 하나도 없는 작가 — '
       + silent.map((x) => esc(x.staff_name) + ' <b>' + x.n + '건</b>').join(' · ')
       + '<small>점수를 만점으로 채우지 않습니다. 응답이 없는 건 «만족»이 아니라 «모름»이라서요.</small></div>'
+    : '';
+
+  // 서브로만 다닌 작가는 위 순위에 아예 안 뜬다 (메인 응답이 없어서). 따로 적어준다.
+  // 별점(5점)과 위의 100점 만점 점수는 섞지 않는다 — 물어본 것이 다르다 (2026-08-24)
+  const subs = (Array.isArray(d.subs) ? d.subs : [])
+    .filter((x) => !staff.some((s) => s.staff_name === x.staff_name));
+  const subRow = subs.length
+    ? '<div class="fb-silent fb-subs">서브로 참여한 작가 — '
+      + subs.map((x) => esc(x.staff_name) + ' <b>★' + x.avg + '</b> (' + x.n + '건)').join(' · ')
+      + '<small>서브 별점은 5점 만점입니다. 위의 100점 만점 점수와는 물어본 것이 달라 섞지 않습니다.</small></div>'
     : '';
 
   // 페이지네이션 — 필터/기간이 바뀌어 목록이 짧아지면 마지막 페이지로 당겨준다
@@ -3970,7 +3981,7 @@ async function renderFeedback() {
     + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>👤 작가별 <small>(점수 높은 순 · 누르면 그 작가 응답만)</small></h3></div>'
       + '<p class="st-note">점수 = 도착 25 · 친절 25 · 요청 15 · 진행 15 · 하객 20 (100점 만점). 전체 만족도는 점수에서 빼고 참고로만 봅니다.<br>'
       + '점수는 다들 만점 언저리라 잘 안 갈립니다. <b>응답률을 같이 보세요</b> — 지금 실제로 차이가 나는 건 그쪽입니다.</p>'
-      + staffRows + silentRow + '</div>'
+      + staffRows + silentRow + subRow + '</div>'
     + '<div class="dash-card">'
       + '<div class="dash-card-head"><h3>💬 받은 응답 <small>(최근순)</small></h3>'
         + '<span class="fb-rangebar">' + rangeBtn(90, '3개월') + rangeBtn(365, '1년') + rangeBtn(3650, '전체') + '</span></div>'

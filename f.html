@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="survey.css?v=b08456ac47" />
+  <link rel="stylesheet" href="survey.css?v=c5e0ba0aad" />
   <link rel="stylesheet" href="feedback.css?v=5dc1510720" />
 </head>
 <body>
@@ -50,6 +50,11 @@
         <p class="sv-greet"><b id="fbName">고객</b>님, 결혼 진심으로 축하드립니다.</p>
         <p class="sv-greet fb-sub" id="fbMeta"></p>
         <p class="sv-note">담당 <b id="fbStaff">작가</b> 작가님의 <b>현장 진행</b>에 대한 짧은 설문입니다. 30초면 됩니다.</p>
+        <!-- 두 분이 가신 예식에서는 «누구에 대한 것인지» 를 못 박아둔다.
+             안 그러면 서브가 아쉬웠던 것이 메인 점수로 붙는다 (대표 요청 2026-08-24) -->
+        <p class="sv-note fb-mainonly" id="fbMainOnly" hidden>아래 문항은
+          <b id="fbStaff2">담당</b> 작가님에 대한 것입니다.
+          함께 가신 작가님은 <b>맨 아래에서 따로</b> 여쭙겠습니다.</p>
       </section>
 
       <section class="sv-sec">
@@ -98,6 +103,14 @@
         </div>
       </section>
 
+      <!-- 2인 촬영으로 서브 작가가 배정된 예식에서만 뜬다.
+           메인과 섞지 않고 별점 하나만 따로 받는다 (대표 요청 2026-08-24) -->
+      <section class="sv-sec" id="fbSubSec" hidden>
+        <h2 class="sv-h">함께 오신 <b id="fbSubName">작가</b> 작가님은 어떠셨나요? <small>(선택)</small></h2>
+        <p class="sv-sub">하객·현장을 주로 담아주신 분입니다.</p>
+        <div class="fb-stars" data-k="sub_stars" data-max="5" role="radiogroup" aria-label="서브 작가"></div>
+      </section>
+
       <section class="sv-sec">
         <h2 class="sv-h">8. 작가님께 한마디 <small>(선택)</small></h2>
         <div class="sv-field full">
@@ -114,6 +127,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="feedback.js?v=2ea34939b5"></script>
+  <script src="feedback.js?v=1d7b8fb7e8"></script>
 </body>
 </html>
