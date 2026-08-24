@@ -3989,6 +3989,9 @@ async function renderFeedback() {
    매출은 예식일 기준 총액(계약금+잔금), 순이익은 거기서 작가비를 뺀 것.
    작가비 규칙은 admin_sales() 안에 있고 여기서는 받은 값을 적기만 한다. */
 let salesLoaded = false;
+// 달마다 표에 보여줄 기간 (대표 요청 2026-08-24) — 최근 / 1년 / 전체
+let salesSpan = 'now';
+const SPAN_LABEL = { now: '최근', '1y': '1년', all: '전체' };
 
 // 만원 단위를 사람이 읽는 말로. 10754 → '1억 754만'
 function manwon(n) {
@@ -4009,7 +4012,7 @@ async function renderSales() {
   const wrap = $('salesBody');
   if (!wrap) return;
   if (!salesLoaded) wrap.innerHTML = '<p class="empty">불러오는 중…</p>';
-  const { data, error } = await sb.rpc('admin_sales');
+  const { data, error } = await sb.rpc('admin_sales', { p_span: salesSpan });
   if (error || !data) {
     wrap.innerHTML = '<p class="empty">불러오지 못했습니다. (' + esc(error ? error.message : '') + ')</p>';
     return;
@@ -4034,6 +4037,22 @@ async function renderSales() {
       + '<span class="sl-al">' + (m.album ? '-' + manwon(m.album) : '') + '</span>'
       + '<span class="sl-pf' + (m.profit < 0 ? ' minus' : '') + '">' + manwon(m.profit) + '</span>'
       + '<span class="sl-un">' + (m.unassigned ? '<em>미배정 ' + m.unassigned + '</em>' : '') + '</span>'
+      + '</div>';
+  }).join('');
+
+  // 해마다 한 줄 (대표 요청 2026-08-24). 매출 크기로 막대를 그린다
+  const years = data.years || [];
+  const yMax = Math.max(1, ...years.map((x) => Number(x.rev) || 0));
+  const yearRows = years.map((x) => {
+    const now = Number(x.y) === Number(data.this_y);
+    return '<div class="sl-row sl-yrow' + (now ? ' now' : '') + '">'
+      + '<span class="sl-m">' + x.y + '년</span>'
+      + '<span class="sl-n">' + x.n + '건' + (x.done ? '<i>치른 ' + x.done + '</i>' : '') + '</span>'
+      + '<span class="sl-y-rev"><i class="sl-b" style="width:' + Math.round((x.rev / yMax) * 100) + '%"></i>'
+      + '<b>' + manwon(x.rev) + '</b></span>'
+      + '<span class="sl-y-cost">-' + manwon(x.cost) + '</span>'
+      + '<span class="sl-al">' + (x.album ? '-' + manwon(x.album) : '') + '</span>'
+      + '<span class="sl-pf' + (x.profit < 0 ? ' minus' : '') + '">' + manwon(x.profit) + '</span>'
       + '</div>';
   }).join('');
 
@@ -4079,7 +4098,23 @@ async function renderSales() {
     + card('한 건 평균', manwon(y.avg), '옵션까지 넣은 값')
     + '</div>'
 
-    + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>📅 달마다 <small>(예식일 기준 · 지난 6달~앞으로 1년)</small></h3></div>'
+    // 해마다 — 매출은 예식일, 앨범은 발주일 기준이라 달로 보면 어긋나지만 해로 보면 상쇄된다
+    + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>🗓 해마다</h3></div>'
+    + (years.length
+      ? '<div class="sl-head sl-yh"><span>해</span><span class="sl-n">예식</span>'
+        + '<span class="sl-y-rev">매출</span><span class="sl-y-cost">작가비</span>'
+        + '<span class="sl-al">앨범</span><span class="sl-pf">순이익</span></div>'
+        + '<div class="sl-list">' + yearRows + '</div>'
+        + '<p class="st-note">달로 보면 매출(예식일)과 앨범값(발주일)의 때가 어긋나 이상해 보이는 달이 생깁니다. '
+        + '해로 묶으면 서로 상쇄되니 <b>이 줄이 제일 정확합니다.</b></p>'
+      : '<p class="empty sm">아직 없습니다.</p>')
+    + '</div>'
+
+    + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>📅 달마다 <small>(예식일 기준)</small></h3>'
+    + '<span class="st-range sl-span">'
+    + ['now', '1y', 'all'].map((k) => '<button class="btn-sm' + (salesSpan === k ? ' active' : '')
+        + '" data-span="' + k + '">' + SPAN_LABEL[k] + '</button>').join('')
+    + '</span></div>'
     + '<div class="sl-head"><span class="sl-m">달</span><span class="sl-n">예식</span>'
     + '<span class="sl-bwrap">매출</span><span class="sl-al">앨범</span>'
     + '<span class="sl-pf">순이익</span><span class="sl-un"></span></div>'
@@ -4104,6 +4139,13 @@ async function renderSales() {
     + '<div class="dash-card"><div class="dash-card-head"><h3>⏳ 언제 예약하나</h3></div>' + lead + '</div>'
     + '<div class="dash-card"><div class="dash-card-head"><h3>🔄 방문 → 예약</h3></div>' + funnel + '</div>'
     + '</div>';
+
+  // 달마다 표에 보여줄 기간 고르기
+  wrap.querySelectorAll('.sl-span button').forEach((b) => b.addEventListener('click', () => {
+    if (salesSpan === b.dataset.span) return;
+    salesSpan = b.dataset.span;
+    renderSales();
+  }));
 }
 
 /* 통계 안의 세 칸 — 예약·매출 / 방문 통계 / 작가 평가.

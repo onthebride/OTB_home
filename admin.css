@@ -1296,3 +1296,18 @@ td .muted { color: var(--ink-soft); }
 .staff-item input.st-phone { padding-left: 9px; padding-right: 9px; }
 /* 이름·번호는 왼쪽에, 색깔부터는 오른쪽으로 몰아 붙인다 (대표 요청 2026-08-24) */
 .staff-item .st-color-wrap { margin-left: auto; }
+
+/* 해마다 한 줄 (대표 요청 2026-08-24). 달마다 표와 칸 수가 달라 따로 잡는다 */
+.sl-head.sl-yh, .sl-row.sl-yrow { grid-template-columns: 58px 62px minmax(0, 1fr) 78px 62px 84px; }
+.sl-y-rev { position: relative; display: flex; align-items: center; min-width: 0; height: 20px; }
+.sl-y-rev b { position: relative; font-weight: 600; font-size: .84rem; padding-left: 7px; white-space: nowrap; }
+.sl-y-cost { text-align: right; font-size: .8rem; color: var(--ink-soft); white-space: nowrap; }
+.sl-yrow .sl-m { font-weight: 600; }
+.sl-yrow .sl-n i { display: block; font-style: normal; font-size: .7rem; color: var(--ink-soft); }
+/* 기간 고르기 단추 — 카드 제목 오른쪽에 */
+.sl-span { margin-left: auto; display: flex; gap: 6px; }
+
+@media (max-width: 560px) {
+  .sl-head.sl-yh, .sl-row.sl-yrow { grid-template-columns: 48px 48px minmax(0, 1fr) 62px 72px; }
+  .sl-y-cost { display: none; }          /* 좁으면 작가비는 접는다 — 순이익에 이미 반영돼 있다 */
+}
