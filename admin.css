@@ -1280,3 +1280,7 @@ td .muted { color: var(--ink-soft); }
 .staff-item .st-rep.on { background: var(--gold-deep); color: #fff; font-weight: 700; cursor: default; }
 .staff-item .st-rep.on:hover { background: var(--gold-deep); color: #fff; }
 .staff-item .st-rep:disabled { opacity: .5; cursor: default; }
+
+/* 홈의 낱개 카드끼리 붙어 있었다 — 사이를 띄운다 (대표 요청 2026-08-24).
+   .dash-cards(두 칸짜리 묶음)는 원래 아래 여백이 있어 그대로 둔다 */
+#tab-dashboard > .dash-card { margin-bottom: 16px; }

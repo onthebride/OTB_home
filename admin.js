@@ -2837,7 +2837,7 @@ async function renderHomeStats(force) {
 }
 
 /* 신부님들이 설문에 남긴 글 세 개. 위에서 이미 받아온 것을 나눠 쓴다 — 따로 안 부른다 */
-const HOME_REV_N = 3;
+const HOME_REV_N = 5;                 // 대표 요청 2026-08-24: 셋 → 다섯
 function renderHomeReviews(items) {
   const box = $('homeReviewsBody');
   if (!box) return;
