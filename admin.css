@@ -1336,3 +1336,9 @@ td .muted { color: var(--ink-soft); }
   .sl-head.sl-yh, .sl-row.sl-yrow { grid-template-columns: 48px 48px minmax(0, 1fr) 62px 72px; }
   .sl-y-cost { display: none; }          /* 좁으면 작가비는 접는다 — 순이익에 이미 반영돼 있다 */
 }
+
+/* 셀렉에서 «알맹이가 안 온 장» 경고 (대표 신고 2026-08-24).
+   위쪽 .sel-warn 은 «조금밖에 안 맞습니다» 안내용이라 따로 둔다 */
+.sel-nobody { background: #fcf3f1; border: 1px solid #e0b6ae; border-radius: 8px;
+  padding: 9px 11px; color: #b5462f; line-height: 1.6; margin-top: 8px; }
+.sel-nobody b { color: #8f3524; }

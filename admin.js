@@ -3357,6 +3357,9 @@ const selMB = (n) => (n >= 1024 * 1024 * 1024
 async function selShow(rbox, ctx, folder, got, items) {
   const want = (items || []).map((it) => it.name);
   const ups = (items || []).filter((it) => it.file || it.entry);   // 올릴 수 있는 것(알맹이가 있는 것)
+  // 이름만 붙여넣은 경우(ups 가 아예 0)는 원래 그런 것이라 넘어간다.
+  // 몇 장만 알맹이가 없는 건 다른 얘기다 — 그건 읽다 만 것이니 알려줘야 한다
+  const noBody = ups.length ? (items || []).filter((it) => !it.file && !it.entry).map((it) => it.name) : [];
   const { hit, miss, dup } = selMatch(want, got.files);
   if (!selRoots) selRoots = await selLoadRoots();
   // 자동으로 넣는 것은 «YYYY 자동셀렉» 에 모은다 — 손으로 하던 «셀렉파일» 과 갈라둔다.
@@ -3397,6 +3400,15 @@ async function selShow(rbox, ctx, folder, got, items) {
           + (ups.length && hit.length ? ' 과 ' : '')
           + (hit.length ? '<b>RAW ' + hit.length + '장</b>' : '')
           + ' 을 넣습니다.</p>'
+          // 이름은 왔는데 알맹이가 안 온 것 — 그대로 두면 «올렸습니다» 라고 하면서
+          // 조용히 그 수만큼 모자라게 들어간다 (대표 신고 2026-08-24: RAW 40 · JPG 38)
+          + (ups.length && noBody.length
+              ? '<p class="dbx-msg sel-nobody">⚠ ' + noBody.length + '장은 <b>알맹이가 안 와서 못 올립니다</b> — '
+                + esc(noBody.slice(0, 8).join(', '))
+                + (noBody.length > 8 ? ' 외 ' + (noBody.length - 8) + '장' : '')
+                + '<br />폴더를 다시 끌어다 놓거나 [파일 고르기] 로 다시 골라주세요. '
+                + 'RAW 는 이름만으로 찾으니 그대로 들어갑니다.</p>'
+              : '')
           + '<button type="button" class="btn-sm primary sel-copy">업로드 &amp; 복사</button>'
           + '<div class="sel-bar" hidden><i></i></div>'
           + '<p class="dbx-msg sel-stat"></p></div>'
