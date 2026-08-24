@@ -299,8 +299,10 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
   .cal-d { font-size: .7rem; }
 
   /* 작가관리 */
-  .staff-item input.st-name { flex: 1 1 100%; }
-  .staff-item input.st-phone { flex: 1 1 100%; }
+  /* 좁으면 한 줄에 하나씩. 위에서 준 고정 너비를 풀어준다 */
+  .staff-item input.st-name { flex: 1 1 100%; width: auto; }
+  .staff-item input.st-phone { flex: 1 1 100%; width: auto; }
+  .staff-item .st-color-wrap { margin-left: 0; }
 }
 
 /* ===== Dashboard ===== */
@@ -510,9 +512,12 @@ td .muted { color: var(--ink-soft); }
 .staff-list { display: flex; flex-direction: column; gap: 8px; }
 .staff-item { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
 .staff-item.inactive { opacity: .55; }
-/* 단추가 늘어나 줄이 빡빡해졌다 — 이름·번호 칸을 줄여 자리를 내준다 (대표 요청 2026-08-24) */
-.staff-item input.st-name { flex: 0 0 96px; padding-left: 9px; padding-right: 9px; }
-.staff-item input.st-phone { flex: 0 0 128px; padding-left: 9px; padding-right: 9px; }
+/* 단추가 늘어나 줄이 빡빡해졌다 — 이름·번호 칸을 줄여 자리를 내준다 (대표 요청 2026-08-24).
+   ⚠ flex-basis 만 줄이면 안 줄어든다. 가로로 늘어선 칸은 min-width 가 auto 라
+   «내용이 요구하는 최소 너비» 아래로는 안 내려가는데, input 은 그 값이 꽤 크다.
+   min-width: 0 을 같이 줘야 실제로 줄어든다. 여백은 아래쪽 규칙에서 다시 잡는다 */
+.staff-item input.st-name { flex: 0 0 96px; width: 96px; min-width: 0; }
+.staff-item input.st-phone { flex: 0 0 128px; width: 128px; min-width: 0; }
 .staff-item input[type="text"] { border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font-size: .9rem; color: var(--ink); background: var(--cream); transition: all .15s; }
 .staff-item input[type="text"]:focus { outline: none; border-color: var(--gold); background: #fff; }
 .staff-item .st-active { font-size: .82rem; display: flex; align-items: center; gap: 4px; white-space: nowrap; color: var(--ink-soft); }
@@ -1284,3 +1289,10 @@ td .muted { color: var(--ink-soft); }
 /* 홈의 낱개 카드끼리 붙어 있었다 — 사이를 띄운다 (대표 요청 2026-08-24).
    .dash-cards(두 칸짜리 묶음)는 원래 아래 여백이 있어 그대로 둔다 */
 #tab-dashboard > .dash-card { margin-bottom: 16px; }
+
+/* 이름·번호 칸의 좌우 여백 — 위쪽 input[type="text"] 규칙(padding: 9px 12px)이
+   같은 무게라 나중에 오는 이쪽이 이긴다. 칸이 좁아졌으니 여백도 줄인다 */
+.staff-item input.st-name,
+.staff-item input.st-phone { padding-left: 9px; padding-right: 9px; }
+/* 이름·번호는 왼쪽에, 색깔부터는 오른쪽으로 몰아 붙인다 (대표 요청 2026-08-24) */
+.staff-item .st-color-wrap { margin-left: auto; }
