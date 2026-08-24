@@ -2909,7 +2909,9 @@ async function renderStats() {
     '<div class="st-cards">'
     + '<div class="st-card"><span class="st-k">오늘</span><strong>' + stNum(d.today.visits) + '</strong><span class="st-sub">방문 · 페이지뷰 ' + stNum(d.today.views) + '</span></div>'
     + '<div class="st-card"><span class="st-k">최근 7일</span><strong>' + stNum(d.week.visits) + '</strong><span class="st-sub">방문 · 페이지뷰 ' + stNum(d.week.views) + '</span></div>'
-    + '<div class="st-card"><span class="st-k">최근 ' + d.days + '일</span><strong>' + stNum(d.range.visits) + '</strong><span class="st-sub">방문 · 페이지뷰 ' + stNum(d.range.views) + '</span></div>'
+    // 기간이 7일이면 바로 위 칸과 똑같은 숫자가 두 번 나온다 — 그때는 뺀다 (대표 요청 2026-08-24)
+    + (Number(d.days) === 7 ? ''
+      : '<div class="st-card"><span class="st-k">최근 ' + d.days + '일</span><strong>' + stNum(d.range.visits) + '</strong><span class="st-sub">방문 · 페이지뷰 ' + stNum(d.range.views) + '</span></div>')
     + '<div class="st-card"><span class="st-k">모바일</span><strong>' + stNum(d.mobile_pct) + '%</strong><span class="st-sub">휴대폰으로 본 비율</span></div>'
     + '</div>'
     + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>📈 일자별 <small>(막대 = 페이지뷰)</small></h3></div>'

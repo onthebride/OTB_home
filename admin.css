@@ -961,8 +961,18 @@ td .muted { color: var(--ink-soft); }
 }
 
 @media (max-width: 600px) {
-  .st-cards { grid-template-columns: repeat(2, 1fr); }
+  /* 폰에서는 칸을 촘촘하게 (대표 요청 2026-08-24 «보기좋게 정리좀») */
+  .st-cards { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+  .st-card { padding: 11px 12px; }
   .st-card strong { font-size: 1.3rem; }
+  .st-card .st-k { font-size: .76rem; }
+  .st-card .st-sub { font-size: .7rem; }
+  /* 홀수로 남은 마지막 칸은 한 줄을 다 쓴다 — 혼자 반쪽으로 떠 있지 않게 */
+  .st-cards > .st-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  /* 기간 버튼과 바로가기를 한 줄에 */
+  .st-bar { gap: 8px; }
+  .st-links { margin-left: auto; width: auto; }
+  .st-links .btn-sm { font-size: .74rem; padding: 5px 8px; }
   .st-links { margin-left: 0; width: 100%; }
   .st-two { flex-direction: column; }
   .st-chart { height: 120px; padding: 8px 10px 0; }
