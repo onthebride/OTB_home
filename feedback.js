@@ -21,17 +21,15 @@ const STAR_N = 10;
 const scores = {};   // { overall: 5, kindness: 4, ... }
 
 // 별점 10개를 버튼으로 그린다 (한 줄에 고르게 나눠 터치가 쉽게, 고르면 점수와 문구를 같이 표시)
-// 서브 작가 별점은 다섯 칸이다 (대표 요청 2026-08-24). 메인 문항과 섞지 않으려고
-// 눈에도 다르게 보이게 두었다 — 10칸짜리와 나란히 두면 같은 잣대로 착각한다
-const STAR5_TXT = ['', '많이 아쉬웠어요', '아쉬웠어요', '보통이었어요', '좋았어요', '정말 좋았어요'];
-
+// 서브 작가 별점도 열 칸이다 (대표 요청 2026-08-24 «서브 항목도 10점만점으로»).
+// 잣대가 같아야 견주기 쉽다. 다만 점수는 여전히 따로 센다 — 물어본 것이 다르다
 function buildStars() {
   document.querySelectorAll('.fb-stars').forEach((wrap) => {
     const k = wrap.dataset.k;
-    const max = Number(wrap.dataset.max) || STAR_N;
-    const txt = max === 5 ? STAR5_TXT : STAR_TXT;
+    const max = STAR_N;
+    const txt = STAR_TXT;
     wrap.innerHTML =
-      '<div class="fb-star-row' + (max === 5 ? ' five' : '') + '">'
+      '<div class="fb-star-row">'
       + Array.from({ length: max }, (_, i) => i + 1).map((n) =>
         `<button type="button" class="fb-star" data-n="${n}" aria-label="${n}점" role="radio" aria-checked="false">★</button>`).join('')
       + '</div><div class="fb-scale"><span>1 아쉬움</span><span>' + max + ' 최고</span></div>'

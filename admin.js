@@ -3897,7 +3897,7 @@ async function renderFeedback() {
         + (s.req_n ? ' · <b>부탁 ' + s.req_n + '건</b>' : '') + '</span>'
       // 응답률 — 점수는 다들 만점 언저리라, 실제로 벌어지는 건 이쪽이다 (대표 요청 2026-08-24)
       + '<span class="fb-sn">' + s.n + '건'
-        + (s.sub_n ? '<i class="fb-subrate">서브 ★' + s.sub_avg + ' (' + s.sub_n + '건)</i>' : '')
+        + (s.sub_n ? '<i class="fb-subrate">서브 ' + s.sub_avg + '점 (' + s.sub_n + '건)</i>' : '')
         + (s.target ? '<i class="fb-rate' + (Number(s.rate) < FB_RATE_LOW ? ' low' : '') + '">'
             + '지난 예식 ' + s.target + '건 중 ' + (s.rate == null ? '-' : s.rate + '%') + '</i>' : '')
         + (Number(s.late_n) ? ' · 지각 ' + s.late_n : '')
@@ -3920,8 +3920,8 @@ async function renderFeedback() {
     .filter((x) => !staff.some((s) => s.staff_name === x.staff_name));
   const subRow = subs.length
     ? '<div class="fb-silent fb-subs">서브로 참여한 작가 — '
-      + subs.map((x) => esc(x.staff_name) + ' <b>★' + x.avg + '</b> (' + x.n + '건)').join(' · ')
-      + '<small>서브 별점은 5점 만점입니다. 위의 100점 만점 점수와는 물어본 것이 달라 섞지 않습니다.</small></div>'
+      + subs.map((x) => esc(x.staff_name) + ' <b>' + x.avg + '점</b> (' + x.n + '건)').join(' · ')
+      + '<small>서브는 10점 만점 한 문항입니다. 위의 100점 만점 점수와는 물어본 것이 달라 섞지 않습니다.</small></div>'
     : '';
 
   // 페이지네이션 — 필터/기간이 바뀌어 목록이 짧아지면 마지막 페이지로 당겨준다

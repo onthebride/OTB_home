@@ -275,7 +275,5 @@ textarea { resize: vertical; }
   .sv-title { font-size: 1.7rem; }
 }
 
-/* 서브 작가 별점은 다섯 칸 — 열 칸짜리와 나란히 두면 같은 잣대로 착각한다.
-   칸이 적으니 별을 조금 키워 눈에 다르게 보이게 한다 (대표 요청 2026-08-24) */
-.fb-star-row.five .fb-star { font-size: 1.9rem; }
+/* 위 문항이 메인 작가에 대한 것이라는 안내 (대표 요청 2026-08-24) */
 .fb-mainonly { background: #f4f1ec; border-color: #e0d8cc; color: #6b635c; }
