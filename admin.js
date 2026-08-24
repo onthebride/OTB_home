@@ -2913,6 +2913,12 @@ async function renderStats() {
     + (Number(d.days) === 7 ? ''
       : '<div class="st-card"><span class="st-k">최근 ' + d.days + '일</span><strong>' + stNum(d.range.visits) + '</strong><span class="st-sub">방문 · 페이지뷰 ' + stNum(d.range.views) + '</span></div>')
     + '<div class="st-card"><span class="st-k">모바일</span><strong>' + stNum(d.mobile_pct) + '%</strong><span class="st-sub">휴대폰으로 본 비율</span></div>'
+    // 한 번 들어와서 몇 쪽이나 보고 가나. 새로 받아올 것 없이 이미 있는 두 숫자를 나눈다.
+    // 1쪽에 가까우면 첫 화면만 보고 나간 것, 커질수록 이것저것 눌러본 것이다.
+    // (재방문율은 못 센다 — 방문 번호가 창을 닫으면 없어져서 같은 사람인지 알 수 없다)
+    + '<div class="st-card"><span class="st-k">한 번에</span><strong>'
+    + (Number(d.range.visits) ? (Math.round((Number(d.range.views) / Number(d.range.visits)) * 10) / 10) : '-')
+    + '</strong><span class="st-sub">쪽 · 한 번 들어와서 본 쪽수</span></div>'
     + '</div>'
     + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>📈 일자별 <small>(막대 = 페이지뷰)</small></h3></div>'
     + '<div class="st-chart" style="gap:' + (daily.length > 45 ? 1 : 3) + 'px">' + bars + '</div></div>'
