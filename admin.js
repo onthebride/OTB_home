@@ -2732,12 +2732,14 @@ if (dashTabs) {
     $('tab-bookings').hidden = tab !== 'bookings';
     $('tab-events').hidden = tab !== 'events';
     $('tab-select').hidden = tab !== 'select';
+    $('tab-album').hidden = tab !== 'album';
     $('tab-stats').hidden = tab !== 'stats';
     $('tab-settings').hidden = tab !== 'settings';
     if (tab === 'dashboard') renderDashboard();
     if (tab === 'calendar') { renderCalendar(); renderSchedule(); }
     if (tab === 'events') loadEvents();
     if (tab === 'select') renderSelect();
+    if (tab === 'album') renderAlbum();
     // 통계를 열면 홈의 「한눈에」 숫자도 같이 새로 받아둔다
     if (tab === 'stats') { stSub(stCur); renderHomeStats(true); }
     if (tab === 'settings') showSubtab(currentSubtab);
@@ -3968,7 +3970,8 @@ async function renderSales() {
   }
   salesLoaded = true;
   const y = data.year || {}, c = data.cost || {};
-  const months = (data.months || []).filter((m) => m.n > 0);
+  // 예식이 없는 달이라도 그 달 앨범 발주가 있으면 보여준다 — 나간 돈은 보여야 한다
+  const months = (data.months || []).filter((m) => m.n > 0 || m.album > 0);
   const left = Math.max(0, (y.n || 0) - (y.done || 0));
   const rate = y.rev ? Math.round((y.profit / y.rev) * 1000) / 10 : null;
   const card = (k, v, sub) => '<div class="st-card"><span class="st-k">' + k + '</span><strong>' + v
@@ -3982,7 +3985,8 @@ async function renderSales() {
       + '<span class="sl-n">' + m.n + '건</span>'
       + '<span class="sl-bwrap"><i class="sl-b" style="width:' + Math.round((m.rev / maxRev) * 100) + '%"></i>'
       + '<b class="sl-rev">' + manwon(m.rev) + '</b></span>'
-      + '<span class="sl-pf">' + manwon(m.profit) + '</span>'
+      + '<span class="sl-al">' + (m.album ? '-' + manwon(m.album) : '') + '</span>'
+      + '<span class="sl-pf' + (m.profit < 0 ? ' minus' : '') + '">' + manwon(m.profit) + '</span>'
       + '<span class="sl-un">' + (m.unassigned ? '<em>미배정 ' + m.unassigned + '</em>' : '') + '</span>'
       + '</div>';
   }).join('');
@@ -4023,18 +4027,21 @@ async function renderSales() {
     '<div class="st-cards">'
     + card(y.y + '년 예식', stNum(y.n) + '건', '치른 ' + stNum(y.done) + ' · 남은 ' + stNum(left))
     + card('매출', manwon(y.rev), '예식일 기준 총액')
-    + card('순이익', manwon(y.profit), rate == null ? '' : '매출의 ' + rate + '%')
+    + card('순이익', manwon(y.profit), rate == null ? '' : '매출의 ' + rate + '% · 앨범까지 뺀 값')
     + card('한 건 평균', manwon(y.avg), '옵션까지 넣은 값')
     + '</div>'
 
     + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>📅 달마다 <small>(예식일 기준 · 지난 6달~앞으로 1년)</small></h3></div>'
     + '<div class="sl-head"><span class="sl-m">달</span><span class="sl-n">예식</span>'
-    + '<span class="sl-bwrap">매출</span><span class="sl-pf">순이익</span><span class="sl-un"></span></div>'
+    + '<span class="sl-bwrap">매출</span><span class="sl-al">앨범</span>'
+    + '<span class="sl-pf">순이익</span><span class="sl-un"></span></div>'
     + '<div class="sl-list">' + (rows || '<p class="empty sm">예식이 없습니다.</p>') + '</div>'
     + '<p class="st-note">작가비 ' + c.staff + '만 · 경기 출장 +' + c.travel + '만 · 2인 촬영 +' + c.sub + '만, '
     + esc(c.rep || '대표') + ' 작가님이 찍은 건은 전액 이익으로 잡습니다. '
-    + '아직 작가가 안 정해진 건도 ' + c.staff + '만 나가는 것으로 미리 빼둡니다(보수적으로). '
-    + '<b>앨범 원가는 아직 안 뺐습니다.</b></p></div>'
+    + '아직 작가가 안 정해진 건도 ' + c.staff + '만 나가는 것으로 미리 빼둡니다(보수적으로).<br>'
+    + '<b>앨범값은 그 달에 넣은 발주액을 뺍니다.</b> 신부가 셀렉을 보내야 작업이 들어가서 '
+    + '예식한 달과 앨범값 나가는 달이 다릅니다. 그래서 달 하나만 보면 어긋나 보일 수 있습니다 — '
+    + '<b>1년 단위로 보시는 게 제일 정확합니다.</b></p></div>'
 
     + '<div class="dash-cards st-two">'
     + '<div class="dash-card"><div class="dash-card-head"><h3>🎁 옵션 <small>(매출의 ' + (data.opt_pct == null ? '-' : data.opt_pct + '%') + ')</small></h3></div>'
@@ -4079,6 +4086,382 @@ if (stToggle) {
   stToggle.addEventListener('click', (e) => {
     const b = e.target.closest('button[data-sttab]');
     if (b) stSub(b.dataset.sttab);
+  });
+}
+
+/* ===== 앨범 발주 (대표 요청 2026-08-24) =====
+   쓰시던 「발주 내역 관리」를 관리자 안으로 옮긴 것.
+   예약(bookings)과는 잇지 않는다 — 신부가 셀렉을 보내야 작업이 들어가서 예식과 시점이
+   제각각이고(24년 촬영이 지금 들어오기도 한다), 억지로 이으면 오히려 틀린다.
+   여기서 넣은 금액은 「예약·매출」의 그 달 비용으로 빠진다. */
+const abWon = (n) => Number(n || 0).toLocaleString('ko-KR') + '원';
+const abYmd = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')
+  + '-' + String(d.getDate()).padStart(2, '0');
+const abThisMonth = () => abYmd(new Date()).slice(0, 7);
+
+let abPrices = [];          // 살아 있는 단가 목록
+let abPick = {};            // 새 발주에서 고른 것 { 단가id: 수량 }
+let abExtra = [];           // 기타 항목 [{ name, unit, qty }]
+let abEditId = null;        // 고치는 중이면 그 발주 id
+let abListMonth = 'all';    // 내역에서 고른 달
+let abStatMonth = null;     // 통계에서 보는 달 (없으면 이번 달)
+let abPaid = 'all';
+let abQ = '';
+let abLoaded = false;
+
+async function renderAlbum() {
+  if (!$('abList')) return;
+  if (!abLoaded) $('abList').innerHTML = '<p class="empty">불러오는 중…</p>';
+  if (!$('abDate').value) $('abDate').value = abYmd(new Date());
+  const pr = await sb.rpc('admin_album_prices');
+  if (pr.error) { $('abList').innerHTML = '<p class="empty">불러오지 못했습니다. (' + esc(pr.error.message) + ')</p>'; return; }
+  abPrices = Array.isArray(pr.data) ? pr.data : [];
+  abLoaded = true;
+  abRenderGrid();
+  await Promise.all([abRenderList(), abRenderStats()]);
+}
+
+/* ── 새 발주 ── */
+function abRenderGrid() {
+  const box = $('abGrid');
+  if (!box) return;
+  box.innerHTML = abPrices.filter((p) => String(p.name || '').trim()).map((p) => {
+    if (p.type === 'check') {
+      const on = abPick[p.id] > 0;
+      return '<button type="button" class="ab-item' + (on ? ' on' : '') + '" data-ck="' + esc(p.id) + '">'
+        + '<span class="ab-nm">' + esc(p.name) + '</span>'
+        + '<span class="ab-un">' + abWon(p.unit) + '</span></button>';
+    }
+    return '<div class="ab-item qty' + (abPick[p.id] > 0 ? ' on' : '') + '">'
+      + '<span class="ab-nm">' + esc(p.name) + '</span>'
+      + '<span class="ab-un">' + abWon(p.unit) + ' × </span>'
+      + '<input type="number" min="0" step="1" class="ab-q" data-qt="' + esc(p.id) + '" value="'
+      + (abPick[p.id] || '') + '" placeholder="0" /></div>';
+  }).join('') || '<p class="empty sm">단가 항목이 없습니다. 아래 「단가 설정」에서 넣어주세요.</p>';
+  abRenderExtras();
+  abSum();
+}
+
+function abRenderExtras() {
+  const box = $('abExtras');
+  if (!box) return;
+  box.innerHTML = abExtra.map((x, i) => '<div class="ab-ex" data-ex="' + i + '">'
+    + '<input type="text" class="ab-ex-n" placeholder="항목 이름" value="' + esc(x.name || '') + '" />'
+    + '<input type="number" class="ab-ex-u" min="0" placeholder="단가" value="' + (x.unit || '') + '" />'
+    + '<span class="ab-ex-x">×</span>'
+    + '<input type="number" class="ab-ex-q" min="1" placeholder="수량" value="' + (x.qty || '') + '" />'
+    + '<span class="ab-ex-s">' + abWon((x.unit || 0) * (x.qty || 0)) + '</span>'
+    + '<button type="button" class="ab-ex-del" data-exdel="' + i + '">✕</button></div>').join('');
+}
+
+function abSum() {
+  let t = 0;
+  abPrices.forEach((p) => { const q = Number(abPick[p.id]) || 0; if (q > 0) t += p.unit * q; });
+  abExtra.forEach((x) => { t += (Number(x.unit) || 0) * (Number(x.qty) || 0); });
+  if ($('abNewSum')) $('abNewSum').textContent = abWon(t);
+  if ($('abSave')) $('abSave').textContent = abEditId ? '고쳐 저장' : '발주 저장';
+  return t;
+}
+
+function abClear() {
+  abPick = {}; abExtra = []; abEditId = null;
+  if ($('abCust')) $('abCust').value = '';
+  if ($('abDate')) $('abDate').value = abYmd(new Date());
+  abRenderGrid();
+}
+
+async function abSave() {
+  const cust = ($('abCust').value || '').trim();
+  const date = $('abDate').value;
+  if (!cust) { toast('고객 이름을 적어주세요.'); $('abCust').focus(); return; }
+  if (!date) { toast('발주 날짜를 골라주세요.'); return; }
+  const lines = [];
+  abPrices.forEach((p) => {
+    const q = Number(abPick[p.id]) || 0;
+    if (q > 0) lines.push({ kind: 'item', price_item_id: p.id, qty: p.type === 'check' ? 1 : q });
+  });
+  abExtra.forEach((x) => {
+    const q = Number(x.qty) || 0;
+    if (q > 0) lines.push({ kind: 'extra', name: (x.name || '').trim() || '기타', unit: Number(x.unit) || 0, qty: q });
+  });
+  if (!lines.length) { toast('상품을 하나 이상 고르세요.'); return; }
+
+  $('abSave').disabled = true;
+  const { data, error } = await sb.rpc('admin_album_order_save',
+    { p_id: abEditId, p_customer: cust, p_date: date, p_lines: lines });
+  $('abSave').disabled = false;
+  if (error) { toast('저장하지 못했습니다. ' + error.message); return; }
+  toast((abEditId ? '고쳤습니다. ' : '넣었습니다. ') + abWon(data && data.total));
+  abClear();
+  await Promise.all([abRenderList(), abRenderStats()]);
+  renderHomeStats(true);          // 순이익이 바뀌었으니 홈 숫자도 새로
+  salesLoaded = false;
+}
+
+/* ── 내역 ── */
+function abLineText(lines) {
+  return (lines || []).map((l) => (l.kind === 'extra' ? esc(l.name) + '×' + l.qty
+    : l.item_type === 'check' ? esc(l.name) : esc(l.name) + ' ' + l.qty)).join(' · ');
+}
+
+async function abRenderList() {
+  const box = $('abList');
+  if (!box) return;
+  const { data, error } = await sb.rpc('admin_album_orders',
+    { p_month: abListMonth, p_paid: abPaid, p_q: abQ || null, p_limit: 400 });
+  if (error || !data) { box.innerHTML = '<p class="empty">불러오지 못했습니다.</p>'; return; }
+
+  // 달 탭 — 올해는 달마다, 지난 해는 해로 묶는다
+  const ms = data.months || [];
+  const thisY = String(new Date().getFullYear());
+  const years = [];
+  ms.forEach((m) => { const y = m.slice(0, 4); if (y !== thisY && years.indexOf(y) < 0) years.push(y); });
+  const tab = (v, label) => '<button class="ab-tab' + (abListMonth === v ? ' active' : '') + '" data-abm="'
+    + esc(v) + '">' + esc(label) + '</button>';
+  $('abMonths').innerHTML = tab('all', '전체')
+    + ms.filter((m) => m.slice(0, 4) === thisY)
+        .map((m) => tab(m, m.slice(5) + '월' + (m === abThisMonth() ? ' (이번 달)' : ''))).join('')
+    + years.map((y) => tab(y, y + '년')).join('');
+
+  $('abListSum').textContent = data.count + '건 · ' + abWon(data.total);
+  const items = data.items || [];
+  box.innerHTML = items.length ? items.map((x) => '<div class="ab-row' + (x.paid ? '' : ' unpaid') + '" data-ab="' + esc(x.id) + '">'
+    + '<span class="ab-d">' + esc(String(x.order_date).slice(2).replace(/-/g, '.')) + '</span>'
+    + '<span class="ab-c">' + esc(x.customer) + '</span>'
+    + '<span class="ab-i">' + abLineText(x.lines) + '</span>'
+    + '<span class="ab-t">' + abWon(x.total) + '</span>'
+    + '<label class="ab-p"><input type="checkbox" data-abpaid="' + esc(x.id) + '"' + (x.paid ? ' checked' : '') + ' />'
+    + '<span>' + (x.paid ? '완료' : '미결제') + '</span></label>'
+    + '<span class="ab-b"><button class="btn-sm" data-abedit="' + esc(x.id) + '">수정</button>'
+    + '<button class="btn-sm od-cancel" data-abdel="' + esc(x.id) + '">삭제</button></span>'
+    + '</div>').join('')
+    + (data.shown < data.count ? '<p class="st-note">앞의 ' + data.shown + '건만 보여드립니다. 달로 좁혀 보세요.</p>' : '')
+    : '<p class="empty sm">해당하는 발주가 없습니다.</p>';
+}
+
+/* ── 통계 ── */
+async function abRenderStats() {
+  const box = $('abStatCards');
+  if (!box) return;
+  const { data, error } = await sb.rpc('admin_album_stats', { p_month: abStatMonth });
+  if (error || !data) { box.innerHTML = '<p class="empty sm">불러오지 못했습니다.</p>'; return; }
+  abStatMonth = data.month;
+  const s = data.sum || {};
+  $('abStatM').textContent = String(data.month).slice(0, 4) + '년 ' + Number(String(data.month).slice(5)) + '월';
+  const card = (k, v, sub, cls) => '<div class="st-card"><span class="st-k">' + k + '</span><strong'
+    + (cls ? ' class="' + cls + '"' : '') + '>' + v + '</strong><span class="st-sub">' + (sub || '') + '</span></div>';
+  box.innerHTML = card('총매입', abWon(s.total))
+    + card('결제완료', abWon(s.paid), '', 'ab-ok')
+    + card('미결제', abWon(s.unpaid), '', Number(s.unpaid) > 0 ? 'ab-no' : '')
+    + card('건수', (s.count || 0) + '건', (s.people || 0) + '명');
+
+  const bm = data.by_month || [];
+  const bmMax = Math.max(1, ...bm.map((x) => Number(x.total) || 0));
+  $('abByMonth').innerHTML = bm.length ? bm.map((x) => '<div class="st-row'
+    + (x.m === data.month ? ' ab-now' : '') + '" data-abstat="' + esc(x.m) + '">'
+    + '<span class="st-row-bar" style="width:' + Math.round((x.total / bmMax) * 100) + '%"></span>'
+    + '<span class="st-row-k">' + esc(x.m.replace('-', '.')) + ' <small>' + x.n + '건</small></span>'
+    + '<span class="st-row-v">' + abWon(x.total) + '</span></div>').join('')
+    : '<p class="empty sm">아직 없습니다.</p>';
+
+  const bi = data.by_item || [];
+  const biMax = Math.max(1, ...bi.map((x) => Number(x.total) || 0));
+  $('abByItem').innerHTML = bi.length ? bi.map((x) => '<div class="st-row">'
+    + '<span class="st-row-bar" style="width:' + Math.round((x.total / biMax) * 100) + '%"></span>'
+    + '<span class="st-row-k">' + esc(x.nm) + ' <small>' + x.qty + '개</small></span>'
+    + '<span class="st-row-v">' + abWon(x.total) + '</span></div>').join('')
+    : '<p class="empty sm">이 달에는 발주가 없습니다.</p>';
+}
+
+/* ── 단가 설정 ── */
+async function abRenderPrices() {
+  const box = $('abPrices');
+  if (!box) return;
+  const { data, error } = await sb.rpc('admin_album_prices');
+  if (error) { box.innerHTML = '<p class="empty sm">불러오지 못했습니다.</p>'; return; }
+  abPrices = Array.isArray(data) ? data : [];
+  box.innerHTML = abPrices.map((p, i) => '<div class="ab-pr" data-pr="' + esc(p.id) + '">'
+    + '<input type="text" class="ab-pr-n" value="' + esc(p.name) + '" />'
+    + '<input type="number" class="ab-pr-u" min="0" value="' + p.unit + '" />'
+    + '<select class="ab-pr-t"><option value="check"' + (p.type === 'check' ? ' selected' : '') + '>체크</option>'
+    + '<option value="qty"' + (p.type === 'qty' ? ' selected' : '') + '>수량</option></select>'
+    + '<button class="btn-sm ab-pr-up"' + (i === 0 ? ' disabled' : '') + '>▲</button>'
+    + '<button class="btn-sm ab-pr-dn"' + (i === abPrices.length - 1 ? ' disabled' : '') + '>▼</button>'
+    + '<button class="btn-sm od-cancel ab-pr-del">삭제</button></div>').join('')
+    || '<p class="empty sm">항목이 없습니다.</p>';
+  abRenderGrid();
+}
+
+/* ── 손가락 ── */
+if ($('abGrid')) {
+  $('abGrid').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-ck]');
+    if (!b) return;
+    const id = b.dataset.ck;
+    abPick[id] = abPick[id] > 0 ? 0 : 1;
+    abRenderGrid();
+  });
+  $('abGrid').addEventListener('input', (e) => {
+    const q = e.target.closest('[data-qt]');
+    if (!q) return;
+    abPick[q.dataset.qt] = Math.max(0, Number(q.value) || 0);
+    q.closest('.ab-item').classList.toggle('on', abPick[q.dataset.qt] > 0);
+    abSum();
+  });
+}
+if ($('abExtras')) {
+  $('abExtras').addEventListener('input', (e) => {
+    const row = e.target.closest('[data-ex]');
+    if (!row) return;
+    const i = Number(row.dataset.ex);
+    if (e.target.classList.contains('ab-ex-n')) abExtra[i].name = e.target.value;
+    if (e.target.classList.contains('ab-ex-u')) abExtra[i].unit = Number(e.target.value) || 0;
+    if (e.target.classList.contains('ab-ex-q')) abExtra[i].qty = Number(e.target.value) || 0;
+    row.querySelector('.ab-ex-s').textContent = abWon((abExtra[i].unit || 0) * (abExtra[i].qty || 0));
+    abSum();
+  });
+  $('abExtras').addEventListener('click', (e) => {
+    const d = e.target.closest('[data-exdel]');
+    if (!d) return;
+    abExtra.splice(Number(d.dataset.exdel), 1);
+    abRenderExtras(); abSum();
+  });
+}
+if ($('abAddExtra')) $('abAddExtra').addEventListener('click', () => {
+  abExtra.push({ name: '', unit: 0, qty: 1 }); abRenderExtras(); abSum();
+});
+if ($('abReset')) $('abReset').addEventListener('click', abClear);
+if ($('abSave')) $('abSave').addEventListener('click', abSave);
+
+if ($('abMonths')) $('abMonths').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-abm]');
+  if (!b) return;
+  abListMonth = b.dataset.abm; abRenderList();
+});
+document.querySelectorAll('.ab-paid button').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('.ab-paid button').forEach((x) => x.classList.toggle('active', x === b));
+  abPaid = b.dataset.paid; abRenderList();
+}));
+if ($('abQ')) $('abQ').addEventListener('input', () => {
+  clearTimeout(abQ._t);
+  abQ._t = setTimeout(() => { abQ = $('abQ').value.trim(); abRenderList(); }, 300);
+});
+
+if ($('abList')) $('abList').addEventListener('click', async (e) => {
+  const pd = e.target.closest('[data-abpaid]');
+  if (pd) {
+    const r = await sb.rpc('admin_album_order_paid', { p_id: pd.dataset.abpaid, p_paid: pd.checked });
+    if (r.error) { pd.checked = !pd.checked; toast('바꾸지 못했습니다.'); return; }
+    salesLoaded = false;
+    await Promise.all([abRenderList(), abRenderStats()]);
+    return;
+  }
+  const ed = e.target.closest('[data-abedit]');
+  if (ed) { abLoadForEdit(ed.dataset.abedit); return; }
+  const dl = e.target.closest('[data-abdel]');
+  if (dl) {
+    const row = dl.closest('.ab-row');
+    const who = row ? (row.querySelector('.ab-c') || {}).textContent : '';
+    if (!confirm(who + ' 발주를 지울까요? 되돌릴 수 없습니다.')) return;
+    const r = await sb.rpc('admin_album_order_del', { p_id: dl.dataset.abdel });
+    if (r.error) { toast('지우지 못했습니다.'); return; }
+    toast('지웠습니다.');
+    salesLoaded = false;
+    await Promise.all([abRenderList(), abRenderStats()]);
+    renderHomeStats(true);
+  }
+});
+
+// 고칠 것을 위 폼에 올려둔다. 원본은 지우지 않는다 — 저장하면 그 자리에서 바뀐다
+async function abLoadForEdit(id) {
+  const { data } = await sb.rpc('admin_album_orders', { p_month: 'all', p_paid: 'all', p_q: null, p_limit: 2000 });
+  const o = ((data || {}).items || []).find((x) => x.id === id);
+  if (!o) { toast('그 발주를 찾지 못했습니다.'); return; }
+  abEditId = id;
+  abPick = {}; abExtra = [];
+  (o.lines || []).forEach((l) => {
+    if (l.kind === 'extra') abExtra.push({ name: l.name, unit: l.unit, qty: l.qty });
+    else if (l.price_item_id) abPick[l.price_item_id] = l.qty;
+  });
+  $('abCust').value = o.customer;
+  $('abDate').value = String(o.order_date).slice(0, 10);
+  abRenderGrid();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  toast('위에서 고친 뒤 [고쳐 저장]을 누르세요. 결제 여부는 그대로 남습니다.');
+}
+
+if ($('abPrev')) $('abPrev').addEventListener('click', () => { abStatMove(-1); });
+if ($('abNext')) $('abNext').addEventListener('click', () => { abStatMove(1); });
+if ($('abThis')) $('abThis').addEventListener('click', () => { abStatMonth = abThisMonth(); abRenderStats(); });
+function abStatMove(d) {
+  const [y, m] = String(abStatMonth || abThisMonth()).split('-').map(Number);
+  const t = new Date(y, m - 1 + d, 1);
+  abStatMonth = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0');
+  abRenderStats();
+}
+if ($('abByMonth')) $('abByMonth').addEventListener('click', (e) => {
+  const r = e.target.closest('[data-abstat]');
+  if (r) { abStatMonth = r.dataset.abstat; abRenderStats(); }
+});
+
+if ($('abPriceToggle')) $('abPriceToggle').addEventListener('click', () => {
+  const body = $('abPriceBody');
+  const open = body.hidden;
+  body.hidden = !open;
+  $('abPriceToggle').setAttribute('aria-expanded', String(open));
+  const caret = $('abPriceToggle').querySelector('.sv-caret');
+  if (caret) caret.textContent = open ? '▴' : '▾';
+  if (open) abRenderPrices();
+});
+if ($('abPriceAdd')) $('abPriceAdd').addEventListener('click', async () => {
+  const r = await sb.rpc('admin_album_price_save',
+    { p_id: null, p_name: '새 항목', p_unit: 0, p_type: 'check', p_active: true });
+  if (r.error) { toast('넣지 못했습니다.'); return; }
+  await abRenderPrices();
+});
+if ($('abPrices')) {
+  // 고치는 즉시 저장한다 (원본도 그랬다). 너무 자주 부르지 않게 잠깐 기다렸다가
+  const save = (row) => {
+    clearTimeout(row._t);
+    row._t = setTimeout(async () => {
+      const r = await sb.rpc('admin_album_price_save', {
+        p_id: row.dataset.pr,
+        p_name: row.querySelector('.ab-pr-n').value,
+        p_unit: Number(row.querySelector('.ab-pr-u').value) || 0,
+        p_type: row.querySelector('.ab-pr-t').value,
+        p_active: true });
+      if (r.error) { toast('저장하지 못했습니다.'); return; }
+      abPrices = abPrices.map((p) => (p.id === row.dataset.pr && r.data ? r.data : p));
+      abRenderGrid();
+      toast('저장했습니다.');
+    }, 600);
+  };
+  $('abPrices').addEventListener('input', (e) => {
+    const row = e.target.closest('[data-pr]'); if (row) save(row);
+  });
+  $('abPrices').addEventListener('change', (e) => {
+    const row = e.target.closest('[data-pr]'); if (row) save(row);
+  });
+  $('abPrices').addEventListener('click', async (e) => {
+    const row = e.target.closest('[data-pr]');
+    if (!row) return;
+    if (e.target.classList.contains('ab-pr-del')) {
+      if (!confirm('이 항목을 지울까요? 과거 발주 금액은 그대로 남습니다.')) return;
+      const r = await sb.rpc('admin_album_price_off', { p_id: row.dataset.pr });
+      if (r.error) { toast('지우지 못했습니다.'); return; }
+      toast('지웠습니다.'); await abRenderPrices(); return;
+    }
+    const up = e.target.classList.contains('ab-pr-up');
+    const dn = e.target.classList.contains('ab-pr-dn');
+    if (!up && !dn) return;
+    const ids = abPrices.map((p) => p.id);
+    const i = ids.indexOf(row.dataset.pr);
+    const j = up ? i - 1 : i + 1;
+    if (i < 0 || j < 0 || j >= ids.length) return;
+    ids.splice(j, 0, ids.splice(i, 1)[0]);
+    const r = await sb.rpc('admin_album_price_order', { p_ids: ids });
+    if (r.error) { toast('순서를 바꾸지 못했습니다.'); return; }
+    await abRenderPrices();
   });
 }
 

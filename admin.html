@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="admin.css?v=527f063905" />
+  <link rel="stylesheet" href="admin.css?v=1f692ac813" />
 </head>
 <body>
 
@@ -52,6 +52,7 @@
         <button class="dtab" data-tab="bookings">예약</button>
         <button class="dtab" data-tab="events">이벤트<span class="dtab-badge" id="evBadge" hidden>0</span></button>
         <button class="dtab" data-tab="select">셀렉</button>
+        <button class="dtab" data-tab="album">발주</button>
         <button class="dtab" data-tab="settings">설정</button>
       </div>
     </div>
@@ -213,6 +214,67 @@
 
       <div id="tab-select" hidden></div>
 
+      <!-- 앨범 발주. 예약과 잇지 않는다 — 셀렉이 들어와야 작업이 시작돼 시점이 제각각이다 -->
+      <div id="tab-album" hidden>
+        <div class="dash-card ab-card">
+          <div class="dash-card-head"><h3>📝 새 발주</h3>
+            <span class="ab-total" id="abNewSum">0원</span></div>
+          <div class="ab-form">
+            <input type="text" id="abCust" placeholder="고객 이름 — 예) 0405 김아람" autocomplete="off" />
+            <input type="date" id="abDate" />
+          </div>
+          <div class="ab-grid" id="abGrid"></div>
+          <div class="ab-extras" id="abExtras"></div>
+          <div class="ab-act">
+            <button class="btn-sm" id="abAddExtra">+ 기타 항목</button>
+            <span class="ab-act-sp"></span>
+            <button class="btn-sm" id="abReset">비우기</button>
+            <button class="btn-sm dl-save" id="abSave">발주 저장</button>
+          </div>
+        </div>
+
+        <div class="dash-card ab-card">
+          <div class="dash-card-head"><h3>📊 <span id="abStatM">이번 달</span> 매입</h3>
+            <span class="ab-mnav"><button class="btn-ghost" id="abPrev">‹</button>
+              <button class="btn-sm" id="abThis">이번 달</button>
+              <button class="btn-ghost" id="abNext">›</button></span></div>
+          <div class="st-cards" id="abStatCards"></div>
+          <div class="dash-cards st-two">
+            <div class="dash-card"><div class="dash-card-head"><h3>달마다</h3></div>
+              <div id="abByMonth"></div></div>
+            <div class="dash-card"><div class="dash-card-head"><h3>항목별 <small>(고른 달)</small></h3></div>
+              <div id="abByItem"></div></div>
+          </div>
+        </div>
+
+        <div class="dash-card ab-card">
+          <div class="dash-card-head"><h3>📋 발주 내역</h3>
+            <span class="ab-total" id="abListSum"></span></div>
+          <div class="ab-tabs" id="abMonths"></div>
+          <div class="ab-filter">
+            <div class="st-range ab-paid">
+              <button class="btn-sm active" data-paid="all">전체</button>
+              <button class="btn-sm" data-paid="paid">결제완료</button>
+              <button class="btn-sm" data-paid="unpaid">미결제</button>
+            </div>
+            <input type="text" id="abQ" placeholder="고객 이름으로 찾기" autocomplete="off" />
+          </div>
+          <div class="ab-list" id="abList"></div>
+        </div>
+
+        <div class="dash-card ab-card">
+          <div class="dash-card-head sched-head">
+            <button class="sched-toggle" id="abPriceToggle" aria-expanded="false">⚙️ 단가 설정 <span class="sv-caret">▾</span></button>
+          </div>
+          <div id="abPriceBody" hidden>
+            <div class="ab-prices" id="abPrices"></div>
+            <div class="ab-act"><button class="btn-sm" id="abPriceAdd">+ 항목 추가</button></div>
+            <p class="st-note">단가를 고쳐도 <b>이미 넣은 발주 금액은 바뀌지 않습니다.</b> 그때 값으로 남아 있습니다.
+              지운 항목도 과거 발주에는 그대로 남습니다.</p>
+          </div>
+        </div>
+      </div>
+
       <div id="tab-stats" hidden>
         <div class="st-toggle" id="stToggle">
           <span class="st-tg-ind" aria-hidden="true"></span>
@@ -311,6 +373,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=d088f0dd00"></script>
+  <script src="admin.js?v=e7080dfc67"></script>
 </body>
 </html>

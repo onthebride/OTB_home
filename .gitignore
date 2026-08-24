@@ -8,3 +8,7 @@ Thumbs.db
 _*.png
 _*.html
 *.log
+
+# 고객 이름이 들어 있는 것 — 이 저장소는 공개(public)라 절대 올리면 안 된다
+이관패키지/
+supabase/migrations/*_seed.sql
