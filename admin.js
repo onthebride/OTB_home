@@ -3428,17 +3428,20 @@ async function selShow(rbox, ctx, folder, got, items) {
       upDone = r.done;
       // 못 올린 게 있으면 마지막까지 들고 간다 — 끝났다는 말에 묻히면 안 된다
       if (r.failed.length) {
-        // 못 올린 것만 한 번 더 — 회선이 잠깐 흔들린 경우가 대부분이다
-        const again = ups.filter((it) => r.failed.indexOf(it.name) >= 0);
+        // 못 올린 것만 새 자리를 받아 한 번 더. 낱장 재시도(세 번)로도 안 되면 여기로 온다
+        const again = ups.filter((it) => r.failed.some((f) => f.name === it.name));
         stat.textContent = '못 올린 ' + again.length + '장을 다시 올리는 중…';
         const r2 = await selUpload(dest, again, (a) => {
           stat.textContent = '다시 올리는 중… ' + a + ' / ' + again.length;
         });
         upDone += r2.done;
         if (r2.failed.length) {
-          warn = '<br /><span class="err">' + r2.failed.length + '장을 못 올렸습니다: '
-            + esc(r2.failed.slice(0, 10).join(', '))
-            + (r2.failed.length > 10 ? ' 외 ' + (r2.failed.length - 10) + '장' : '')
+          // 왜 안 올라갔는지 같이 적는다 — 이유를 모르면 손쓸 데가 없다 (2026-08-24)
+          const why = {};
+          r2.failed.forEach((f) => { (why[f.why] = why[f.why] || []).push(f.name); });
+          warn = '<br /><span class="err">' + r2.failed.length + '장을 못 올렸습니다.<br />'
+            + Object.keys(why).map((k) => esc(k) + ' — ' + esc(why[k].slice(0, 8).join(', '))
+                + (why[k].length > 8 ? ' 외 ' + (why[k].length - 8) + '장' : '')).join('<br />')
             + '<br />드롭박스에서 확인하고 그것만 직접 올려주세요.</span>';
         }
       }
@@ -3519,7 +3522,7 @@ async function selUpload(dest, items, onProg) {
     }
     if (!got) {
       // 이 묶음은 건너뛴다. 뒤는 계속 올린다 — 통째로 그만두면 «올라가다 말고» 가 된다
-      part.forEach((it) => failed.push(it.name));
+      part.forEach((it) => failed.push({ name: it.name, why: '올릴 자리를 못 받았습니다' }));
       continue;
     }
 
@@ -3529,14 +3532,25 @@ async function selUpload(dest, items, onProg) {
     for (let k = 0; k < part.length; k += 4) {
       await Promise.all(part.slice(k, k + 4).map(async (it) => {
         const l = byName[it.name];
-        if (!l || !l.url) { failed.push(it.name); return; }
-        try {
-          const blob = await selFile(it);
-          if (!blob) { failed.push(it.name); return; }
-          const up = await fetch(l.url, { method: 'POST',
-            headers: { 'Content-Type': 'application/octet-stream' }, body: blob });
-          if (!up.ok) failed.push(it.name); else done++;
-        } catch (e) { failed.push(it.name); }
+        if (!l || !l.url) { failed.push({ name: it.name, why: (l && l.error) || '올릴 자리를 못 받았습니다' }); return; }
+        let blob = null;
+        try { blob = await selFile(it); } catch (e) { blob = null; }
+        if (!blob) { failed.push({ name: it.name, why: '파일을 읽지 못했습니다' }); return; }
+        // 한 장씩 세 번까지 다시 해본다. 예전엔 한 번 어긋나면 그걸로 끝이라
+        // 매번 몇 장씩 남아 대표가 손으로 다시 눌러야 했다 (2026-08-24)
+        let why = '';
+        for (let tryN = 0; tryN < 3; tryN++) {
+          if (tryN) await new Promise((x) => setTimeout(x, 800 * tryN));
+          try {
+            const up = await fetch(l.url, { method: 'POST',
+              headers: { 'Content-Type': 'application/octet-stream' }, body: blob });
+            if (up.ok) { done++; why = ''; break; }
+            why = '드롭박스가 거절했습니다 (' + up.status + ')';
+            // 400대는 다시 해도 같은 답이 온다. 429(너무 잦음)만 예외로 다시 해본다
+            if (up.status >= 400 && up.status < 500 && up.status !== 429) break;
+          } catch (e) { why = '올리는 도중 연결이 끊겼습니다'; }
+        }
+        if (why) failed.push({ name: it.name, why: why });
         if (onProg) onProg(done, failed.length);
       }));
     }
