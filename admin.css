@@ -607,11 +607,6 @@ td .muted { color: var(--ink-soft); }
 
 @media (max-width: 760px) {
   .dash-cards { flex-direction: column; }
-  /* 세로로 쌓을 땐 너비를 꽉 채운다. 위의 .st-two { align-items: flex-start } 는
-     가로로 놓을 때 «키를 억지로 안 맞추려고» 준 것인데, 세로가 되면 그게 너비를 줄인다.
-     그래서 「많이 본 페이지」·「어디서 들어왔나」 박스만 좁게 떠 있었다 (2026-08-24).
-     세로 전환이 여기(760px)라 이 줄도 여기 있어야 한다 — 600px 에 두면 그 사이가 빈다 */
-  .st-two { align-items: stretch; }
   .dash-col-left, .dash-col-right { width: 100%; min-width: 0; }
   .dash-col-right { display: block; }
   .dash-col-right .dash-card { flex: none; width: 100%; }
@@ -840,6 +835,16 @@ td .muted { color: var(--ink-soft); }
 
 .st-two { align-items: flex-start; }
 .st-two .dash-card { flex: 1; min-width: 0; }
+/* 세로로 쌓이면(760px 아래) 너비를 꽉 채운다.
+   바로 위 flex-start 는 가로로 둘씩 놓을 때 «키를 억지로 안 맞추려고» 준 것인데,
+   세로가 되면 같은 값이 이번엔 너비를 줄인다. 그래서 「많이 본 페이지」·
+   「어디서 들어왔나」·「많이 간 예식장」이 제 내용만큼만 넓어져 들쭉날쭉했다.
+   ⚠ 이 줄은 반드시 위 flex-start «뒤» 에 있어야 한다. 미디어쿼리는 무게를 더해주지
+   않아서, 앞쪽 @media 에 적어두면 뒤에 오는 flex-start 에 그대로 덮인다
+   (2026-08-24 실제로 그렇게 한 번 헛돌았다) */
+@media (max-width: 760px) {
+  .st-two { align-items: stretch; }
+}
 .st-row { position: relative; display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; margin-bottom: 4px; overflow: hidden; }
 .st-row-bar { position: absolute; left: 0; top: 0; bottom: 0; background: #f4ece0; border-radius: 6px; }
 .st-row-k { position: relative; flex: 1; min-width: 0; font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
