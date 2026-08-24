@@ -4045,8 +4045,10 @@ async function renderSales() {
   const vens = data.venues || [];
   const venMax = Math.max(1, ...vens.map((v) => Number(v.n) || 0));
   const venRows = vens.length
+    // 금액은 뺐다 (대표 요청 2026-08-24) — 여기서 궁금한 건 «어디를 많이 갔나» 라
+    // 건수면 충분하고, 금액까지 붙으니 줄이 시끄러웠다
     ? vens.map((v) => slBar(esc(v.venue) + (v.names > 1 ? ' <em class="sl-alias">이름 ' + v.names + '가지</em>' : ''),
-        manwon(v.rev), v.n + '건', v.n / venMax)).join('')
+        '', v.n + '건', v.n / venMax)).join('')
     : '<p class="empty sm">아직 기록이 없습니다.</p>';
 
   const L = data.lead || {};
