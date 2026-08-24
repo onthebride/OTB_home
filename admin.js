@@ -186,10 +186,10 @@ async function loadBookings() {
   refreshEventBadge();
 }
 
-// 시작 시(및 변경 후) 이벤트 승인대기 배지 갱신
+// 시작할 때 이벤트를 받아둔다. 예전엔 배지 숫자만 챙기면 됐지만
+// 이제 홈 카드라서 목록까지 그려야 한다 (2026-08-24)
 async function refreshEventBadge() {
-  const { data, error } = await sb.rpc('admin_event_list');
-  if (!error && data) updateEventBadge(data);
+  await loadEvents();
 }
 
 async function loadStaff() {
@@ -2730,14 +2730,12 @@ if (dashTabs) {
     $('tab-dashboard').hidden = tab !== 'dashboard';
     $('tab-calendar').hidden = tab !== 'calendar';
     $('tab-bookings').hidden = tab !== 'bookings';
-    $('tab-events').hidden = tab !== 'events';
     $('tab-select').hidden = tab !== 'select';
     $('tab-album').hidden = tab !== 'album';
     $('tab-stats').hidden = tab !== 'stats';
     $('tab-settings').hidden = tab !== 'settings';
-    if (tab === 'dashboard') renderDashboard();
+    if (tab === 'dashboard') { renderDashboard(); loadEvents(); }
     if (tab === 'calendar') { renderCalendar(); renderSchedule(); }
-    if (tab === 'events') loadEvents();
     if (tab === 'select') renderSelect();
     if (tab === 'album') renderAlbum();
     // 통계를 열면 홈의 「한눈에」 숫자도 같이 새로 받아둔다
@@ -3767,6 +3765,8 @@ const FB_LOW = 6;                       // 이 점수 이하면 눈에 띄게 �
 // 응답이 두어 건뿐이면 한 사람 답에 점수가 크게 흔들린다 — 곧이곧대로 보지 않게 표시한다.
 // 날짜 조회(dcStar)와 통계 화면이 함께 쓴다
 const FB_THIN = 3;
+// 응답률이 이보다 낮으면 눈에 띄게 — 설문이 제대로 나갔는지부터 봐야 한다
+const FB_RATE_LOW = 20;
 const stars = (n) => { const k = Math.max(0, Math.min(5, Math.round((Number(n) || 0) / 2)));
   return '★★★★★'.slice(0, k) + '☆☆☆☆☆'.slice(0, 5 - k); };
 const avg1 = (v) => (v == null ? '-' : Number(v).toFixed(1));
@@ -3818,11 +3818,23 @@ async function renderFeedback() {
       + '<span class="fb-sdetail">친절 ' + avg1(s.avg_kindness) + ' · 요청 ' + avg1(s.avg_requests) + ' · 진행 ' + avg1(s.avg_flow)
         + (s.avg_family == null ? '' : ' · 하객 ' + avg1(s.avg_family))
         + (s.req_n ? ' · <b>부탁 ' + s.req_n + '건</b>' : '') + '</span>'
+      // 응답률 — 점수는 다들 만점 언저리라, 실제로 벌어지는 건 이쪽이다 (대표 요청 2026-08-24)
       + '<span class="fb-sn">' + s.n + '건'
+        + (s.target ? '<i class="fb-rate' + (Number(s.rate) < FB_RATE_LOW ? ' low' : '') + '">'
+            + '지난 예식 ' + s.target + '건 중 ' + (s.rate == null ? '-' : s.rate + '%') + '</i>' : '')
         + (Number(s.late_n) ? ' · 지각 ' + s.late_n : '')
         + (Number(s.issue_n) ? ' · 불편 ' + s.issue_n : '') + '</span>'
       + '</div>';
   }).join('') : '<p class="empty">아직 응답이 없습니다.</p>';
+
+  // 한 번도 응답이 없는 작가. 만점으로 채우지 않고 그대로 «평가 없음» 으로 둔다 —
+  // 무응답은 만족이 아니라 «모른다» 이고, 안 찍힌 작가가 100점이 되면 그건 거짓 숫자다
+  const silent = Array.isArray(d.silent) ? d.silent : [];
+  const silentRow = silent.length
+    ? '<div class="fb-silent">아직 응답이 하나도 없는 작가 — '
+      + silent.map((x) => esc(x.staff_name) + ' <b>' + x.n + '건</b>').join(' · ')
+      + '<small>점수를 만점으로 채우지 않습니다. 응답이 없는 건 «만족»이 아니라 «모름»이라서요.</small></div>'
+    : '';
 
   // 페이지네이션 — 필터/기간이 바뀌어 목록이 짧아지면 마지막 페이지로 당겨준다
   const pageMax = Math.max(0, Math.ceil(items.length / FB_PER) - 1);
@@ -3872,11 +3884,16 @@ async function renderFeedback() {
     '<div class="st-cards fb-top">'
     + '<div class="st-card"><span class="st-k">응답</span><strong>' + (d.count || 0) + '</strong><span class="st-sub">' + esc(fbRangeLabel()) + '</span></div>'
     + '<div class="st-card"><span class="st-k">평균 점수</span><strong>' + (d.avg_score == null ? '-' : d.avg_score) + '</strong><span class="st-sub">100점 만점 · 가중</span></div>'
+    + '<div class="st-card"><span class="st-k">응답률</span><strong'
+      + (d.rate != null && Number(d.rate) < FB_RATE_LOW ? ' class="ab-no"' : '') + '>'
+      + (d.rate == null ? '-' : d.rate + '%') + '</strong>'
+      + '<span class="st-sub">지난 예식 ' + (d.target || 0) + '건 중</span></div>'
     + '<div class="st-card"><span class="st-k">설문 안 온 예식</span><strong>' + pendAll.length + '</strong><span class="st-sub">최근 60일 · 미응답</span></div>'
     + '</div>'
     + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>👤 작가별 <small>(점수 높은 순 · 누르면 그 작가 응답만)</small></h3></div>'
-      + '<p class="st-note">점수 = 도착 25 · 친절 25 · 요청 15 · 진행 15 · 하객 20 (100점 만점). 전체 만족도는 점수에서 빼고 참고로만 봅니다.</p>'
-      + staffRows + '</div>'
+      + '<p class="st-note">점수 = 도착 25 · 친절 25 · 요청 15 · 진행 15 · 하객 20 (100점 만점). 전체 만족도는 점수에서 빼고 참고로만 봅니다.<br>'
+      + '점수는 다들 만점 언저리라 잘 안 갈립니다. <b>응답률을 같이 보세요</b> — 지금 실제로 차이가 나는 건 그쪽입니다.</p>'
+      + staffRows + silentRow + '</div>'
     + '<div class="dash-card">'
       + '<div class="dash-card-head"><h3>💬 받은 응답 <small>(최근순)</small></h3>'
         + '<span class="fb-rangebar">' + rangeBtn(90, '3개월') + rangeBtn(365, '1년') + rangeBtn(3650, '전체') + '</span></div>'
@@ -4498,13 +4515,15 @@ async function loadEvents() {
   updateEventBadge(data);
 }
 
+// 이벤트는 홈 카드가 됐다 (2026-08-24). 챙길 게 없으면 카드째 접어 둔다.
+// 승인된 것·처리 끝난 것 말고 «지금 손댈 게 있나» 만 센다
 function updateEventBadge(data) {
   const pend = (data.buddies || []).filter((b) => b.status === 'matched').length
              + (data.reviews || []).filter((r) => r.status === 'pending').length;
-  const el = $('evBadge');
-  if (!el) return;
-  el.textContent = pend;
-  el.hidden = pend === 0;
+  const n = $('dcEvents');
+  if (n) n.textContent = pend;
+  const card = $('card-events');
+  if (card) card.hidden = pend === 0;
 }
 
 const EV_REWARD = (r) => (r === '앨범' ? '앨범 1권' : r === '할인' ? '1만원 할인' : (r || '-'));
@@ -4563,11 +4582,11 @@ function renderReviewList(list) {
 }
 
 function bindEventActions() {
-  document.querySelectorAll('#tab-events .ev-approve').forEach((btn) =>
+  document.querySelectorAll('#card-events .ev-approve').forEach((btn) =>
     btn.addEventListener('click', () => eventAction(btn.dataset.kind, btn.dataset.id, 'approve')));
-  document.querySelectorAll('#tab-events .ev-cancel').forEach((btn) =>
+  document.querySelectorAll('#card-events .ev-cancel').forEach((btn) =>
     btn.addEventListener('click', () => eventAction(btn.dataset.kind, btn.dataset.id, 'cancel')));
-  document.querySelectorAll('#tab-events .ev-reject').forEach((btn) =>
+  document.querySelectorAll('#card-events .ev-reject').forEach((btn) =>
     btn.addEventListener('click', () => eventAction(btn.dataset.kind, btn.dataset.id, 'reject')));
 }
 

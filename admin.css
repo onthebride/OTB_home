@@ -614,7 +614,10 @@ td .muted { color: var(--ink-soft); }
 }
 
 /* ===== 이벤트 탭 (짝꿍 / 후기) ===== */
-.ev-section { margin-bottom: 26px; }
+/* 이벤트는 이제 홈 카드 안에 들어간다 (2026-08-24) — 카드 안이라 여백을 줄인다 */
+.ev-section { margin-bottom: 18px; }
+.ev-section:last-child { margin-bottom: 0; }
+#card-events .ev-h { font-size: .92rem; margin-bottom: 8px; }
 .ev-h { font-size: 1rem; font-weight: 700; margin-bottom: 12px; }
 .ev-h small { font-weight: 400; color: var(--ink-soft); font-size: .78rem; }
 .ev-list { display: grid; gap: 10px; }
@@ -1258,3 +1261,11 @@ td .muted { color: var(--ink-soft); }
 .sel-fold > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sel-fn { font-size: .76rem; color: #2f7d4f; white-space: nowrap; }
 .sel-fn.none { color: var(--ink-soft); }
+
+/* 작가별 응답률 (대표 요청 2026-08-24) — 점수는 다들 만점 언저리라 여기서 갈린다 */
+.fb-sn .fb-rate { display: block; font-style: normal; font-size: .74rem; color: var(--ink-soft); margin-top: 2px; }
+.fb-sn .fb-rate.low { color: #b5462f; }
+.fb-silent { margin-top: 10px; padding: 10px 12px; background: var(--cream); border: 1px solid var(--line);
+  border-radius: 8px; font-size: .82rem; color: var(--ink-soft); line-height: 1.6; }
+.fb-silent b { color: var(--ink); }
+.fb-silent small { display: block; font-size: .74rem; margin-top: 3px; }

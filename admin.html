@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="admin.css?v=1f692ac813" />
+  <link rel="stylesheet" href="admin.css?v=43b2574768" />
 </head>
 <body>
 
@@ -50,7 +50,6 @@
         <button class="dtab" data-tab="stats">통계</button>
         <button class="dtab" data-tab="calendar">캘린더</button>
         <button class="dtab" data-tab="bookings">예약</button>
-        <button class="dtab" data-tab="events">이벤트<span class="dtab-badge" id="evBadge" hidden>0</span></button>
         <button class="dtab" data-tab="select">셀렉</button>
         <button class="dtab" data-tab="album">발주</button>
         <button class="dtab" data-tab="settings">설정</button>
@@ -68,6 +67,20 @@
       </div>
 
       <div id="tab-dashboard">
+        <!-- 이벤트는 탭을 없애고 홈으로 옮겼다 (대표 요청 2026-08-24).
+             챙길 게 없으면 통째로 접어 둔다 — 홈이 지저분해지지 않게 -->
+        <div class="dash-card" id="card-events" hidden>
+          <div class="dash-card-head"><h3>🎁 이벤트</h3><span class="dash-count" id="dcEvents">0</span></div>
+          <div class="ev-section">
+            <h3 class="ev-h">🤝 짝꿍 <small>(매칭 완료 → 승인 대기)</small></h3>
+            <div class="ev-list" id="evBuddyList"></div>
+          </div>
+          <div class="ev-section">
+            <h3 class="ev-h">✍️ 후기</h3>
+            <div class="ev-list" id="evReviewList"></div>
+          </div>
+        </div>
+
         <div class="dash-card" id="card-atkfail" hidden>
           <div class="dash-card-head"><h3>📨 알림톡 발송 내역</h3><span class="dash-count" id="dcAtkFail">0</span><button class="btn-sm" id="atkDismissAll" style="margin-left:auto">전체 확인</button></div>
           <div class="dash-list" id="listAtkFail"></div>
@@ -298,17 +311,6 @@
         <div id="fbBody" hidden><p class="empty">불러오는 중…</p></div>
       </div>
 
-      <div id="tab-events" hidden>
-        <div class="ev-section">
-          <h3 class="ev-h">🤝 짝꿍 이벤트 <small>(매칭 완료 → 승인 대기)</small></h3>
-          <div class="ev-list" id="evBuddyList"></div>
-        </div>
-        <div class="ev-section">
-          <h3 class="ev-h">✍️ 후기 이벤트</h3>
-          <div class="ev-list" id="evReviewList"></div>
-        </div>
-      </div>
-
       <div id="tab-settings" hidden>
         <div class="dash-subtabs">
           <button class="sub-tab active" data-subtab="staff">작가관리</button>
@@ -373,6 +375,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=e7080dfc67"></script>
+  <script src="admin.js?v=2d40bdf45f"></script>
 </body>
 </html>
