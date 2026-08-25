@@ -4,6 +4,9 @@
 -- 겹치는 구간이 있다 — 2026-06-20 뒤로는 같은 예식이 두 곳에 다 있을 수 있다.
 -- 그래서 (작가, 예식장묶음, 날짜) 가 같으면 한 번만 센다.
 -- 예약 쪽을 먼저 두어(src=0) 이름 표기는 예약 것을 쓴다.
+--
+-- 2026-08-25 고침: venue_key 가 아니라 venue_canon 을 쓴다.
+-- venue_alias 로 이어준 것(「상암 월드컵컨벤션」=「월드컵컨벤션」)까지 같이 세야 한다.
 
 create or replace function public.admin_staff_venues(p_days integer default 3650)
 returns jsonb language plpgsql security definer
@@ -15,7 +18,7 @@ begin
   with raw as (
     -- 우리 예약 (메인·서브 둘 다 «갔다» 로 친다)
     select 0 as src, st.id as staff_id, st.name as staff_name, coalesce(st.active, false) as active,
-           private.venue_key(b.wedding_venue) as vkey, b.wedding_venue as venue, b.wedding_date as d
+           private.venue_canon(b.wedding_venue) as vkey, b.wedding_venue as venue, b.wedding_date as d
     from public.bookings b
     join public.staff st on st.id in (b.assignee_id, b.sub_assignee_id)
     where b.status <> '취소'
@@ -24,7 +27,7 @@ begin
     union all
     -- 캘린더에서 읽어 넣은 지난 이력. 그만두신 분은 staff_id 가 없다
     select 1, h.staff_id, coalesce(s.name, h.staff_name), coalesce(s.active, false),
-           h.venue_key, h.venue, h.shot_on
+           private.venue_canon_key(h.venue_key), h.venue, h.shot_on
     from public.staff_history h
     left join public.staff s on s.id = h.staff_id
     where h.shot_on >= today - p_days
@@ -72,7 +75,7 @@ as $$
 declare res jsonb; today date := (now() at time zone 'Asia/Seoul')::date; k text;
 begin
   if auth.uid() is null then raise exception 'unauthorized'; end if;
-  k := private.venue_key(p_venue);
+  k := private.venue_canon(p_venue);
   if coalesce(k, '') = '' then
     return jsonb_build_object('ok', true, 'venue', p_venue, 'staff', '[]'::jsonb);
   end if;
@@ -81,12 +84,12 @@ begin
            b.wedding_date as d
     from public.bookings b
     join public.staff st on st.id in (b.assignee_id, b.sub_assignee_id)
-    where b.status <> '취소' and private.venue_key(b.wedding_venue) = k
+    where b.status <> '취소' and private.venue_canon(b.wedding_venue) = k
     union all
     select 1, h.staff_id, coalesce(s.name, h.staff_name), coalesce(s.active, false), h.shot_on
     from public.staff_history h
     left join public.staff s on s.id = h.staff_id
-    where h.venue_key = k
+    where private.venue_canon_key(h.venue_key) = k
   ),
   uniq as (
     select distinct on (coalesce(staff_id::text, staff_name), d) *
