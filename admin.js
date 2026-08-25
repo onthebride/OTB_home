@@ -3951,21 +3951,28 @@ async function renderFeedback() {
             + '<button type="button" class="fb-svn-btn" data-vn="' + si + '">더보기</button>'
           : '') + '</span>'
       : '';
+    // 한 줄에 다 넣고 칸 높이를 낮춘다 (대표 요청 2026-08-25 «작가들 칸 높이를 낮춰줘»).
+    // 「예식장 N곳」은 뺐다 — 대표가 「이건 뭐지? 빼도 될거 같은데」
+    // 응답은 「9건 중 응답 2건 22%」 차례로 (대표가 정해준 말차례)
+    const rate = s.target
+      ? '<span class="fb-rate' + (Number(s.rate) < FB_RATE_LOW ? ' low' : '') + '">'
+        + s.target + '건 중 응답 ' + s.n + '건 ' + (s.rate == null ? '-' : s.rate + '%') + '</span>'
+      : '<span class="fb-rate">응답 ' + s.n + '건</span>';
+    const tags = [
+      s.avg_rec == null ? '' : '추천 ' + s.avg_rec,
+      Number(s.n) < FB_THIN ? '<em>응답 적음</em>' : '만족 ' + avg1(s.avg_overall),
+      s.sub_n ? '서브 ' + s.sub_avg : '',
+      Number(s.late_n) ? '지각 ' + s.late_n : '',
+      s.req_n ? '부탁 ' + s.req_n : '',
+    ].filter(Boolean).join(' · ');
     return '<div class="fb-srow' + (on ? ' on' : '') + '" data-staff="' + esc(s.staff_name) + '" title="누르면 이 작가 응답만 보기">'
       + '<span class="fb-sname">' + esc(s.staff_name) + '</span>'
       // 순위는 100점 만점 가중 점수. 2026-08-25 부터 추천 의향이 들어갔다
-      + '<span class="fb-sscore"><b>' + (s.avg_score == null ? '-' : s.avg_score) + '</b><small>점</small>'
-        + (s.avg_rec == null ? '' : '<i class="fb-srec">추천 ' + s.avg_rec + '</i>')
-        + '<i class="fb-sold">' + (Number(s.n) < FB_THIN ? '<em>응답 적음</em>' : '만족 ' + avg1(s.avg_overall)) + '</i></span>'
-      // 촬영 건수 — 평점과 같은 줄에 둔다
-      + '<span class="fb-sshot">' + (sh ? '<b>' + sh.shots + '</b>건 <i>예식장 ' + sh.venues + '곳</i>' : '') + '</span>'
-      // 응답률 — 점수는 다들 만점 언저리라, 실제로 벌어지는 건 이쪽이다 (대표 요청 2026-08-24)
-      + '<span class="fb-sn">응답 ' + s.n + '건'
-        + (s.target ? '<i class="fb-rate' + (Number(s.rate) < FB_RATE_LOW ? ' low' : '') + '">'
-            + s.target + '건 중 ' + (s.rate == null ? '-' : s.rate + '%') + '</i>' : '')
-        + (s.sub_n ? '<i class="fb-subrate">서브 ' + s.sub_avg + '점 (' + s.sub_n + '건)</i>' : '')
-        + (Number(s.late_n) ? '<i>지각 ' + s.late_n + '</i>' : '')
-        + (s.req_n ? '<i>부탁 ' + s.req_n + '</i>' : '') + '</span>'
+      + '<span class="fb-sscore"><b>' + (s.avg_score == null ? '-' : s.avg_score) + '</b><small>점</small></span>'
+      // 촬영 건수 — 평점과 같은 줄에. 응답률은 그 바로 옆에 붙인다
+      + '<span class="fb-sshot">' + (sh ? '<b>' + sh.shots + '</b>건' : '') + '</span>'
+      + '<span class="fb-sn">' + rate + '</span>'
+      + '<span class="fb-stags">' + tags + '</span>'
       + venue
       + '</div>';
   }).join('') : '<p class="empty">아직 응답이 없습니다.</p>';
@@ -4049,9 +4056,7 @@ async function renderFeedback() {
     + '<div class="st-card"><span class="st-k">설문 안 온 예식</span><strong>' + pendAll.length + '</strong><span class="st-sub">최근 60일 · 미응답</span></div>'
     + '</div>'
     + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>👤 작가별 <small>(점수 높은 순 · 누르면 그 작가 응답만)</small></h3></div>'
-      + '<p class="st-note">점수 = 도착 20 · 친절 20 · 요청 10 · 진행 15 · 하객 15 · <b>추천 20</b> (100점 만점). 전체 만족도는 점수에서 빼고 참고로만 봅니다.<br>'
-      + '<b>추천</b>은 「다른 신부님께 이 작가님을 추천하시겠어요?」(0~10)입니다. 도착·친절은 거의 다 만점이라 안 갈리는데 이건 갈립니다 — 추천 9점이면 98점, 5점이면 90점.<br>'
-      + '<b>추천 문항이 없던 옛 응답과는 나란히 견주지 마세요.</b> 그때 것은 옛 항목만으로 셈합니다. 응답률도 같이 보시면 좋습니다.</p>'
+      + '<p class="st-note">점수 = 도착 20 · 친절 20 · 요청 10 · 진행 15 · 하객 15 · <b>추천 20</b> (100점 만점)</p>'
 
       + staffRows + silentRow + subRow + '</div>'
     + '<div class="dash-card">'

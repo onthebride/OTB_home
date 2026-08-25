@@ -1047,20 +1047,20 @@ td .muted { color: var(--ink-soft); }
 .st-tg.active { color: #fff; font-weight: 600; }
 .st-tg:not(.active):hover { color: var(--ink); }
 
-.fb-srow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 18px; padding: 14px 12px; border-bottom: 1px solid var(--line); }
+.fb-srow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
 .fb-srow:last-child { border-bottom: none; }
 .fb-sname { font-weight: 700; min-width: 68px; }
 /* 순위 점수는 100점 만점 가중 점수. 별 대신 숫자로 크게 */
 .fb-sscore { color: var(--gold); letter-spacing: 0; white-space: nowrap; }
 .fb-sscore b { color: var(--ink); margin-left: 0; font-size: 1.06rem; }
-.fb-sscore .fb-sold { display: block; font-style: normal; font-size: .72rem;
+.fb-sscore .fb-sold { display: none; font-style: normal; font-size: .72rem;
   color: var(--ink-soft); font-weight: 400; margin-top: 1px; }
 /* 응답이 두어 건뿐이면 한 사람 답에 점수가 크게 흔들린다 — 곧이곧대로 보지 않게 */
 .fb-sscore .fb-sold em { font-style: normal; color: #b5462f; }
 .dc-thin { display: block; color: #b5462f; font-size: .72rem; font-weight: 400; }
 .fb-sdetail { font-size: .82rem; color: var(--ink-soft); }
 /* 추천 의향은 지정 근거라 눈에 띄게 (2026-08-25) */
-.fb-srec { display: block; font-style: normal; font-size: .74rem; color: var(--gold-deep); font-weight: 700; }
+/* 추천·응답적음 같은 곁가지는 .fb-stags 로 옮겼다 (2026-08-25) */
 
 /* 많이 간 예식장 — 홈 카드 안에 바로 둔다 (박스를 겹치지 않게, 2026-08-25) */
 .vn-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
@@ -1070,19 +1070,21 @@ td .muted { color: var(--ink-soft); }
   border-radius: 999px; min-width: 17px; height: 17px; line-height: 17px; text-align: center; padding: 0 4px; }
 .vn-item b { color: var(--ink); font-weight: 700; }
 
-/* 작가 줄 — 평점·건수·응답률을 한 줄에, 많이 간 곳은 그 아래 (2026-08-25) */
-.fb-sshot { font-size: .84rem; color: var(--ink-soft); min-width: 92px; }
+/* 작가 줄 — 이름·점수·건수·응답률을 한 줄에. 칸 높이를 낮춘다
+   (대표 요청 2026-08-25 «건수 옆에 붙여서 전체적으로 작가들 칸 높이를 낮춰줘») */
+.fb-sshot { font-size: .84rem; color: var(--ink-soft); white-space: nowrap; }
 .fb-sshot b { color: var(--ink); font-size: .98rem; }
-.fb-sshot i { font-style: normal; display: block; font-size: .74rem; }
-.fb-svn { flex: 1 0 100%; margin-top: 2px; padding-top: 6px; border-top: 1px dashed var(--line);
-  font-size: .8rem; color: var(--ink-soft); line-height: 1.7; }
+.fb-stags { font-size: .76rem; color: var(--ink-soft); white-space: nowrap; }
+.fb-stags em { font-style: normal; color: #b5462f; }
+.fb-svn { flex: 1 0 100%; margin-top: 1px; padding-top: 5px; border-top: 1px dashed var(--line);
+  font-size: .8rem; color: var(--ink-soft); line-height: 1.6; }
 .fb-svn b { color: var(--ink); }
 .fb-svn-btn { margin-left: 8px; padding: 1px 8px; font-size: .74rem; font-family: var(--sans);
   color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line);
   border-radius: 999px; cursor: pointer; }
 .fb-svn-btn:hover { border-color: var(--gold); color: var(--gold-deep); }
-/* 응답률·서브 같은 곁가지는 줄을 나눠 붙는 글자가 없게 */
-.fb-sn i { font-style: normal; display: block; font-size: .74rem; }
+/* 응답률은 건수 바로 옆에 붙인다 (2026-08-25) */
+.fb-sn { white-space: nowrap; }
 .fb-sn { font-size: .78rem; color: var(--ink-soft); margin-left: auto; white-space: nowrap; }
 
 .fb-list { display: flex; flex-direction: column; gap: 10px; max-height: 620px; overflow-y: auto; }
