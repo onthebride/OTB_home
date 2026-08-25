@@ -199,7 +199,6 @@ function renderDownload() {
   const box = $('downloadBox');
   const notes = `<ul class="pt-dl-notes">
     <li>링크는 <b>3개월</b> 동안 유지됩니다.</li>
-    <li>원본은 <b>1회 더</b> 재공유해 드립니다.</li>
     <li>다운로드가 어려우시면 USB 구매로 받으실 수 있습니다. (10만원)</li>
     <li>원본은 작업 여부와 상관없이 <b>14개월 이후</b> 사전 안내 없이 서버에서 삭제됩니다.</li>
   </ul>`;
