@@ -34,8 +34,9 @@ begin
       and b.wedding_date >= d0 and b.wedding_date < d0 + 7
       and coalesce(st.active, false)
       and coalesce(st.phone, '') <> ''
-      -- 대표도 받는다 (대표 요청 2026-08-25 «나한테도 톡 주고»).
+      -- 대표를 걸러내지 않는 것은 일부러다 (대표 요청 2026-08-25 «나한테도 톡 주고»).
       -- 본인도 찍으러 나가니 이번 주 일정을 같은 방식으로 받는 게 맞다
+      --
       -- 이번 주에 이미 보냈으면 다시 안 보낸다 (크론이 두 번 돌아도 안전하게)
       and not exists (
         select 1 from private.alimtalk_outbox o
