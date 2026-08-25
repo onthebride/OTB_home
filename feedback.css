@@ -18,9 +18,27 @@
 .fb-star.on { color: var(--gold); }
 .fb-star-txt { font-size: .88rem; color: var(--gold-deep); min-height: 1.2em; }
 
+/* 추천 의향 0~10 — 별이 아니라 숫자칸이다.
+   모양이 별과 같으면 위 문항들처럼 습관적으로 끝칸을 누른다. 그러면 갈리지 않는다 */
+.fb-nps { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
+.fb-nps-row { display: flex; gap: 3px; width: 100%; max-width: 420px; }
+.fb-nps-b {
+  flex: 1 1 0; min-width: 0; cursor: pointer; padding: 9px 0; line-height: 1;
+  font-size: clamp(.72rem, 3.1vw, .92rem); font-variant-numeric: tabular-nums;
+  background: #fff; border: 1px solid #e0d8cc; border-radius: 6px;
+  color: var(--ink-soft); transition: background .12s, border-color .12s, color .12s;
+}
+.fb-nps-b:hover { border-color: var(--gold); }
+.fb-nps-b.on { background: var(--gold); border-color: var(--gold); color: #fff; font-weight: 600; }
+
 /* 빠뜨린 항목 표시 */
 .fb-stars.miss .fb-star-row,
+.fb-nps.miss .fb-nps-row,
 .sv-choices.miss { outline: 1px solid #d9a79a; outline-offset: 6px; border-radius: 8px; }
+
+/* 게시 고지 — 체크박스 대신 문구로 알린다 (대표 결정 2026-08-25) */
+.fb-use { margin: 18px 0 0; font-size: .82rem; line-height: 1.6; color: var(--ink-soft); }
+.fb-use b { color: var(--ink); font-weight: 600; }
 
 .fb-issue { margin-top: 14px; }
 

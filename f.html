@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="survey.css?v=ef64d2b331" />
-  <link rel="stylesheet" href="feedback.css?v=5dc1510720" />
+  <link rel="stylesheet" href="feedback.css?v=929d83d63f" />
 </head>
 <body>
   <header class="sv-header">
@@ -93,10 +93,21 @@
         <div class="fb-stars" data-k="family" role="radiogroup" aria-label="가족·하객 응대"></div>
       </section>
 
+      <!-- 지정 근거로 쓸 문항 (대표 요청 2026-08-25).
+           위 별점들은 «문제가 없었나» 를 묻기 때문에 거의 전부 만점이 나온다
+           (응답 13건에서 도착 13/13 「제시간」, 친절 13/13 만점).
+           이 문항은 만족한 분들 안에서도 8·9·10 으로 갈린다 — 그래서 줄을 세울 수 있다.
+           별이 아니라 숫자칸으로 그린다. 모양이 달라야 습관적으로 만점을 누르지 않는다 -->
+      <section class="sv-sec">
+        <h2 class="sv-h">7. 다른 신부님께 이 작가님을 추천하시겠어요? <em class="fb-req">*</em></h2>
+        <p class="sv-sub">0점부터 10점까지 눌러주세요.</p>
+        <div class="fb-nps" data-k="recommend" role="radiogroup" aria-label="추천 의향"></div>
+      </section>
+
       <!-- 불만이 아니라 «부탁» 을 묻는다. 같은 정보가 나오는데 신부님도 편히 쓰시고,
            작가에게 전할 때도 지적이 아니라 부탁이 된다 (대표 요청) -->
       <section class="sv-sec">
-        <h2 class="sv-h">7. 다음에 또 촬영하신다면, 미리 부탁드리고 싶은 게 있으실까요? <small>(선택)</small></h2>
+        <h2 class="sv-h">8. 다음에 또 촬영하신다면, 미리 부탁드리고 싶은 게 있으실까요? <small>(선택)</small></h2>
         <p class="sv-sub">사소한 것이라도 좋습니다. 다음 촬영에 그대로 반영하겠습니다.</p>
         <div class="sv-field full">
           <textarea id="f_next_req" rows="3" placeholder="예) 신부대기실에 조금 더 일찍 와주시면 좋겠어요"></textarea>
@@ -112,11 +123,17 @@
       </section>
 
       <section class="sv-sec">
-        <h2 class="sv-h">8. 작가님께 한마디 <small>(선택)</small></h2>
+        <h2 class="sv-h">9. 작가님께 한마디 <small>(선택)</small></h2>
         <div class="sv-field full">
           <textarea id="f_message" rows="3" placeholder="고마웠던 점이나 기억에 남는 순간이 있다면 적어주세요."></textarea>
         </div>
       </section>
+
+      <!-- 체크박스가 아니라 고지 문구다 (대표 결정 2026-08-25).
+           체크를 붙이면 안 누르는 분이 생기고 그만큼 쓸 수 있는 글이 줄어든다.
+           대신 이름은 줄여 싣는다고 여기서 약속한다 -->
+      <p class="fb-use">보내주신 내용은 서비스 운영과 마케팅에 사용될 수 있습니다.
+        홈페이지에 실을 때는 <b>김○○ 님</b>처럼 성만 남겨 표기합니다.</p>
 
       <div class="sv-submit">
         <button type="button" class="sv-btn" id="fbSubmit">설문 보내기</button>
@@ -127,6 +144,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="feedback.js?v=bef37a2001"></script>
+  <script src="feedback.js?v=b1e11ccc02"></script>
 </body>
 </html>

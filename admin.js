@@ -202,7 +202,9 @@ async function loadStaffScores() {
   staffScore = {};
   allStaff.forEach((s) => {
     const v = byName[s.name];
-    if (v) staffScore[s.id] = { score: v.avg_score, n: Number(v.n) || 0 };
+    // 추천 의향도 같이 담는다 — 지정 근거로 보는 값이다 (2026-08-25)
+    if (v) staffScore[s.id] = { score: v.avg_score, n: Number(v.n) || 0,
+      rec: v.avg_rec, recN: Number(v.rec_n) || 0 };
   });
 }
 
@@ -248,7 +250,11 @@ let staffScore = {};
 function scoreTag(id) {
   const v = staffScore[id];
   if (!v || v.score == null) return ' · 평가 -';
-  return ' · ' + v.score + '점' + (v.n < FB_THIN ? '(응답 ' + v.n + ')' : '');
+  // 추천 의향이 쌓이면 같이 보여준다. 100점 점수는 다들 만점 언저리라 안 갈리는데
+  // 이건 갈린다 — 지정할 때 실제로 볼 값이다 (2026-08-25).
+  // 줄 세우는 기준은 아직 점수 그대로다. 추천이 충분히 쌓이면 그때 바꾼다
+  const rec = v.rec == null ? '' : ' · 추천 ' + v.rec;
+  return ' · ' + v.score + '점' + rec + (v.n < FB_THIN ? '(응답 ' + v.n + ')' : '');
 }
 
 function assigneeOptions(selId, conf, slot) {
@@ -3926,7 +3932,10 @@ async function renderFeedback() {
       // 1번 전체 만족도는 점수에서 뺐지만 참고로 옆에 같이 보여준다
       + '<span class="fb-sscore"><b>' + (s.avg_score == null ? '-' : s.avg_score) + '</b><small>점</small>'
         + '<i class="fb-sold">' + (Number(s.n) < FB_THIN ? '<em>응답 적음</em>' : '만족 ' + avg1(s.avg_overall)) + '</i></span>'
-      + '<span class="fb-sdetail">친절 ' + avg1(s.avg_kindness) + ' · 요청 ' + avg1(s.avg_requests) + ' · 진행 ' + avg1(s.avg_flow)
+      // 추천 의향은 맨 앞에 굵게 — 지정할 때 실제로 보는 값이다 (2026-08-25)
+      + '<span class="fb-sdetail">'
+        + (s.avg_rec == null ? '' : '<b class="fb-srec">추천 ' + s.avg_rec + '</b> · ')
+        + '친절 ' + avg1(s.avg_kindness) + ' · 요청 ' + avg1(s.avg_requests) + ' · 진행 ' + avg1(s.avg_flow)
         + (s.avg_family == null ? '' : ' · 하객 ' + avg1(s.avg_family))
         + (s.req_n ? ' · <b>부탁 ' + s.req_n + '건</b>' : '') + '</span>'
       // 응답률 — 점수는 다들 만점 언저리라, 실제로 벌어지는 건 이쪽이다 (대표 요청 2026-08-24)
@@ -3981,6 +3990,8 @@ async function renderFeedback() {
         + chip('요청', x.requests, Number(x.requests) <= FB_LOW)
         + chip('진행', x.flow, Number(x.flow) <= FB_LOW)
         + (x.family == null ? '' : chip('하객', x.family, Number(x.family) <= FB_LOW))
+        // 추천 의향 — 0 도 답이라 == null 로만 걸러야 한다 (2026-08-25)
+        + (x.recommend == null ? '' : chip('추천', x.recommend, Number(x.recommend) <= FB_LOW))
       + '</div>'
       // 「다음에 부탁드리고 싶은 것」 — 점수는 만점인데 여기에만 적히는 경우가 있다.
       // 실제로 고칠 거리라 제일 눈에 띄게 둔다
@@ -4006,6 +4017,9 @@ async function renderFeedback() {
     '<div class="st-cards fb-top">'
     + '<div class="st-card"><span class="st-k">응답</span><strong>' + (d.count || 0) + '</strong><span class="st-sub">' + esc(fbRangeLabel()) + '</span></div>'
     + '<div class="st-card"><span class="st-k">평균 점수</span><strong>' + (d.avg_score == null ? '-' : d.avg_score) + '</strong><span class="st-sub">100점 만점 · 가중</span></div>'
+    // 지정 근거 (대표 요청 2026-08-25). 점수와 달리 이건 갈린다
+    + '<div class="st-card"><span class="st-k">추천 의향</span><strong>' + (d.avg_rec == null ? '-' : d.avg_rec) + '</strong>'
+      + '<span class="st-sub">10점 만점 · ' + (d.rec_n || 0) + '건</span></div>'
     + '<div class="st-card"><span class="st-k">응답률</span><strong'
       + (d.rate != null && Number(d.rate) < FB_RATE_LOW ? ' class="ab-no"' : '') + '>'
       + (d.rate == null ? '-' : d.rate + '%') + '</strong>'
@@ -4014,7 +4028,8 @@ async function renderFeedback() {
     + '</div>'
     + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>👤 작가별 <small>(점수 높은 순 · 누르면 그 작가 응답만)</small></h3></div>'
       + '<p class="st-note">점수 = 도착 25 · 친절 25 · 요청 15 · 진행 15 · 하객 20 (100점 만점). 전체 만족도는 점수에서 빼고 참고로만 봅니다.<br>'
-      + '점수는 다들 만점 언저리라 잘 안 갈립니다. <b>응답률을 같이 보세요</b> — 지금 실제로 차이가 나는 건 그쪽입니다.</p>'
+      + '점수는 다들 만점 언저리라 잘 안 갈립니다. <b>추천 의향과 응답률을 같이 보세요</b> — 실제로 차이가 나는 건 그쪽입니다.<br>'
+      + '<b>추천 의향</b>은 「다른 신부님께 이 작가님을 추천하시겠어요?」(0~10)입니다. 만족한 분들 안에서도 갈리기 때문에 <b>지정 근거</b>로 씁니다. 100점 점수에는 넣지 않습니다 — 옛 응답엔 이 문항이 없어 같은 잣대로 못 견줍니다.</p>'
       + staffRows + silentRow + subRow + '</div>'
     + '<div class="dash-card">'
       + '<div class="dash-card-head"><h3>💬 받은 응답 <small>(최근순)</small></h3>'

@@ -775,6 +775,10 @@ td .muted { color: var(--ink-soft); }
 .st-card .st-k { font-size: .8rem; color: var(--ink-soft); }
 .st-card strong { font-size: 1.55rem; font-weight: 700; line-height: 1.2; }
 .st-card .st-sub { font-size: .74rem; color: var(--ink-soft); }
+/* 작가 평가 칸은 다섯이다 — 「추천」이 붙었다 (대표 요청 2026-08-25 «지정 근거»).
+   .st-cards 보다 셈이 무거워야(.st-cards.fb-top) 기본 넉 줄 규칙을 이긴다.
+   폰용 되돌리기도 같은 무게라서, 이 줄이 «앞» 에 있어야 한다 — 셈이 같으면 뒤가 이긴다 */
+.st-cards.fb-top { grid-template-columns: repeat(5, 1fr); margin-bottom: 16px; }
 
 /* 홈의 「한눈에」 — 홈에 있던 예식 캘린더 자리에 들어간다 (대표 요청 2026-08-23).
    숫자만 훑는 자리라 통계 탭의 카드보다 작게. 좁아지면 두 줄, 더 좁아지면 한 줄 */
@@ -984,6 +988,8 @@ td .muted { color: var(--ink-soft); }
   .st-card .st-sub { font-size: .7rem; }
   /* 홀수로 남은 마지막 칸은 한 줄을 다 쓴다 — 혼자 반쪽으로 떠 있지 않게 */
   .st-cards > .st-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  /* 다섯 칸짜리도 폰에서는 두 칸으로. 셈이 같아야 위의 repeat(5) 를 이긴다 */
+  .st-cards.fb-top { grid-template-columns: repeat(2, 1fr); margin-bottom: 12px; }
   /* 기간 버튼과 바로가기를 한 줄에 */
   .st-bar { gap: 8px; }
   .st-links { margin-left: auto; width: auto; }
@@ -1008,7 +1014,6 @@ td .muted { color: var(--ink-soft); }
   transition: color .18s; white-space: nowrap; }
 .st-tg.active { color: #fff; font-weight: 600; }
 .st-tg:not(.active):hover { color: var(--ink); }
-.fb-top { margin-bottom: 16px; }
 
 .fb-srow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
 .fb-srow:last-child { border-bottom: none; }
@@ -1022,6 +1027,8 @@ td .muted { color: var(--ink-soft); }
 .fb-sscore .fb-sold em { font-style: normal; color: #b5462f; }
 .dc-thin { display: block; color: #b5462f; font-size: .72rem; font-weight: 400; }
 .fb-sdetail { font-size: .82rem; color: var(--ink-soft); }
+/* 추천 의향은 지정 근거라 눈에 띄게 (2026-08-25) */
+.fb-srec { color: var(--gold-deep); font-weight: 700; }
 .fb-sn { font-size: .78rem; color: var(--ink-soft); margin-left: auto; white-space: nowrap; }
 
 .fb-list { display: flex; flex-direction: column; gap: 10px; max-height: 620px; overflow-y: auto; }

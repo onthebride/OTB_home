@@ -50,6 +50,37 @@ function buildStars() {
   });
 }
 
+// 추천 의향 0~10 (대표 요청 2026-08-25 «지정 근거»).
+// 별이 아니라 숫자칸으로 그린다 — 모양이 같으면 위 별점들처럼 습관적으로 끝칸을 누른다.
+// 0 도 뜻이 있는 답이라 «안 고름» 과 구별해야 한다. scores 대신 따로 담는 이유다
+const NPS_TXT = (n) => (n <= 6 ? '추천은 어려울 것 같아요'
+  : n <= 8 ? '추천할 만해요' : '꼭 추천하고 싶어요');
+let npsVal = null;
+
+function buildNps() {
+  document.querySelectorAll('.fb-nps').forEach((wrap) => {
+    wrap.innerHTML =
+      '<div class="fb-nps-row">'
+      + Array.from({ length: 11 }, (_, n) =>
+        `<button type="button" class="fb-nps-b" data-n="${n}" aria-label="${n}점" role="radio" aria-checked="false">${n}</button>`).join('')
+      + '</div><div class="fb-scale"><span>0 전혀 아니에요</span><span>10 꼭 추천해요</span></div>'
+      + '<span class="fb-star-txt"></span>';
+    wrap.addEventListener('click', (e) => {
+      const btn = e.target.closest('.fb-nps-b');
+      if (!btn) return;
+      const n = Number(btn.dataset.n);
+      npsVal = n;
+      wrap.querySelectorAll('.fb-nps-b').forEach((b) => {
+        const on = Number(b.dataset.n) === n;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-checked', String(on));
+      });
+      wrap.querySelector('.fb-star-txt').textContent = n + '점 · ' + NPS_TXT(n);
+      wrap.classList.remove('miss');
+    });
+  });
+}
+
 async function load() {
   if (demo) {                       // 예약을 찾지 않고 보기용 값으로 채운다
     $('fbName').textContent = '김소연';
@@ -61,6 +92,7 @@ async function load() {
       '<p class="sv-note" style="background:#f4f1ec;border-color:#e0d8cc;color:#6b635c">'
       + '미리보기 화면입니다. 여기서 보내도 저장되지 않습니다.</p>');
     buildStars();
+    buildNps();
     show($('mainCard'));
     return;
   }
@@ -76,6 +108,7 @@ async function load() {
   $('fbMeta').textContent = [d, data.wedding_venue].filter(Boolean).join(' · ');
   subSetup(data.staff_name, data.sub_name);
   buildStars();
+  buildNps();
   show($('mainCard'));
 }
 
@@ -104,13 +137,19 @@ $('fbSubmit').addEventListener('click', async () => {
     w.classList.toggle('miss', bad);
     if (bad && !firstMiss) firstMiss = w;
   });
+  // 추천 의향은 0 도 답이라 «안 고름» 은 null 로만 판단한다 (!npsVal 로 보면 0 점이 빈칸이 된다)
+  document.querySelectorAll('.fb-nps').forEach((w) => {
+    const bad = npsVal === null;
+    w.classList.toggle('miss', bad);
+    if (bad && !firstMiss) firstMiss = w;
+  });
   [['arrivalWrap', !arrival]].forEach(([id, bad]) => {
     $(id).classList.toggle('miss', bad);
     if (bad && !firstMiss) firstMiss = $(id);
   });
   if (firstMiss) {
     st.className = 'fb-status err';
-    st.textContent = '별표가 비어 있는 항목이 있어요.';
+    st.textContent = '아직 안 고르신 항목이 있어요.';
     firstMiss.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
@@ -125,6 +164,7 @@ $('fbSubmit').addEventListener('click', async () => {
     requests: scores.requests,
     flow: scores.flow,
     family: scores.family,
+    recommend: npsVal,
     sub_stars: scores.sub_stars || null,
     next_req: $('f_next_req').value.trim(),
     message: $('f_message').value.trim(),
