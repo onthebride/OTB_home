@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="admin.css?v=9fb8a1d7d4" />
+  <link rel="stylesheet" href="admin.css?v=c708241bd5" />
 </head>
 <body>
 
@@ -123,6 +123,13 @@
           <div class="dash-card-head"><h3>📈 한눈에</h3>
             <button class="btn-sm st-mini-more" id="homeStatsMore">통계 자세히 →</button></div>
           <div class="st-mini" id="homeStatsBody"><p class="empty sm">불러오는 중…</p></div>
+        </div>
+
+        <!-- 우리가 많이 간 예식장. 통계 안에 두니 박스가 세 겹이 돼서 홈으로 옮겼다
+             (대표 요청 2026-08-25) -->
+        <div class="dash-card" id="homeVenues">
+          <div class="dash-card-head"><h3>📍 많이 간 예식장 <small>(2018년부터 · 우리 스케줄만)</small></h3></div>
+          <div class="vn-top" id="homeVenuesBody"><p class="empty sm">불러오는 중…</p></div>
         </div>
 
         <!-- 신부님들이 설문에 남긴 글. 같은 요청에서 받아온 것을 나눠 쓴다 -->
@@ -382,6 +389,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=9ebef19b43"></script>
+  <script src="admin.js?v=8fc587eb5c"></script>
 </body>
 </html>

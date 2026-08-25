@@ -2874,6 +2874,9 @@ async function renderHomeStats(force) {
     + tile('설문 미응답', pend.length, '최근 60일 예식', pend.length > 0);
 
   renderHomeReviews(Array.isArray(f.items) ? f.items : []);
+  // 많이 간 예식장 — 한 번만 받아 두면 된다 (2026-08-25 통계에서 홈으로 옮김)
+  if (!staffShots) await loadStaffShots();
+  renderHomeVenues();
 }
 
 /* 신부님들이 설문에 남긴 글 세 개. 위에서 이미 받아온 것을 나눠 쓴다 — 따로 안 부른다 */
@@ -3929,27 +3932,41 @@ async function renderFeedback() {
       + '</div>';
   }).join('');
 
-  const staffRows = staff.length ? staff.map((s) => {
+  // 평점과 촬영 건수를 한 줄에 묶는다 (대표 요청 2026-08-25 «작가 평점과 건수는 묶어서»).
+  // 촬영 이력은 이름으로 맞춘다 — 설문 쪽은 이름만 들고 온다
+  const shotsBy = {};
+  ((staffShots && staffShots.staff) || []).forEach((x) => { shotsBy[x.staff_name] = x; });
+  const staffRows = staff.length ? staff.map((s, si) => {
     const on = fbStaff === s.staff_name;
+    const sh = shotsBy[s.staff_name];
+    // 많이 간 곳은 셋만 보이고 나머지는 접는다 (대표 요청). 열면 열 곳까지
+    const tops = (sh && sh.top) || [];
+    const vName = (v) => esc(String(v).replace(/\s*[-/(,].*$/, '').slice(0, 16));
+    const venue = tops.length
+      ? '<span class="fb-svn">'
+        + tops.slice(0, 3).map((x) => vName(x.venue) + ' <b>' + x.n + '</b>').join(' · ')
+        + (tops.length > 3
+          ? '<span class="fb-svn-more" hidden id="fbvn' + si + '"> · '
+            + tops.slice(3, 10).map((x) => vName(x.venue) + ' <b>' + x.n + '</b>').join(' · ') + '</span>'
+            + '<button type="button" class="fb-svn-btn" data-vn="' + si + '">더보기</button>'
+          : '') + '</span>'
+      : '';
     return '<div class="fb-srow' + (on ? ' on' : '') + '" data-staff="' + esc(s.staff_name) + '" title="누르면 이 작가 응답만 보기">'
       + '<span class="fb-sname">' + esc(s.staff_name) + '</span>'
-      // 순위는 100점 만점 가중 점수로 (도착25·친절25·요청15·진행15·하객20).
-      // 1번 전체 만족도는 점수에서 뺐지만 참고로 옆에 같이 보여준다
+      // 순위는 100점 만점 가중 점수. 2026-08-25 부터 추천 의향이 들어갔다
       + '<span class="fb-sscore"><b>' + (s.avg_score == null ? '-' : s.avg_score) + '</b><small>점</small>'
+        + (s.avg_rec == null ? '' : '<i class="fb-srec">추천 ' + s.avg_rec + '</i>')
         + '<i class="fb-sold">' + (Number(s.n) < FB_THIN ? '<em>응답 적음</em>' : '만족 ' + avg1(s.avg_overall)) + '</i></span>'
-      // 추천 의향은 맨 앞에 굵게 — 지정할 때 실제로 보는 값이다 (2026-08-25)
-      + '<span class="fb-sdetail">'
-        + (s.avg_rec == null ? '' : '<b class="fb-srec">추천 ' + s.avg_rec + '</b> · ')
-        + '친절 ' + avg1(s.avg_kindness) + ' · 요청 ' + avg1(s.avg_requests) + ' · 진행 ' + avg1(s.avg_flow)
-        + (s.avg_family == null ? '' : ' · 하객 ' + avg1(s.avg_family))
-        + (s.req_n ? ' · <b>부탁 ' + s.req_n + '건</b>' : '') + '</span>'
+      // 촬영 건수 — 평점과 같은 줄에 둔다
+      + '<span class="fb-sshot">' + (sh ? '<b>' + sh.shots + '</b>건 <i>예식장 ' + sh.venues + '곳</i>' : '') + '</span>'
       // 응답률 — 점수는 다들 만점 언저리라, 실제로 벌어지는 건 이쪽이다 (대표 요청 2026-08-24)
-      + '<span class="fb-sn">' + s.n + '건'
-        + (s.sub_n ? '<i class="fb-subrate">서브 ' + s.sub_avg + '점 (' + s.sub_n + '건)</i>' : '')
+      + '<span class="fb-sn">응답 ' + s.n + '건'
         + (s.target ? '<i class="fb-rate' + (Number(s.rate) < FB_RATE_LOW ? ' low' : '') + '">'
-            + '지난 예식 ' + s.target + '건 중 ' + (s.rate == null ? '-' : s.rate + '%') + '</i>' : '')
-        + (Number(s.late_n) ? ' · 지각 ' + s.late_n : '')
-        + (Number(s.issue_n) ? ' · 불편 ' + s.issue_n : '') + '</span>'
+            + s.target + '건 중 ' + (s.rate == null ? '-' : s.rate + '%') + '</i>' : '')
+        + (s.sub_n ? '<i class="fb-subrate">서브 ' + s.sub_avg + '점 (' + s.sub_n + '건)</i>' : '')
+        + (Number(s.late_n) ? '<i>지각 ' + s.late_n + '</i>' : '')
+        + (s.req_n ? '<i>부탁 ' + s.req_n + '</i>' : '') + '</span>'
+      + venue
       + '</div>';
   }).join('') : '<p class="empty">아직 응답이 없습니다.</p>';
 
@@ -4032,10 +4049,10 @@ async function renderFeedback() {
     + '<div class="st-card"><span class="st-k">설문 안 온 예식</span><strong>' + pendAll.length + '</strong><span class="st-sub">최근 60일 · 미응답</span></div>'
     + '</div>'
     + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>👤 작가별 <small>(점수 높은 순 · 누르면 그 작가 응답만)</small></h3></div>'
-      + '<p class="st-note">점수 = 도착 25 · 친절 25 · 요청 15 · 진행 15 · 하객 20 (100점 만점). 전체 만족도는 점수에서 빼고 참고로만 봅니다.<br>'
-      + '점수는 다들 만점 언저리라 잘 안 갈립니다. <b>추천 의향과 응답률을 같이 보세요</b> — 실제로 차이가 나는 건 그쪽입니다.<br>'
-      + '<b>추천 의향</b>은 「다른 신부님께 이 작가님을 추천하시겠어요?」(0~10)입니다. 만족한 분들 안에서도 갈리기 때문에 <b>지정 근거</b>로 씁니다. 100점 점수에는 넣지 않습니다 — 옛 응답엔 이 문항이 없어 같은 잣대로 못 견줍니다.</p>'
-      + shotsHtml()
+      + '<p class="st-note">점수 = 도착 20 · 친절 20 · 요청 10 · 진행 15 · 하객 15 · <b>추천 20</b> (100점 만점). 전체 만족도는 점수에서 빼고 참고로만 봅니다.<br>'
+      + '<b>추천</b>은 「다른 신부님께 이 작가님을 추천하시겠어요?」(0~10)입니다. 도착·친절은 거의 다 만점이라 안 갈리는데 이건 갈립니다 — 추천 9점이면 98점, 5점이면 90점.<br>'
+      + '<b>추천 문항이 없던 옛 응답과는 나란히 견주지 마세요.</b> 그때 것은 옛 항목만으로 셈합니다. 응답률도 같이 보시면 좋습니다.</p>'
+
       + staffRows + silentRow + subRow + '</div>'
     + '<div class="dash-card">'
       + '<div class="dash-card-head"><h3>💬 받은 응답 <small>(최근순)</small></h3>'
@@ -4090,6 +4107,14 @@ async function renderFeedback() {
   }));
   wrap.querySelectorAll('.fb-srow').forEach((r) => r.addEventListener('click', () => {
     fbStaff = fbStaff === r.dataset.staff ? null : r.dataset.staff; fbPage = 0; renderFeedback();
+  }));
+  // 많이 간 곳 더보기 — 줄 전체를 누르면 작가가 걸리므로 여기서 멈춘다 (2026-08-25)
+  wrap.querySelectorAll('.fb-svn-btn').forEach((b) => b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const more = $('fbvn' + b.dataset.vn);
+    if (!more) return;
+    more.hidden = !more.hidden;
+    b.textContent = more.hidden ? '더보기' : '접기';
   }));
   const clr = wrap.querySelector('.fb-clear');
   if (clr) clr.addEventListener('click', (e) => { e.stopPropagation(); fbStaff = null; fbPage = 0; renderFeedback(); });
@@ -4951,25 +4976,16 @@ async function loadStaffShots() {
   const { data, error } = await sb.rpc('admin_staff_shots', { p_top: 10 });
   if (!error && data) staffShots = data;
 }
-function shotsHtml() {
-  if (!staffShots) return '';
+// 「우리가 많이 간 예식장」은 홈으로 옮겼다 (대표 요청 2026-08-25).
+// 통계 안에 카드를 또 만드니 «박스 안에 박스 안에 박스» 가 됐다
+function renderHomeVenues() {
+  const box = $('homeVenuesBody');
+  if (!box) return;
+  const list = (staffShots && staffShots.venues) || [];
+  if (!list.length) { box.innerHTML = '<p class="empty sm">아직 자료가 없습니다.</p>'; return; }
   const cut = (v) => esc(String(v).replace(/\s*[-/(,].*$/, '').slice(0, 18));
-  const rows = (staffShots.staff || []).filter((s) => s.active).map((s) =>
-    '<div class="fb-srow">'
-    + '<span class="fb-sname">' + esc(s.staff_name) + '</span>'
-    + '<span class="fb-sscore"><b>' + s.shots + '</b><small>건</small>'
-      + '<i class="fb-sold">예식장 ' + s.venues + '곳</i></span>'
-    + '<span class="fb-sdetail">'
-      + (s.top || []).slice(0, 6).map((x) => cut(x.venue) + ' <b>' + x.n + '</b>').join(' · ')
-      + '</span></div>').join('');
-  const top = (staffShots.venues || []).map((v, i) =>
+  box.innerHTML = list.map((v, i) =>
     '<span class="vn-item"><i>' + (i + 1) + '</i>' + cut(v.venue) + ' <b>' + v.n + '</b></span>').join('');
-  return '<div class="dash-card st-chart-card"><div class="dash-card-head">'
-    + '<h3>📍 작가별 촬영 이력 <small>(2018년부터 · 우리 스케줄만)</small></h3></div>'
-    + '<p class="st-note">지난 캘린더에서 읽어온 것과 지금 예약을 합친 값입니다. 다른 업체에서 찍으신 건 안 들어갑니다.<br>'
-    + '예식장 이름이 제각각 적혀 있어도 같은 곳으로 묶어 셉니다 (「아펠가모 광화문 그랜드홀」 = 「광화문 아펠가모」).</p>'
-    + '<div class="vn-top"><b>우리가 많이 간 예식장 10곳</b>' + top + '</div>'
-    + rows + '</div>';
 }
 
 // 사진마다 「누가 찍었는지」 를 고르는 칸 (대표 요청 2026-08-25 «갤러리도 누구사진인지»).
