@@ -3898,7 +3898,12 @@ const fbRangeLabel = () => (fbDays >= 3650 ? '전체 기간' : fbDays >= 365 ? '
 async function renderFeedback() {
   const wrap = $('fbBody');
   if (!wrap) return;
-  const [fr, pr] = await Promise.all([sb.rpc('admin_feedback', { p_days: fbDays }), sb.rpc('admin_feedback_pending')]);
+  // 촬영 이력은 한 번만 받아 두면 된다 (기간을 바꿔도 안 바뀐다)
+  const [fr, pr] = await Promise.all([
+    sb.rpc('admin_feedback', { p_days: fbDays }),
+    sb.rpc('admin_feedback_pending'),
+    staffShots ? Promise.resolve() : loadStaffShots(),
+  ]);
   if (fr.error) { wrap.innerHTML = '<p class="empty">불러오지 못했습니다. (' + esc(fr.error.message) + ')</p>'; return; }
   const d = fr.data || {};
   const staff = Array.isArray(d.staff) ? d.staff : [];
@@ -4030,6 +4035,7 @@ async function renderFeedback() {
       + '<p class="st-note">점수 = 도착 25 · 친절 25 · 요청 15 · 진행 15 · 하객 20 (100점 만점). 전체 만족도는 점수에서 빼고 참고로만 봅니다.<br>'
       + '점수는 다들 만점 언저리라 잘 안 갈립니다. <b>추천 의향과 응답률을 같이 보세요</b> — 실제로 차이가 나는 건 그쪽입니다.<br>'
       + '<b>추천 의향</b>은 「다른 신부님께 이 작가님을 추천하시겠어요?」(0~10)입니다. 만족한 분들 안에서도 갈리기 때문에 <b>지정 근거</b>로 씁니다. 100점 점수에는 넣지 않습니다 — 옛 응답엔 이 문항이 없어 같은 잣대로 못 견줍니다.</p>'
+      + shotsHtml()
       + staffRows + silentRow + subRow + '</div>'
     + '<div class="dash-card">'
       + '<div class="dash-card-head"><h3>💬 받은 응답 <small>(최근순)</small></h3>'
@@ -4867,6 +4873,8 @@ function resizeImage(file, maxDim, quality) {
 async function uploadGallery() {
   const files = glQueue.map((it) => it.file);
   const venue = $('glVenue').value.trim();
+  // 올릴 때 작가도 같이 찍는다 (대표 요청 2026-08-25) — 나중에 손볼 일이 없게
+  const upStaff = $('glUpStaff').value || null;
   if (!files.length) { setGlStatus('사진을 선택해 주세요.', 'err'); return; }
   const btn = $('glUploadBtn');
   btn.disabled = true;
@@ -4878,13 +4886,14 @@ async function uploadGallery() {
       const up = await sb.storage.from('gallery').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
       if (up.error) throw up.error;
       const pub = sb.storage.from('gallery').getPublicUrl(path);
-      const add = await sb.rpc('admin_gallery_add', { payload: { image_path: path, image_url: pub.data.publicUrl, venue } });
+      const add = await sb.rpc('admin_gallery_add', { payload: { image_path: path, image_url: pub.data.publicUrl, venue, staff_id: upStaff } });
       if (add.error) throw add.error;
     }
     const n = files.length;
     clearQueue();
     $('glFiles').value = '';
     $('glVenue').value = '';
+    // 작가 고른 것은 안 지운다 — 같은 예식 사진을 이어서 올리는 경우가 많다
     setGlStatus(n + '장 업로드 완료!', 'ok');
     loadGallery();
   } catch (err) {
@@ -4909,6 +4918,10 @@ async function loadGallery() {
   glSearch = '';
   glTagsOpen = false;
   glPage = 1;
+  glPicked.clear();
+  // 올릴 때 고를 작가 목록 (2026-08-25). 고른 것은 다시 그려도 남긴다
+  const up = $('glUpStaff');
+  if (up) { const keep = up.value; up.innerHTML = glStaffOptions(keep); up.value = keep; }
   renderGalleryAdmin();
 }
 
@@ -4929,6 +4942,36 @@ function renderGalleryAdmin() {
   renderGalleryGrid();
 }
 
+/* 작가별 촬영 이력 — 몇 건 찍었고 어디를 많이 갔나 (대표 요청 2026-08-25
+   «전체 촬영건수도 기록해주고 / 홀별로많이 간 순위 10위까지»).
+   우리 예약(2026-06~)과 캘린더에서 읽어 넣은 지난 이력(2018~)을 합친 값이다.
+   다른 업체에서 찍은 것은 안 들어간다 — 우리 스케줄로 한 것만 */
+let staffShots = null;
+async function loadStaffShots() {
+  const { data, error } = await sb.rpc('admin_staff_shots', { p_top: 10 });
+  if (!error && data) staffShots = data;
+}
+function shotsHtml() {
+  if (!staffShots) return '';
+  const cut = (v) => esc(String(v).replace(/\s*[-/(,].*$/, '').slice(0, 18));
+  const rows = (staffShots.staff || []).filter((s) => s.active).map((s) =>
+    '<div class="fb-srow">'
+    + '<span class="fb-sname">' + esc(s.staff_name) + '</span>'
+    + '<span class="fb-sscore"><b>' + s.shots + '</b><small>건</small>'
+      + '<i class="fb-sold">예식장 ' + s.venues + '곳</i></span>'
+    + '<span class="fb-sdetail">'
+      + (s.top || []).slice(0, 6).map((x) => cut(x.venue) + ' <b>' + x.n + '</b>').join(' · ')
+      + '</span></div>').join('');
+  const top = (staffShots.venues || []).map((v, i) =>
+    '<span class="vn-item"><i>' + (i + 1) + '</i>' + cut(v.venue) + ' <b>' + v.n + '</b></span>').join('');
+  return '<div class="dash-card st-chart-card"><div class="dash-card-head">'
+    + '<h3>📍 작가별 촬영 이력 <small>(2018년부터 · 우리 스케줄만)</small></h3></div>'
+    + '<p class="st-note">지난 캘린더에서 읽어온 것과 지금 예약을 합친 값입니다. 다른 업체에서 찍으신 건 안 들어갑니다.<br>'
+    + '예식장 이름이 제각각 적혀 있어도 같은 곳으로 묶어 셉니다 (「아펠가모 광화문 그랜드홀」 = 「광화문 아펠가모」).</p>'
+    + '<div class="vn-top"><b>우리가 많이 간 예식장 10곳</b>' + top + '</div>'
+    + rows + '</div>';
+}
+
 // 사진마다 「누가 찍었는지」 를 고르는 칸 (대표 요청 2026-08-25 «갤러리도 누구사진인지»).
 // 자동으로는 못 붙인다 — 사진에 날짜가 없고, 같은 예식장을 여러 번 갔다
 const glStaffOptions = (sel) =>
@@ -4936,37 +4979,79 @@ const glStaffOptions = (sel) =>
   + allStaff.map((s) =>
     `<option value="${esc(s.id)}"${s.id === sel ? ' selected' : ''}>${esc(s.name)}${s.active ? '' : ' (비활성)'}</option>`).join('');
 
-// 예식장 한 곳을 고른 상태에서만 뜬다. 그 묶음을 통째로 한 작가로 찍는다
+// 고른 사진 (체크한 것). 쪽을 넘겨도 남아 있게 화면 바깥에 둔다
+const glPicked = new Set();
+
+// 지금 보고 있는 목록을 한꺼번에 찍는다.
+// 예식장 이름을 눌렀을 때만이 아니라 **검색만 해도** 뜬다 (대표 요청 2026-08-25).
+// 한 예식장에 작가가 섞여 있으면 체크해서 그것만 찍는다
 function renderGalleryBulk() {
   const box = $('glBulk');
-  const one = !glSearch && glActiveTag !== '전체';
-  box.hidden = !one;
-  if (!one) return;
   const list = glVisible();
+  // 전체를 보고 있을 때는 안 뜬다 — 689장을 통째로 찍는 건 사고다.
+  // 다만 체크한 게 있으면 그것만 찍을 수 있게 띄운다
+  const filtered = !!glSearch || glActiveTag !== '전체';
+  const pickedHere = list.filter((g) => glPicked.has(g.id)).length;
+  box.hidden = !filtered && !pickedHere;
+  if (box.hidden) return;
+
   const empty = list.filter((g) => !g.staff_id).length;
+  const what = glSearch ? '「' + esc(glSearch) + '」 검색' : esc(glActiveTag);
   box.innerHTML =
-    '<span class="gl-bulk-t"><b>' + esc(glActiveTag) + '</b> ' + list.length + '장'
-    + (empty ? ' · <em>미지정 ' + empty + '장</em>' : ' · 전부 지정됨') + '</span>'
+    '<span class="gl-bulk-t"><b>' + what + '</b> ' + list.length + '장'
+      + (empty ? ' · <em>미지정 ' + empty + '장</em>' : ' · 전부 지정됨')
+      + (pickedHere ? ' · <b class="gl-picked">체크 ' + pickedHere + '장</b>' : '') + '</span>'
+    + '<label class="gl-bulk-over"><input type="checkbox" id="glPickAll"'
+      + (pickedHere && pickedHere === list.length ? ' checked' : '') + ' /> 이 목록 전체 체크</label>'
     + '<select id="glBulkStaff">' + glStaffOptions('') + '</select>'
+    + (pickedHere
+      ? '<button class="btn-sm btn-primary-sm" id="glPickGo">체크한 ' + pickedHere + '장 지정</button>'
+      : '')
     + '<label class="gl-bulk-over"><input type="checkbox" id="glBulkOver" /> 이미 찍힌 것도 덮어쓰기</label>'
-    + '<button class="btn-sm" id="glBulkGo">한꺼번에 지정</button>';
-  $('glBulkGo').addEventListener('click', async () => {
-    const sel = $('glBulkStaff');
-    const over = $('glBulkOver').checked;
-    const name = sel.options[sel.selectedIndex].text;
-    const n = over ? list.length : empty;
-    if (!n) { toast('바꿀 사진이 없습니다'); return; }
-    if (!confirm(glActiveTag + ' 사진 ' + n + '장을 «' + name + '» 으로 찍을까요?')) return;
-    const { data, error } = await sb.rpc('admin_gallery_staff_bulk', {
-      p_venue: glActiveTag, p_staff_id: sel.value || null, p_only_empty: !over,
-    });
-    if (error) { alert('지정 실패: ' + error.message); return; }
-    // 화면에 들고 있는 목록도 같이 맞춘다 (다시 불러오지 않아도 되게)
-    glAllItems.forEach((g) => {
-      if (g.venue === glActiveTag && (over || !g.staff_id)) g.staff_id = sel.value || null;
-    });
-    toast((data && data.n) + '장 지정했습니다');
+    + '<button class="btn-sm" id="glBulkGo">이 목록 전부 지정</button>';
+
+  const staffName = () => { const s = $('glBulkStaff'); return s.options[s.selectedIndex].text; };
+  const after = (ids, val) => {
+    glAllItems.forEach((g) => { if (ids.has(g.id)) g.staff_id = val; });
     renderGalleryAdmin();
+  };
+
+  $('glPickAll').addEventListener('change', (e) => {
+    list.forEach((g) => (e.target.checked ? glPicked.add(g.id) : glPicked.delete(g.id)));
+    renderGalleryAdmin();
+  });
+
+  // 체크한 것만 — 한 예식장에 여러 작가가 섞였을 때 쓴다
+  const go = $('glPickGo');
+  if (go) go.addEventListener('click', async () => {
+    const ids = list.filter((g) => glPicked.has(g.id)).map((g) => g.id);
+    const val = $('glBulkStaff').value || null;
+    if (!confirm('체크한 ' + ids.length + '장을 «' + staffName() + '» 으로 찍을까요?')) return;
+    const { data, error } = await sb.rpc('admin_gallery_staff_many', { p_ids: ids, p_staff_id: val });
+    if (error) { alert('지정 실패: ' + error.message); return; }
+    const set = new Set(ids);
+    ids.forEach((id) => glPicked.delete(id));
+    toast((data && data.n) + '장 지정했습니다');
+    after(set, val);
+  });
+
+  // 목록 전부 — 검색 결과에도 쓸 수 있게 id 로 보낸다 (예식장 이름 하나로는 검색을 못 담는다)
+  $('glBulkGo').addEventListener('click', async () => {
+    const over = $('glBulkOver').checked;
+    const target = over ? list : list.filter((g) => !g.staff_id);
+    if (!target.length) { toast('바꿀 사진이 없습니다'); return; }
+    const val = $('glBulkStaff').value || null;
+    if (!confirm(what.replace(/<[^>]+>/g, '') + ' ' + target.length + '장을 «' + staffName() + '» 으로 찍을까요?')) return;
+    const ids = target.map((g) => g.id);
+    let n = 0;
+    for (let i = 0; i < ids.length; i += 500) {          // 서버가 한 번에 500장까지 받는다
+      const { data, error } = await sb.rpc('admin_gallery_staff_many',
+        { p_ids: ids.slice(i, i + 500), p_staff_id: val });
+      if (error) { alert('지정 실패: ' + error.message); return; }
+      n += (data && data.n) || 0;
+    }
+    toast(n + '장 지정했습니다');
+    after(new Set(ids), val);
   });
 }
 
@@ -5021,8 +5106,16 @@ function renderGalleryGrid() {
   const grid = $('glGrid');
   grid.innerHTML = list
     .slice(start, start + GL_PER)
-    .map((g) => `<div class="gl-item"><img src="${esc(imgThumb(g.image_url, 400))}" alt="" loading="lazy" decoding="async" /><div class="gl-meta"><input class="gl-venue-edit" data-id="${esc(g.id)}" value="${esc(g.venue || '')}" placeholder="장소 태그" /><button class="gl-del" data-id="${esc(g.id)}" data-path="${esc(g.image_path)}">삭제</button></div><select class="gl-staff${g.staff_id ? '' : ' none'}" data-id="${esc(g.id)}">${glStaffOptions(g.staff_id)}</select></div>`)
+    .map((g) => `<div class="gl-item${glPicked.has(g.id) ? ' picked' : ''}"><label class="gl-pick"><input type="checkbox" class="gl-pick-cb" data-id="${esc(g.id)}"${glPicked.has(g.id) ? ' checked' : ''} /></label><img src="${esc(imgThumb(g.image_url, 400))}" alt="" loading="lazy" decoding="async" /><div class="gl-meta"><input class="gl-venue-edit" data-id="${esc(g.id)}" value="${esc(g.venue || '')}" placeholder="장소 태그" /><button class="gl-del" data-id="${esc(g.id)}" data-path="${esc(g.image_path)}">삭제</button></div><select class="gl-staff${g.staff_id ? '' : ' none'}" data-id="${esc(g.id)}">${glStaffOptions(g.staff_id)}</select></div>`)
     .join('');
+  // 체크 — 여러 장 골라서 한 작가로 찍을 때 쓴다 (대표 요청 2026-08-25)
+  grid.querySelectorAll('.gl-pick-cb').forEach((cb) => {
+    cb.addEventListener('change', () => {
+      if (cb.checked) glPicked.add(cb.dataset.id); else glPicked.delete(cb.dataset.id);
+      cb.closest('.gl-item').classList.toggle('picked', cb.checked);
+      renderGalleryBulk();          // 「체크 N장」 만 다시 그린다 (사진은 그대로 둔다)
+    });
+  });
   // 사진마다 작가 고르기 — 고르는 즉시 저장한다
   grid.querySelectorAll('.gl-staff').forEach((sel) => {
     sel.addEventListener('change', async () => {

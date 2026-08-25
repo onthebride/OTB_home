@@ -116,6 +116,19 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .gl-bulk-over input { margin: 0; }
 /* 아직 안 찍은 것 세는 딱지 — 남은 일이라 눈에 띄게 */
 .gl-tag-todo { border-color: #d9a79a; color: #c0392b; }
+
+/* 여러 장 골라 한꺼번에 찍기 (2026-08-25).
+   한 예식장 사진에 작가가 섞여 있으면 체크해서 그것만 찍는다 */
+.gl-item { position: relative; }
+.gl-pick { position: absolute; top: 6px; left: 6px; z-index: 1; display: block;
+  width: 26px; height: 26px; border-radius: 6px; background: rgba(255, 255, 255, .88);
+  border: 1px solid var(--line); cursor: pointer; }
+.gl-pick input { width: 16px; height: 16px; margin: 4px; cursor: pointer; }
+.gl-item.picked { outline: 2px solid var(--gold); outline-offset: -2px; }
+.gl-item.picked .gl-pick { background: var(--gold); border-color: var(--gold); }
+.gl-picked { color: var(--gold-deep); }
+.btn-primary-sm { background: var(--ink); color: #fff; border-color: var(--ink); }
+.btn-primary-sm:hover { background: #000; }
 .gl-venue-edit { flex: 1; min-width: 0; border: 1px solid transparent; background: transparent; font-size: .82rem; color: var(--ink); padding: 4px 6px; border-radius: 4px; font-family: var(--sans); transition: border-color .2s, background .3s; }
 .gl-venue-edit:hover { border-color: var(--line); }
 .gl-venue-edit:focus { outline: none; border-color: var(--gold); background: #fff; }
@@ -1048,6 +1061,16 @@ td .muted { color: var(--ink-soft); }
 .fb-sdetail { font-size: .82rem; color: var(--ink-soft); }
 /* 추천 의향은 지정 근거라 눈에 띄게 (2026-08-25) */
 .fb-srec { color: var(--gold-deep); font-weight: 700; }
+
+/* 우리가 많이 간 예식장 10곳 (2026-08-25) */
+.vn-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
+  padding: 10px 12px; margin: 0 0 6px; background: var(--cream);
+  border: 1px solid var(--line); border-radius: 8px; font-size: .84rem; }
+.vn-top > b { margin-right: 4px; }
+.vn-item { display: inline-flex; align-items: baseline; gap: 4px; color: var(--ink-soft); }
+.vn-item i { font-style: normal; font-size: .72rem; color: #fff; background: var(--gold);
+  border-radius: 999px; min-width: 16px; height: 16px; line-height: 16px; text-align: center; padding: 0 4px; }
+.vn-item b { color: var(--ink); }
 .fb-sn { font-size: .78rem; color: var(--ink-soft); margin-left: auto; white-space: nowrap; }
 
 .fb-list { display: flex; flex-direction: column; gap: 10px; max-height: 620px; overflow-y: auto; }

@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="admin.css?v=1cd7b3c754" />
+  <link rel="stylesheet" href="admin.css?v=9fb8a1d7d4" />
 </head>
 <body>
 
@@ -349,6 +349,8 @@
             <div class="gl-up-row">
               <label class="gl-file"><input type="file" id="glFiles" accept="image/*" multiple /><span id="glFileLabel">사진 선택 (여러 장 가능)</span></label>
               <input type="text" id="glVenue" placeholder="예식장소 태그 (예: 아펠가모 선릉)" />
+              <!-- 올릴 때 작가도 같이 찍는다 (대표 요청 2026-08-25). 나중에 손볼 일이 없게 -->
+              <select id="glUpStaff"><option value="">작가 미지정</option></select>
               <button class="btn-primary" id="glUploadBtn">업로드</button>
             </div>
             <div class="gl-queue" id="glQueue"></div>
@@ -380,6 +382,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=dc66e9534e"></script>
+  <script src="admin.js?v=9ebef19b43"></script>
 </body>
 </html>
