@@ -4917,12 +4917,57 @@ const glVisible = () => {
     const t = glSearch.toLowerCase();
     return glAllItems.filter((g) => (g.venue || '').toLowerCase().includes(t));
   }
-  return glActiveTag === '전체' ? glAllItems : glAllItems.filter((g) => g.venue === glActiveTag);
+  if (glActiveTag === '전체') return glAllItems;
+  // 아직 작가를 안 찍은 것만 — 689장을 훑을 때 어디까지 했는지 보려고 (2026-08-25)
+  if (glActiveTag === '작가 미지정') return glAllItems.filter((g) => !g.staff_id);
+  return glAllItems.filter((g) => g.venue === glActiveTag);
 };
 
 function renderGalleryAdmin() {
   renderGalleryTags();
+  renderGalleryBulk();
   renderGalleryGrid();
+}
+
+// 사진마다 「누가 찍었는지」 를 고르는 칸 (대표 요청 2026-08-25 «갤러리도 누구사진인지»).
+// 자동으로는 못 붙인다 — 사진에 날짜가 없고, 같은 예식장을 여러 번 갔다
+const glStaffOptions = (sel) =>
+  '<option value="">작가 미지정</option>'
+  + allStaff.map((s) =>
+    `<option value="${esc(s.id)}"${s.id === sel ? ' selected' : ''}>${esc(s.name)}${s.active ? '' : ' (비활성)'}</option>`).join('');
+
+// 예식장 한 곳을 고른 상태에서만 뜬다. 그 묶음을 통째로 한 작가로 찍는다
+function renderGalleryBulk() {
+  const box = $('glBulk');
+  const one = !glSearch && glActiveTag !== '전체';
+  box.hidden = !one;
+  if (!one) return;
+  const list = glVisible();
+  const empty = list.filter((g) => !g.staff_id).length;
+  box.innerHTML =
+    '<span class="gl-bulk-t"><b>' + esc(glActiveTag) + '</b> ' + list.length + '장'
+    + (empty ? ' · <em>미지정 ' + empty + '장</em>' : ' · 전부 지정됨') + '</span>'
+    + '<select id="glBulkStaff">' + glStaffOptions('') + '</select>'
+    + '<label class="gl-bulk-over"><input type="checkbox" id="glBulkOver" /> 이미 찍힌 것도 덮어쓰기</label>'
+    + '<button class="btn-sm" id="glBulkGo">한꺼번에 지정</button>';
+  $('glBulkGo').addEventListener('click', async () => {
+    const sel = $('glBulkStaff');
+    const over = $('glBulkOver').checked;
+    const name = sel.options[sel.selectedIndex].text;
+    const n = over ? list.length : empty;
+    if (!n) { toast('바꿀 사진이 없습니다'); return; }
+    if (!confirm(glActiveTag + ' 사진 ' + n + '장을 «' + name + '» 으로 찍을까요?')) return;
+    const { data, error } = await sb.rpc('admin_gallery_staff_bulk', {
+      p_venue: glActiveTag, p_staff_id: sel.value || null, p_only_empty: !over,
+    });
+    if (error) { alert('지정 실패: ' + error.message); return; }
+    // 화면에 들고 있는 목록도 같이 맞춘다 (다시 불러오지 않아도 되게)
+    glAllItems.forEach((g) => {
+      if (g.venue === glActiveTag && (over || !g.staff_id)) g.staff_id = sel.value || null;
+    });
+    toast((data && data.n) + '장 지정했습니다');
+    renderGalleryAdmin();
+  });
 }
 
 // 태그: 사진 많은 순 + 검색 + 한 줄 접기(더보기)
@@ -4932,8 +4977,11 @@ function renderGalleryTags() {
   glAllItems.forEach((g) => { if (g.venue) counts[g.venue] = (counts[g.venue] || 0) + 1; });
   const venues = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
 
+  // 작가를 아직 안 찍은 것 — 남은 일이 얼마나인지 보여준다 (2026-08-25)
+  const noStaff = glAllItems.filter((g) => !g.staff_id).length;
   const top = `<div class="gl-tags-top">
       <button class="gl-tag${glActiveTag === '전체' && !glSearch ? ' active' : ''}" data-v="전체">전체 ${glAllItems.length}</button>
+      ${noStaff ? `<button class="gl-tag gl-tag-todo${glActiveTag === '작가 미지정' && !glSearch ? ' active' : ''}" data-v="작가 미지정">작가 미지정 ${noStaff}</button>` : ''}
       <span class="gl-tag-search"><input id="glTagSearch" type="text" placeholder="예식장 검색" autocomplete="off" value="${esc(glSearch)}" /></span>
       ${venues.length ? `<button type="button" class="gl-more" id="glMore">${glTagsOpen ? '접기 ▴' : '더보기 ▾'}</button>` : ''}
     </div>`;
@@ -4973,8 +5021,22 @@ function renderGalleryGrid() {
   const grid = $('glGrid');
   grid.innerHTML = list
     .slice(start, start + GL_PER)
-    .map((g) => `<div class="gl-item"><img src="${esc(imgThumb(g.image_url, 400))}" alt="" loading="lazy" decoding="async" /><div class="gl-meta"><input class="gl-venue-edit" data-id="${esc(g.id)}" value="${esc(g.venue || '')}" placeholder="장소 태그" /><button class="gl-del" data-id="${esc(g.id)}" data-path="${esc(g.image_path)}">삭제</button></div></div>`)
+    .map((g) => `<div class="gl-item"><img src="${esc(imgThumb(g.image_url, 400))}" alt="" loading="lazy" decoding="async" /><div class="gl-meta"><input class="gl-venue-edit" data-id="${esc(g.id)}" value="${esc(g.venue || '')}" placeholder="장소 태그" /><button class="gl-del" data-id="${esc(g.id)}" data-path="${esc(g.image_path)}">삭제</button></div><select class="gl-staff${g.staff_id ? '' : ' none'}" data-id="${esc(g.id)}">${glStaffOptions(g.staff_id)}</select></div>`)
     .join('');
+  // 사진마다 작가 고르기 — 고르는 즉시 저장한다
+  grid.querySelectorAll('.gl-staff').forEach((sel) => {
+    sel.addEventListener('change', async () => {
+      const { error } = await sb.rpc('admin_gallery_staff', {
+        p_id: sel.dataset.id, p_staff_id: sel.value || null,
+      });
+      if (error) { alert('작가 지정 실패: ' + error.message); return; }
+      const it = glAllItems.find((x) => x.id === sel.dataset.id);
+      if (it) it.staff_id = sel.value || null;
+      sel.classList.toggle('none', !sel.value);
+      renderGalleryBulk();
+      if (glActiveTag === '작가 미지정') renderGalleryAdmin();   // 지정하면 이 목록에서 빠진다
+    });
+  });
   grid.querySelectorAll('.gl-del').forEach((b) =>
     b.addEventListener('click', () => deleteGalleryItem(b.dataset.id, b.dataset.path))
   );

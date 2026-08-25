@@ -97,6 +97,25 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .gl-item { border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--paper); }
 .gl-item img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
 .gl-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 8px; }
+
+/* 사진마다 누가 찍었는지 (2026-08-25). 아직 안 찍은 것은 흐리게 둬서 남은 일이 보이게 한다 */
+.gl-staff { width: calc(100% - 16px); margin: 0 8px 8px; padding: 5px 6px; font-size: .8rem;
+  font-family: var(--sans); border: 1px solid var(--line); border-radius: 5px;
+  background: var(--paper); color: var(--ink); }
+.gl-staff.none { color: var(--ink-soft); border-style: dashed; }
+
+/* 예식장 묶음을 한꺼번에 찍는 줄 */
+.gl-bulk { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 12px;
+  padding: 10px 12px; background: var(--cream); border: 1px solid var(--line); border-radius: 8px; }
+.gl-bulk-t { font-size: .86rem; color: var(--ink-soft); }
+.gl-bulk-t b { color: var(--ink); }
+.gl-bulk-t em { color: #c0392b; font-style: normal; font-weight: 600; }
+.gl-bulk select { padding: 6px 8px; font-size: .84rem; font-family: var(--sans);
+  border: 1px solid var(--line); border-radius: 5px; background: var(--paper); color: var(--ink); }
+.gl-bulk-over { display: inline-flex; align-items: center; gap: 5px; font-size: .8rem; color: var(--ink-soft); cursor: pointer; }
+.gl-bulk-over input { margin: 0; }
+/* 아직 안 찍은 것 세는 딱지 — 남은 일이라 눈에 띄게 */
+.gl-tag-todo { border-color: #d9a79a; color: #c0392b; }
 .gl-venue-edit { flex: 1; min-width: 0; border: 1px solid transparent; background: transparent; font-size: .82rem; color: var(--ink); padding: 4px 6px; border-radius: 4px; font-family: var(--sans); transition: border-color .2s, background .3s; }
 .gl-venue-edit:hover { border-color: var(--line); }
 .gl-venue-edit:focus { outline: none; border-color: var(--gold); background: #fff; }

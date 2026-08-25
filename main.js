@@ -759,7 +759,10 @@ function whenNear(el, margin) {
   const show = (i) => {
     curIdx = (i + curList.length) % curList.length;
     lbImg.src = curList[curIdx].image_url; // 확대보기는 원본(고화질)
-    lbVenue.textContent = curList[curIdx].venue || '';
+    // 누가 찍었는지 같이 보여준다 (대표 요청 2026-08-25 — 작가를 보고 고르시라고).
+    // 아직 작가를 안 찍은 사진은 예식장만 나온다
+    const p = curList[curIdx];
+    lbVenue.textContent = [p.venue, p.staff_name ? p.staff_name + ' 작가' : ''].filter(Boolean).join(' · ');
   };
   const open = (i) => { curList = visible(); show(i); lb.hidden = false; document.body.style.overflow = 'hidden'; };
   const close = () => { lb.hidden = true; document.body.style.overflow = ''; };
