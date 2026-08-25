@@ -34,8 +34,8 @@ begin
       and b.wedding_date >= d0 and b.wedding_date < d0 + 7
       and coalesce(st.active, false)
       and coalesce(st.phone, '') <> ''
-      -- 대표는 뺀다. 월요일 톡은 «작가가 우리와 확인하는 과정» 이라 우리 쪽은 받을 이유가 없다
-      and not coalesce(st.is_rep, false)
+      -- 대표도 받는다 (대표 요청 2026-08-25 «나한테도 톡 주고»).
+      -- 본인도 찍으러 나가니 이번 주 일정을 같은 방식으로 받는 게 맞다
       -- 이번 주에 이미 보냈으면 다시 안 보낸다 (크론이 두 번 돌아도 안전하게)
       and not exists (
         select 1 from private.alimtalk_outbox o
@@ -102,3 +102,9 @@ end$$;
 
 revoke all on function private.staff_check_send_weekly(boolean) from public, anon, authenticated;
 revoke all on function private.staff_survey_send_daily(boolean) from public, anon, authenticated;
+
+-- ===== 크론 (실제 적용은 2026-08-25, 대표 승인 후) =====
+-- pg_cron 은 DB 시간대가 아니라 cron.timezone 을 본다. 지금 GMT 이므로
+-- 한국 오전 10시는 «1시» 로 적는다. 신부 톡(0 1)과 같은 분에 겹치지 않게 2분 뒤로 둔다.
+--   select cron.schedule('otb-staff-monday', '0 1 * * 1', 'select private.staff_check_send_weekly();');
+--   select cron.schedule('otb-staff-eve',    '2 1 * * *', 'select private.staff_survey_send_daily();');
