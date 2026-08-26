@@ -944,14 +944,18 @@ td .muted { color: var(--ink-soft); }
 .ab-item { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left;
   padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--paper);
   cursor: pointer; font-family: var(--sans); transition: border-color .15s, background .15s; min-width: 0; }
+/* 수량이 있든 없든 카드 키를 똑같이 (대표 요청 2026-08-26).
+   수량 칸이 단가와 같은 줄에 있으므로 그 줄 높이에 맞춰 바닥을 깔아준다 */
+.ab-item { min-height: 74px; justify-content: flex-start; }
 .ab-item.qty { cursor: default; }
 .ab-item:hover { border-color: var(--gold); }
 .ab-item.on { border-color: var(--gold-deep); background: #fbf6ee; box-shadow: inset 0 0 0 1px var(--gold-deep); }
 .ab-nm { font-size: .88rem; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis;
   white-space: nowrap; max-width: 100%; }
-.ab-un { font-size: .76rem; color: var(--ink-soft); }
-.ab-q { width: 68px; margin-top: 3px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px;
-  font-family: var(--sans); font-size: .86rem; background: #fff; color: var(--ink); }
+/* 단가와 수량 칸을 한 줄에 (2026-08-26) */
+.ab-un { display: flex; align-items: center; gap: 5px; font-size: .76rem; color: var(--ink-soft); }
+.ab-q { width: 56px; padding: 4px 7px; border: 1px solid var(--line); border-radius: 6px;
+  font-family: var(--sans); font-size: .84rem; background: #fff; color: var(--ink); }
 
 .ab-extras { margin-top: 10px; }
 .ab-ex { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: nowrap; }

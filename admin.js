@@ -4371,11 +4371,13 @@ function abRenderGrid() {
         + '<span class="ab-nm">' + esc(p.name) + '</span>'
         + '<span class="ab-un">' + abWon(p.unit) + '</span></button>';
     }
+    // 수량 칸을 단가와 같은 줄에 둔다 (대표 요청 2026-08-26 «수량 넣는 칸 올려줘
+    // 그래서 박스크기 전부 동일하게»). 따로 한 줄을 쓰면 이 카드만 키가 커진다
     return '<div class="ab-item qty' + (abPick[p.id] > 0 ? ' on' : '') + '">'
       + '<span class="ab-nm">' + esc(p.name) + '</span>'
-      + '<span class="ab-un">' + abWon(p.unit) + ' × </span>'
+      + '<span class="ab-un">' + abWon(p.unit) + ' ×'
       + '<input type="number" min="0" step="1" class="ab-q" data-qt="' + esc(p.id) + '" value="'
-      + (abPick[p.id] || '') + '" placeholder="0" /></div>';
+      + (abPick[p.id] || '') + '" placeholder="0" /></span></div>';
   }).join('') || '<p class="empty sm">단가 항목이 없습니다. 아래 「단가 설정」에서 넣어주세요.</p>';
   abRenderExtras();
   abSum();
