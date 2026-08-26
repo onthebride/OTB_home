@@ -60,10 +60,18 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 /* Gallery management */
 .gl-upload { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 24px; margin-bottom: 24px; }
 .gl-upload h3 { font-family: var(--serif); font-size: 1.2rem; font-weight: 600; margin-bottom: 16px; }
-.gl-up-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.gl-up-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: stretch; }
 .gl-file { position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; padding: 12px 18px; border: 1px dashed var(--line); border-radius: 4px; cursor: pointer; color: var(--ink-soft); font-size: .9rem; background: var(--cream); }
 .gl-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.gl-up-row > input[type=text] { flex: 1; min-width: 200px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 4px; font-size: .95rem; }
+/* 예식장 칸이 줄을 다 먹지 않게 (대표: 「입력박스를 좀 줄여도 되고」) */
+.gl-up-row > input[type=text] { flex: 1 1 220px; max-width: 420px; min-width: 160px;
+  padding: 12px 14px; border: 1px solid var(--line); border-radius: 4px; font-size: .95rem; }
+/* 작가 고르는 칸 — 다른 칸과 키·테두리·모서리를 똑같이 (대표: 「통일감 있게」) */
+.gl-up-row > select { flex: 0 0 auto; padding: 12px 14px; border: 1px solid var(--line);
+  border-radius: 4px; font-size: .95rem; font-family: var(--sans); background: var(--paper);
+  color: var(--ink); cursor: pointer; }
+.gl-up-row > select:focus { outline: none; border-color: var(--gold); }
+.gl-up-row > .btn-primary { padding: 12px 22px; }
 .gl-up-row > input[type=text]:focus { outline: none; border-color: var(--gold); }
 .gl-queue { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .gl-queue:empty { margin-top: 0; }
@@ -127,8 +135,6 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .gl-item.picked { outline: 2px solid var(--gold); outline-offset: -2px; }
 .gl-item.picked .gl-pick { background: var(--gold); border-color: var(--gold); }
 .gl-picked { color: var(--gold-deep); }
-.btn-primary-sm { background: var(--ink); color: #fff; border-color: var(--ink); }
-.btn-primary-sm:hover { background: #000; }
 .gl-venue-edit { flex: 1; min-width: 0; border: 1px solid transparent; background: transparent; font-size: .82rem; color: var(--ink); padding: 4px 6px; border-radius: 4px; font-family: var(--sans); transition: border-color .2s, background .3s; }
 .gl-venue-edit:hover { border-color: var(--line); }
 .gl-venue-edit:focus { outline: none; border-color: var(--gold); background: #fff; }
@@ -403,6 +409,11 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .dl-link:focus { border-color: var(--gold); }
 .btn-sm { border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 7px 12px; font-size: .8rem; cursor: pointer; white-space: nowrap; }
 .btn-sm:hover { border-color: var(--gold); }
+/* 골라서 지정하는 단추 — 눈에 띄게 채운다.
+   .btn-sm 앞에 두면 같은 무게라 .btn-sm 이 이겨서 흰 단추가 된다 (2026-08-26 대표 지적).
+   뒤에 두고 셈도 무겁게(.btn-sm.btn-primary-sm) 해서 두 번 다시 안 밀리게 한다 */
+.btn-sm.btn-primary-sm { background: var(--ink); color: #fff; border-color: var(--ink); }
+.btn-sm.btn-primary-sm:hover { background: #000; border-color: #000; }
 .dl-save { color: var(--ink); }
 .btn-kakao-sm { background: #fae100; border: none; color: #3a1d1d; font-weight: 700; }
 .btn-kakao-sm:hover { filter: brightness(.97); }
