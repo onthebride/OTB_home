@@ -3967,11 +3967,13 @@ async function renderFeedback() {
       s.req_n ? '부탁 ' + s.req_n : '',
     ].filter(Boolean).join(' · ');
     return '<div class="fb-srow' + (on ? ' on' : '') + '" data-staff="' + esc(s.staff_name) + '" title="누르면 이 작가 응답만 보기">'
-      + '<span class="fb-sname">' + esc(s.staff_name) + '</span>'
-      // 순위는 100점 만점 가중 점수. 2026-08-25 부터 추천 의향이 들어갔다
+      // 이름 뒤에 「작가님」 을 작고 얇게 (대표 요청 2026-08-26)
+      + '<span class="fb-sname">' + esc(s.staff_name) + '<i>작가님</i></span>'
+      // 순위는 100점 만점 가중 점수. 2026-08-25 부터 추천 의향이 들어갔다.
+      // 박스에 넣어 강조한다 (대표 요청 2026-08-26)
       + '<span class="fb-sscore"><b>' + (s.avg_score == null ? '-' : s.avg_score) + '</b><small>점</small></span>'
       // 촬영 건수 — 평점과 같은 줄에. 응답률은 그 바로 옆에 붙인다
-      + '<span class="fb-sshot">' + (sh ? '<b>' + sh.shots + '</b>건' : '') + '</span>'
+      + '<span class="fb-sshot">' + (sh ? '촬영 <b>' + sh.shots + '</b>건' : '') + '</span>'
       + '<span class="fb-sn">' + rate + '</span>'
       + '<span class="fb-stags">' + tags + '</span>'
       + venue
