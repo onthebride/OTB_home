@@ -134,8 +134,11 @@ async function loadMe() {
 
   const said = (data.said || []).map((x) => {
     const d = x.wedding_date ? String(x.wedding_date).slice(0, 10).replace(/-/g, '. ') : '';
+    // 신부님 이름도 보여준다 (대표 요청 2026-08-26). 번호·이메일은 여전히 안 온다
     return '<div class="me-say">'
-      + '<div class="me-say-h">' + esc([d, cut(x.wedding_venue)].filter(Boolean).join(' · '))
+      + '<div class="me-say-h">'
+        + (x.bride_name ? '<b>' + esc(x.bride_name) + '</b> 신부님 · ' : '')
+        + esc([d, cut(x.wedding_venue)].filter(Boolean).join(' · '))
         + (x.as_sub ? ' <i>서브</i>' : '') + '</div>'
       + (x.message ? '<p>' + esc(x.message) + '</p>' : '')
       + (x.next_req ? '<p class="me-req">다음엔 — ' + esc(x.next_req) + '</p>' : '')

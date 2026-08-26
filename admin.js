@@ -4012,7 +4012,9 @@ async function renderFeedback() {
     return '<div class="fb-item' + (low ? ' low' : '') + '" data-id="' + esc(x.booking_id) + '">'
       + '<div class="fb-ihead">'
         + '<span class="fb-istar">' + stars(x.overall) + ' <b>' + x.overall + '</b><small>/10</small></span>'
-        + '<span class="fb-iwho">' + esc(x.staff_name) + ' <small>(' + esc(who) + (wd ? ' · ' + esc(wd) : '') + ')</small></span>'
+        // 이름 · 예식장 · 날짜 (대표 요청 2026-08-26 «이름이랑 예식장이랑 날짜 넣어줘»)
+        + '<span class="fb-iwho">' + esc(x.staff_name) + ' <small>('
+          + [who, x.wedding_venue, wd].filter(Boolean).map(esc).join(' · ') + ')</small></span>'
       + '</div>'
       + '<div class="fb-chips">'
         + chip('도착 ' + (ARRIVAL_TXT[x.arrival] || x.arrival), null, x.arrival !== 'ontime')

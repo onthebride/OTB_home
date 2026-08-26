@@ -332,6 +332,7 @@
 .me-say { padding: 11px 12px; margin-bottom: 8px; border: 1px solid var(--line);
   border-radius: 10px; background: var(--paper); }
 .me-say-h { font-size: .76rem; color: var(--ink-soft); margin-bottom: 5px; }
+.me-say-h b { color: var(--ink); font-weight: 600; }
 .me-say-h i { font-style: normal; padding: 1px 6px; margin-left: 4px; font-size: .7rem;
   color: var(--gold-deep); border: 1px solid var(--gold); border-radius: 999px; }
 .me-say p { margin: 0; font-size: .9rem; line-height: 1.65; color: var(--ink); white-space: pre-wrap; }
