@@ -1088,7 +1088,6 @@ td .muted { color: var(--ink-soft); }
   border-radius: 999px; cursor: pointer; }
 .fb-svn-btn:hover { border-color: var(--gold); color: var(--gold-deep); }
 /* 응답률은 건수 바로 옆에 붙인다 (2026-08-25) */
-.fb-sn { white-space: nowrap; }
 .fb-sn { font-size: .78rem; color: var(--ink-soft); margin-left: auto; white-space: nowrap; }
 
 .fb-list { display: flex; flex-direction: column; gap: 10px; max-height: 620px; overflow-y: auto; }
@@ -1120,7 +1119,10 @@ td .muted { color: var(--ink-soft); }
 
 @media (max-width: 600px) {
   .st-toggle { max-width: none; }
-  .fb-sn { margin-left: 0; width: 100%; }
+  /* 응답률·곁가지는 오른쪽에 붙인다 (대표 요청 2026-08-26 «모바일에서 응답 몇건 이건
+     오른쪽에 붙여줘»). 폭을 100% 로 잡으면 왼쪽에 홀로 서서 줄만 늘어난다 */
+  .fb-sn { margin-left: auto; width: auto; }
+  .fb-stags { margin-left: auto; text-align: right; }
   .fb-idate { margin-left: 0; width: 100%; }
 }
 
