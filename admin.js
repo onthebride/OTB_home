@@ -3958,9 +3958,10 @@ async function renderFeedback() {
       ? '<span class="fb-rate' + (Number(s.rate) < FB_RATE_LOW ? ' low' : '') + '">'
         + s.target + '건 중 응답 ' + s.n + '건 ' + (s.rate == null ? '-' : s.rate + '%') + '</span>'
       : '<span class="fb-rate">응답 ' + s.n + '건</span>';
+    // 「응답 적음」은 뺐다 (대표 요청 2026-08-26). 응답률이 20% 아래면 붉게 뜨는 것으로 충분하다
     const tags = [
       s.avg_rec == null ? '' : '추천 ' + s.avg_rec,
-      Number(s.n) < FB_THIN ? '<em>응답 적음</em>' : '만족 ' + avg1(s.avg_overall),
+      s.avg_overall == null ? '' : '만족 ' + avg1(s.avg_overall),
       s.sub_n ? '서브 ' + s.sub_avg : '',
       Number(s.late_n) ? '지각 ' + s.late_n : '',
       s.req_n ? '부탁 ' + s.req_n : '',

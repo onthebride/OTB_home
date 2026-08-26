@@ -1051,7 +1051,7 @@ td .muted { color: var(--ink-soft); }
 .st-tg.active { color: #fff; font-weight: 600; }
 .st-tg:not(.active):hover { color: var(--ink); }
 
-.fb-srow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+.fb-srow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px 14px; padding: 15px 12px; border-bottom: 1px solid var(--line); }
 .fb-srow:last-child { border-bottom: none; }
 .fb-sname { font-weight: 700; min-width: 68px; }
 /* 순위 점수는 100점 만점 가중 점수. 별 대신 숫자로 크게 */
