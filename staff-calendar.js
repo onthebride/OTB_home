@@ -79,7 +79,79 @@ async function load() {
     + '<button type="button" class="sc-help-ic" id="helpIc" title="사용안내" aria-label="사용안내">?</button>';
   helpInit();
   render();
+  tabsInit();
   show($('mainCard'));
+}
+
+/* ===== 캘린더 · 내 기록 (대표 요청 2026-08-26 «탭 분리해서 넣을거야») ===== */
+let meLoaded = false;
+function tabsInit() {
+  const tabs = $('scTabs');
+  if (!tabs || tabs.dataset.on) return;
+  tabs.dataset.on = '1';
+  tabs.addEventListener('click', (e) => {
+    const b = e.target.closest('.sc-tab');
+    if (!b) return;
+    const me = b.dataset.sct === 'me';
+    tabs.querySelectorAll('.sc-tab').forEach((x) => x.classList.toggle('active', x === b));
+    // 달력 판·날짜 칸·홈화면추가는 캘린더 칸에서만 보인다
+    ['calWrap', 'dayPanel'].forEach((id) => { const el = $(id); if (el) el.hidden = me || (id === 'dayPanel' && !el.innerHTML); });
+    const a2 = document.querySelector('.sc-a2hs-wrap');
+    if (a2) a2.hidden = me;
+    $('meBody').hidden = !me;
+    if (me && !meLoaded) { meLoaded = true; loadMe(); }
+  });
+}
+
+async function loadMe() {
+  const box = $('meBody');
+  const { data, error } = await sb.rpc('staff_stats', { p_staff_id: staffId });
+  if (error || !data) { box.innerHTML = '<p class="sv-sub">기록을 불러오지 못했어요.</p>'; return; }
+  const s = data.shot || {}, f = data.fb || {}, sub = data.sub || {};
+  const ym = (v) => (v ? String(v).slice(0, 7).replace('-', '. ') : '');
+  // 예식장 이름이 길면 홀 이름까지는 안 보여준다 (좁은 화면에서 줄이 밀린다)
+  const cut = (v) => esc(String(v).replace(/\s*[-/(,].*$/, '').slice(0, 20));
+
+  const card = (k, v, sub2) => '<div class="me-card"><span class="me-k">' + k + '</span>'
+    + '<strong>' + v + '</strong>' + (sub2 ? '<span class="me-s">' + sub2 + '</span>' : '') + '</div>';
+
+  const venues = (data.venues || []).length
+    ? '<ol class="me-vn">' + data.venues.map((v) =>
+      '<li><span>' + cut(v.venue) + '</span><b>' + v.n + '</b></li>').join('') + '</ol>'
+    : '<p class="sv-sub">아직 기록이 없어요.</p>';
+
+  // 후기가 없으면 점수 칸을 아예 안 그린다 — 「-」 만 늘어놓으면 서운하다
+  const hasFb = Number(f.n) > 0 || Number(sub.n) > 0;
+  const fbCards = hasFb
+    ? '<div class="me-cards">'
+      + (f.score == null ? '' : card('후기 점수', f.score, '100점 만점'))
+      + (f.rec == null ? '' : card('추천 의향', f.rec, '10점 만점'))
+      + (f.overall == null ? '' : card('전체 만족', f.overall, '10점 만점'))
+      + (f.rate == null ? '' : card('응답률', f.rate + '%', f.target + '건 중 ' + f.n + '건'))
+      + (Number(sub.n) ? card('서브 별점', sub.avg, sub.n + '건') : '')
+      + '</div>'
+    : '<p class="sv-sub">아직 받은 후기가 없어요. 예식 다음날 신부님께 설문이 나갑니다.</p>';
+
+  const said = (data.said || []).map((x) => {
+    const d = x.wedding_date ? String(x.wedding_date).slice(0, 10).replace(/-/g, '. ') : '';
+    return '<div class="me-say">'
+      + '<div class="me-say-h">' + esc([d, cut(x.wedding_venue)].filter(Boolean).join(' · '))
+        + (x.as_sub ? ' <i>서브</i>' : '') + '</div>'
+      + (x.message ? '<p>' + esc(x.message) + '</p>' : '')
+      + (x.next_req ? '<p class="me-req">다음엔 — ' + esc(x.next_req) + '</p>' : '')
+      + '</div>';
+  }).join('');
+
+  box.innerHTML =
+    '<div class="me-cards">'
+      + card('총 촬영', s.shots || 0, '건')
+      + card('가본 예식장', s.venues || 0, '곳')
+      + (Number(s.booked) ? card('앞으로', s.booked, '건 예정') : '')
+    + '</div>'
+    + (s.first ? '<p class="sv-sub me-since">' + ym(s.first) + ' 부터 함께하고 계십니다</p>' : '')
+    + '<h3 class="me-h">많이 가신 예식장</h3>' + venues
+    + '<h3 class="me-h">후기</h3>' + fbCards
+    + (said ? '<h3 class="me-h">신부님이 남긴 글</h3>' + said : '');
 }
 
 function render() {

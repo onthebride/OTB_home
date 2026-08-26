@@ -296,3 +296,37 @@
   border: none; background: none; font-size: 1.5rem; line-height: 1; color: var(--ink-soft); cursor: pointer; }
 .sc-modal-x:hover { color: var(--ink); }
 .sc-help-acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+/* ===== 캘린더 · 내 기록 칸 나누기 (대표 요청 2026-08-26) ===== */
+.sc-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin: 0 0 14px;
+  border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--paper); }
+.sc-tab { padding: 9px 0; border: none; background: none; cursor: pointer;
+  font-family: var(--sans); font-size: .9rem; color: var(--ink-soft); transition: background .15s, color .15s; }
+.sc-tab.active { background: var(--gold); color: #fff; font-weight: 600; }
+
+.me-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; margin-bottom: 14px; }
+.me-card { padding: 12px 10px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--paper); text-align: center; }
+.me-k { display: block; font-size: .76rem; color: var(--ink-soft); }
+.me-card strong { display: block; font-size: 1.5rem; font-weight: 700; color: var(--ink); line-height: 1.25; }
+.me-s { display: block; font-size: .7rem; color: var(--ink-soft); }
+.me-since { text-align: center; margin: -6px 0 16px; }
+
+.me-h { font-size: .95rem; font-weight: 600; color: var(--ink); margin: 20px 0 8px; }
+.me-vn { list-style: none; margin: 0; padding: 0; counter-reset: vn; }
+.me-vn li { display: flex; align-items: baseline; gap: 8px; padding: 8px 2px;
+  border-bottom: 1px solid var(--line); font-size: .88rem; counter-increment: vn; }
+.me-vn li:last-child { border-bottom: none; }
+.me-vn li::before { content: counter(vn); flex: 0 0 20px; height: 20px; line-height: 20px;
+  text-align: center; font-size: .72rem; color: #fff; background: var(--gold); border-radius: 999px; }
+.me-vn li span { flex: 1 1 auto; color: var(--ink); min-width: 0; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; }
+.me-vn li b { color: var(--gold-deep); }
+
+.me-say { padding: 11px 12px; margin-bottom: 8px; border: 1px solid var(--line);
+  border-radius: 10px; background: var(--paper); }
+.me-say-h { font-size: .76rem; color: var(--ink-soft); margin-bottom: 5px; }
+.me-say-h i { font-style: normal; padding: 1px 6px; margin-left: 4px; font-size: .7rem;
+  color: var(--gold-deep); border: 1px solid var(--gold); border-radius: 999px; }
+.me-say p { margin: 0; font-size: .9rem; line-height: 1.65; color: var(--ink); white-space: pre-wrap; }
+.me-say .me-req { margin-top: 6px; font-size: .86rem; color: var(--ink-soft); }
