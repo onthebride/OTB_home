@@ -1,75 +1,68 @@
 /* 신부님 후기 모아보기 (/reviews) — 대표 요청 2026-08-27.
-   바탕·글꼴·머리말은 styles.css 의 rules-page 를 그대로 쓰고, 여기서 두 가지를 덮어쓴다:
-     · 폭 — 규정 페이지는 글을 읽는 곳이라 720px 로 좁다. 여기는 카드가 여러 장 놓이므로 넓힌다
-       (대표 «페이지 폭이 넘 좁은데? 가로로 길게 보이게 해줘»)
-     · 카드 — 후기 전용
-   ⚠ styles.css 의 .rules-page-main 보다 **뒤에 실려야** 이긴다.
-     reviews.html 에서 styles.css 다음에 걸어둔다. 순서를 바꾸면 폭이 도로 좁아진다 */
+   ⚠ 이 화면은 홈과 **같은 틀**을 쓴다 (대표 «헤더가 사라져버리네 / 디자인스타일이 달라 폰트도 달라»).
+   `body` 에 rules-page 를 붙이지 않고, site-header·site-footer·container·section-title 을
+   홈에서 쓰던 그대로 쓴다. 여기 있는 건 후기 카드뿐이다. */
 
-.rules-page-main { max-width: 1180px; padding-left: 46px; padding-right: 46px; }
-
-.rv-lead { text-align: center; color: var(--ink-soft); line-height: 1.85; font-size: .93rem;
-  margin: -14px 0 34px; }
-.rv-lead b { color: var(--ink); font-weight: 600; }
+/* 머리말이 fixed(84px) 라 그만큼 비워준다 */
+.rv-page { padding: 148px 0 96px; background: var(--paper); }
+.rv-head { margin-bottom: 44px; text-align: center; }
+.rv-head .section-desc { margin-top: 14px; line-height: 1.85; }
+/* 지금 보고 있는 칸은 메뉴에서 짚어준다 */
+.site-header .nav-menu a.on { color: var(--gold); }
 
 /* ── 두 갈래를 위아래로 갈라 놓는다 (칸을 눌러 바꾸지 않아도 다 보이게) ── */
-.rv-sec + .rv-sec { margin-top: 44px; padding-top: 38px; border-top: 1px solid var(--line); }
-.rv-sec-t { font-family: 'Noto Serif KR', serif; font-size: 1.18rem; font-weight: 600;
-  color: var(--ink); margin: 0 0 5px; display: flex; align-items: center; gap: 9px; }
-.rv-sec-n { font-family: var(--sans, inherit); font-size: .76rem; font-weight: 500;
+.rv-sec + .rv-sec { margin-top: 52px; padding-top: 44px; border-top: 1px solid var(--line); }
+.rv-sec-t { font-family: var(--kserif); font-size: 1.32rem; font-weight: 500;
+  color: var(--ink); margin: 0 0 6px; display: flex; align-items: center; gap: 10px; }
+.rv-sec-n { font-family: var(--sans); font-size: .76rem; font-weight: 500;
   color: var(--gold-deep); background: var(--cream); border: 1px solid var(--line);
   border-radius: 999px; padding: 2px 10px; }
-.rv-sec-d { margin: 0 0 20px; font-size: .84rem; color: var(--ink-soft); line-height: 1.7; }
+.rv-sec-d { margin: 0 0 22px; font-size: .86rem; color: var(--ink-soft); line-height: 1.75; }
 
-.rv-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px;
-  align-items: start; }
-.rv-card { background: #fff; border: 1px solid var(--line); border-radius: 12px;
-  padding: 22px 22px 20px; display: flex; flex-direction: column; min-width: 0; }
+.rv-grid { display: grid; gap: 14px; align-items: start; }
+.rv-card { background: #fff; border: 1px solid var(--line); border-radius: var(--radius, 10px);
+  min-width: 0; }
 
-/* 설문 글 — 본문이 주인공이라 위에 놓고, 누가 썼는지는 아래에 작게 */
-.rv-body { margin: 0 0 14px; line-height: 1.9; color: #3d3833; font-size: .92rem;
+/* ── 일반 후기: 작가 이름 / 홀 이름 / 후기 링크 석 줄. 카드째 누르면 열린다.
+      전에는 카드가 컸다 — 대표 «일반 후기 카드가 좀 커». 「블로그」 딱지도 뺐다 ── */
+.rv-sec-link .rv-grid { grid-template-columns: repeat(auto-fill, minmax(224px, 1fr)); }
+.rv-link { display: block; padding: 16px 18px 14px; background: var(--cream);
+  transition: border-color .2s ease, background .2s ease, transform .2s ease; }
+.rv-link:hover { border-color: var(--gold); background: #fff; transform: translateY(-2px); }
+.rv-link .rv-who { font-size: .92rem; }
+.rv-go { display: inline-block; margin-top: 9px; font-size: .82rem; color: var(--gold-deep); }
+.rv-link:hover .rv-go { text-decoration: underline; }
+
+/* ── 촬영 후 설문 후기: 본문이 주인공 ── */
+.rv-sec-survey .rv-grid { grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); }
+.rv-survey { padding: 24px 24px 20px; }
+.rv-body { margin: 0 0 16px; line-height: 1.9; color: #3d3833; font-size: .93rem;
   white-space: pre-wrap; word-break: break-word; }
-.rv-body::before { content: '“'; font-family: 'Cormorant Garamond', serif; font-size: 2.1rem;
+.rv-body::before { content: '“'; font-family: var(--serif); font-size: 2.1rem;
   color: var(--gold); line-height: 0; vertical-align: -.22em; margin-right: 4px; }
+.rv-foot { padding-top: 13px; border-top: 1px solid var(--line); }
 
 .rv-who { margin: 0; font-size: .88rem; font-weight: 600; color: var(--ink); }
 .rv-meta { margin: 3px 0 0; font-size: .78rem; color: var(--ink-soft); }
 
-/* 밖에 올리신 글 — 본문이 없으니 카드가 짧다. 어디에 올린 글인지를 위에 딱지로 */
-.rv-link { background: var(--cream); }
-.rv-site { margin: 0 0 10px; display: inline-block; align-self: flex-start;
-  font-size: .74rem; color: var(--gold-deep); background: #fff;
-  border: 1px solid var(--line); border-radius: 999px; padding: 3px 11px; }
-.rv-go { margin-top: 14px; font-size: .84rem; color: var(--gold-deep); align-self: flex-start; }
-.rv-go:hover { text-decoration: underline; }
-
 .rv-empty { text-align: center; color: var(--ink-soft); padding: 40px 0; }
 
-.rv-note { margin: 30px 0 0; text-align: center; font-size: .8rem; color: var(--ink-soft);
-  line-height: 1.8; }
+.rv-note { margin: 38px auto 0; max-width: 640px; text-align: center;
+  font-size: .8rem; color: var(--ink-soft); line-height: 1.85; }
 .rv-note b { color: var(--ink); }
 .rv-note a { color: var(--gold-deep); }
 
-/* 링크 카드는 짧아서 넉 줄까지 놓아도 답답하지 않다. 설문 글은 읽어야 하므로 세 줄까지만 */
-@media (min-width: 1080px) {
-  .rv-sec-link .rv-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
-@media (max-width: 1000px) {
-  .rv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .rv-sec-link .rv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rv-cta { margin-top: 34px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+
+@media (max-width: 860px) {
+  .rv-page { padding: 120px 0 72px; }
 }
 @media (max-width: 640px) {
   /* 좁으면 한 줄에 하나. 두 칸으로 버티면 글이 두 글자씩 끊긴다 */
-  .rv-grid, .rv-sec-link .rv-grid { grid-template-columns: 1fr; gap: 10px; }
-  .rules-page-main { padding-left: 20px; padding-right: 20px; }
-  .rv-card { padding: 18px 17px 16px; }
+  .rv-sec-link .rv-grid, .rv-sec-survey .rv-grid { grid-template-columns: 1fr; gap: 10px; }
+  .rv-survey { padding: 19px 18px 16px; }
   .rv-body { font-size: .9rem; line-height: 1.85; }
-  .rv-lead { font-size: .88rem; margin-bottom: 24px; }
-  .rv-sec + .rv-sec { margin-top: 32px; padding-top: 28px; }
-}
-
-/* 아래 단추 둘 — 「홈으로」와 「예약 문의하기」. 좁으면 세로로 쌓는다 */
-.rules-page-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
-@media (max-width: 480px) {
-  .rules-page-actions .btn { width: 100%; box-sizing: border-box; }
+  .rv-sec + .rv-sec { margin-top: 36px; padding-top: 30px; }
+  .rv-head { margin-bottom: 32px; }
+  .rv-cta .btn { width: 100%; }
 }
