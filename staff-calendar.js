@@ -73,6 +73,15 @@ const tel = (phone) => {
   return ` <a class="sc-tel" href="tel:${esc(dial)}">${esc(phone)}</a>`;
 };
 
+// 예식장 길찾기 (대표 요청 2026-08-27). 우리는 주소가 없고 **이름만** 있으므로 찾기로 보낸다.
+// 폰에서는 네이버지도 앱이 받아 연다. 이름이 없으면 단추를 아예 안 만든다
+const mapLink = (venue) => {
+  const v = String(venue || '').trim();
+  if (!v) return '';
+  return ` <a class="sc-map" href="https://map.naver.com/p/search/${encodeURIComponent(v)}"
+    target="_blank" rel="noopener">길찾기</a>`;
+};
+
 const pad = (n) => String(n).padStart(2, '0');
 const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const dayKey = (v) => String(v).slice(0, 10);
@@ -125,6 +134,7 @@ async function load() {
   });
   if (error || !res) { show($('errCard')); return; }
   data = { bookings: res.bookings || [], busy: res.busy || [] };
+  renderNext(res.next);        // 보고 있는 달과 무관하게 «다음 촬영» 한 줄
   $('greet').innerHTML = `<b>${esc(res.staff_name || '')}</b> 작가님의 캘린더`
     + '<button type="button" class="sc-help-ic" id="helpIc" title="사용안내" aria-label="사용안내">?</button>';
   helpInit();
@@ -135,6 +145,26 @@ async function load() {
   loadNotices();       // 확인할 것 — 폰 알림이 못 갔어도 여기서 본다
   clearBadge();        // 화면을 열었으니 아이콘 숫자를 지운다
   show($('mainCard'));
+}
+
+/* ===== 다음 촬영 한 줄 (대표 요청 2026-08-27 «1 2번 넣자»)
+   달력에서 찾아야 했던 것을 맨 위에 올린다 — 작가가 제일 자주 보는 것이다.
+   ⚠ 보고 있는 달에서 뽑지 않는다. 서버가 «오늘 이후 첫 예식» 을 따로 준다 —
+   다음 촬영이 다음 달이면 이번 달만 봐서는 안 나온다 ===== */
+const DOW = ['일', '월', '화', '수', '목', '금', '토'];
+
+function renderNext(n) {
+  const box = $('scNext');
+  if (!box) return;
+  if (!n) { box.hidden = true; box.innerHTML = ''; return; }
+  const d = new Date(String(n.wedding_date) + 'T00:00:00');
+  const when = n.days === 0 ? '오늘' : n.days === 1 ? '내일' : `${n.days}일 뒤`;
+  box.hidden = false;
+  box.innerHTML = `
+    <p class="sc-next-l">다음 촬영 <i>${esc(when)}</i></p>
+    <p class="sc-next-m"><b>${d.getMonth() + 1}월 ${d.getDate()}일(${DOW[d.getDay()]})</b>
+      ${esc(kTime(n.wedding_time) || '시간 미정')} · ${esc(n.wedding_venue || '-')}${mapLink(n.wedding_venue)}
+      ${n.role === '서브' ? '<span class="sc-role sub">서브</span>' : ''}</p>`;
 }
 
 /* ===== 폰 알림 (대표 요청 2026-08-27
@@ -687,7 +717,7 @@ function renderPanel() {
       : '<span class="btn-sm sc-survey none">설문 아직 없음</span>';
     const last = b.rep_designation ? 'rep' : (o.length ? 'opt' : 'who');
     return `<div class="sc-item bk">
-      <div class="sc-item-h"><b>${esc(kTime(b.wedding_time) || '시간 미정')}</b> · ${esc(b.wedding_venue || '-')}
+      <div class="sc-item-h"><b>${esc(kTime(b.wedding_time) || '시간 미정')}</b> · ${esc(b.wedding_venue || '-')}${mapLink(b.wedding_venue)}
         <span class="sc-role ${b.role === '서브' ? 'sub' : 'main'}">${esc(b.role)}</span></div>
       <div class="sc-item-b">
         <span class="sc-who"><span class="sc-who-l"><span class="sc-ptag g">신랑</span>${esc(b.groom_name || '-')}</span>${tel(b.groom_phone)}</span>

@@ -19,7 +19,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="survey.css?v=ef64d2b331" />
   <link rel="stylesheet" href="guide.css?v=8b8ebc02c8" />
-  <link rel="stylesheet" href="staff-calendar.css?v=be41330c3d" />
+  <link rel="stylesheet" href="staff-calendar.css?v=048271f8a1" />
 </head>
 <body>
   <header class="sv-header">
@@ -77,6 +77,11 @@
         </div>
       </div>
       <div class="sc-cal" id="calWrap">
+       <!-- 다음 촬영 한 줄 (대표 요청 2026-08-27). 달력에서 찾아야 했던 것을 맨 위로.
+            보고 있는 달과 무관하게 서버가 「오늘 이후 첫 예식」을 준다.
+            앞으로 예식이 없으면 통째로 접힌다 -->
+       <div class="sc-next" id="scNext" hidden></div>
+
        <!-- 달력만 한 판으로 묶어 카드 위에 살짝 떠 보이게 (대표 요청) -->
        <div class="sc-board">
         <div class="sc-nav">
@@ -123,6 +128,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="staff-calendar.js?v=dd891f5484"></script>
+  <script src="staff-calendar.js?v=2de65e135e"></script>
 </body>
 </html>

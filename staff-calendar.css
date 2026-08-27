@@ -430,3 +430,17 @@
 .sc-set-d + .sc-set-d { margin-top: -6px; }
 .sc-set-row h3 + .sc-set-d { margin-bottom: 8px; }
 .sc-set-d:last-of-type { margin-bottom: 14px; }
+
+/* ===== 다음 촬영 한 줄 · 길찾기 (대표 요청 2026-08-27 «1 2번 넣자») ===== */
+.sc-next { margin: 0 0 14px; padding: 13px 16px; border: 1px solid var(--gold);
+  border-radius: 10px; background: #fdf8f0; }
+.sc-next-l { margin: 0 0 3px; font-size: .78rem; color: var(--gold-deep); }
+.sc-next-l i { font-style: normal; margin-left: 6px; font-weight: 700; color: #b5462f; }
+.sc-next-m { margin: 0; font-size: .92rem; line-height: 1.6; color: var(--ink); }
+.sc-next-m b { font-weight: 700; }
+
+/* 예식장 이름 옆 「길찾기」 — 작아도 눌리게 여백을 준다 */
+.sc-map { display: inline-block; margin-left: 6px; padding: 2px 9px; font-size: .74rem;
+  color: var(--gold-deep); background: #fff; border: 1px solid var(--line); border-radius: 999px;
+  white-space: nowrap; vertical-align: 1px; }
+.sc-map:hover { border-color: var(--gold); background: var(--cream, #f7f3ee); }
