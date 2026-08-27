@@ -417,7 +417,9 @@ function renderSet() {
     <div class="sc-set">
       <section class="sc-set-row">
         <h3>알림</h3>
-        <p class="sc-set-d">예식 <b>날짜·시간·장소가 바뀌거나 취소</b>되면 폰으로 알려드려요.</p>
+        <p class="sc-set-d">예식 <b>날짜·시간·장소</b>가 바뀌거나,
+          <b>연회장·폐백·2부 촬영</b>이 붙고 빠지거나, <b>취소</b>되면 폰으로 알려드려요.<br />
+          <b>한 기기에서만 받습니다.</b> 다른 기기에서 켜면 이전 기기는 저절로 꺼져요.</p>
         <button type="button" class="sc-sw" id="setPushSw" role="switch" aria-checked="false">
           <span class="sc-sw-k"></span><b>불러오는 중</b>
         </button>
