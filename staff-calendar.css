@@ -481,7 +481,7 @@
 .sc-next-l { margin: 0; display: flex; align-items: baseline; font-size: .76rem; font-weight: 400;
   color: var(--ink-soft); letter-spacing: .02em; }
 .sc-next-l i { font-style: normal; margin-left: auto; font-weight: 500; color: var(--gold-deep); }
-.sc-next-m { margin: 2px 0 8px; font-size: 1.02rem; font-weight: 500; color: var(--ink);
+.sc-next-m { margin: 2px 0 0; padding-bottom: 9px; border-bottom: 1px solid var(--line); font-size: 1.02rem; font-weight: 500; color: var(--ink);
   font-family: var(--kserif, inherit); }
 .sc-next-m em { font-style: normal; margin-left: 6px; font-size: .72rem; font-weight: 400;
   color: var(--gold-deep); }
@@ -489,12 +489,9 @@
 /* 그날 예식 한 줄씩 — 두 건이면 두 줄 */
 .sc-nx-row { padding-top: 8px; }
 .sc-nx-row + .sc-nx-row { margin-top: 8px; border-top: 1px solid var(--line); }
-.sc-nx-t { margin: 0; font-size: .88rem; font-weight: 400; line-height: 1.6; color: #3d3833; }
+.sc-nx-t { margin: 0; display: flex; align-items: baseline; gap: 10px;
+  font-size: .88rem; font-weight: 400; line-height: 1.6; color: #3d3833; }
 /* 이름은 접어둔다 — 펴 놓으면 카드가 길어져 달력이 안 보인다 (대표 지적) */
-.sc-nx-more { margin-top: 6px; padding: 2px 0; background: none; border: none;
-  border-bottom: 1px solid var(--line); border-radius: 0; font-family: inherit;
-  font-size: .76rem; font-weight: 400; color: var(--ink-soft); cursor: pointer; }
-.sc-nx-more:hover, .sc-nx-more.on { color: var(--gold-deep); border-bottom-color: var(--gold); }
 .sc-nx-who { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 4px 18px; }
 /* 이름 옆에 바로 번호 (대표 «신랑 박종석 연락처 / 이름옆에 연락처오게») */
 .sc-nx-p { font-size: .84rem; font-weight: 400; color: var(--ink); white-space: nowrap; }
@@ -510,3 +507,17 @@
   .sc-nx-who { flex-direction: column; gap: 4px; }
   .sc-next-m { font-size: .96rem; }
 }
+
+/* 예식 한 줄 — 「다음 촬영」과 「날짜 칸」이 같은 모양을 쓴다 (대표 요청 2026-08-27) */
+.sc-nx-t > span { min-width: 0; }        /* flex 안에서는 min-width 가 auto 라 안 줄어든다 */
+/* 설문 보기는 오른쪽 끝에 (대표 «오른쪽에 설문보는 버튼도 넣어줘») */
+.sc-nx-sv { margin-left: auto; flex: 0 0 auto; font-size: .76rem; font-weight: 400;
+  color: var(--gold-deep); white-space: nowrap; }
+.sc-nx-sv:hover { text-decoration: underline; }
+.sc-nx-opts { margin-top: 8px; }
+.sc-nx-rep { margin: 7px 0 0; font-size: .8rem; color: var(--ink-soft); }
+
+/* 날짜를 눌러 여는 칸도 같은 결로 — 바깥 상자만 두고 안쪽은 위와 같다 */
+.sc-item.bk { padding: 13px 16px 12px; }
+.sc-item.bk .sc-nx-row { padding-top: 0; }
+.sc-nx-sv.none { color: var(--ink-soft); opacity: .7; }

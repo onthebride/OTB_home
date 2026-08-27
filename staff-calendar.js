@@ -166,6 +166,28 @@ function renderTop(name, photo) {
    다음 촬영이 다음 달이면 이번 달만 봐서는 안 나온다 ===== */
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 
+/* 예식 한 줄 — 「다음 촬영」과 「날짜를 눌러 여는 칸」이 **같은 모양**을 쓴다
+   (대표 «지금 이 스타일이 좋네 / 아래 날짜누르면 뜨는 카드도 이렇게 바꾸자»).
+   두 군데서 따로 만들면 한쪽만 고쳐져 곧 어긋난다 — 여기 하나만 고친다.
+   연락처는 늘 펴 둔다 (대표 «연락처 안접어도 되겠다 그냥 펴주고 접었따 폈다 버튼 없애주고») */
+function shootRow(x, extra) {
+  // 설문이 아직이면 그렇게 적는다 — 자리를 비워두면 「단추가 왜 없지」가 된다
+  const sv = x.has_survey
+    ? `<a class="sc-nx-sv" href="survey-view?b=${esc(x.booking_id)}&s=${esc(staffId)}" target="_blank" rel="noopener">설문 보기</a>`
+    : '<span class="sc-nx-sv none">설문 아직 없음</span>';
+  const who = [
+    x.groom_name ? `<span class="sc-nx-p"><i>신랑</i>${esc(x.groom_name)}${tel(x.groom_phone)}</span>` : '',
+    x.bride_name ? `<span class="sc-nx-p"><i>신부</i>${esc(x.bride_name)}${tel(x.bride_phone)}</span>` : '',
+  ].filter(Boolean).join('');
+  return `
+  <div class="sc-nx-row">
+    <p class="sc-nx-t"><span>${esc(kTime(x.wedding_time) || '시간 미정')} · ${esc(x.wedding_venue || '-')}${mapLink(x.wedding_venue)}${
+      x.role === '서브' ? '<span class="sc-role sub">서브</span>' : ''}</span>${sv}</p>
+    ${who ? `<div class="sc-nx-who">${who}</div>` : ''}
+    ${extra || ''}
+  </div>`;
+}
+
 function renderNext(n) {
   const box = $('scNext');
   if (!box) return;
@@ -173,37 +195,12 @@ function renderNext(n) {
   const d = new Date(String(n.wedding_date) + 'T00:00:00');
   const when = n.days === 0 ? '오늘' : n.days === 1 ? '내일' : `${n.days}일 뒤`;
 
-  /* 그날 것을 **전부** 보여준다 — 하루에 두 건 찍는 날이 흔한데 하나만 보였다.
-     신랑·신부는 접어둔다 (대표 «카드가 너무 넓다 캘린더가 눈에 안띄에») —
-     이름 옆에 번호가 오게 두고, 「연락처」를 눌러야 펼쳐진다 */
-  const row = (x, i) => {
-    const who = [
-      x.groom_name ? `<span class="sc-nx-p"><i>신랑</i>${esc(x.groom_name)}${tel(x.groom_phone)}</span>` : '',
-      x.bride_name ? `<span class="sc-nx-p"><i>신부</i>${esc(x.bride_name)}${tel(x.bride_phone)}</span>` : '',
-    ].filter(Boolean).join('');
-    return `
-    <div class="sc-nx-row">
-      <p class="sc-nx-t">${esc(kTime(x.wedding_time) || '시간 미정')} · ${esc(x.wedding_venue || '-')}${mapLink(x.wedding_venue)}${
-        x.role === '서브' ? '<span class="sc-role sub">서브</span>' : ''}</p>
-      ${who ? `<button type="button" class="sc-nx-more" data-nx="${i}">연락처</button>
-      <div class="sc-nx-who" id="scNxW${i}" hidden>${who}</div>` : ''}
-    </div>`;
-  };
-
   box.hidden = false;
   box.innerHTML = `
     <p class="sc-next-l">다음 촬영<i>${esc(when)}</i></p>
     <p class="sc-next-m">${d.getMonth() + 1}월 ${d.getDate()}일(${DOW[d.getDay()]})${
       n.items.length > 1 ? ` <em>${n.items.length}건</em>` : ''}</p>
-    ${n.items.map(row).join('')}`;
-
-  box.querySelectorAll('[data-nx]').forEach((btn) => btn.addEventListener('click', () => {
-    const w = $('scNxW' + btn.dataset.nx);
-    if (!w) return;
-    w.hidden = !w.hidden;
-    btn.textContent = w.hidden ? '연락처' : '접기';
-    btn.classList.toggle('on', !w.hidden);
-  }));
+    ${n.items.map((x) => shootRow(x)).join('')}`;
 }
 
 /* ===== 폰 알림 (대표 요청 2026-08-27
@@ -747,24 +744,15 @@ function renderPanel() {
   const off = busy.find((x) => x.kind === 'off');
   const [y, m, d] = openDay.split('-').map(Number);
 
+  // 날짜 칸도 「다음 촬영」과 같은 줄 모양을 쓴다 (대표 요청 2026-08-27).
+  // 옵션 딱지만 이 화면에서 더 붙인다
   const bkHtml = bk.map((b) => {
     const o = opts(b);
-    // 설문 단추는 «맨 마지막 줄» 오른쪽 끝에 붙는다. 줄 하나를 혼자 차지하거나
-    // 옵션 줄만 아래에 남으면 동떨어져 보인다 (대표 지적)
-    const sv = b.has_survey
-      ? `<a class="btn-sm sc-survey" href="survey-view?b=${esc(b.booking_id)}&s=${esc(staffId)}" target="_blank" rel="noopener">설문 보기</a>`
-      : '<span class="btn-sm sc-survey none">설문 아직 없음</span>';
-    const last = b.rep_designation ? 'rep' : (o.length ? 'opt' : 'who');
-    return `<div class="sc-item bk">
-      <div class="sc-item-h"><b>${esc(kTime(b.wedding_time) || '시간 미정')}</b> · ${esc(b.wedding_venue || '-')}${mapLink(b.wedding_venue)}
-        <span class="sc-role ${b.role === '서브' ? 'sub' : 'main'}">${esc(b.role)}</span></div>
-      <div class="sc-item-b">
-        <span class="sc-who"><span class="sc-who-l"><span class="sc-ptag g">신랑</span>${esc(b.groom_name || '-')}</span>${tel(b.groom_phone)}</span>
-        <span class="sc-who"><span class="sc-who-l"><span class="sc-ptag b">신부</span>${esc(b.bride_name || '-')}</span>${tel(b.bride_phone)}${last === 'who' ? sv : ''}</span>
-      </div>
-      ${o.length ? `<div class="ss-opts sc-lastrow">${o.map((x) => `<span class="ss-opt${x === '2인 촬영' ? ' two' : ''}">${esc(x)}</span>`).join('')}${last === 'opt' ? sv : ''}</div>` : ''}
-      ${b.rep_designation ? `<div class="sc-item-b sc-lastrow">촬영 : 대표지정${sv}</div>` : ''}
-    </div>`;
+    const extra = o.length
+      ? `<div class="ss-opts sc-nx-opts">${o.map((x) => `<span class="ss-opt${x === '2인 촬영' ? ' two' : ''}">${esc(x)}</span>`).join('')}</div>`
+      : '';
+    const rep = b.rep_designation ? '<p class="sc-nx-rep">촬영 : 대표지정</p>' : '';
+    return `<div class="sc-item bk">${shootRow(b, rep + extra)}</div>`;
   }).join('');
 
   const evHtml = busy.filter((x) => x.kind === 'busy' || x.kind === 'personal').map((x) => `

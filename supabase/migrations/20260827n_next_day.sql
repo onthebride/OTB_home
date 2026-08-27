@@ -33,7 +33,9 @@ begin
           'bride_name', b.bride_name, 'groom_name', b.groom_name,
           -- ⚠ 연락처는 예식 2주 전부터만. 날짜 칸과 같은 규칙이라야 한다
           'bride_phone', case when b.wedding_date <= current_date + 14 then b.bride_phone end,
-          'groom_phone', case when b.wedding_date <= current_date + 14 then b.groom_phone end)
+          'groom_phone', case when b.wedding_date <= current_date + 14 then b.groom_phone end,
+          -- 설문을 냈으면 카드에서 바로 열 수 있게 (대표 «오른쪽에 설문보는 버튼도 넣어줘»)
+          'has_survey', exists(select 1 from public.surveys sv where sv.booking_id = b.id))
           order by b.wedding_time)
         from public.bookings b
         where (b.assignee_id = p_staff_id or b.sub_assignee_id = p_staff_id)
