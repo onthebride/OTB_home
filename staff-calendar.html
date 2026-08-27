@@ -8,7 +8,9 @@
   <!-- 아이콘은 관리자(흰 바탕)와 뒤집어 어둡게 쓴다 — 홈 화면에 둘 다 있으면 구분이 안 된다 (대표 요청 2026-08-27) -->
   <link rel="icon" type="image/png" href="assets/favicon-staff.png" />
   <link rel="apple-touch-icon" href="assets/favicon-staff.png" />
-  <link rel="manifest" href="manifest-staff.json" />
+  <!-- manifest 는 파일로 걸지 않는다. 파일로 걸면 start_url 이 /staff-calendar 로 굳어
+       ?s= 가 떨어져 나가고, 설치한 작가는 「링크를 확인해 주세요」만 보게 된다.
+       staff-calendar.js 가 그 사람 번호를 실어 그 자리에서 만들어 건다 -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="내 캘린더" />
   <meta name="theme-color" content="#ffffff" />
@@ -111,6 +113,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="staff-calendar.js?v=7b01242647"></script>
+  <script src="staff-calendar.js?v=08c1b3c18d"></script>
 </body>
 </html>

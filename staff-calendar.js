@@ -25,6 +25,42 @@ const pickStaff = () => {
   return q;
 };
 const staffId = pickStaff();
+
+/* 홈 화면에 추가할 때 **내 링크가 그대로 실리게** 한다.
+   ⚠ 2026-08-27 대표가 실제로 막혔다. manifest 를 파일로 걸었더니
+   start_url 이 `/staff-calendar` 로 굳어 ?s= 가 떨어져 나갔고,
+   아이폰은 홈 화면 앱이 사파리와 저장소를 **따로** 써서 위에 기억해둔 번호도 못 꺼낸다.
+   그래서 이 사람 번호가 박힌 manifest 를 그 자리에서 만들어 건다.
+   만들다 실패해도 괜찮다 — manifest 가 없으면 브라우저는 **지금 주소 그대로**
+   바로가기를 만들므로 예전처럼 돌아간다. 이쪽으로 넘어지는 게 안전하다 */
+function manifestInit() {
+  if (!staffId || !uuidRe.test(staffId) || !document.head) return;
+  try {
+    const o = location.origin;
+    const here = `${o}/staff-calendar?s=${encodeURIComponent(staffId)}`;
+    const m = {
+      id: `/staff-calendar?s=${staffId}`,   // 작가마다 다른 앱이어야 서로 안 덮어쓴다
+      name: '온더브라이드 작가 캘린더',
+      short_name: '내 캘린더',
+      description: '배정된 예식과 촬영 불가일',
+      start_url: here,
+      scope: `${o}/staff-calendar`,
+      display: 'standalone',
+      background_color: '#ffffff',
+      theme_color: '#ffffff',
+      icons: [
+        { src: `${o}/assets/favicon-staff.png`, sizes: '192x192', type: 'image/png', purpose: 'any' },
+        // 안드로이드는 아이콘을 동그랗게 잘라낸다 — 여백 있는 판을 따로 준다
+        { src: `${o}/assets/favicon-staff-mask.png`, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      ],
+    };
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = URL.createObjectURL(new Blob([JSON.stringify(m)], { type: 'application/manifest+json' }));
+    document.head.appendChild(link);
+  } catch (_) { /* 못 걸어도 된다 — 지금 주소로 바로가기가 만들어진다 */ }
+}
+manifestInit();
 const esc = (s) => (s == null ? '' : String(s)).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const show = (el) => ['errCard', 'loadCard', 'mainCard'].forEach((id) => ($(id).hidden = $(id) !== el));
 
