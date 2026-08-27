@@ -178,6 +178,12 @@ function renderTop(name, photo) {
    다음 촬영이 다음 달이면 이번 달만 봐서는 안 나온다 ===== */
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 
+/* 접어둔 기기는 다음에 와도 접힌 채로 (대표 요청 2026-08-27).
+   저장이 막힌 기기(사파리 비공개 모드 등)에서도 화면은 그대로 돌아가야 한다 —
+   그래서 읽기·쓰기 둘 다 try 로 감싼다. 못 읽으면 「펴 있음」이 기본이다 */
+const NEXT_KEY = 'otb_sc_next';
+const nextShut = () => { try { return localStorage.getItem(NEXT_KEY) === 'shut'; } catch (e) { return false; } };
+
 /* 예식 한 줄 — 「다음 촬영」과 「날짜를 눌러 여는 칸」이 **같은 모양**을 쓴다
    (대표 «지금 이 스타일이 좋네 / 아래 날짜누르면 뜨는 카드도 이렇게 바꾸자»).
    두 군데서 따로 만들면 한쪽만 고쳐져 곧 어긋난다 — 여기 하나만 고친다.
@@ -207,12 +213,29 @@ function renderNext(n) {
   const d = new Date(String(n.wedding_date) + 'T00:00:00');
   const when = n.days === 0 ? '오늘' : n.days === 1 ? '내일' : `${n.days}일 뒤`;
 
+  // 날짜 줄을 눌러 그 아래를 접는다 (대표 «다음 촬영 날짜 밑으로는 접을 수 있게 해줘»).
+  // 접혀 있어도 날짜와 몇 건인지는 남는다 — 그것까지 감추면 무엇을 폈는지 알 수 없다
+  const shut = nextShut();
   box.hidden = false;
   box.innerHTML = `
     <p class="sc-next-l">다음 촬영<i>${esc(when)}</i></p>
-    <p class="sc-next-m">${d.getMonth() + 1}월 ${d.getDate()}일(${DOW[d.getDay()]})${
-      n.items.length > 1 ? ` <em>${n.items.length}건</em>` : ''}</p>
-    ${n.items.map((x) => shootRow(x)).join('')}`;
+    <button type="button" class="sc-next-m${shut ? ' shut' : ''}" id="scNextT"
+      aria-expanded="${shut ? 'false' : 'true'}" aria-controls="scNextB">
+      <span>${d.getMonth() + 1}월 ${d.getDate()}일(${DOW[d.getDay()]})${
+        n.items.length > 1 ? ` <em>${n.items.length}건</em>` : ''}</span><i></i>
+    </button>
+    <div class="sc-next-b" id="scNextB"${shut ? ' hidden' : ''}>${
+      n.items.map((x) => shootRow(x)).join('')}</div>`;
+
+  const tg = $('scNextT'), bd = $('scNextB');
+  if (!tg || !bd) return;
+  tg.addEventListener('click', () => {
+    const off = !bd.hidden;                    // 지금 펴 있으면 접는다
+    bd.hidden = off;
+    tg.classList.toggle('shut', off);
+    tg.setAttribute('aria-expanded', off ? 'false' : 'true');
+    try { localStorage.setItem(NEXT_KEY, off ? 'shut' : 'open'); } catch (e) { /* 저장이 막힌 기기 */ }
+  });
 }
 
 /* ===== 폰 알림 (대표 요청 2026-08-27

@@ -481,10 +481,24 @@
 .sc-next-l { margin: 0; display: flex; align-items: baseline; font-size: .76rem; font-weight: 400;
   color: var(--ink-soft); letter-spacing: .02em; }
 .sc-next-l i { font-style: normal; margin-left: auto; font-weight: 500; color: var(--gold-deep); }
-.sc-next-m { margin: 2px 0 0; padding-bottom: 9px; border-bottom: 1px solid var(--line); font-size: 1.02rem; font-weight: 500; color: var(--ink);
-  font-family: var(--kserif, inherit); }
+/* 날짜 줄은 이제 「눌러서 접는」 단추다 (대표 요청 2026-08-27).
+   단추로 바꿔도 글씨는 그대로 보여야 한다 — 바탕·테두리·글꼴을 도로 벗긴다.
+   아래 금(border-bottom)은 대표가 넣어달라 한 분리자라 그대로 둔다 */
+.sc-next-m { width: 100%; display: flex; align-items: baseline; gap: 8px;
+  margin: 2px 0 0; padding: 0 0 9px; background: none; border: none;
+  border-bottom: 1px solid var(--line); border-radius: 0; cursor: pointer;
+  font-family: var(--kserif, inherit); font-size: 1.02rem; font-weight: 500; color: var(--ink);
+  text-align: left; letter-spacing: -.01em; }
+.sc-next-m > span { min-width: 0; }
 .sc-next-m em { font-style: normal; margin-left: 6px; font-size: .72rem; font-weight: 400;
   color: var(--gold-deep); }
+/* 접기 화살표 — 선 두 개로 만든 갈매기. 접으면 위를 본다 */
+.sc-next-m > i { flex: 0 0 auto; margin-left: auto; width: 7px; height: 7px;
+  border-right: 1.5px solid var(--ink-soft); border-bottom: 1.5px solid var(--ink-soft);
+  transform: translateY(-3px) rotate(45deg); transition: transform .18s ease; }
+.sc-next-m.shut > i { transform: translateY(1px) rotate(-135deg); }
+/* 접으면 아래 금은 지운다 — 접힌 채로 금만 남으면 뜬금없는 줄이 된다 */
+.sc-next-m.shut { border-bottom-color: transparent; }
 
 /* 그날 예식 한 줄씩 — 두 건이면 두 줄 */
 .sc-nx-row { padding-top: 8px; }
