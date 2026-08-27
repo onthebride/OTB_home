@@ -1051,10 +1051,11 @@ td .muted { color: var(--ink-soft); }
 /* ===== 작가 평가 (촬영 후 설문) ===== */
 /* 방문 통계 ↔ 작가 평가 전환 스위치 (표시등이 좌우로 미끄러짐) */
 /* 칸이 셋(예약·매출 / 방문 통계 / 작가 평가). 표시등은 --st-i 번째 칸으로 미끄러진다 */
-.st-toggle { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); max-width: 430px;
+/* 칸 수는 stSub() 가 --st-n 으로 알려준다. 여기 숫자를 박아두면 칸을 더할 때마다 표시등이 어긋난다 */
+.st-toggle { position: relative; display: grid; grid-template-columns: repeat(var(--st-n, 3), 1fr); max-width: 560px;
   background: var(--cream); border: 1px solid var(--line); border-radius: 999px; padding: 3px; margin-bottom: 16px; }
 .st-tg-ind { position: absolute; top: 3px; bottom: 3px;
-  left: calc(3px + var(--st-i, 0) * (100% - 6px) / 3); width: calc((100% - 6px) / 3);
+  left: calc(3px + var(--st-i, 0) * (100% - 6px) / var(--st-n, 3)); width: calc((100% - 6px) / var(--st-n, 3));
   background: var(--ink); border-radius: 999px; transition: left .22s ease; }
 .st-tg { position: relative; z-index: 1; background: none; border: none; cursor: pointer;
   font-family: var(--sans); font-size: .9rem; color: var(--ink-soft); padding: 9px 8px; border-radius: 999px;
@@ -1134,6 +1135,9 @@ td .muted { color: var(--ink-soft); }
 
 @media (max-width: 600px) {
   .st-toggle { max-width: none; }
+  /* 칸이 넷이 되면서(이벤트 후기) 좁은 폰에서 글자가 넘친다. 글씨를 줄여 한 줄에 담는다.
+     .st-tg 기본 규칙보다 뒤에 있어야 이긴다 — 미디어쿼리는 우선순위를 안 올린다 */
+  .st-tg { font-size: .78rem; padding: 8px 2px; letter-spacing: -.2px; }
   /* 응답률·곁가지는 오른쪽에 붙인다 (대표 요청 2026-08-26 «모바일에서 응답 몇건 이건
      오른쪽에 붙여줘»). 폭을 100% 로 잡으면 왼쪽에 홀로 서서 줄만 늘어난다 */
   .fb-sn { margin-left: auto; width: auto; }
@@ -1437,3 +1441,40 @@ td .muted { color: var(--ink-soft); }
 .fb-sn .fb-subrate { display: block; font-style: normal; font-size: .74rem; color: var(--gold-deep); margin-top: 2px; }
 .fb-subs { border-color: #e0d4bd; background: #fbf6ee; }
 .fb-subs b { color: var(--gold-deep); }
+
+/* 이벤트 후기 모아보기 (통계 → 이벤트 후기. 대표 요청 2026-08-27) */
+.rv-months { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.rv-mon { background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+  padding: 7px 11px; font-size: .8rem; color: var(--ink-soft); }
+.rv-mon b { color: var(--ink); font-weight: 700; margin-right: 5px; }
+.rv-mon i { font-style: normal; color: var(--gold-deep); margin-left: 6px; font-size: .74rem; }
+
+.rv-filter { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.rv-filter .btn-sm.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+.rv-list { display: flex; flex-direction: column; gap: 8px; }
+.rv-item { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px;
+  border: 1px solid var(--line); border-radius: 9px; padding: 12px 14px; background: #fff; }
+.rv-item.pending { border-color: var(--gold); background: #fdf8f0; }
+.rv-main { min-width: 0; flex: 1 1 auto; }          /* flex 안에서는 min-width:auto 라 안 줄어든다 */
+.rv-who { margin: 0 0 4px; }
+.rv-who b { font-weight: 700; }
+.rv-who small { color: var(--ink-soft); font-size: .78rem; margin-left: 6px; }
+.rv-link { display: block; font-size: .8rem; color: var(--gold-deep); word-break: break-all; }
+.rv-link:hover { text-decoration: underline; }
+.rv-nolink { display: block; font-size: .8rem; color: var(--ink-soft); }
+.rv-side { flex: 0 0 auto; text-align: right; display: flex; flex-direction: column;
+  align-items: flex-end; gap: 3px; }
+.rv-tag { font-size: .74rem; padding: 2px 9px; border-radius: 999px;
+  background: var(--cream); border: 1px solid var(--line); }
+.rv-tag.off { color: var(--ink-soft); }
+.rv-rw { font-size: .78rem; color: var(--ink); }
+.rv-when { font-size: .72rem; color: var(--ink-soft); white-space: nowrap; }
+.rv-when b { color: var(--gold-deep); }
+
+@media (max-width: 600px) {
+  .rv-item { flex-wrap: wrap; gap: 6px; }
+  /* 좁으면 딱지를 아래 한 줄로 눕힌다 — 오른쪽에 세워두면 본문이 두 글자씩 끊긴다 */
+  .rv-side { flex-direction: row; align-items: center; flex-wrap: wrap; width: 100%; }
+  .rv-when { margin-left: auto; }
+}

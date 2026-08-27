@@ -4315,15 +4315,18 @@ function stSub(sub) {
   stCur = cur;
   btns.forEach((x, k) => x.classList.toggle('active', k === i));
   box.style.setProperty('--st-i', i);                 // 표시등을 그 칸으로 밀어줌
+  box.style.setProperty('--st-n', btns.length);       // 칸이 몇 개인지도 알려준다 (표시등 폭)
   $('salesBody').hidden = cur !== 'sales';
   $('statsBody').hidden = cur !== 'visits';
   $('fbBody').hidden = cur !== 'feedback';
+  $('revBody').hidden = cur !== 'reviews';
   const bar = document.querySelector('.st-bar');
   if (bar) bar.hidden = cur !== 'visits';             // 기간 버튼·바로가기는 방문 통계 전용
   setHash(cur === stFirst() ? 'stats' : 'stats/' + cur);
   if (cur === 'sales') renderSales();
   if (cur === 'visits') renderStats();
   if (cur === 'feedback') renderFeedback();
+  if (cur === 'reviews') renderEventReviews();
 }
 const stToggle = $('stToggle');
 if (stToggle) {
@@ -4331,6 +4334,81 @@ if (stToggle) {
     const b = e.target.closest('button[data-sttab]');
     if (b) stSub(b.dataset.sttab);
   });
+}
+
+/* ===== 이벤트 후기 모아보기 (통계 안, 대표 요청 2026-08-27 «후기도 관리자 통계에 넣어줘») =====
+
+   지금까지 모이기만 하고 볼 데가 없었다. 홈의 [이벤트] 카드는 «승인 대기» 만 그리고
+   대기가 0건이면 카드째 접혀서, 승인하는 순간 화면에서 사라졌다 (36건이 통째로 안 보였다).
+
+   ⚠ 두 갈래를 반드시 갈라 보여준다. 섞으면 «후기 36건» 이 부풀려 보인다:
+     · 링크 있는 것  = 신부가 실제로 글을 올린 것 (18건)
+     · 직접 확인     = 대표가 예약 상세에서 체크만 한 것 — 글이 어디 있는지 모른다 (18건) */
+let rvData = null;
+let rvFilter = 'all';
+
+async function renderEventReviews(force) {
+  const wrap = $('revBody');
+  if (!wrap) return;
+  if (!rvData || force) {
+    wrap.innerHTML = '<p class="empty">불러오는 중…</p>';
+    const { data, error } = await sb.rpc('admin_event_reviews');
+    if (error) { wrap.innerHTML = `<p class="empty">불러오기 실패: ${esc(error.message)}</p>`; return; }
+    rvData = data || {};
+  }
+  const d = rvData;
+  const all = d.rows || [];
+  const pct = d.bookings ? Math.round((d.joined / d.bookings) * 1000) / 10 : 0;
+  const rows = rvFilter === 'link' ? all.filter((r) => r.has_link)
+    : rvFilter === 'nolink' ? all.filter((r) => !r.has_link)
+    : all;
+
+  const card = (k, v, sub) => '<div class="st-card"><span class="st-k">' + k + '</span><strong>' + v
+    + '</strong><span class="st-sub">' + sub + '</span></div>';
+  const mon = (d.months || []).map((m) =>
+    `<span class="rv-mon"><b>${esc(m.m.slice(2).replace('-', '.'))}</b> ${m.n}건<i>링크 ${m.linked}</i></span>`).join('');
+
+  const btn = (k, label, n) => `<button type="button" class="btn-sm${rvFilter === k ? ' active' : ''}"`
+    + ` data-rvf="${k}">${label} ${n}</button>`;
+
+  wrap.innerHTML =
+    '<div class="st-cards">'
+    + card('후기 이벤트 참여', d.n || 0, '앨범 ' + (d.album || 0) + ' · 할인 ' + (d.discount || 0))
+    + card('링크가 있는 것', d.linked || 0, '신부님이 올린 글')
+    + card('직접 확인', d.checked || 0, '링크 없이 체크만 한 것')
+    + card('참여율', pct + '%', '예약 ' + (d.bookings || 0) + '건 중 ' + (d.joined || 0) + '건')
+    + '</div>'
+    + (mon ? '<div class="rv-months">' + mon + '</div>' : '')
+    + '<div class="rv-filter">'
+    + btn('all', '전체', all.length)
+    + btn('link', '링크 있는 것', all.filter((r) => r.has_link).length)
+    + btn('nolink', '직접 확인', all.filter((r) => !r.has_link).length)
+    + '</div>'
+    + (rows.length ? '<div class="rv-list">' + rows.map(rvRow).join('') + '</div>'
+      : '<p class="empty">해당하는 후기가 없어요.</p>');
+
+  wrap.querySelectorAll('[data-rvf]').forEach((b) =>
+    b.addEventListener('click', () => { rvFilter = b.dataset.rvf; renderEventReviews(); }));
+}
+
+function rvRow(r) {
+  const wed = r.wedding_date ? `<small>예식 ${esc(fmtDateShort(r.wedding_date))}</small>` : '';
+  // 링크가 없는 줄은 «없다» 고 분명히 적는다. 빈칸으로 두면 있는 줄처럼 읽힌다
+  const body = r.has_link
+    ? `<a class="rv-link" href="${esc(r.link)}" target="_blank" rel="noopener">${esc(r.link)}</a>`
+    : '<span class="rv-nolink">링크 없음 — 예약 상세에서 체크한 건</span>';
+  return `
+  <div class="rv-item${r.status === 'pending' ? ' pending' : ''}">
+    <div class="rv-main">
+      <p class="rv-who"><b>${esc(r.name || '-')}</b> ${wed}</p>
+      ${body}
+    </div>
+    <div class="rv-side">
+      <span class="rv-tag${r.has_link ? '' : ' off'}">${esc(r.where || '-')}</span>
+      <span class="rv-rw">${esc(r.reward || '-')}</span>
+      <span class="rv-when">${esc(r.created_at || '')} 등록${r.status === 'pending' ? ' · <b>승인 대기</b>' : ''}</span>
+    </div>
+  </div>`;
 }
 
 /* ===== 앨범 발주 (대표 요청 2026-08-24) =====
