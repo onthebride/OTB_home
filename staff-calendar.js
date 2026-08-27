@@ -81,6 +81,7 @@ async function load() {
   render();
   tabsInit();
   pushInit();          // 늦게 와도 된다 — 단추만 늦게 뜬다
+  clearBadge();        // 화면을 열었으니 아이콘 숫자를 지운다
   show($('mainCard'));
 }
 
@@ -98,6 +99,11 @@ const b64ToU8 = (b64) => {
   return arr;
 };
 let scSw = null;
+
+// 홈 화면 아이콘의 숫자를 지운다 (대표 요청 2026-08-27). 못 쓰는 브라우저면 조용히 넘어간다
+function clearBadge() {
+  try { if (navigator.clearAppBadge) navigator.clearAppBadge(); } catch (_) {}
+}
 
 async function pushInit() {
   const btn = $('scPush');

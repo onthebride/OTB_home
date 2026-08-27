@@ -15,12 +15,29 @@ self.addEventListener('push', (e) => {
     data: { url: data.url || '/admin' },
     vibrate: [80, 40, 80],
   };
-  e.waitUntil(self.registration.showNotification(title, opts));
+  // 알림을 띄우고, 홈 화면 아이콘에도 숫자를 붙인다 (대표 요청 2026-08-27).
+  // 안 읽은 알림 수 = 지금 떠 있는 알림 수. 눌러서 열면 지운다.
+  // setAppBadge 를 못 쓰는 브라우저도 있으므로 실패해도 알림 자체는 뜨게 따로 감싼다
+  e.waitUntil((async () => {
+    await self.registration.showNotification(title, opts);
+    try {
+      const n = (await self.registration.getNotifications()).length;
+      if (self.navigator && self.navigator.setAppBadge) await self.navigator.setAppBadge(n || 1);
+    } catch (_) { /* 뱃지를 못 붙여도 알림은 떴다 */ }
+  })());
 });
 
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   const url = (e.notification.data && e.notification.data.url) || '/admin';
+  // 눌러서 열면 아이콘 숫자를 지운다. 남은 알림이 있으면 그만큼만 남긴다
+  e.waitUntil((async () => {
+    try {
+      const n = (await self.registration.getNotifications()).length;
+      if (self.navigator && self.navigator.clearAppBadge && !n) await self.navigator.clearAppBadge();
+      else if (self.navigator && self.navigator.setAppBadge && n) await self.navigator.setAppBadge(n);
+    } catch (_) {}
+  })());
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
       // 알림이 알려준 주소와 같은 곳이 이미 열려 있으면 그 창을 쓴다.

@@ -5219,9 +5219,15 @@ function urlB64ToUint8(b64) {
   return arr;
 }
 let swReg = null;
+// 홈 화면 아이콘의 숫자를 지운다 (대표 요청 2026-08-27)
+function clearBadge() {
+  try { if (navigator.clearAppBadge) navigator.clearAppBadge(); } catch (_) {}
+}
+
 async function initPush() {
   const btn = document.getElementById('notifyBtn');
   if (!btn) return;
+  clearBadge();        // 화면을 열었으니 아이콘 숫자를 지운다
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return; // 미지원
   try {
     swReg = await navigator.serviceWorker.register('sw.js', { scope: '/' });
