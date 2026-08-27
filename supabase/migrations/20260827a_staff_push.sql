@@ -149,3 +149,55 @@ drop trigger if exists trg_booking_change_notify on public.bookings;
 create trigger trg_booking_change_notify
   after update on public.bookings
   for each row execute function private.booking_change_notify();
+
+
+-- ===== 한 폰이 대표이면서 작가일 수 있다 =====
+-- 대표는 본인도 찍는다. 같은 폰으로 관리자 알림과 작가 알림을 둘 다 받아야 한다.
+-- 그런데 endpoint 가 열쇠라 작가로 켜는 순간 관리자 줄이 덮어써져
+-- **관리자 알림이 조용히 끊긴다.** 사람이 눈치채기 어려운 사고다.
+--
+-- endpoint + 주인 을 열쇠로 바꾼다. 웹푸시는 브라우저마다 endpoint 가 하나라
+-- 같은 endpoint 가 두 줄이 되지만, 보낼 때 주인으로 거르므로 두 번 가지 않는다.
+-- (nulls not distinct — 주인이 없는 줄도 한 번만 있어야 한다. PG 15+)
+-- ⚠ 옛 세 칸짜리 save_push_subscription 을 반드시 지운다.
+-- 그것은 «on conflict (endpoint)» 를 쓰는데 아래에서 그 제약을 없앤다 —
+-- 남겨두면 관리자가 알림을 켤 때 통째로 터진다 (칸 수가 다르면 create or replace 로는 안 지워진다)
+drop function if exists public.save_push_subscription(text, text, text);
+
+alter table public.push_subscriptions drop constraint if exists push_subscriptions_pkey;
+alter table public.push_subscriptions drop constraint if exists push_subscriptions_ep_who;
+alter table public.push_subscriptions
+  add constraint push_subscriptions_ep_who unique nulls not distinct (endpoint, staff_id);
+
+create or replace function public.save_push_subscription(
+  p_endpoint text, p_p256dh text, p_auth text, p_staff_id uuid default null)
+returns void language plpgsql security definer
+set search_path to 'public', 'pg_temp'
+as $$
+begin
+  if p_endpoint is null or p_p256dh is null or p_auth is null then raise exception 'bad subscription'; end if;
+  if p_staff_id is null then
+    if auth.uid() is null then raise exception 'unauthorized'; end if;
+  else
+    if not exists (select 1 from public.staff where id = p_staff_id and coalesce(active, false)) then
+      raise exception 'staff not found';
+    end if;
+  end if;
+  insert into public.push_subscriptions (endpoint, p256dh, auth, staff_id)
+    values (p_endpoint, p_p256dh, p_auth, p_staff_id)
+  on conflict (endpoint, staff_id) do update
+    set p256dh = excluded.p256dh, auth = excluded.auth;
+end$$;
+grant execute on function public.save_push_subscription(text, text, text, uuid) to anon, authenticated;
+
+-- 끌 때도 그 역할만 끈다. 작가가 끄는데 관리자 줄까지 지우면 안 된다
+create or replace function public.drop_push_subscription(p_endpoint text, p_staff_id uuid default null)
+returns void language plpgsql security definer
+set search_path to 'public', 'pg_temp'
+as $$
+begin
+  delete from public.push_subscriptions
+   where endpoint = p_endpoint and staff_id is not distinct from p_staff_id;
+end$$;
+drop function if exists public.drop_push_subscription(text);
+grant execute on function public.drop_push_subscription(text, uuid) to anon, authenticated;

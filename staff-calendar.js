@@ -163,7 +163,8 @@ async function pushEnable(btn, note) {
 async function pushDisable(btn, note) {
   try {
     const sub = await scSw.pushManager.getSubscription();
-    if (sub) { await sb.rpc('drop_push_subscription', { p_endpoint: sub.endpoint }); await sub.unsubscribe(); }
+    // 이 작가 것만 끈다 — 같은 폰에 관리자 등록이 있으면 그건 그대로 둔다
+    if (sub) { await sb.rpc('drop_push_subscription', { p_endpoint: sub.endpoint, p_staff_id: staffId }); }
   } catch (_) {}
   btn.textContent = '🔔 알림 받기';
   btn.classList.remove('on');
