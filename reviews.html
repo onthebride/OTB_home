@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=bdaa844b36" />
-  <link rel="stylesheet" href="/reviews.css?v=2b410d3578" />
+  <link rel="stylesheet" href="/reviews.css?v=9da3baf50a" />
 </head>
 <body class="rules-page">
 
@@ -36,12 +36,8 @@
       저희가 고르거나 고쳐 쓰지 않았고, 받은 글 그대로 싣습니다.
     </p>
 
-    <div class="rv-tabs" id="rvTabs" hidden>
-      <button type="button" class="rv-tab active" data-rvk="all">전체</button>
-      <button type="button" class="rv-tab" data-rvk="survey">촬영 후기</button>
-      <button type="button" class="rv-tab" data-rvk="link">블로그 · 카페</button>
-    </div>
-
+    <!-- 「일반 후기」와 「설문 후기」를 위아래로 갈라 놓는다 (대표 요청 2026-08-27).
+         칸을 눌러 바꾸는 방식이 아니라, 한 화면에서 둘 다 보이게 -->
     <div id="rvBody"><p class="rv-empty">불러오는 중입니다…</p></div>
 
     <p class="rv-note" id="rvNote" hidden>
@@ -62,7 +58,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/config.js"></script>
-  <script src="/reviews.js?v=f3a385f93c"></script>
+  <script src="/reviews.js?v=20a36c5dbb"></script>
   <script defer src="/analytics.js?v=2437a22e8c"></script>
 </body>
 </html>

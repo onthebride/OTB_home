@@ -1,23 +1,33 @@
 /* 신부님 후기 모아보기 (/reviews) — 대표 요청 2026-08-27.
-   바탕·글꼴·머리말은 styles.css 의 rules-page 를 그대로 쓰고, 후기 카드만 여기 둔다 */
+   바탕·글꼴·머리말은 styles.css 의 rules-page 를 그대로 쓰고, 여기서 두 가지를 덮어쓴다:
+     · 폭 — 규정 페이지는 글을 읽는 곳이라 720px 로 좁다. 여기는 카드가 여러 장 놓이므로 넓힌다
+       (대표 «페이지 폭이 넘 좁은데? 가로로 길게 보이게 해줘»)
+     · 카드 — 후기 전용
+   ⚠ styles.css 의 .rules-page-main 보다 **뒤에 실려야** 이긴다.
+     reviews.html 에서 styles.css 다음에 걸어둔다. 순서를 바꾸면 폭이 도로 좁아진다 */
+
+.rules-page-main { max-width: 1180px; padding-left: 46px; padding-right: 46px; }
 
 .rv-lead { text-align: center; color: var(--ink-soft); line-height: 1.85; font-size: .93rem;
-  margin: -14px 0 26px; }
+  margin: -14px 0 34px; }
 .rv-lead b { color: var(--ink); font-weight: 600; }
 
-.rv-tabs { display: flex; justify-content: center; gap: 6px; margin: 0 0 24px; }
-.rv-tab { background: none; border: 1px solid var(--line); border-radius: 999px;
-  padding: 7px 16px; font-family: inherit; font-size: .86rem; color: var(--ink-soft);
-  cursor: pointer; transition: background .18s, color .18s, border-color .18s; }
-.rv-tab:hover { color: var(--ink); }
-.rv-tab.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+/* ── 두 갈래를 위아래로 갈라 놓는다 (칸을 눌러 바꾸지 않아도 다 보이게) ── */
+.rv-sec + .rv-sec { margin-top: 44px; padding-top: 38px; border-top: 1px solid var(--line); }
+.rv-sec-t { font-family: 'Noto Serif KR', serif; font-size: 1.18rem; font-weight: 600;
+  color: var(--ink); margin: 0 0 5px; display: flex; align-items: center; gap: 9px; }
+.rv-sec-n { font-family: var(--sans, inherit); font-size: .76rem; font-weight: 500;
+  color: var(--gold-deep); background: var(--cream); border: 1px solid var(--line);
+  border-radius: 999px; padding: 2px 10px; }
+.rv-sec-d { margin: 0 0 20px; font-size: .84rem; color: var(--ink-soft); line-height: 1.7; }
 
-.rv-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.rv-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px;
+  align-items: start; }
 .rv-card { background: #fff; border: 1px solid var(--line); border-radius: 12px;
   padding: 22px 22px 20px; display: flex; flex-direction: column; min-width: 0; }
 
 /* 설문 글 — 본문이 주인공이라 위에 놓고, 누가 썼는지는 아래에 작게 */
-.rv-body { margin: 0 0 14px; line-height: 1.9; color: #3d3833; font-size: .93rem;
+.rv-body { margin: 0 0 14px; line-height: 1.9; color: #3d3833; font-size: .92rem;
   white-space: pre-wrap; word-break: break-word; }
 .rv-body::before { content: '“'; font-family: 'Cormorant Garamond', serif; font-size: 2.1rem;
   color: var(--gold); line-height: 0; vertical-align: -.22em; margin-right: 4px; }
@@ -35,16 +45,25 @@
 
 .rv-empty { text-align: center; color: var(--ink-soft); padding: 40px 0; }
 
-.rv-note { margin: 26px 0 0; text-align: center; font-size: .8rem; color: var(--ink-soft);
+.rv-note { margin: 30px 0 0; text-align: center; font-size: .8rem; color: var(--ink-soft);
   line-height: 1.8; }
 .rv-note b { color: var(--ink); }
 .rv-note a { color: var(--gold-deep); }
 
-@media (max-width: 720px) {
+/* 링크 카드는 짧아서 넉 줄까지 놓아도 답답하지 않다. 설문 글은 읽어야 하므로 세 줄까지만 */
+@media (min-width: 1080px) {
+  .rv-sec-link .rv-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 1000px) {
+  .rv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rv-sec-link .rv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
   /* 좁으면 한 줄에 하나. 두 칸으로 버티면 글이 두 글자씩 끊긴다 */
-  .rv-grid { grid-template-columns: 1fr; gap: 10px; }
+  .rv-grid, .rv-sec-link .rv-grid { grid-template-columns: 1fr; gap: 10px; }
+  .rules-page-main { padding-left: 20px; padding-right: 20px; }
   .rv-card { padding: 18px 17px 16px; }
   .rv-body { font-size: .9rem; line-height: 1.85; }
-  .rv-lead { font-size: .88rem; margin-bottom: 20px; }
-  .rv-tabs { flex-wrap: wrap; }
+  .rv-lead { font-size: .88rem; margin-bottom: 24px; }
+  .rv-sec + .rv-sec { margin-top: 32px; padding-top: 28px; }
 }
