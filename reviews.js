@@ -7,7 +7,8 @@
      · 일반 후기        — 신부님이 블로그·카페에 올리신 글. **링크만** 건다
      · 촬영 후 설문 후기 — 우리 설문에 남겨주신 글. 본문을 그대로 싣는다
 
-   ⚠ 이름은 **작가 이름만** 쓴다. 신부님 이름은 `reviews_public()` 이 아예 안 낸다.
+   ⚠ 이름은 갈래마다 다르다: 일반 후기는 **신부님(김○○)**, 설문 후기는 **작가**.
+   신부님 이름은 **넣을 때 이미 가려서** 담긴 것만 나간다 — 원본은 표에 없다.
    이 화면은 feedback·bookings 를 아예 안 건드린다 — 실수로도 고객 정보가 샐 길이 없게. */
 const sb = window.supabase && window.OTB_CONFIG
   ? window.supabase.createClient(window.OTB_CONFIG.SUPABASE_URL, window.OTB_CONFIG.SUPABASE_KEY)
@@ -25,8 +26,12 @@ const esc = (s) => (s == null ? '' : String(s)).replace(/[&<>"']/g, (c) => ({ '&
   menu.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => menu.classList.remove('open')));
 })();
 
-// 작가 이름 — 없으면 그 줄을 아예 안 그린다 (「미지정」 을 손님께 보일 필요가 없다)
-const whoLine = (r) => (r.staff ? `<p class="rv-who">${esc(r.staff)} 작가</p>` : '');
+/* 갈래마다 적는 이름이 다르다 (대표 지시 2026-08-27):
+     · 일반 후기        = 신부님이 직접 쓰신 글 → 쓰신 분 (김○○ 님)
+     · 촬영 후 설문 후기 = 작가에 대한 평      → 누구를 두고 한 말인지 (김병훈 작가)
+   둘 다 없으면 그 줄을 아예 안 그린다 — 「미지정」 을 손님께 보일 필요가 없다 */
+const brideLine = (r) => (r.who ? `<p class="rv-who">${esc(r.who)} 님</p>` : '');
+const staffLine = (r) => (r.staff ? `<p class="rv-who">${esc(r.staff)} 작가</p>` : '');
 // 예식장·날짜는 있는 것만. 없다고 「-」 를 늘어놓으면 지저분하다
 const metaLine = (r) => {
   const bits = [];
@@ -35,22 +40,22 @@ const metaLine = (r) => {
   return bits.length ? `<p class="rv-meta">${bits.join(' · ')}</p>` : '';
 };
 
-// 설문 글 — 본문이 주인공이라 위에 놓고, 누가 찍었는지는 아래에
+// 설문 글 — 본문이 주인공이라 위에 놓고, 누구를 두고 한 말인지는 아래에
 function surveyCard(r) {
   return `
   <article class="rv-card rv-survey">
     <p class="rv-body">${esc(r.body || '')}</p>
-    <div class="rv-foot">${whoLine(r)}${metaLine(r)}</div>
+    <div class="rv-foot">${staffLine(r)}${metaLine(r)}</div>
   </article>`;
 }
 
 /* 밖에 올리신 글 — 본문을 옮겨오지 않는다. 남의 사이트 글이다.
-   대표가 그린 대로 «작가 이름 / 홀 이름 / 후기 링크» 석 줄만.
+   대표가 그린 대로 «이름 / 홀 이름 / 후기 링크» 석 줄만.
    어디에 올린 글인지(블로그·카페) 딱지는 뺐다 — 대표 말대로 손님에겐 구분이 안 된다 */
 function linkCard(r) {
   return `
   <a class="rv-card rv-link" href="${esc(r.url)}" target="_blank" rel="noopener nofollow">
-    ${whoLine(r)}
+    ${brideLine(r)}
     ${metaLine(r)}
     <span class="rv-go">후기 보러 가기 ›</span>
   </a>`;
