@@ -151,5 +151,4 @@ function section(title, desc, rows, card, cls) {
       links, linkCard, 'rv-sec-link')
     + section('촬영 후 설문 후기', '촬영이 끝난 뒤 보내드린 설문에 남겨주신 글입니다. 받은 그대로 싣습니다.',
       surveys, surveyCard, 'rv-sec-survey');
-  $('rvNote').hidden = false;
 })();

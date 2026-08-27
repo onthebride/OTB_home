@@ -53,12 +53,8 @@
 
 .rv-empty { text-align: center; color: var(--ink-soft); padding: 40px 0; }
 
-.rv-note { margin: 38px auto 0; max-width: 640px; text-align: center;
-  font-size: .8rem; color: var(--ink-soft); line-height: 1.85; }
-.rv-note b { color: var(--ink); }
-.rv-note a { color: var(--gold-deep); }
-
-.rv-cta { margin-top: 34px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+/* 안내 문구를 뺐으므로(대표 지시) 위 간격을 더 준다 */
+.rv-cta { margin-top: 46px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
 
 @media (max-width: 980px) {
   .rv-sec-survey .rv-grid { column-count: 2; }
