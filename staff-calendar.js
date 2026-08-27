@@ -146,6 +146,18 @@ async function load() {
   show($('mainCard'));
 }
 
+/* 아래로 당겨 새로고침이 부르는 곳 (대표 요청 2026-08-27).
+   load() 가 달력·다음 촬영·머리말·알림을 다시 받아온다. **보고 있던 칸도 같이 되살린다** —
+   안 그러면 알림 칸을 보다가 당겼을 때 날짜 칸이 새어 나온다 */
+async function refreshAll() {
+  const cur = curTab();
+  await load();
+  await settingsInit();          // load() 안에서도 부르지만 여기선 끝나기를 기다린다
+  if (cur === 'me') { meLoaded = true; await loadMe(); }
+  if (cur === 'set') renderSet();
+  applyTab(cur);                 // 맨 마지막에 — render/renderPanel 이 열어둔 것을 닫는다
+}
+
 /* 머리말 — 왼쪽 로고, 오른쪽에 사진과 이름 (대표 요청 2026-08-27).
    사진이 없으면 성 한 글자를 동그라미에 넣는다. 「?」(사용안내)도 여기 붙는다 */
 function renderTop(name, photo) {
@@ -349,6 +361,30 @@ async function pushSave(sub) {
 
 /* ===== 캘린더 · 내 기록 (대표 요청 2026-08-26 «탭 분리해서 넣을거야») ===== */
 let meLoaded = false;
+// 지금 보고 있는 칸
+function curTab() {
+  const b = document.querySelector('.sc-tab.active');
+  return (b && b.dataset.sct) || 'cal';
+}
+
+/* 어느 칸을 보여줄지 — 칸을 누를 때도, 당겨 새로고침한 뒤에도 **여기 하나만** 쓴다.
+   ⚠ 두 군데서 따로 여닫으면 곧 어긋난다. 새로고침이 renderPanel() 로 날짜 칸을 다시 그리는데,
+      그때 알림 칸을 보고 있으면 날짜 칸이 새어 나온다 (renderPanel 이 hidden 을 푼다) */
+function applyTab(cur) {
+  // 달력 판·날짜 칸·홈화면추가는 캘린더 칸에서만 보인다.
+  // ⚠ «캘린더냐» 로 판단해야 한다 — «내 기록이냐» 로 두면 칸을 더할 때마다 새어 나온다
+  const onCal = cur === 'cal';
+  ['calWrap', 'dayPanel'].forEach((id) => {
+    const el = $(id);
+    if (el) el.hidden = !onCal || (id === 'dayPanel' && !el.innerHTML);
+  });
+  const a2 = document.querySelector('.sc-a2hs-wrap');
+  if (a2) a2.hidden = !onCal;
+  $('ntBody').hidden = cur !== 'nt';
+  $('meBody').hidden = cur !== 'me';
+  $('setBody').hidden = cur !== 'set';
+}
+
 function tabsInit() {
   const tabs = $('scTabs');
   if (!tabs || tabs.dataset.on) return;
@@ -358,18 +394,7 @@ function tabsInit() {
     if (!b) return;
     const cur = b.dataset.sct;                 // cal | nt | me | set
     tabs.querySelectorAll('.sc-tab').forEach((x) => x.classList.toggle('active', x === b));
-    // 달력 판·날짜 칸·홈화면추가는 캘린더 칸에서만 보인다.
-    // ⚠ «캘린더냐» 로 판단해야 한다 — «내 기록이냐» 로 두면 칸을 더할 때마다 새어 나온다
-    const onCal = cur === 'cal';
-    ['calWrap', 'dayPanel'].forEach((id) => {
-      const el = $(id);
-      if (el) el.hidden = !onCal || (id === 'dayPanel' && !el.innerHTML);
-    });
-    const a2 = document.querySelector('.sc-a2hs-wrap');
-    if (a2) a2.hidden = !onCal;
-    $('ntBody').hidden = cur !== 'nt';
-    $('meBody').hidden = cur !== 'me';
-    $('setBody').hidden = cur !== 'set';
+    applyTab(cur);
     if (cur === 'me' && !meLoaded) { meLoaded = true; loadMe(); }
     if (cur === 'set') renderSet();
   });
@@ -1032,6 +1057,75 @@ if (todayBtn) todayBtn.addEventListener('click', goToday);
     goMonth(dx < 0 ? 1 : -1);        // 왼쪽으로 밀면 다음 달
   }, { passive: true });
   el.addEventListener('touchcancel', () => { x0 = null; }, { passive: true });
+})();
+
+/* ── 아래로 당겨 새로고침(폰) ── (대표 요청 2026-08-27 «아래로 당기면 새로고침 되게해줭»)
+   홈 화면에 담은 앱에는 사파리의 「당겨 새로고침」이 아예 없다 — 우리가 만든다.
+   ⚠ 세로 스크롤·좌우로 밀어 달 넘기기와 헷갈리면 안 된다:
+     ① 화면 **맨 위**에서 시작한 손짓만 받는다 (중간에서 훑어 올리는 것을 가로채면 안 된다)
+     ② 처음 8px 로 가로·세로를 정하고 **세로 + 아래쪽** 일 때만 당긴다
+     ③ 팝업이 떠 있으면 손대지 않는다
+   ⚠ touchmove 를 passive 로 두면 안 된다 — 고무줄처럼 튕기는 것을 막아야 당겨진다.
+      대신 당기는 중이 아니면 첫 줄에서 바로 빠져나온다 (스크롤이 굼떠지지 않게) */
+(function pullRefresh() {
+  const OFF = 50;                  // 평소엔 이만큼 위로 숨어 있다
+  const MAX = 96;                  // 이보다 더 당겨도 안 내려온다
+  const ON = 56;                   // 이만큼 당기고 놓으면 새로고침
+  const bar = document.createElement('div');
+  bar.className = 'sc-pull';
+  bar.innerHTML = '<span class="sc-pull-c"><i></i><b>당기면 새로고침</b></span>';
+  document.body.appendChild(bar);
+  const txt = bar.querySelector('b');
+
+  let y0 = null, x0 = 0, axis = null, dist = 0, busy = false;
+  const atTop = () => (window.scrollY || document.documentElement.scrollTop || 0) <= 0;
+  const put = (d, o) => {
+    bar.style.transform = 'translateY(' + (Math.min(d, MAX) - OFF) + 'px)';
+    bar.style.opacity = String(o);
+  };
+  const reset = () => {
+    bar.classList.remove('ready', 'go');
+    bar.style.transform = ''; bar.style.opacity = '';
+    txt.textContent = '당기면 새로고침';
+    y0 = null; axis = null; dist = 0;
+  };
+
+  document.addEventListener('touchstart', (e) => {
+    if (busy || e.touches.length !== 1 || !atTop()) { y0 = null; return; }
+    if (document.querySelector('.sc-modal:not([hidden])')) { y0 = null; return; }
+    y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; axis = null; dist = 0;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (y0 === null || e.touches.length !== 1) return;
+    const dy = e.touches[0].clientY - y0;
+    const dx = e.touches[0].clientX - x0;
+    if (axis === null) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      axis = Math.abs(dy) > Math.abs(dx) ? 'y' : 'x';
+    }
+    if (axis !== 'y' || dy <= 0 || !atTop()) { reset(); return; }
+    e.preventDefault();            // 고무줄처럼 튕기는 것을 막아야 당겨진다
+    dist = dy * 0.6;               // 손가락보다 천천히 — 당기는 손맛
+    put(dist, Math.min(1, dist / ON));
+    const ready = dist >= ON;
+    bar.classList.toggle('ready', ready);
+    txt.textContent = ready ? '놓으면 새로고침' : '당기면 새로고침';
+  }, { passive: false });
+
+  document.addEventListener('touchend', () => {
+    if (y0 === null) return;
+    const go = dist >= ON;
+    y0 = null; axis = null;
+    if (!go) { reset(); return; }
+    busy = true;
+    bar.classList.add('go');
+    txt.textContent = '새로고침 중…';
+    put(ON, 1);
+    Promise.resolve(refreshAll()).catch(() => {}).then(() => { busy = false; reset(); });
+  }, { passive: true });
+
+  document.addEventListener('touchcancel', () => { if (y0 !== null) reset(); }, { passive: true });
 })();
 
 load();

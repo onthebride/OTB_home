@@ -521,3 +521,22 @@
 .sc-item.bk { padding: 13px 16px 12px; }
 .sc-item.bk .sc-nx-row { padding-top: 0; }
 .sc-nx-sv.none { color: var(--ink-soft); opacity: .7; }
+
+/* ── 아래로 당겨 새로고침 (대표 요청 2026-08-27) ──
+   평소엔 화면 위로 숨어 있다가 당긴 만큼 내려온다.
+   팝업(z-index 60)보다 **아래**에 둔다 — 팝업 위로 올라오면 안 된다 */
+.sc-pull { position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  display: flex; justify-content: center; pointer-events: none;
+  transform: translateY(-50px); opacity: 0; }
+.sc-pull-c { display: inline-flex; align-items: center; gap: 7px;
+  margin-top: 8px; padding: 7px 15px; border-radius: 999px;
+  background: #fff; border: 1px solid var(--line);
+  box-shadow: 0 4px 14px -4px rgba(43,39,36,.22);
+  font-size: .78rem; font-weight: 500; color: var(--ink-soft); white-space: nowrap; }
+.sc-pull-c i { width: 13px; height: 13px; border-radius: 50%; flex: 0 0 auto;
+  border: 2px solid var(--line); border-top-color: var(--gold); }
+.sc-pull.ready .sc-pull-c { color: var(--gold-deep); border-color: var(--gold); }
+/* 놓은 뒤엔 제자리에서 돌기만 한다 */
+.sc-pull.go { transition: transform .18s ease; }
+.sc-pull.go .sc-pull-c i { animation: sc-spin .7s linear infinite; }
+@keyframes sc-spin { to { transform: rotate(360deg); } }
