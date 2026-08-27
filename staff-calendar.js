@@ -131,6 +131,7 @@ async function load() {
   render();
   tabsInit();
   pushInit();          // 늦게 와도 된다 — 단추만 늦게 뜬다
+  settingsInit();      // 「설정」 칸을 띄울지 정한다 (지금은 대표만)
   clearBadge();        // 화면을 열었으니 아이콘 숫자를 지운다
   show($('mainCard'));
 }
@@ -247,15 +248,123 @@ function tabsInit() {
   tabs.addEventListener('click', (e) => {
     const b = e.target.closest('.sc-tab');
     if (!b) return;
-    const me = b.dataset.sct === 'me';
+    const cur = b.dataset.sct;                 // cal | me | set
     tabs.querySelectorAll('.sc-tab').forEach((x) => x.classList.toggle('active', x === b));
     // 달력 판·날짜 칸·홈화면추가는 캘린더 칸에서만 보인다
-    ['calWrap', 'dayPanel'].forEach((id) => { const el = $(id); if (el) el.hidden = me || (id === 'dayPanel' && !el.innerHTML); });
+    const onCal = cur === 'cal';
+    ['calWrap', 'dayPanel'].forEach((id) => {
+      const el = $(id);
+      if (el) el.hidden = !onCal || (id === 'dayPanel' && !el.innerHTML);
+    });
     const a2 = document.querySelector('.sc-a2hs-wrap');
-    if (a2) a2.hidden = me;
-    $('meBody').hidden = !me;
-    if (me && !meLoaded) { meLoaded = true; loadMe(); }
+    if (a2) a2.hidden = !onCal;
+    $('meBody').hidden = cur !== 'me';
+    $('setBody').hidden = cur !== 'set';
+    if (cur === 'me' && !meLoaded) { meLoaded = true; loadMe(); }
+    if (cur === 'set') renderSet();
   });
+}
+
+/* ===== 설정 (대표 요청 2026-08-27
+   «작가별 설정탭을 하나 더 추가해줘 / 거기에 알람여부도 넣고 / 스케줄을 계속 받을지
+     그만받을지도 토글 넣어줘 / 지정비용을 넣을 수 있게 해주고 /
+     지정비용은 우리랑 촬영 후 후기가 5개이상 쌓여야지만 비용을 넣을 수 있게 해줘»)
+
+   ⚠ 지금은 **대표 캘린더에만** 뜬다 (대표 «레이아웃은 내 김병훈 캘린더에만 보여주고
+   나머지는 최종 확인 후 배포하는걸로»). 다 열어줄 때는 아래 is_rep 줄만 지우면 된다.
+   ⚠ 후기 5건 문턱은 **서버가 막는다** — 화면만 잠그면 개발자도구로 그냥 부를 수 있다 */
+let setData = null;
+
+async function settingsInit() {
+  if (!sb || !staffId) return;
+  const { data, error } = await sb.rpc('staff_settings', { p_staff_id: staffId });
+  if (error || !data) return;
+  setData = data;
+  if (!data.is_rep) return;                    // ← 다 열어줄 때 이 줄만 지운다
+  const b = document.querySelector('.sc-tab[data-sct="set"]');
+  if (b) b.hidden = false;
+}
+
+const wonFmt = (n) => Number(n || 0).toLocaleString('ko-KR');
+
+function renderSet() {
+  const box = $('setBody');
+  if (!box) return;
+  const d = setData;
+  if (!d) { box.innerHTML = '<p class="sv-sub">설정을 불러오지 못했어요.</p>'; return; }
+  const fee = d.pick_fee == null ? '' : d.pick_fee;
+
+  box.innerHTML = `
+    <div class="sc-set">
+      <section class="sc-set-row">
+        <h3>알림</h3>
+        <p class="sc-set-d">예식 <b>날짜·시간·장소가 바뀌거나 취소</b>되면 폰으로 알려드려요.</p>
+        <div id="setPushSlot"></div>
+      </section>
+
+      <section class="sc-set-row">
+        <h3>스케줄 받기</h3>
+        <p class="sc-set-d">잠시 쉬실 때는 꺼두세요. 꺼두면 새 예식이 배정되지 않아요.
+          이미 배정된 예식은 그대로 있습니다.</p>
+        <button type="button" class="sc-sw${d.accepting ? ' on' : ''}" id="setAccept"
+          role="switch" aria-checked="${d.accepting ? 'true' : 'false'}">
+          <span class="sc-sw-k"></span><b>${d.accepting ? '받는 중' : '쉬는 중'}</b>
+        </button>
+      </section>
+
+      <section class="sc-set-row">
+        <h3>지정 촬영비</h3>
+        <p class="sc-set-d">신부님이 <b>작가님을 지정해</b> 예약하실 때 기본가에 더해지는 금액이에요.
+          안 받으시려면 0 을 적어주세요.</p>
+        ${d.can_fee ? `
+        <div class="sc-fee">
+          <input type="number" id="setFee" min="0" max="1000000" step="1000"
+            inputmode="numeric" value="${fee}" placeholder="예) 30000" />
+          <span class="sc-fee-w">원</span>
+          <button type="button" class="btn-sm primary" id="setFeeSave">저장</button>
+        </div>
+        <p class="sc-set-now" id="setFeeNow">${d.pick_fee == null ? '아직 안 정하셨어요.'
+          : d.pick_fee === 0 ? '지금은 <b>안 받는 것</b>으로 되어 있어요.'
+          : `지금 <b>${wonFmt(d.pick_fee)}원</b>으로 되어 있어요.`}</p>`
+        : `
+        <p class="sc-set-lock">촬영 후기가 <b>${d.need}건</b> 쌓이면 적으실 수 있어요.
+          지금은 <b>${d.reviews}건</b>이에요.</p>`}
+      </section>
+    </div>`;
+
+  // 알림 단추는 새로 만들지 않고 아래 있던 것을 이 칸으로 **옮겨 온다** —
+  // 같은 단추가 두 군데 있으면 한쪽만 눌러 놓고 헷갈린다. 옮겨도 손잡이는 그대로 붙어 있다
+  const slot = $('setPushSlot');
+  ['scPush', 'scPushNote'].forEach((id) => { const el = $(id); if (el && slot) slot.appendChild(el); });
+
+  const sw = $('setAccept');
+  if (sw) sw.addEventListener('click', () => setSave({ accepting: !setData.accepting }, sw));
+  const save = $('setFeeSave');
+  if (save) save.addEventListener('click', () => {
+    const v = String($('setFee').value || '').trim();
+    if (v === '') { toastSet('금액을 적어주세요.'); return; }
+    setSave({ pick_fee: Number(v) }, save);
+  });
+}
+
+function toastSet(msg) {
+  const el = $('setFeeNow') || $('setBody');
+  if (el) el.innerHTML = esc(msg);
+}
+
+async function setSave(patch, btn) {
+  if (btn) btn.disabled = true;
+  const { data, error } = await sb.rpc('staff_settings_set', { p_staff_id: staffId, p_patch: patch });
+  if (btn) btn.disabled = false;
+  if (error || !data) {
+    // 후기가 모자라면 서버가 막는다. 그 말을 그대로 옮기지 않고 알아듣게 바꿔준다
+    const m = /need (\d+) reviews \(now (\d+)\)/.exec(error && error.message || '');
+    toastSet(m ? `촬영 후기가 ${m[1]}건 쌓이면 적으실 수 있어요. 지금은 ${m[2]}건이에요.`
+      : '저장하지 못했어요. 잠시 후 다시 해주세요.');
+    return;
+  }
+  setData = data;
+  renderSet();
 }
 
 async function loadMe() {

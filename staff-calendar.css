@@ -342,3 +342,44 @@
 .sc-a2hs.on { border-color: var(--gold); color: var(--gold-deep); background: #faf4ea; }
 .sc-push-note { max-width: 320px; margin: 8px auto 0; font-size: .78rem; line-height: 1.6;
   color: var(--ink-soft); text-align: center; }
+
+/* ===== 설정 칸 (대표 요청 2026-08-27) ===== */
+.sc-set { max-width: 460px; margin: 0 auto; }
+.sc-set-row { padding: 20px 0; border-bottom: 1px solid var(--line); }
+.sc-set-row:last-child { border-bottom: none; }
+.sc-set-row h3 { margin: 0 0 5px; font-family: var(--kserif, inherit); font-size: 1.02rem;
+  font-weight: 600; color: var(--ink); }
+.sc-set-d { margin: 0 0 12px; font-size: .84rem; line-height: 1.7; color: var(--ink-soft); }
+.sc-set-d b { color: var(--ink); font-weight: 600; }
+
+/* 스케줄 받기 스위치 — 지금 켜졌는지가 한눈에 보여야 한다 */
+.sc-sw { display: inline-flex; align-items: center; gap: 10px; cursor: pointer;
+  border: 1px solid var(--line); background: #fff; border-radius: 999px;
+  padding: 7px 16px 7px 8px; font-family: inherit; font-size: .88rem; color: var(--ink-soft); }
+.sc-sw b { font-weight: 600; }
+.sc-sw-k { width: 38px; height: 22px; border-radius: 999px; background: #d9d1c6;
+  position: relative; transition: background .2s ease; flex: 0 0 auto; }
+.sc-sw-k::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px;
+  border-radius: 50%; background: #fff; transition: left .2s ease; }
+.sc-sw.on { border-color: var(--gold); color: var(--gold-deep); background: #faf4ea; }
+.sc-sw.on .sc-sw-k { background: var(--gold); }
+.sc-sw.on .sc-sw-k::after { left: 19px; }
+
+/* 지정 촬영비 */
+.sc-fee { display: flex; align-items: center; gap: 8px; }
+.sc-fee input { flex: 1 1 auto; min-width: 0; font-family: inherit; font-size: .95rem;
+  padding: 9px 12px; border: 1px solid var(--line); border-radius: 7px; background: #fff;
+  text-align: right; }
+.sc-fee input:focus { outline: none; border-color: var(--gold); }
+.sc-fee-w { font-size: .88rem; color: var(--ink-soft); }
+.sc-set-now { margin: 9px 0 0; font-size: .82rem; color: var(--ink-soft); }
+.sc-set-now b { color: var(--gold-deep); font-weight: 600; }
+/* 후기가 모자라 아직 못 적는 상태 — 잠긴 이유를 숫자로 보여준다 */
+.sc-set-lock { margin: 0; padding: 11px 13px; font-size: .84rem; line-height: 1.7;
+  color: var(--ink-soft); background: var(--cream, #f7f3ee); border: 1px solid var(--line);
+  border-radius: 8px; }
+.sc-set-lock b { color: var(--ink); font-weight: 600; }
+
+/* 알림 단추를 이 칸으로 옮겨 오므로 가운데 정렬을 풀어준다 */
+#setPushSlot .sc-a2hs { margin: 0; }
+#setPushSlot .sc-push-note { margin: 8px 0 0; text-align: left; max-width: none; }

@@ -19,7 +19,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="survey.css?v=ef64d2b331" />
   <link rel="stylesheet" href="guide.css?v=8b8ebc02c8" />
-  <link rel="stylesheet" href="staff-calendar.css?v=c94a1001dc" />
+  <link rel="stylesheet" href="staff-calendar.css?v=c59c31d90a" />
 </head>
 <body>
   <header class="sv-header">
@@ -45,8 +45,12 @@
       <div class="sc-tabs" id="scTabs">
         <button type="button" class="sc-tab active" data-sct="cal">캘린더</button>
         <button type="button" class="sc-tab" data-sct="me">내 기록</button>
+        <!-- 설정은 지금 대표 캘린더에만 뜬다 (대표 «레이아웃은 내 김병훈 캘린더에만 보여주고
+             나머지는 최종 확인 후 배포하는걸로», 2026-08-27). staff_settings 가 is_rep 를 주면 켠다 -->
+        <button type="button" class="sc-tab" data-sct="set" hidden>설정</button>
       </div>
       <div id="meBody" hidden><p class="sv-sub">불러오는 중…</p></div>
+      <div id="setBody" hidden><p class="sv-sub">불러오는 중…</p></div>
       <!-- 사용안내는 팝업으로. 처음 오면 저절로 뜨고, [그만 띄우기] 를 누르면
            인사말 옆 아이콘으로 접힌다. 아이콘을 누르면 다시 열린다 (대표 요청) -->
       <div class="sc-modal" id="helpModal" hidden>
@@ -113,6 +117,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="staff-calendar.js?v=08c1b3c18d"></script>
+  <script src="staff-calendar.js?v=062ffb2c67"></script>
 </body>
 </html>
