@@ -67,3 +67,9 @@
   .rv-lead { font-size: .88rem; margin-bottom: 24px; }
   .rv-sec + .rv-sec { margin-top: 32px; padding-top: 28px; }
 }
+
+/* 아래 단추 둘 — 「홈으로」와 「예약 문의하기」. 좁으면 세로로 쌓는다 */
+.rules-page-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+@media (max-width: 480px) {
+  .rules-page-actions .btn { width: 100%; box-sizing: border-box; }
+}

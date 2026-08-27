@@ -104,7 +104,9 @@ a { color: inherit; text-decoration: none; }
 .brand-logo-dark { display: none; }
 .site-header.scrolled .brand-logo-light { display: none; }
 .site-header.scrolled .brand-logo-dark { display: block; }
-.nav-menu { list-style: none; display: flex; align-items: center; gap: 38px; }
+/* 칸이 여덟이 되면서 1000px 안팎에서 빠듯하다. 좁아질수록 사이를 좁힌다
+   (860px 아래로는 어차피 햄버거로 접힌다) */
+.nav-menu { list-style: none; display: flex; align-items: center; gap: clamp(20px, 3.2vw, 38px); }
 .nav-menu a {
   font-size: .92rem; font-weight: 500; letter-spacing: .03em;
   color: rgba(255,255,255,.92); transition: color .25s ease;
@@ -564,7 +566,9 @@ input.readonly { background: var(--cream); color: var(--ink-soft); cursor: not-a
     max-height: 0; overflow: hidden; visibility: hidden;
     transition: max-height .3s ease, padding .3s ease, visibility .3s;
   }
-  .nav-menu.open { max-height: 420px; padding: 10px 0; visibility: visible; }
+  /* 칸이 하나 늘 때마다 여기도 늘려야 한다 — 넘치면 아래 것이 잘려서 안 보인다.
+     지금 여덟 칸 × 48px ≈ 384px (2026-08-27 「후기」 추가) */
+  .nav-menu.open { max-height: 520px; padding: 10px 0; visibility: visible; }
   .nav-menu li { width: 100%; text-align: center; }
   .nav-menu a { display: block; padding: 14px 0; color: var(--ink) !important; }
   .nav-cta { border: none; }
