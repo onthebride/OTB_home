@@ -801,8 +801,20 @@ function renderView(b, flash) {
     `<div><p class="dl">${label}</p><p class="dv">${esc(value || '-')}</p></div>`;
   $('modalCard').innerHTML = `
     <button class="modal-close" id="modalClose">&times;</button>
-    <p class="modal-title">${esc(b.contractor_name || '예약')} 님 <span class="badge ${esc(b.status)}">${esc(b.status)}</span></p>
-    <p class="modal-sub">접수 ${esc(fmtDateTime(b.created_at))}</p>
+    <!-- 수정·취소·삭제를 **맨 위 오른쪽**에 붙인다 (대표 요청 2026-08-27
+         «길면 스크롤이 너무 기네 폰에서도 그렇고 / 버튼은 좀 작아도 돼»).
+         아래에 두면 예약이 길 때 한참 내려가야 눌린다 -->
+    <div class="md-head">
+      <div class="md-head-t">
+        <p class="modal-title">${esc(b.contractor_name || '예약')} 님 <span class="badge ${esc(b.status)}">${esc(b.status)}</span></p>
+        <p class="modal-sub">접수 ${esc(fmtDateTime(b.created_at))}</p>
+      </div>
+      <div class="md-acts">
+        <button class="btn-sm btn-primary-sm" id="mEdit">수정</button>
+        <button class="btn-sm" id="mCancelBk">${b.status === '취소' ? '취소 해제' : '예약 취소'}</button>
+        <button class="btn-sm od-cancel" id="mDelete">삭제</button>
+      </div>
+    </div>
     ${flash ? `<p class="save-msg ok" style="text-align:left;margin:0 0 12px">${esc(flash)}</p>` : ''}
 
     <div class="md-assignee">
@@ -869,11 +881,7 @@ function renderView(b, flash) {
       </div>
     </div>
 
-    <div class="modal-btns">
-      <button class="btn-primary" id="mEdit">수정</button>
-      <button class="btn-outline" id="mCancelBk">${b.status === '취소' ? '취소 해제' : '예약 취소'}</button>
-      <button class="btn-del" id="mDelete">삭제</button>
-    </div>`;
+    `;
 
   if ($('dbxBtn')) $('dbxBtn').addEventListener('click', () =>
     dbxShare(b, $('dbxBtn'), $('dbxBox'), document.querySelector('.dl-link-d')));

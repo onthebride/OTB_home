@@ -1504,3 +1504,19 @@ td .muted { color: var(--ink-soft); }
   .rv-pub-t { width: 100%; margin-right: 0; }
   .rv-item.off .rv-who::after { content: ''; }
 }
+
+/* 예약 상세의 수정·취소·삭제를 맨 위 오른쪽으로 (대표 요청 2026-08-27
+   «길면 스크롤이 너무 기네 폰에서도 그렇고 / 버튼은 좀 작아도 돼»).
+   ⚠ 오른쪽 위에는 닫기(×)가 절대위치로 떠 있다 — 그만큼 비워야 겹치지 않는다 */
+.md-head { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap;
+  padding-right: 34px; margin-bottom: 12px; }
+.md-head-t { min-width: 0; }                 /* flex 안에서는 min-width 가 auto 라 안 줄어든다 */
+.md-head .modal-title { margin-bottom: 2px; }
+.md-head .modal-sub { margin: 0; }
+.md-acts { margin-left: auto; display: flex; gap: 6px; flex-shrink: 0; }
+
+@media (max-width: 560px) {
+  /* 좁으면 이름 아래로 내려 오른쪽에 붙인다 — 한 줄로 버티면 이름이 두 글자씩 끊긴다 */
+  .md-head { padding-right: 30px; }
+  .md-acts { width: 100%; justify-content: flex-end; margin-top: 2px; }
+}
