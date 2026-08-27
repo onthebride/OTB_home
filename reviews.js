@@ -50,13 +50,79 @@ function surveyCard(r) {
    대표가 그린 대로 «이름 / 홀 이름 / 후기 링크» 석 줄만.
    어디에 올린 글인지(블로그·카페) 딱지는 뺐다 — 대표 말대로 손님에겐 구분이 안 된다 */
 function linkCard(r) {
+  // 주소는 href 에 그대로 둔다 — 새 탭으로 열기·주소 복사·검색엔진이 다 이걸 본다.
+  // 창으로 띄우는 건 그 위에 얹는 것뿐이라, 스크립트가 죽어도 링크는 살아 있다
   return `
-  <a class="rv-card rv-link" href="${esc(r.url)}" target="_blank" rel="noopener nofollow">
+  <a class="rv-card rv-link" href="${esc(r.url)}" target="_blank" rel="noopener nofollow"
+     data-rvopen="${esc(r.url)}" data-rvwho="${esc(r.who || '')}" data-rvvenue="${esc(r.venue || '')}">
     ${brideLine(r)}
     ${metaLine(r)}
     <span class="rv-go">후기 보러 가기 ›</span>
   </a>`;
 }
+
+/* ===== 후기 글을 이 자리에서 보여주는 창 (대표 «새창 말고 팝업형식으로 가능? 좀 무겁나?»)
+
+   무겁지 않다 — 창은 **누를 때만** 남의 글을 불러온다. 안 누르면 아무것도 안 받는다.
+   다만 남의 사이트를 끼워 넣는 것이라 **안 열릴 수 있다**:
+     · 네이버 카페는 헤더로 아예 막는다 (x-frame-options: SAMEORIGIN)
+     · 블로그는 지금은 열리지만 언제 막힐지 모른다
+   그래서 ①못 열 곳은 아예 새 탭으로 보내고 ②열다 안 되면 안내와 함께 새 탭 단추를 준다.
+   어느 쪽으로 넘어져도 후기는 볼 수 있다. */
+const CANT_FRAME = /cafe\.naver|cafe\.daum|instagram/i;   // 끼워 넣기를 막는 곳
+let rvTimer = null;
+
+function modalInit() {
+  const box = $('rvModal'), frame = $('rvFrame'), msg = $('rvModalMsg');
+  if (!box || !frame) return;
+
+  const close = () => {
+    box.hidden = true;
+    frame.removeAttribute('src');            // 소리·영상이 계속 도는 것을 막는다
+    document.body.style.overflow = '';
+    if (rvTimer) { clearTimeout(rvTimer); rvTimer = null; }
+  };
+  const fail = () => {
+    frame.style.visibility = 'hidden';
+    msg.hidden = false;
+    msg.innerHTML = '이 글은 여기서 바로 보여드릴 수 없습니다.<br />오른쪽 위 <b>새 창으로 열기</b>를 눌러주세요.';
+  };
+
+  document.body.addEventListener('click', (e) => {
+    const a = e.target.closest('[data-rvopen]');
+    if (!a) return;
+    const url = a.dataset.rvopen;
+    if (CANT_FRAME.test(url)) return;         // 막힌 곳은 손대지 않는다 — 원래대로 새 탭
+    e.preventDefault();
+
+    $('rvModalT').textContent = [a.dataset.rvwho && a.dataset.rvwho + ' 님', a.dataset.rvvenue]
+      .filter(Boolean).join(' · ');
+    $('rvModalOpen').href = url;
+    msg.hidden = false;
+    msg.textContent = '불러오는 중입니다…';
+    frame.style.visibility = 'hidden';
+    frame.src = url;
+    box.hidden = false;
+    document.body.style.overflow = 'hidden';
+
+    // 막히면 onload 가 안 오거나 빈 화면이 온다. 기다리다 안 되면 안내로 바꾼다
+    if (rvTimer) clearTimeout(rvTimer);
+    rvTimer = setTimeout(fail, 6000);
+  });
+
+  frame.addEventListener('load', () => {
+    if (!frame.src) return;
+    if (rvTimer) { clearTimeout(rvTimer); rvTimer = null; }
+    msg.hidden = true;
+    frame.style.visibility = 'visible';
+  });
+  frame.addEventListener('error', fail);
+
+  $('rvModalX').addEventListener('click', close);
+  $('rvModalBg').addEventListener('click', close);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !box.hidden) close(); });
+}
+modalInit();
 
 function section(title, desc, rows, card, cls) {
   if (!rows.length) return '';

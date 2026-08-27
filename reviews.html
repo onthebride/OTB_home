@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=628796a76a" />
-  <link rel="stylesheet" href="/reviews.css?v=537f8ca7a1" />
+  <link rel="stylesheet" href="/reviews.css?v=1f78482da5" />
 </head>
 <body>
 
@@ -77,6 +77,29 @@
     </div>
   </main>
 
+  <!-- 후기 글을 이 자리에서 바로 보여주는 창 (대표 «새창 말고 팝업형식으로 가능?»).
+       ⚠ 남의 사이트를 끼워 넣는 것이라 **안 열릴 수 있다.**
+       · 네이버 카페는 헤더로 아예 막는다 (x-frame-options: SAMEORIGIN)
+       · 블로그는 열리지만 언제 막힐지 모른다
+       그래서 못 열면 「새 창으로 열기」로 넘겨준다. 창은 눌렀을 때만 만들므로 평소엔 무게가 0 이다.
+       sandbox 에 allow-top-navigation 을 **주지 않는다** — 안 그러면 남의 글이
+       우리 페이지를 통째로 자기 쪽으로 끌고 갈 수 있다 -->
+  <div class="rv-modal" id="rvModal" hidden>
+    <div class="rv-modal-bg" id="rvModalBg"></div>
+    <div class="rv-modal-box" role="dialog" aria-modal="true" aria-label="후기 보기">
+      <div class="rv-modal-head">
+        <p class="rv-modal-t" id="rvModalT"></p>
+        <a class="btn-line" id="rvModalOpen" href="#" target="_blank" rel="noopener nofollow">새 창으로 열기 ↗</a>
+        <button type="button" class="rv-modal-x" id="rvModalX" aria-label="닫기">&times;</button>
+      </div>
+      <div class="rv-modal-body">
+        <p class="rv-modal-msg" id="rvModalMsg">불러오는 중입니다…</p>
+        <iframe id="rvFrame" title="후기" referrerpolicy="no-referrer"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== Footer ===== -->
   <footer class="site-footer">
     <div class="container footer-inner">
@@ -90,7 +113,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/config.js"></script>
-  <script src="/reviews.js?v=a7ae1404ff"></script>
+  <script src="/reviews.js?v=95a930e9c7"></script>
   <script defer src="/analytics.js?v=2437a22e8c"></script>
 </body>
 </html>
