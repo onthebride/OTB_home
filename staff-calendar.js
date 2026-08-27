@@ -132,6 +132,7 @@ async function load() {
   tabsInit();
   pushInit();          // 늦게 와도 된다 — 단추만 늦게 뜬다
   settingsInit();      // 「설정」 칸을 띄울지 정한다 (지금은 대표만)
+  loadNotices();       // 확인할 것 — 폰 알림이 못 갔어도 여기서 본다
   clearBadge();        // 화면을 열었으니 아이콘 숫자를 지운다
   show($('mainCard'));
 }
@@ -190,13 +191,19 @@ async function pushInit() {
   btn.addEventListener('click', () => pushEnable(btn, note));
 }
 
+/* 알림이 **이미 켜져 있으면** 캘린더 첫 화면에서는 감춘다 (대표 요청 2026-08-27
+   «알림이 켜져있으면 캘린더 첫화면서 알림은꺼줘»).
+   켜라고 권하는 단추라 이미 켠 사람에겐 거치적거린다. 끄고 켜는 건 「설정」 칸에서 한다.
+   ⚠ 설정 칸으로 옮겨 간 뒤에는 **늘 보여야 한다** — 안 그러면 끌 길이 없어진다 */
+let pushInSet = false;
+
 function pushOn(btn, note) {
-  btn.hidden = false;
   btn.textContent = '🔔 알림 켜짐';
   btn.classList.add('on');
-  note.hidden = false;
   note.textContent = '예식 날짜·시간·장소가 바뀌거나 취소되면 알려드려요. (누르면 끕니다)';
   btn.onclick = () => pushDisable(btn, note);
+  btn.hidden = !pushInSet;
+  note.hidden = !pushInSet;
 }
 
 async function pushEnable(btn, note) {
@@ -263,6 +270,66 @@ function tabsInit() {
     if (cur === 'me' && !meLoaded) { meLoaded = true; loadMe(); }
     if (cur === 'set') renderSet();
   });
+}
+
+/* ===== 확인할 것 (대표 요청 2026-08-27
+   «알림이 안갈수도 있으니까 노티를 해줬으면 하는데 확인할거 따로 모아서»)
+
+   폰 알림은 못 갈 수 있다 — 안 켰거나, 껐거나, 등록이 죽었거나, 폰이 꺼져 있었거나.
+   그래서 보낸 것을 DB 에 남겨두고 캘린더를 열면 그 자리에서 보이게 한다.
+   **알림이 갔든 안 갔든 캘린더만 열면 놓치지 않는다.** 챙길 게 없으면 통째로 접는다. */
+let ntData = null;
+let ntShowOld = false;
+
+async function loadNotices() {
+  if (!sb || !staffId) return;
+  const { data, error } = await sb.rpc('staff_notices', { p_staff_id: staffId });
+  if (error || !data) return;
+  ntData = data;
+  renderNotices();
+}
+
+function renderNotices() {
+  const box = $('scNotice');
+  if (!box || !ntData) return;
+  const all = ntData.rows || [];
+  const unread = all.filter((r) => r.unread);
+  const old = all.filter((r) => !r.unread);
+  // 챙길 게 없으면 접는다. 지난 것만 있을 때는 굳이 자리를 차지하지 않는다
+  if (!unread.length && !(ntShowOld && old.length)) { box.hidden = true; box.innerHTML = ''; return; }
+
+  const item = (r) => `
+    <div class="sc-nt-item${r.unread ? ' unread' : ''}">
+      <p class="sc-nt-t">${esc(r.title)}<span>${esc(r.at)}</span></p>
+      <p class="sc-nt-b">${esc(r.body)}</p>
+      ${r.unread ? `<button type="button" class="btn-sm sc-nt-ok" data-nt="${r.id}">확인했어요</button>` : ''}
+    </div>`;
+
+  box.hidden = false;
+  box.innerHTML = `
+    <div class="sc-nt-head">
+      <b>확인할 것${unread.length ? ` <i>${unread.length}</i>` : ''}</b>
+      ${unread.length > 1 ? '<button type="button" class="btn-sm" id="ntAll">모두 확인</button>' : ''}
+    </div>
+    <div class="sc-nt-list">${(ntShowOld ? all : unread).map(item).join('')}</div>
+    ${old.length ? `<button type="button" class="sc-nt-more" id="ntMore">${
+      ntShowOld ? '지난 것 접기' : `지난 것 ${old.length}개 보기`}</button>` : ''}`;
+
+  box.querySelectorAll('[data-nt]').forEach((b) =>
+    b.addEventListener('click', () => ntRead(Number(b.dataset.nt))));
+  const all2 = $('ntAll');
+  if (all2) all2.addEventListener('click', () => ntRead(null));
+  const more = $('ntMore');
+  if (more) more.addEventListener('click', () => { ntShowOld = !ntShowOld; renderNotices(); });
+}
+
+async function ntRead(id) {
+  const { data, error } = await sb.rpc('staff_notice_read',
+    id == null ? { p_staff_id: staffId } : { p_staff_id: staffId, p_id: id });
+  if (error || !data) return;
+  ntData = data;
+  renderNotices();
+  clearBadge();        // 다 확인했으면 홈 화면 아이콘 숫자도 지운다
 }
 
 /* ===== 설정 (대표 요청 2026-08-27
@@ -336,6 +403,10 @@ function renderSet() {
   // 같은 단추가 두 군데 있으면 한쪽만 눌러 놓고 헷갈린다. 옮겨도 손잡이는 그대로 붙어 있다
   const slot = $('setPushSlot');
   ['scPush', 'scPushNote'].forEach((id) => { const el = $(id); if (el && slot) slot.appendChild(el); });
+  // 캘린더 첫 화면에서는 「켜짐」을 감춰뒀다. 여기서는 끌 수 있어야 하므로 도로 보여준다
+  pushInSet = true;
+  const pb = $('scPush'), pn = $('scPushNote');
+  if (pb && pb.classList.contains('on')) { pb.hidden = false; if (pn) pn.hidden = false; }
 
   const sw = $('setAccept');
   if (sw) sw.addEventListener('click', () => setSave({ accepting: !setData.accepting }, sw));
