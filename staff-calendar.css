@@ -384,27 +384,44 @@
 #setPushSlot .sc-a2hs { margin: 0; }
 #setPushSlot .sc-push-note { margin: 8px 0 0; text-align: left; max-width: none; }
 
-/* ===== 확인할 것 (대표 요청 2026-08-27) =====
-   폰 알림이 못 갔어도 캘린더를 열면 여기 남아 있다. 달력 바로 위에 둔다 —
-   아래에 두면 스크롤을 내려야 보여서 「못 봤다」가 그대로 남는다 */
-.sc-notice { margin: 0 0 14px; border: 1px solid var(--gold); border-radius: 10px;
-  background: #fdf8f0; padding: 13px 15px 12px; }
-.sc-nt-head { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
-.sc-nt-head b { margin-right: auto; font-size: .92rem; color: var(--ink); }
-.sc-nt-head b i { font-style: normal; margin-left: 5px; font-size: .78rem; font-weight: 600;
-  color: #fff; background: #b5462f; border-radius: 999px; padding: 1px 8px; }
+
+/* ===== 알림 칸 (대표 요청 2026-08-27 «알림 탭이 따로 있었음 좋겠어 / 내역도 볼 수 있고 /
+   확인안한건 진하게 / 확인누른건 보통으로 / 10개정도만 해서 페이지 네이션») =====
+   ⚠ 칸으로 빼면 눌러야 보인다 — 그래서 안 읽은 수를 칸 이름 옆에 붙인다 */
+.sc-tab-n { font-style: normal; margin-left: 5px; font-size: .68rem; font-weight: 700;
+  color: #fff; background: #b5462f; border-radius: 999px; padding: 1px 6px; vertical-align: 2px; }
+
+.sc-nt-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.sc-nt-head b { margin-right: auto; font-size: .95rem; color: var(--ink); }
+.sc-nt-head b i { font-style: normal; margin-left: 6px; font-size: .76rem; font-weight: 600;
+  color: #b5462f; }
 .sc-nt-list { display: flex; flex-direction: column; gap: 8px; }
-.sc-nt-item { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 11px 13px; }
-.sc-nt-item.unread { border-color: #e0cfae; }
+
+/* 확인한 것은 보통, 안 한 것은 진하게 (대표 지시) */
+.sc-nt-item { background: #fff; border: 1px solid var(--line); border-radius: 9px; padding: 13px 15px; }
+.sc-nt-item.unread { border-color: var(--gold); background: #fdf8f0; }
 .sc-nt-t { margin: 0 0 4px; display: flex; align-items: baseline; gap: 8px;
-  font-size: .88rem; font-weight: 600; color: var(--ink); }
+  font-size: .88rem; font-weight: 400; color: var(--ink-soft); }
+.sc-nt-item.unread .sc-nt-t { font-weight: 700; color: var(--ink); }
 .sc-nt-t span { margin-left: auto; font-size: .74rem; font-weight: 400; color: var(--ink-soft);
   white-space: nowrap; }
 .sc-nt-b { margin: 0; font-size: .84rem; line-height: 1.7; color: var(--ink-soft);
   white-space: pre-wrap; word-break: break-word; }
-.sc-nt-item .sc-nt-ok { margin-top: 9px; }
-/* 이미 확인한 것은 흐리게 — 없애지는 않는다. 급히 눌렀다가 다시 볼 수 있어야 한다 */
-.sc-nt-item:not(.unread) { opacity: .62; }
-.sc-nt-more { margin: 9px 0 0; background: none; border: none; cursor: pointer;
-  font-family: inherit; font-size: .78rem; color: var(--gold-deep); padding: 0; }
-.sc-nt-more:hover { text-decoration: underline; }
+.sc-nt-item.unread .sc-nt-b { color: var(--ink); }
+.sc-nt-item .sc-nt-ok { margin-top: 10px; }
+.sc-nt-empty { text-align: center; color: var(--ink-soft); font-size: .88rem; line-height: 1.8;
+  padding: 34px 0; }
+
+/* 쪽 나누기 — 캘린더 화살표(.btn-nav)와 같은 결로 */
+.sc-pg { display: flex; justify-content: center; align-items: center; gap: 4px; margin-top: 16px; }
+.sc-pg-a, .sc-pg-n { min-width: 32px; height: 32px; padding: 0 6px; border: 1px solid var(--line);
+  background: #fff; border-radius: 7px; cursor: pointer; font-family: inherit; font-size: .84rem;
+  color: var(--ink-soft); }
+.sc-pg-a:hover:not(:disabled), .sc-pg-n:hover { border-color: var(--gold); color: var(--gold-deep); }
+.sc-pg-a:disabled { opacity: .35; cursor: default; }
+.sc-pg-n.on { background: var(--ink); border-color: var(--ink); color: #fff; font-weight: 600; }
+.sc-pg-d { color: var(--ink-soft); padding: 0 2px; }
+
+/* 설정 안의 안내 한 줄 (알림을 못 켤 때 등) */
+.sc-set-msg { margin: 9px 0 0; font-size: .8rem; line-height: 1.7; color: #b5462f; }
+.sc-sw:disabled { opacity: .55; cursor: default; }

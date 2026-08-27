@@ -157,20 +157,49 @@ function clearBadge() {
   try { if (navigator.clearAppBadge) navigator.clearAppBadge(); } catch (_) {}
 }
 
+/* 알림 상태를 **한 곳**에 둔다 — 캘린더 아래 단추와 「설정」 칸 스위치가 같은 값을 보고 그린다.
+   두 군데가 저마다 상태를 들고 있으면 한쪽만 바뀌어 어긋난다 (2026-08-27 대표 요청으로 둘이 됐다) */
+let pushState = 'unknown';        // unknown | unsupported | off | on
+let pushMsg = '';
+
+function syncPush() {
+  const btn = $('scPush');
+  if (btn) {
+    // 켜져 있으면 캘린더 첫 화면에서는 감춘다 (대표 «알림이 켜져있으면 캘린더 첫화면서 알림은꺼줘»).
+    // 켜라고 권하는 단추라 이미 켠 사람에겐 거치적거린다. 끄는 건 「설정」 칸에서 한다
+    btn.hidden = pushState !== 'off';
+    btn.textContent = '🔔 알림 받기';
+  }
+  const note = $('scPushNote');
+  if (note) { note.hidden = !pushMsg; note.textContent = pushMsg; }
+
+  const sw = $('setPushSw');
+  if (sw) {
+    const on = pushState === 'on';
+    sw.classList.toggle('on', on);
+    sw.setAttribute('aria-checked', on ? 'true' : 'false');
+    sw.disabled = pushState === 'unsupported' || pushState === 'unknown';
+    const lab = sw.querySelector('b');
+    if (lab) lab.textContent = pushState === 'unsupported' ? '켤 수 없어요' : on ? '받는 중' : '꺼짐';
+  }
+  const hint = $('setPushMsg');
+  if (hint) { hint.hidden = !pushMsg; hint.textContent = pushMsg; }
+}
+
 async function pushInit() {
   const btn = $('scPush');
-  const note = $('scPushNote');
-  if (!btn) return;
+  if (btn) btn.addEventListener('click', pushToggle);   // 한 번만 건다
   if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
     // 아이폰에서 홈 화면에 추가하지 않고 사파리로 열면 여기로 온다
-    note.hidden = false;
-    note.textContent = '이 브라우저에서는 알림을 켤 수 없어요. 아이폰은 먼저 「홈 화면에 추가」를 하고 그 앱에서 열어주세요.';
+    pushState = 'unsupported';
+    pushMsg = '이 브라우저에서는 알림을 켤 수 없어요. 아이폰은 먼저 「홈 화면에 추가」를 하고 그 앱에서 열어주세요.';
+    syncPush();
     return;
   }
   try {
     scSw = await navigator.serviceWorker.register('sw.js', { scope: '/' });
     await navigator.serviceWorker.ready;
-  } catch (_) { return; }
+  } catch (_) { pushState = 'unsupported'; syncPush(); return; }
 
   let sub = await scSw.pushManager.getSubscription();
   // 열쇠가 바뀌었으면 옛 구독은 버린다
@@ -183,57 +212,48 @@ async function pushInit() {
     }
   }
   if (sub && Notification.permission === 'granted') {
-    await pushSave(sub);                    // 이미 켜져 있다 — 이 작가 것으로 다시 적어둔다
-    pushOn(btn, note);
-    return;
+    await pushSave(sub);            // 이미 켜져 있다 — 이 작가 것으로 다시 적어둔다
+    pushState = 'on';
+  } else {
+    pushState = 'off';
   }
-  btn.hidden = false;
-  btn.addEventListener('click', () => pushEnable(btn, note));
+  pushMsg = '';
+  syncPush();
 }
 
-/* 알림이 **이미 켜져 있으면** 캘린더 첫 화면에서는 감춘다 (대표 요청 2026-08-27
-   «알림이 켜져있으면 캘린더 첫화면서 알림은꺼줘»).
-   켜라고 권하는 단추라 이미 켠 사람에겐 거치적거린다. 끄고 켜는 건 「설정」 칸에서 한다.
-   ⚠ 설정 칸으로 옮겨 간 뒤에는 **늘 보여야 한다** — 안 그러면 끌 길이 없어진다 */
-let pushInSet = false;
-
-function pushOn(btn, note) {
-  btn.textContent = '🔔 알림 켜짐';
-  btn.classList.add('on');
-  note.textContent = '예식 날짜·시간·장소가 바뀌거나 취소되면 알려드려요. (누르면 끕니다)';
-  btn.onclick = () => pushDisable(btn, note);
-  btn.hidden = !pushInSet;
-  note.hidden = !pushInSet;
+async function pushToggle() {
+  if (pushState === 'on') await pushDisable();
+  else if (pushState === 'off') await pushEnable();
 }
 
-async function pushEnable(btn, note) {
+async function pushEnable() {
   try {
     if ((await Notification.requestPermission()) !== 'granted') {
-      note.hidden = false;
-      note.textContent = '알림이 거부되어 있어요. 폰 설정에서 이 앱의 알림을 켜주세요.';
+      pushMsg = '알림이 거부되어 있어요. 폰 설정에서 이 앱의 알림을 켜주세요.';
+      syncPush();
       return;
     }
     const sub = await scSw.pushManager.subscribe({
       userVisibleOnly: true, applicationServerKey: b64ToU8(VAPID_PUBLIC),
     });
     await pushSave(sub);
-    pushOn(btn, note);
+    pushState = 'on';
+    pushMsg = '';
   } catch (_) {
-    note.hidden = false;
-    note.textContent = '알림을 켜지 못했어요. 아이폰은 먼저 「홈 화면에 추가」를 하고 그 앱에서 켜주세요.';
+    pushMsg = '알림을 켜지 못했어요. 아이폰은 먼저 「홈 화면에 추가」를 하고 그 앱에서 켜주세요.';
   }
+  syncPush();
 }
 
-async function pushDisable(btn, note) {
+async function pushDisable() {
   try {
     const sub = await scSw.pushManager.getSubscription();
     // 이 작가 것만 끈다 — 같은 폰에 관리자 등록이 있으면 그건 그대로 둔다
     if (sub) { await sb.rpc('drop_push_subscription', { p_endpoint: sub.endpoint, p_staff_id: staffId }); }
   } catch (_) {}
-  btn.textContent = '🔔 알림 받기';
-  btn.classList.remove('on');
-  note.hidden = true;
-  btn.onclick = () => pushEnable(btn, note);
+  pushState = 'off';
+  pushMsg = '';
+  syncPush();
 }
 
 async function pushSave(sub) {
@@ -255,9 +275,10 @@ function tabsInit() {
   tabs.addEventListener('click', (e) => {
     const b = e.target.closest('.sc-tab');
     if (!b) return;
-    const cur = b.dataset.sct;                 // cal | me | set
+    const cur = b.dataset.sct;                 // cal | nt | me | set
     tabs.querySelectorAll('.sc-tab').forEach((x) => x.classList.toggle('active', x === b));
-    // 달력 판·날짜 칸·홈화면추가는 캘린더 칸에서만 보인다
+    // 달력 판·날짜 칸·홈화면추가는 캘린더 칸에서만 보인다.
+    // ⚠ «캘린더냐» 로 판단해야 한다 — «내 기록이냐» 로 두면 칸을 더할 때마다 새어 나온다
     const onCal = cur === 'cal';
     ['calWrap', 'dayPanel'].forEach((id) => {
       const el = $(id);
@@ -265,6 +286,7 @@ function tabsInit() {
     });
     const a2 = document.querySelector('.sc-a2hs-wrap');
     if (a2) a2.hidden = !onCal;
+    $('ntBody').hidden = cur !== 'nt';
     $('meBody').hidden = cur !== 'me';
     $('setBody').hidden = cur !== 'set';
     if (cur === 'me' && !meLoaded) { meLoaded = true; loadMe(); }
@@ -272,32 +294,47 @@ function tabsInit() {
   });
 }
 
-/* ===== 확인할 것 (대표 요청 2026-08-27
-   «알림이 안갈수도 있으니까 노티를 해줬으면 하는데 확인할거 따로 모아서»)
+/* ===== 알림 (대표 요청 2026-08-27
+   «알림이 안갈수도 있으니까 노티를 해줬으면 하는데 확인할거 따로 모아서»
+   «알림 탭이 따로 있었음 좋겠어 / 내역도 볼 수 있고 / 확인안한건 진하게 /
+     확인누른건 보통으로 / 10개정도만 해서 페이지 네이션»)
 
    폰 알림은 못 갈 수 있다 — 안 켰거나, 껐거나, 등록이 죽었거나, 폰이 꺼져 있었거나.
-   그래서 보낸 것을 DB 에 남겨두고 캘린더를 열면 그 자리에서 보이게 한다.
-   **알림이 갔든 안 갔든 캘린더만 열면 놓치지 않는다.** 챙길 게 없으면 통째로 접는다. */
+   그래서 보낸 것을 DB 에 남겨두고 여기서 본다. **알림이 갔든 안 갔든 놓치지 않는다.**
+   ⚠ 칸으로 빼면 눌러야 보인다 — 그래서 안 읽은 수를 **칸 이름 옆에** 붙여 밖에서도 알게 한다. */
 let ntData = null;
-let ntShowOld = false;
+let ntPage = 1;
 
-async function loadNotices() {
+async function loadNotices(page) {
   if (!sb || !staffId) return;
-  const { data, error } = await sb.rpc('staff_notices', { p_staff_id: staffId });
+  const { data, error } = await sb.rpc('staff_notices',
+    { p_staff_id: staffId, p_page: page || ntPage });
   if (error || !data) return;
   ntData = data;
+  ntPage = data.page;
   renderNotices();
 }
 
-function renderNotices() {
-  const box = $('scNotice');
-  if (!box || !ntData) return;
-  const all = ntData.rows || [];
-  const unread = all.filter((r) => r.unread);
-  const old = all.filter((r) => !r.unread);
-  // 챙길 게 없으면 접는다. 지난 것만 있을 때는 굳이 자리를 차지하지 않는다
-  if (!unread.length && !(ntShowOld && old.length)) { box.hidden = true; box.innerHTML = ''; return; }
+// 안 읽은 수는 칸 이름 옆에. 0 이면 딱지를 아예 없앤다
+function ntBadge() {
+  const el = $('ntCount');
+  if (!el) return;
+  const n = (ntData && ntData.unread) || 0;
+  el.hidden = !n;
+  el.textContent = n > 99 ? '99+' : String(n);
+}
 
+function renderNotices() {
+  ntBadge();
+  const box = $('ntBody');
+  if (!box || !ntData) return;
+  const rows = ntData.rows || [];
+  if (!rows.length) {
+    box.innerHTML = '<p class="sc-nt-empty">아직 알림이 없어요.<br />예식 날짜·시간·장소가 바뀌거나 취소되면 여기에 남습니다.</p>';
+    return;
+  }
+
+  // 확인 안 한 것은 진하게, 확인한 것은 보통으로 (대표 지시)
   const item = (r) => `
     <div class="sc-nt-item${r.unread ? ' unread' : ''}">
       <p class="sc-nt-t">${esc(r.title)}<span>${esc(r.at)}</span></p>
@@ -305,29 +342,44 @@ function renderNotices() {
       ${r.unread ? `<button type="button" class="btn-sm sc-nt-ok" data-nt="${r.id}">확인했어요</button>` : ''}
     </div>`;
 
-  box.hidden = false;
+  const pg = ntData.pages || 1;
+  const nums = [];
+  for (let i = 1; i <= pg; i++) {
+    // 쪽이 많아지면 앞뒤 두 칸과 처음·끝만 남긴다 — 폰에서 줄이 넘치면 못 누른다
+    if (i === 1 || i === pg || Math.abs(i - ntPage) <= 1) {
+      nums.push(`<button type="button" class="sc-pg-n${i === ntPage ? ' on' : ''}" data-ntp="${i}">${i}</button>`);
+    } else if (nums[nums.length - 1] !== '<span class="sc-pg-d">…</span>') {
+      nums.push('<span class="sc-pg-d">…</span>');
+    }
+  }
+
   box.innerHTML = `
     <div class="sc-nt-head">
-      <b>확인할 것${unread.length ? ` <i>${unread.length}</i>` : ''}</b>
-      ${unread.length > 1 ? '<button type="button" class="btn-sm" id="ntAll">모두 확인</button>' : ''}
+      <b>알림 ${ntData.total}건${ntData.unread ? ` <i>안 읽음 ${ntData.unread}</i>` : ''}</b>
+      ${ntData.unread ? '<button type="button" class="btn-sm" id="ntAll">모두 확인</button>' : ''}
     </div>
-    <div class="sc-nt-list">${(ntShowOld ? all : unread).map(item).join('')}</div>
-    ${old.length ? `<button type="button" class="sc-nt-more" id="ntMore">${
-      ntShowOld ? '지난 것 접기' : `지난 것 ${old.length}개 보기`}</button>` : ''}`;
+    <div class="sc-nt-list">${rows.map(item).join('')}</div>
+    ${pg > 1 ? `<div class="sc-pg">
+      <button type="button" class="sc-pg-a" data-ntp="${ntPage - 1}"${ntPage <= 1 ? ' disabled' : ''}>‹</button>
+      ${nums.join('')}
+      <button type="button" class="sc-pg-a" data-ntp="${ntPage + 1}"${ntPage >= pg ? ' disabled' : ''}>›</button>
+    </div>` : ''}`;
 
   box.querySelectorAll('[data-nt]').forEach((b) =>
     b.addEventListener('click', () => ntRead(Number(b.dataset.nt))));
-  const all2 = $('ntAll');
-  if (all2) all2.addEventListener('click', () => ntRead(null));
-  const more = $('ntMore');
-  if (more) more.addEventListener('click', () => { ntShowOld = !ntShowOld; renderNotices(); });
+  box.querySelectorAll('[data-ntp]').forEach((b) =>
+    b.addEventListener('click', () => { if (!b.disabled) loadNotices(Number(b.dataset.ntp)); }));
+  const all = $('ntAll');
+  if (all) all.addEventListener('click', () => ntRead(null));
 }
 
 async function ntRead(id) {
-  const { data, error } = await sb.rpc('staff_notice_read',
-    id == null ? { p_staff_id: staffId } : { p_staff_id: staffId, p_id: id });
+  const args = { p_staff_id: staffId, p_page: ntPage };
+  if (id != null) args.p_id = id;
+  const { data, error } = await sb.rpc('staff_notice_read', args);
   if (error || !data) return;
   ntData = data;
+  ntPage = data.page;
   renderNotices();
   clearBadge();        // 다 확인했으면 홈 화면 아이콘 숫자도 지운다
 }
@@ -366,7 +418,10 @@ function renderSet() {
       <section class="sc-set-row">
         <h3>알림</h3>
         <p class="sc-set-d">예식 <b>날짜·시간·장소가 바뀌거나 취소</b>되면 폰으로 알려드려요.</p>
-        <div id="setPushSlot"></div>
+        <button type="button" class="sc-sw" id="setPushSw" role="switch" aria-checked="false">
+          <span class="sc-sw-k"></span><b>불러오는 중</b>
+        </button>
+        <p class="sc-set-msg" id="setPushMsg" hidden></p>
       </section>
 
       <section class="sc-set-row">
@@ -399,14 +454,11 @@ function renderSet() {
       </section>
     </div>`;
 
-  // 알림 단추는 새로 만들지 않고 아래 있던 것을 이 칸으로 **옮겨 온다** —
-  // 같은 단추가 두 군데 있으면 한쪽만 눌러 놓고 헷갈린다. 옮겨도 손잡이는 그대로 붙어 있다
-  const slot = $('setPushSlot');
-  ['scPush', 'scPushNote'].forEach((id) => { const el = $(id); if (el && slot) slot.appendChild(el); });
-  // 캘린더 첫 화면에서는 「켜짐」을 감춰뒀다. 여기서는 끌 수 있어야 하므로 도로 보여준다
-  pushInSet = true;
-  const pb = $('scPush'), pn = $('scPushNote');
-  if (pb && pb.classList.contains('on')) { pb.hidden = false; if (pn) pn.hidden = false; }
+  // 알림도 스케줄 받기와 같은 스위치로 (대표 «설정에 알림켜짐도 토글로 해줘»).
+  // 상태는 pushState 한 곳에서 오고 syncPush() 가 그린다 — 여기서 따로 들고 있지 않는다
+  const psw = $('setPushSw');
+  if (psw) psw.addEventListener('click', pushToggle);
+  syncPush();
 
   const sw = $('setAccept');
   if (sw) sw.addEventListener('click', () => setSave({ accepting: !setData.accepting }, sw));

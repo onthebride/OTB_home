@@ -104,3 +104,14 @@
   .rv-modal-box { width: 100%; height: 100%; border-radius: 0; }
   .rv-modal-t { font-size: .84rem; }
 }
+
+/* ── 쪽 나누기 (대표 «일반후기는 10개하고 페이지 네이션 / 설문후기도10개하고 페이지네이션»).
+      자리마다 따로 넘긴다 — 한쪽을 넘겼다고 다른 쪽이 같이 넘어가면 안 된다 ── */
+.rv-pg { display: flex; justify-content: center; align-items: center; gap: 4px; margin-top: 20px; }
+.rv-pg-a, .rv-pg-n { min-width: 34px; height: 34px; padding: 0 7px; border: 1px solid var(--line);
+  background: #fff; border-radius: var(--radius, 4px); cursor: pointer; font-family: inherit;
+  font-size: .85rem; color: var(--ink-soft); transition: border-color .18s, color .18s; }
+.rv-pg-a:hover:not(:disabled), .rv-pg-n:hover { border-color: var(--gold); color: var(--gold-deep); }
+.rv-pg-a:disabled { opacity: .35; cursor: default; }
+.rv-pg-n.on { background: var(--ink); border-color: var(--ink); color: #fff; font-weight: 600; }
+.rv-pg-d { color: var(--ink-soft); padding: 0 2px; }

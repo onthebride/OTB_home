@@ -124,14 +124,67 @@ function modalInit() {
 }
 modalInit();
 
-function section(title, desc, rows, card, cls) {
+/* 한 자리에 열 개씩 (대표 «일반후기는 10개하고 페이지 네이션 / 설문후기도10개하고 페이지네이션»).
+   자리마다 쪽을 따로 넘긴다 — 한쪽을 넘겼다고 다른 쪽이 같이 넘어가면 안 된다 */
+const PER = 10;
+const pages = { link: 1, survey: 1 };
+
+function pager(key, total) {
+  const pg = Math.ceil(total / PER);
+  if (pg <= 1) return '';
+  const now = pages[key];
+  const nums = [];
+  for (let i = 1; i <= pg; i++) {
+    // 쪽이 많아지면 앞뒤 한 칸과 처음·끝만 — 폰에서 줄이 넘치면 못 누른다
+    if (i === 1 || i === pg || Math.abs(i - now) <= 1) {
+      nums.push(`<button type="button" class="rv-pg-n${i === now ? ' on' : ''}" data-rvp="${key}:${i}">${i}</button>`);
+    } else if (nums[nums.length - 1] !== '<span class="rv-pg-d">…</span>') {
+      nums.push('<span class="rv-pg-d">…</span>');
+    }
+  }
+  return `<div class="rv-pg">
+    <button type="button" class="rv-pg-a" data-rvp="${key}:${now - 1}"${now <= 1 ? ' disabled' : ''}>‹</button>
+    ${nums.join('')}
+    <button type="button" class="rv-pg-a" data-rvp="${key}:${now + 1}"${now >= pg ? ' disabled' : ''}>›</button>
+  </div>`;
+}
+
+function section(key, title, desc, rows, card, cls) {
   if (!rows.length) return '';
+  const pg = Math.max(1, Math.ceil(rows.length / PER));
+  // 쪽 번호가 범위를 벗어나면 바로잡는다 — 안 그러면 빈 자리가 나온다
+  if (pages[key] > pg) pages[key] = pg;
+  const from = (pages[key] - 1) * PER;
   return `
   <section class="rv-sec ${cls}">
     <h3 class="rv-sec-t">${title} <span class="rv-sec-n">${rows.length}</span></h3>
     <p class="rv-sec-d">${desc}</p>
-    <div class="rv-grid">${rows.map(card).join('')}</div>
+    <div class="rv-grid">${rows.slice(from, from + PER).map(card).join('')}</div>
+    ${pager(key, rows.length)}
   </section>`;
+}
+
+let rvAll = [];
+
+function renderReviews() {
+  const body = $('rvBody');
+  const links = rvAll.filter((r) => r.kind === 'link');
+  const surveys = rvAll.filter((r) => r.kind === 'survey');
+  body.innerHTML =
+    section('link', '일반 후기', '블로그와 웨딩카페에 직접 올려주신 글입니다. 누르시면 그 글로 이동합니다.',
+      links, linkCard, 'rv-sec-link')
+    + section('survey', '촬영 후 설문 후기', '촬영이 끝난 뒤 보내드린 설문에 남겨주신 글입니다. 받은 그대로 싣습니다.',
+      surveys, surveyCard, 'rv-sec-survey');
+
+  body.querySelectorAll('[data-rvp]').forEach((b) => b.addEventListener('click', () => {
+    if (b.disabled) return;
+    const [key, n] = b.dataset.rvp.split(':');
+    pages[key] = Number(n);
+    renderReviews();
+    // 쪽을 넘기면 그 자리의 맨 위로 올려준다 — 안 그러면 아래쪽만 바뀌어 바뀐 줄 모른다
+    const sec = body.querySelector('.rv-sec-' + key);
+    if (sec && sec.scrollIntoView) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }));
 }
 
 (async function load() {
@@ -143,12 +196,6 @@ function section(title, desc, rows, card, cls) {
     return;
   }
   if (!data.length) { body.innerHTML = '<p class="rv-empty">아직 올라온 후기가 없습니다.</p>'; return; }
-
-  const links = data.filter((r) => r.kind === 'link');
-  const surveys = data.filter((r) => r.kind === 'survey');
-  body.innerHTML =
-    section('일반 후기', '블로그와 웨딩카페에 직접 올려주신 글입니다. 누르시면 그 글로 이동합니다.',
-      links, linkCard, 'rv-sec-link')
-    + section('촬영 후 설문 후기', '촬영이 끝난 뒤 보내드린 설문에 남겨주신 글입니다. 받은 그대로 싣습니다.',
-      surveys, surveyCard, 'rv-sec-survey');
+  rvAll = data;
+  renderReviews();
 })();

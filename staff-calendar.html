@@ -19,7 +19,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="survey.css?v=ef64d2b331" />
   <link rel="stylesheet" href="guide.css?v=8b8ebc02c8" />
-  <link rel="stylesheet" href="staff-calendar.css?v=d067f21583" />
+  <link rel="stylesheet" href="staff-calendar.css?v=0998f50d91" />
 </head>
 <body>
   <header class="sv-header">
@@ -44,11 +44,14 @@
            «작가본인들 캘린더에 별로로 탭 분리해서 넣을거야») -->
       <div class="sc-tabs" id="scTabs">
         <button type="button" class="sc-tab active" data-sct="cal">캘린더</button>
+        <!-- 안 읽은 수를 칸에 붙인다 — 칸으로 빼면 눌러야 보이므로 밖에서도 알 수 있어야 한다 -->
+        <button type="button" class="sc-tab" data-sct="nt">알림<i class="sc-tab-n" id="ntCount" hidden></i></button>
         <button type="button" class="sc-tab" data-sct="me">내 기록</button>
         <!-- 설정은 지금 대표 캘린더에만 뜬다 (대표 «레이아웃은 내 김병훈 캘린더에만 보여주고
              나머지는 최종 확인 후 배포하는걸로», 2026-08-27). staff_settings 가 is_rep 를 주면 켠다 -->
         <button type="button" class="sc-tab" data-sct="set" hidden>설정</button>
       </div>
+      <div id="ntBody" hidden><p class="sv-sub">불러오는 중…</p></div>
       <div id="meBody" hidden><p class="sv-sub">불러오는 중…</p></div>
       <div id="setBody" hidden><p class="sv-sub">불러오는 중…</p></div>
       <!-- 사용안내는 팝업으로. 처음 오면 저절로 뜨고, [그만 띄우기] 를 누르면
@@ -71,11 +74,6 @@
         </div>
       </div>
       <div class="sc-cal" id="calWrap">
-       <!-- 확인할 것 (대표 요청 2026-08-27 «알림이 안갈수도 있으니까 노티를 해줬으면
-            하는데 확인할거 따로 모아서»). 폰 알림이 못 가도 캘린더만 열면 여기 남아 있다.
-            챙길 게 없으면 통째로 접힌다 -->
-       <div class="sc-notice" id="scNotice" hidden></div>
-
        <!-- 달력만 한 판으로 묶어 카드 위에 살짝 떠 보이게 (대표 요청) -->
        <div class="sc-board">
         <div class="sc-nav">
@@ -122,6 +120,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="staff-calendar.js?v=3087f7d717"></script>
+  <script src="staff-calendar.js?v=81d1c15e68"></script>
 </body>
 </html>
