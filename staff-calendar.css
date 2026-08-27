@@ -431,20 +431,6 @@
 .sc-set-row h3 + .sc-set-d { margin-bottom: 8px; }
 .sc-set-d:last-of-type { margin-bottom: 14px; }
 
-/* ===== 다음 촬영 한 줄 · 길찾기 (대표 요청 2026-08-27 «1 2번 넣자») ===== */
-.sc-next { margin: 0 0 14px; padding: 13px 16px; border: 1px solid var(--gold);
-  border-radius: 10px; background: #fdf8f0; }
-.sc-next-l { margin: 0 0 3px; font-size: .78rem; color: var(--gold-deep); }
-.sc-next-l i { font-style: normal; margin-left: 6px; font-weight: 700; color: #b5462f; }
-.sc-next-m { margin: 0; font-size: .92rem; line-height: 1.6; color: var(--ink); }
-.sc-next-m b { font-weight: 700; }
-
-/* 예식장 이름 옆 「길찾기」 — 작아도 눌리게 여백을 준다 */
-.sc-map { display: inline-block; margin-left: 6px; padding: 2px 9px; font-size: .74rem;
-  color: var(--gold-deep); background: #fff; border: 1px solid var(--line); border-radius: 999px;
-  white-space: nowrap; vertical-align: 1px; }
-.sc-map:hover { border-color: var(--gold); background: var(--cream, #f7f3ee); }
-
 /* ===== 머리말 — 왼쪽 로고 · 오른쪽 사진과 이름 (대표 요청 2026-08-27) =====
    ⚠ .sv-header 는 신부 설문·포털도 함께 쓰는 것이라 여기서만 따로 만든다 */
 .sc-top { display: flex; align-items: center; gap: 12px;
@@ -462,11 +448,6 @@
   font-size: .9rem; font-weight: 600; color: var(--gold-deep); }
 .sc-top .sc-help-ic { position: static; margin: 0; flex: 0 0 auto; }
 
-/* 오늘로 돌아오기 */
-.sc-today { margin-left: 8px; padding: 5px 11px; font-family: inherit; font-size: .78rem;
-  color: var(--ink-soft); background: #fff; border: 1px solid var(--line); border-radius: 999px;
-  cursor: pointer; white-space: nowrap; }
-.sc-today:hover { border-color: var(--gold); color: var(--gold-deep); }
 
 /* 다음 촬영 카드의 신랑·신부 */
 .sc-next-who { margin-top: 9px; padding-top: 9px; border-top: 1px dashed #e0cfae;
@@ -478,4 +459,54 @@
   .sc-top-name { font-size: .86rem; }
   .sc-av { width: 30px; height: 30px; }
   .sc-next-who { flex-direction: column; gap: 4px; }
+}
+
+/* ===== 오늘 단추 — 오른쪽에 붙이고 글자만 (대표 2026-08-27
+   «오늘 버튼을 오른쪽으로 붙여주고 그냥 뱃지는 빼줘 글자만 넣고 아래선 /
+     < 월 > 이거는 중간에 오게») =====
+   ⚠ 흐름 안에 두면 그 너비만큼 「‹ 월 ›」 이 왼쪽으로 밀린다.
+   자리를 띄워 붙여야 달 표시가 **진짜 가운데**에 온다 */
+.sc-nav { position: relative; }
+.sc-today { position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; border-bottom: 1px solid var(--line); border-radius: 0;
+  padding: 1px 1px 2px; font-family: inherit; font-size: .78rem; font-weight: 400;
+  color: var(--ink-soft); cursor: pointer; }
+.sc-today:hover { color: var(--gold-deep); border-bottom-color: var(--gold); }
+
+/* ===== 다음 촬영 — 달력 판과 같은 「떠 있는」 결로 (대표 «다른건 다 플로팅인데 얘만 이상하네»)
+   글씨는 얇게. 테두리 대신 그림자로 띄운다 ===== */
+.sc-next { margin: 18px 0 0; padding: 14px 16px 12px; background: #fff; border: none;
+  border-radius: 14px;
+  box-shadow: 0 12px 28px -12px rgba(43,39,36,.22), 0 3px 8px -3px rgba(43,39,36,.10); }
+.sc-next-l { margin: 0; display: flex; align-items: baseline; font-size: .76rem; font-weight: 400;
+  color: var(--ink-soft); letter-spacing: .02em; }
+.sc-next-l i { font-style: normal; margin-left: auto; font-weight: 500; color: var(--gold-deep); }
+.sc-next-m { margin: 2px 0 8px; font-size: 1.02rem; font-weight: 500; color: var(--ink);
+  font-family: var(--kserif, inherit); }
+.sc-next-m em { font-style: normal; margin-left: 6px; font-size: .72rem; font-weight: 400;
+  color: var(--gold-deep); }
+
+/* 그날 예식 한 줄씩 — 두 건이면 두 줄 */
+.sc-nx-row { padding-top: 8px; }
+.sc-nx-row + .sc-nx-row { margin-top: 8px; border-top: 1px solid var(--line); }
+.sc-nx-t { margin: 0; font-size: .88rem; font-weight: 400; line-height: 1.6; color: #3d3833; }
+/* 이름은 접어둔다 — 펴 놓으면 카드가 길어져 달력이 안 보인다 (대표 지적) */
+.sc-nx-more { margin-top: 6px; padding: 2px 0; background: none; border: none;
+  border-bottom: 1px solid var(--line); border-radius: 0; font-family: inherit;
+  font-size: .76rem; font-weight: 400; color: var(--ink-soft); cursor: pointer; }
+.sc-nx-more:hover, .sc-nx-more.on { color: var(--gold-deep); border-bottom-color: var(--gold); }
+.sc-nx-who { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 4px 18px; }
+/* 이름 옆에 바로 번호 (대표 «신랑 박종석 연락처 / 이름옆에 연락처오게») */
+.sc-nx-p { font-size: .84rem; font-weight: 400; color: var(--ink); white-space: nowrap; }
+.sc-nx-p i { font-style: normal; margin-right: 6px; font-size: .74rem; color: var(--ink-soft); }
+.sc-nx-p .sc-tel { margin-left: 7px; }
+
+/* 길찾기 — 받침선 없이 글자만 (대표 «길찾기 뱃지는 아래받침선은 없애줘») */
+.sc-map { display: inline-block; margin-left: 8px; padding: 0; font-size: .76rem; font-weight: 400;
+  color: var(--gold-deep); background: none; border: none; white-space: nowrap; }
+.sc-map:hover { text-decoration: underline; }
+
+@media (max-width: 480px) {
+  .sc-nx-who { flex-direction: column; gap: 4px; }
+  .sc-next-m { font-size: .96rem; }
 }

@@ -169,23 +169,41 @@ const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 function renderNext(n) {
   const box = $('scNext');
   if (!box) return;
-  if (!n) { box.hidden = true; box.innerHTML = ''; return; }
+  if (!n || !n.items || !n.items.length) { box.hidden = true; box.innerHTML = ''; return; }
   const d = new Date(String(n.wedding_date) + 'T00:00:00');
   const when = n.days === 0 ? '오늘' : n.days === 1 ? '내일' : `${n.days}일 뒤`;
-  box.hidden = false;
-  // 신랑·신부와 연락처도 함께 (대표 «신랑 신부 이름 연락처도 넣어줘»).
-  // ⚠ 연락처는 서버가 **예식 2주 전부터만** 준다 — 없으면 이름만 나온다
-  const who = [
-    n.groom_name ? `<span class="sc-who"><span class="sc-who-l"><span class="sc-ptag g">신랑</span>${esc(n.groom_name)}</span>${tel(n.groom_phone)}</span>` : '',
-    n.bride_name ? `<span class="sc-who"><span class="sc-who-l"><span class="sc-ptag b">신부</span>${esc(n.bride_name)}</span>${tel(n.bride_phone)}</span>` : '',
-  ].filter(Boolean).join('');
 
+  /* 그날 것을 **전부** 보여준다 — 하루에 두 건 찍는 날이 흔한데 하나만 보였다.
+     신랑·신부는 접어둔다 (대표 «카드가 너무 넓다 캘린더가 눈에 안띄에») —
+     이름 옆에 번호가 오게 두고, 「연락처」를 눌러야 펼쳐진다 */
+  const row = (x, i) => {
+    const who = [
+      x.groom_name ? `<span class="sc-nx-p"><i>신랑</i>${esc(x.groom_name)}${tel(x.groom_phone)}</span>` : '',
+      x.bride_name ? `<span class="sc-nx-p"><i>신부</i>${esc(x.bride_name)}${tel(x.bride_phone)}</span>` : '',
+    ].filter(Boolean).join('');
+    return `
+    <div class="sc-nx-row">
+      <p class="sc-nx-t">${esc(kTime(x.wedding_time) || '시간 미정')} · ${esc(x.wedding_venue || '-')}${mapLink(x.wedding_venue)}${
+        x.role === '서브' ? '<span class="sc-role sub">서브</span>' : ''}</p>
+      ${who ? `<button type="button" class="sc-nx-more" data-nx="${i}">연락처</button>
+      <div class="sc-nx-who" id="scNxW${i}" hidden>${who}</div>` : ''}
+    </div>`;
+  };
+
+  box.hidden = false;
   box.innerHTML = `
-    <p class="sc-next-l">다음 촬영 <i>${esc(when)}</i></p>
-    <p class="sc-next-m"><b>${d.getMonth() + 1}월 ${d.getDate()}일(${DOW[d.getDay()]})</b>
-      ${esc(kTime(n.wedding_time) || '시간 미정')} · ${esc(n.wedding_venue || '-')}${mapLink(n.wedding_venue)}
-      ${n.role === '서브' ? '<span class="sc-role sub">서브</span>' : ''}</p>
-    ${who ? `<div class="sc-next-who">${who}</div>` : ''}`;
+    <p class="sc-next-l">다음 촬영<i>${esc(when)}</i></p>
+    <p class="sc-next-m">${d.getMonth() + 1}월 ${d.getDate()}일(${DOW[d.getDay()]})${
+      n.items.length > 1 ? ` <em>${n.items.length}건</em>` : ''}</p>
+    ${n.items.map(row).join('')}`;
+
+  box.querySelectorAll('[data-nx]').forEach((btn) => btn.addEventListener('click', () => {
+    const w = $('scNxW' + btn.dataset.nx);
+    if (!w) return;
+    w.hidden = !w.hidden;
+    btn.textContent = w.hidden ? '연락처' : '접기';
+    btn.classList.toggle('on', !w.hidden);
+  }));
 }
 
 /* ===== 폰 알림 (대표 요청 2026-08-27
