@@ -19,11 +19,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="survey.css?v=ef64d2b331" />
   <link rel="stylesheet" href="guide.css?v=8b8ebc02c8" />
-  <link rel="stylesheet" href="staff-calendar.css?v=048271f8a1" />
+  <link rel="stylesheet" href="staff-calendar.css?v=fcc28ad5ef" />
 </head>
 <body>
-  <header class="sv-header">
-    <img src="assets/logo-black.png" alt="온더브라이드" class="sv-logo" />
+  <!-- 왼쪽 로고 · 오른쪽 사진과 이름 (대표 요청 2026-08-27
+       «로고는 왼쪽에 오른쪽에 김병훈 작가님 넣고 프로필 사진 하나»).
+       이름과 사진은 불러온 뒤에 채운다 — 그 전엔 자리만 있다.
+       ⚠ .sv-header 는 신부 설문·포털도 함께 쓰는 것이라 여기서만 따로 쓴다 -->
+  <header class="sc-top">
+    <img src="assets/logo-black.png" alt="온더브라이드" class="sc-top-logo" />
+    <div class="sc-top-me" id="scTopMe"></div>
   </header>
 
   <main class="sv-wrap">
@@ -39,7 +44,6 @@
     <!-- 제일 바깥 상자는 두지 않는다 (대표 요청) — 달력 판과 스케줄 카드가
          바탕 위에 바로 떠 보이게. sv-card 는 다른 화면들이 함께 쓰므로 여기서만 벗긴다 -->
     <section class="sv-card sc-bare" id="mainCard" hidden>
-      <p class="sv-greet" id="greet"></p>
       <!-- 캘린더와 내 기록을 칸으로 나눈다 (대표 요청 2026-08-26
            «작가본인들 캘린더에 별로로 탭 분리해서 넣을거야») -->
       <div class="sc-tabs" id="scTabs">
@@ -88,6 +92,8 @@
           <button type="button" class="btn-nav" id="prevM">‹</button>
           <span id="monthLabel"></span>
           <button type="button" class="btn-nav" id="nextM">›</button>
+          <!-- 오늘로 돌아오기 (대표 요청 2026-08-27). 달을 몇 번 넘기면 돌아오기 번거롭다 -->
+          <button type="button" class="sc-today" id="todayBtn">오늘</button>
         </div>
 
         <div class="sc-dows"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
@@ -128,6 +134,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="staff-calendar.js?v=2de65e135e"></script>
+  <script src="staff-calendar.js?v=fa055d73cd"></script>
 </body>
 </html>

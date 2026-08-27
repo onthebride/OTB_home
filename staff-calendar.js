@@ -135,8 +135,7 @@ async function load() {
   if (error || !res) { show($('errCard')); return; }
   data = { bookings: res.bookings || [], busy: res.busy || [] };
   renderNext(res.next);        // 보고 있는 달과 무관하게 «다음 촬영» 한 줄
-  $('greet').innerHTML = `<b>${esc(res.staff_name || '')}</b> 작가님의 캘린더`
-    + '<button type="button" class="sc-help-ic" id="helpIc" title="사용안내" aria-label="사용안내">?</button>';
+  renderTop(res.staff_name, res.staff_photo);
   helpInit();
   render();
   tabsInit();
@@ -145,6 +144,20 @@ async function load() {
   loadNotices();       // 확인할 것 — 폰 알림이 못 갔어도 여기서 본다
   clearBadge();        // 화면을 열었으니 아이콘 숫자를 지운다
   show($('mainCard'));
+}
+
+/* 머리말 — 왼쪽 로고, 오른쪽에 사진과 이름 (대표 요청 2026-08-27).
+   사진이 없으면 성 한 글자를 동그라미에 넣는다. 「?」(사용안내)도 여기 붙는다 */
+function renderTop(name, photo) {
+  const box = $('scTopMe');
+  if (!box) return;
+  const nm = String(name || '').trim();
+  const av = photo
+    ? `<img class="sc-av" src="${esc(photo)}" alt="" />`
+    : `<span class="sc-av none">${esc(nm.slice(0, 1) || '·')}</span>`;
+  box.innerHTML = av
+    + `<span class="sc-top-name">${esc(nm)}<i>작가님</i></span>`
+    + '<button type="button" class="sc-help-ic" id="helpIc" title="사용안내" aria-label="사용안내">?</button>';
 }
 
 /* ===== 다음 촬영 한 줄 (대표 요청 2026-08-27 «1 2번 넣자»)
@@ -160,11 +173,19 @@ function renderNext(n) {
   const d = new Date(String(n.wedding_date) + 'T00:00:00');
   const when = n.days === 0 ? '오늘' : n.days === 1 ? '내일' : `${n.days}일 뒤`;
   box.hidden = false;
+  // 신랑·신부와 연락처도 함께 (대표 «신랑 신부 이름 연락처도 넣어줘»).
+  // ⚠ 연락처는 서버가 **예식 2주 전부터만** 준다 — 없으면 이름만 나온다
+  const who = [
+    n.groom_name ? `<span class="sc-who"><span class="sc-who-l"><span class="sc-ptag g">신랑</span>${esc(n.groom_name)}</span>${tel(n.groom_phone)}</span>` : '',
+    n.bride_name ? `<span class="sc-who"><span class="sc-who-l"><span class="sc-ptag b">신부</span>${esc(n.bride_name)}</span>${tel(n.bride_phone)}</span>` : '',
+  ].filter(Boolean).join('');
+
   box.innerHTML = `
     <p class="sc-next-l">다음 촬영 <i>${esc(when)}</i></p>
     <p class="sc-next-m"><b>${d.getMonth() + 1}월 ${d.getDate()}일(${DOW[d.getDay()]})</b>
       ${esc(kTime(n.wedding_time) || '시간 미정')} · ${esc(n.wedding_venue || '-')}${mapLink(n.wedding_venue)}
-      ${n.role === '서브' ? '<span class="sc-role sub">서브</span>' : ''}</p>`;
+      ${n.role === '서브' ? '<span class="sc-role sub">서브</span>' : ''}</p>
+    ${who ? `<div class="sc-next-who">${who}</div>` : ''}`;
 }
 
 /* ===== 폰 알림 (대표 요청 2026-08-27
@@ -947,6 +968,20 @@ async function del(id, group) {
   modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
 })();
 
+/* 오늘로 돌아오기 (대표 요청 2026-08-27).
+   달을 몇 번 넘기고 나면 오늘로 돌아오기가 번거롭다.
+   이미 이번 달을 보고 있으면 달은 그대로 두고 오늘 칸만 연다 */
+function goToday() {
+  const now = new Date();
+  const same = view.getFullYear() === now.getFullYear() && view.getMonth() === now.getMonth();
+  view = new Date(now.getFullYear(), now.getMonth(), 1);
+  openDay = todayStr;
+  formKind = null;
+  editId = null;
+  slideDir = same ? '' : (now < view ? 'l' : 'r');
+  if (same) { render(); } else { load().then(() => {}); }
+}
+
 function goMonth(step) {
   view = new Date(view.getFullYear(), view.getMonth() + step, 1);
   openDay = null;
@@ -959,6 +994,9 @@ function goMonth(step) {
 }
 $('prevM').addEventListener('click', () => goMonth(-1));
 $('nextM').addEventListener('click', () => goMonth(1));
+// 오늘로 돌아오기 (대표 요청 2026-08-27)
+const todayBtn = $('todayBtn');
+if (todayBtn) todayBtn.addEventListener('click', goToday);
 
 // ── 좌우로 밀어 달 넘기기(폰) ──
 // 세로로 스크롤하려는 손짓과 헷갈리면 안 된다. 처음 움직인 방향으로 가로/세로를 정하고,
