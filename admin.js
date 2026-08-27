@@ -2359,6 +2359,11 @@ function renderSchedule() {
         const sc = staffColor(b.assignee_id);
         const bg = assigned ? ` style="background:${tint(sc, 0.16)}"` : '';
         const flag = !b.assignee_id ? '미배정' : (is2 && !b.sub_assignee_id ? '서브 미배정' : '');
+        // 촬영본 사용동의 = 블로그·SNS 에 올려도 되는지 (대표 요청 2026-08-28).
+        // 「가능」만 붙이면 나머지가 «안 물어본 건지 안 되는 건지» 헷갈린다 — 둘 다 적는다
+        const post = b.photo_usage_agree
+          ? '<span class="sched-post ok" title="촬영본 사용동의 YES">포스팅 가능</span>'
+          : '<span class="sched-post no" title="촬영본 사용동의 NO">포스팅 불가</span>';
         return `
         <div class="sched-row${assigned ? ' assigned' : ' unassigned'}" data-id="${b.id}"${bg}>
           <input type="checkbox" class="sched-cb" value="${b.id}" />
@@ -2367,6 +2372,7 @@ function renderSchedule() {
           <div class="sched-mid">
             ${flag ? `<span class="sched-flag">⚠ ${flag}</span>` : ''}
             <span class="sched-venue">${esc(b.wedding_venue || '-')}</span>
+            ${post}
             ${opts.length ? `<span class="sched-opts">${opts.map((o) => `<span class="sched-optag">${esc(o)}</span>`).join('')}</span>` : ''}
           </div>
           <div class="sched-asg-ctrls">
