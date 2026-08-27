@@ -7,12 +7,15 @@ self.addEventListener('push', (e) => {
   let data = {};
   try { data = e.data ? e.data.json() : {}; } catch (_) { data = { title: '온더브라이드', body: e.data ? e.data.text() : '' }; }
   const title = data.title || '온더브라이드';
+  const url = data.url || '/admin';
+  // 작가에게 가는 알림은 작가 캘린더 아이콘(어두운 것)으로 띄운다 — 관리자 알림과 한눈에 갈린다
+  const icon = url.includes('staff-calendar') ? 'assets/favicon-staff.png' : 'assets/favicon.png';
   const opts = {
     body: data.body || '',
-    icon: 'assets/favicon.png',
+    icon,
     badge: 'assets/favicon.png',
     tag: data.tag || 'otb',
-    data: { url: data.url || '/admin' },
+    data: { url },
     vibrate: [80, 40, 80],
   };
   // 알림을 띄우고, 홈 화면 아이콘에도 숫자를 붙인다 (대표 요청 2026-08-27).

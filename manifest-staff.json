@@ -1,0 +1,15 @@
+{
+  "id": "/staff-calendar",
+  "name": "온더브라이드 작가 캘린더",
+  "short_name": "내 캘린더",
+  "description": "배정된 예식과 촬영 불가일",
+  "start_url": "/staff-calendar",
+  "scope": "/staff-calendar",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    { "src": "assets/favicon-staff.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/favicon-staff-mask.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

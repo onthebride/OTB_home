@@ -9,8 +9,22 @@ const sb = window.supabase && window.OTB_CONFIG
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
-const staffId = params.get('s');
 const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/* 홈 화면에 «설치»해서 열면 주소에 ?s= 가 없다 — 안드로이드는 manifest 의 start_url 로 열기 때문이다.
+   그래서 링크로 한 번 들어온 작가 번호를 기억해 두었다가, 주소에 없을 때만 꺼내 쓴다.
+   주소에 번호가 있으면 그것이 언제나 이긴다 (틀린 번호로 들어오면 그대로 오류를 보여줘야 한다).
+   이 번호는 이미 그 사람 브라우저의 주소·방문기록에 있는 것이라 새로 새는 것은 없다 */
+const SKEY = 'otb_staff_s';
+const pickStaff = () => {
+  const q = params.get('s');
+  try {
+    if (q && uuidRe.test(q)) { localStorage.setItem(SKEY, q); return q; }
+    if (!q) { const v = localStorage.getItem(SKEY); if (v && uuidRe.test(v)) return v; }
+  } catch (_) { /* 사생활보호 모드면 저장이 막힌다 — 주소에 있는 것만 쓴다 */ }
+  return q;
+};
+const staffId = pickStaff();
 const esc = (s) => (s == null ? '' : String(s)).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const show = (el) => ['errCard', 'loadCard', 'mainCard'].forEach((id) => ($(id).hidden = $(id) !== el));
 
