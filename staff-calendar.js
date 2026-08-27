@@ -135,7 +135,7 @@ async function load() {
   if (error || !res) { show($('errCard')); return; }
   data = { bookings: res.bookings || [], busy: res.busy || [] };
   renderNext(res.next);        // 보고 있는 달과 무관하게 «다음 촬영» 한 줄
-  renderTop(res.staff_name, res.staff_photo);
+  renderTop(res.staff_name);
   helpInit();
   render();
   tabsInit();
@@ -160,15 +160,11 @@ async function refreshAll() {
 
 /* 머리말 — 왼쪽 로고, 오른쪽에 사진과 이름 (대표 요청 2026-08-27).
    사진이 없으면 성 한 글자를 동그라미에 넣는다. 「?」(사용안내)도 여기 붙는다 */
-function renderTop(name, photo) {
+function renderTop(name) {
   const box = $('scTopMe');
   if (!box) return;
   const nm = String(name || '').trim();
-  const av = photo
-    ? `<img class="sc-av" src="${esc(photo)}" alt="" />`
-    : `<span class="sc-av none">${esc(nm.slice(0, 1) || '·')}</span>`;
-  box.innerHTML = av
-    + `<span class="sc-top-name">${esc(nm)}<i>작가님</i></span>`
+  box.innerHTML = `<span class="sc-top-name">${esc(nm)}<i>작가님</i></span>`
     + '<button type="button" class="sc-help-ic" id="helpIc" title="사용안내" aria-label="사용안내">?</button>';
 }
 

@@ -2629,39 +2629,11 @@ function staffCalMsg(id) {
   ]).join('\n');
 }
 
-/* 사진을 정사각으로 줄인다 (작가 얼굴용).
-   갤러리는 가로세로를 살리지만 여기는 동그라미에 들어가므로 **가운데를 잘라** 정사각으로.
-   원본 그대로 올리면 4MB 짜리가 머리말마다 내려온다 */
-function squareJpeg(file, size) {
-  return new Promise((res, rej) => {
-    const img = new Image();
-    img.onload = () => {
-      const side = Math.min(img.width, img.height);
-      const sx = (img.width - side) / 2;
-      const sy = (img.height - side) / 2;
-      const cv = document.createElement('canvas');
-      cv.width = size; cv.height = size;
-      cv.getContext('2d').drawImage(img, sx, sy, side, side, 0, 0, size, size);
-      cv.toBlob((b) => (b ? res(b) : rej(new Error('그림을 못 만들었어요'))), 'image/jpeg', 0.85);
-      URL.revokeObjectURL(img.src);
-    };
-    img.onerror = () => rej(new Error('그림 파일이 아니에요'));
-    img.src = URL.createObjectURL(file);
-  });
-}
-
 function renderStaff() {
   if (!$('staffList')) return;
   $('staffEmpty').hidden = allStaff.length > 0;
   $('staffList').innerHTML = allStaff.map((s) => `
     <div class="staff-item${s.active ? '' : ' inactive'}" data-id="${s.id}">
-      <!-- 작가 사진 (대표 요청 2026-08-27). 작가 캘린더 머리말에 뜬다.
-           작가는 로그인이 없어 스스로 못 올린다 — 대표가 여기서 넣는다 -->
-      <label class="st-pic${s.photo_url ? ' has' : ''}" title="${s.photo_url ? '누르면 바꿉니다 (오른쪽 X 로 지웁니다)' : '작가 사진 넣기'}">
-        ${s.photo_url ? `<img src="${esc(s.photo_url)}" alt="" />` : `<span>${esc(String(s.name || '·').slice(0, 1))}</span>`}
-        <input type="file" class="st-pic-in" data-id="${s.id}" accept="image/*" hidden />
-      </label>
-      ${s.photo_url ? `<button type="button" class="st-pic-x" data-id="${s.id}" title="사진 지우기">&times;</button>` : ''}
       <input type="text" class="st-name" data-id="${s.id}" value="${esc(s.name || '')}" placeholder="이름" />
       <input type="text" class="st-phone js-phone" data-id="${s.id}" value="${esc(s.phone || '')}" placeholder="연락처" />
       <span class="st-color-wrap" title="달력·스케줄에 표시될 작가 색">
@@ -2680,39 +2652,6 @@ function renderStaff() {
     </div>`).join('');
 
   hookPhone($('staffList'));
-
-  /* 사진 올리기 — 갤러리와 같은 방식으로 줄여서 넣는다.
-     ⚠ 원본 그대로 올리면 4MB 짜리가 머리말에 뜬다. 256px 정사각으로 줄인다 */
-  $('staffList').querySelectorAll('.st-pic-in').forEach((inp) =>
-    inp.addEventListener('change', async () => {
-      const f = inp.files && inp.files[0];
-      if (!f) return;
-      const box = inp.closest('.st-pic');
-      if (box) box.classList.add('busy');
-      try {
-        const blob = await squareJpeg(f, 256);
-        const path = `staff/${inp.dataset.id}-${Date.now()}.jpg`;
-        const up = await sb.storage.from('gallery').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
-        if (up.error) throw up.error;
-        const url = sb.storage.from('gallery').getPublicUrl(path).data.publicUrl;
-        const { error } = await sb.rpc('admin_staff_photo', { p_staff_id: inp.dataset.id, p_url: url });
-        if (error) throw error;
-        toast('사진을 넣었어요');
-        await loadStaff();
-      } catch (e) {
-        alert('사진을 못 올렸어요: ' + (e.message || e));
-        if (box) box.classList.remove('busy');
-      }
-    }));
-
-  $('staffList').querySelectorAll('.st-pic-x').forEach((b) =>
-    b.addEventListener('click', async () => {
-      if (!confirm('이 작가의 사진을 지울까요?')) return;
-      const { error } = await sb.rpc('admin_staff_photo', { p_staff_id: b.dataset.id, p_url: '' });
-      if (error) { alert('못 지웠어요: ' + error.message); return; }
-      toast('사진을 지웠어요');
-      await loadStaff();
-    }));
 
   // 작가에게 카톡으로 그대로 붙여넣을 안내문 (링크 포함)
   $('staffList').querySelectorAll('.st-callink').forEach((btn) =>
