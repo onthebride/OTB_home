@@ -4,7 +4,7 @@
   "short_name": "OTB 관리자",
   "description": "온더브라이드 예약 관리",
   "start_url": "/admin",
-  "scope": "/",
+  "scope": "/admin",
   "display": "standalone",
   "background_color": "#f7f3ee",
   "theme_color": "#2b2724",

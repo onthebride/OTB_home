@@ -161,6 +161,8 @@ function clearBadge() {
    두 군데가 저마다 상태를 들고 있으면 한쪽만 바뀌어 어긋난다 (2026-08-27 대표 요청으로 둘이 됐다) */
 let pushState = 'unknown';        // unknown | unsupported | off | on
 let pushMsg = '';
+// 이 기기의 등록이 「관리자」 것과 같으면 알림이 관리자 앱으로 뜬다 (아이폰)
+let pushAdminApp = false;
 
 function syncPush() {
   const btn = $('scPush');
@@ -183,7 +185,15 @@ function syncPush() {
     if (lab) lab.textContent = pushState === 'unsupported' ? '켤 수 없어요' : on ? '받는 중' : '꺼짐';
   }
   const hint = $('setPushMsg');
-  if (hint) { hint.hidden = !pushMsg; hint.textContent = pushMsg; }
+  if (hint) {
+    // 관리자 앱 안에서 켜면 알림이 그쪽 이름으로 뜬다 — 어디서 켜야 하는지 알려준다
+    const wrong = pushAdminApp && pushState === 'on'
+      ? '지금은 알림이 「OTB 관리자」 앱으로 갑니다. 홈 화면의 「내 캘린더」 앱을 열어 거기서 켜주세요.'
+      : '';
+    const m = pushMsg || wrong;
+    hint.hidden = !m;
+    hint.textContent = m;
+  }
 }
 
 async function pushInit() {
@@ -258,12 +268,17 @@ async function pushDisable() {
 
 async function pushSave(sub) {
   const j = sub.toJSON();
-  await sb.rpc('save_push_subscription', {
+  const { data } = await sb.rpc('save_push_subscription', {
     p_endpoint: j.endpoint,
     p_p256dh: j.keys && j.keys.p256dh,
     p_auth: j.keys && j.keys.auth,
     p_staff_id: staffId,          // 이게 있어야 대표 알림과 안 섞인다
   });
+  /* ⚠ 이 등록이 이미 「관리자」 것이면, 여기서 켠 알림은 **관리자 앱 이름과 아이콘**으로 뜬다.
+     대표가 실제로 그랬다 (2026-08-27) — 관리자 앱 안에서 캘린더를 열고 거기서 켰다.
+     아이폰은 홈 화면 앱마다 저장소가 따로라 **켠 앱으로** 알림이 간다.
+     막지는 않는다 — 못 받는 것보다 낫다. 대신 어디서 켜야 하는지 알려준다 */
+  pushAdminApp = !!(data && data.admin_app);
 }
 
 /* ===== 캘린더 · 내 기록 (대표 요청 2026-08-26 «탭 분리해서 넣을거야») ===== */
