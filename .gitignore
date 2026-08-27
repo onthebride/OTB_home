@@ -12,3 +12,6 @@ _*.html
 # 고객 이름이 들어 있는 것 — 이 저장소는 공개(public)라 절대 올리면 안 된다
 이관패키지/
 supabase/migrations/*_seed.sql
+
+# supabase CLI 가 남기는 것 (프로젝트 연결 기록)
+supabase/.temp/
