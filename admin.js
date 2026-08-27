@@ -4460,6 +4460,7 @@ function rvPostsHtml(p) {
       <p class="rv-pub-t">홈페이지에 <b>${p.shown || 0}건</b> 실려 있습니다
         <a href="/reviews" target="_blank" rel="noopener">게시 화면 열기 ↗</a></p>
       ${cand ? `<button type="button" class="btn-sm" id="rvTakeAll">아직 안 실은 ${cand}건 모두 싣기</button>` : ''}
+      ${p.no_staff ? `<button type="button" class="btn-sm" id="rvRefill">작가 이름 채우기 ${p.no_staff}</button>` : ''}
       <button type="button" class="btn-sm btn-primary-sm" id="rvAddOpen">후기 붙여넣기</button>
     </div>
     <div class="rv-add" id="rvAdd" hidden>
@@ -4492,6 +4493,17 @@ function rvBindPosts(wrap) {
       const { data, error } = await sb.rpc('admin_review_post_add', { p_items: items });
       if (error) { msg.textContent = '실패: ' + error.message; return; }
       toast(`${data.added}건 넣었어요` + (data.skipped ? ` (${data.skipped}건은 이미 있거나 주소가 아니라 건너뜀)` : ''));
+      renderEventReviews(true);
+    });
+  }
+  // 예식이 아직 배정 전이면 작가 이름이 비어 있다. 배정한 뒤 이걸 누르면 채워진다.
+  // 이름은 «옮겨 담은» 값이라 예약이 바뀌어도 저절로 안 따라온다 (빈 것만 채우고 적힌 건 안 덮는다)
+  const refill = wrap.querySelector('#rvRefill');
+  if (refill) {
+    refill.addEventListener('click', async () => {
+      const { data, error } = await sb.rpc('admin_review_post_refill');
+      if (error) { alert('실패: ' + error.message); return; }
+      toast(data.filled ? `${data.filled}건 채웠어요` : '아직 배정되지 않은 예식이라 채울 게 없어요');
       renderEventReviews(true);
     });
   }
