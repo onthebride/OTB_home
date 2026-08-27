@@ -1,6 +1,10 @@
 // 범용 웹푸시 발송 (Supabase Edge Function, Deno)
-// DB(pg_net)가 x-push-secret 헤더 + {title, body, url, tag} 로 호출.
-// 신규예약·알림톡 실패 등 모든 관리자 푸시를 이 함수 하나로 처리.
+// DB(pg_net)가 x-push-secret 헤더 + {title, body, url, tag, staff_id} 로 호출.
+//
+// staff_id 가 있으면 **그 작가 폰에만**, 없으면 대표(관리자) 폰에만 보낸다.
+// 2026-08-27 이전에는 구분이 없어 등록된 것 전부에 보냈다 —
+// 작가 구독이 들어온 뒤로는 반드시 걸러야 한다. 안 그러면
+// 대표에게 가는 알림(예약·매출·설문)이 작가들에게 다 간다.
 import webpush from 'npm:web-push@3.6.7';
 
 Deno.serve(async (req) => {
@@ -8,13 +12,15 @@ Deno.serve(async (req) => {
   if (req.headers.get('x-push-secret') !== Deno.env.get('PUSH_SECRET')) {
     return new Response('forbidden', { status: 403 });
   }
-  const { title, body, url, tag } = await req.json().catch(() => ({}));
+  const { title, body, url, tag, staff_id } = await req.json().catch(() => ({}));
 
   const SUPA = Deno.env.get('SUPABASE_URL');
   const KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const h = { apikey: KEY!, Authorization: `Bearer ${KEY}` };
 
-  const sr = await fetch(`${SUPA}/rest/v1/push_subscriptions?select=endpoint,p256dh,auth`, { headers: h });
+  // 누구에게 보낼지 — 작가면 그 사람 것만, 아니면 주인 없는 것(=대표)만
+  const whose = staff_id ? `staff_id=eq.${encodeURIComponent(staff_id)}` : 'staff_id=is.null';
+  const sr = await fetch(`${SUPA}/rest/v1/push_subscriptions?select=endpoint,p256dh,auth&${whose}`, { headers: h });
   const subs = await sr.json();
 
   webpush.setVapidDetails(

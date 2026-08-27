@@ -1,4 +1,5 @@
-/* 온더브라이드 관리자 — 서비스워커 (웹 푸시) */
+/* 온더브라이드 — 서비스워커 (웹 푸시)
+   관리자와 작가 캘린더가 같이 쓴다. 어디로 갈지는 알림에 실려 오는 url 이 정한다 */
 self.addEventListener('install', (e) => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
 
@@ -22,7 +23,10 @@ self.addEventListener('notificationclick', (e) => {
   const url = (e.notification.data && e.notification.data.url) || '/admin';
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
-      for (const c of list) { if (c.url.includes('/admin') && 'focus' in c) return c.focus(); }
+      // 알림이 알려준 주소와 같은 곳이 이미 열려 있으면 그 창을 쓴다.
+      // 예전에는 '/admin' 이 박혀 있어서 작가 알림도 관리자 창을 깨웠다 (2026-08-27)
+      const path = (url.split('?')[0] || '/');
+      for (const c of list) { if (c.url.includes(path) && 'focus' in c) return c.focus(); }
       return self.clients.openWindow(url);
     })
   );

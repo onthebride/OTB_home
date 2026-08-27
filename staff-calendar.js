@@ -80,7 +80,105 @@ async function load() {
   helpInit();
   render();
   tabsInit();
+  pushInit();          // 늦게 와도 된다 — 단추만 늦게 뜬다
   show($('mainCard'));
+}
+
+/* ===== 폰 알림 (대표 요청 2026-08-27
+   «스케줄 장소나 시간 변동이나 취소있으면 알람 가게»)
+
+   예식 날짜·시간·장소가 바뀌거나 취소되면 DB 트리거가 이 작가에게만 보낸다.
+   아이폰은 **홈 화면에 추가한 뒤 그 앱에서** 켜야 알림이 온다 (사파리 제약).
+   그래서 홈화면추가 단추 옆에 둔다 ===== */
+const VAPID_PUBLIC = 'BBKafqxDWhKLbQCm7VRSkiFA0NwBy7DrlXFju432bq5KMS8v5XRKBFJC4HmKEtf3WZdQsz7xqQ-3RbVkVBJw1QM';
+const b64ToU8 = (b64) => {
+  const base = (b64 + '='.repeat((4 - (b64.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base); const arr = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr;
+};
+let scSw = null;
+
+async function pushInit() {
+  const btn = $('scPush');
+  const note = $('scPushNote');
+  if (!btn) return;
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+    // 아이폰에서 홈 화면에 추가하지 않고 사파리로 열면 여기로 온다
+    note.hidden = false;
+    note.textContent = '이 브라우저에서는 알림을 켤 수 없어요. 아이폰은 먼저 「홈 화면에 추가」를 하고 그 앱에서 열어주세요.';
+    return;
+  }
+  try {
+    scSw = await navigator.serviceWorker.register('sw.js', { scope: '/' });
+    await navigator.serviceWorker.ready;
+  } catch (_) { return; }
+
+  let sub = await scSw.pushManager.getSubscription();
+  // 열쇠가 바뀌었으면 옛 구독은 버린다
+  if (sub) {
+    const cur = b64ToU8(VAPID_PUBLIC);
+    const old = new Uint8Array(sub.options && sub.options.applicationServerKey ? sub.options.applicationServerKey : []);
+    if (!(old.length === cur.length && old.every((v, i) => v === cur[i]))) {
+      try { await sub.unsubscribe(); } catch (_) {}
+      sub = null;
+    }
+  }
+  if (sub && Notification.permission === 'granted') {
+    await pushSave(sub);                    // 이미 켜져 있다 — 이 작가 것으로 다시 적어둔다
+    pushOn(btn, note);
+    return;
+  }
+  btn.hidden = false;
+  btn.addEventListener('click', () => pushEnable(btn, note));
+}
+
+function pushOn(btn, note) {
+  btn.hidden = false;
+  btn.textContent = '🔔 알림 켜짐';
+  btn.classList.add('on');
+  note.hidden = false;
+  note.textContent = '예식 날짜·시간·장소가 바뀌거나 취소되면 알려드려요. (누르면 끕니다)';
+  btn.onclick = () => pushDisable(btn, note);
+}
+
+async function pushEnable(btn, note) {
+  try {
+    if ((await Notification.requestPermission()) !== 'granted') {
+      note.hidden = false;
+      note.textContent = '알림이 거부되어 있어요. 폰 설정에서 이 앱의 알림을 켜주세요.';
+      return;
+    }
+    const sub = await scSw.pushManager.subscribe({
+      userVisibleOnly: true, applicationServerKey: b64ToU8(VAPID_PUBLIC),
+    });
+    await pushSave(sub);
+    pushOn(btn, note);
+  } catch (_) {
+    note.hidden = false;
+    note.textContent = '알림을 켜지 못했어요. 아이폰은 먼저 「홈 화면에 추가」를 하고 그 앱에서 켜주세요.';
+  }
+}
+
+async function pushDisable(btn, note) {
+  try {
+    const sub = await scSw.pushManager.getSubscription();
+    if (sub) { await sb.rpc('drop_push_subscription', { p_endpoint: sub.endpoint }); await sub.unsubscribe(); }
+  } catch (_) {}
+  btn.textContent = '🔔 알림 받기';
+  btn.classList.remove('on');
+  note.hidden = true;
+  btn.onclick = () => pushEnable(btn, note);
+}
+
+async function pushSave(sub) {
+  const j = sub.toJSON();
+  await sb.rpc('save_push_subscription', {
+    p_endpoint: j.endpoint,
+    p_p256dh: j.keys && j.keys.p256dh,
+    p_auth: j.keys && j.keys.auth,
+    p_staff_id: staffId,          // 이게 있어야 대표 알림과 안 섞인다
+  });
 }
 
 /* ===== 캘린더 · 내 기록 (대표 요청 2026-08-26 «탭 분리해서 넣을거야») ===== */

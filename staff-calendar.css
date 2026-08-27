@@ -337,3 +337,8 @@
   color: var(--gold-deep); border: 1px solid var(--gold); border-radius: 999px; }
 .me-say p { margin: 0; font-size: .9rem; line-height: 1.65; color: var(--ink); white-space: pre-wrap; }
 .me-say .me-req { margin-top: 6px; font-size: .86rem; color: var(--ink-soft); }
+
+/* 폰 알림 단추 (대표 요청 2026-08-27) */
+.sc-a2hs.on { border-color: var(--gold); color: var(--gold-deep); background: #faf4ea; }
+.sc-push-note { max-width: 320px; margin: 8px auto 0; font-size: .78rem; line-height: 1.6;
+  color: var(--ink-soft); text-align: center; }

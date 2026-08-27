@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="survey.css?v=ef64d2b331" />
   <link rel="stylesheet" href="guide.css?v=8b8ebc02c8" />
-  <link rel="stylesheet" href="staff-calendar.css?v=3b3047b0de" />
+  <link rel="stylesheet" href="staff-calendar.css?v=c94a1001dc" />
 </head>
 <body>
   <header class="sv-header">
@@ -92,6 +92,9 @@
 
       <div class="sc-a2hs-wrap">
         <button type="button" class="sc-a2hs" id="a2hs">📱 홈 화면에 추가</button>
+        <!-- 예식 날짜·시간·장소가 바뀌거나 취소되면 폰으로 알린다 (대표 요청 2026-08-27) -->
+        <button type="button" class="sc-a2hs" id="scPush" hidden>🔔 알림 받기</button>
+        <p class="sc-push-note" id="scPushNote" hidden></p>
       </div>
     </section>
 
@@ -106,6 +109,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="staff-calendar.js?v=4b95477ef3"></script>
+  <script src="staff-calendar.js?v=4d0f0b051f"></script>
 </body>
 </html>
