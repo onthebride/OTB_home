@@ -1180,7 +1180,6 @@ td .muted { color: var(--ink-soft); }
 .fb-pendtoggle .dash-count { margin-left: auto; }
 
 /* 작가 미확인 박스 헤더 — 건수 배지 옆에 일괄발송 버튼 */
-.unconf-head-right { display: flex; align-items: center; gap: 8px; flex: none; }
 
 /* 배정 변경 이력 */
 .au-list { display: flex; flex-direction: column; }

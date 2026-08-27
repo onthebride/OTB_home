@@ -1883,22 +1883,41 @@ function renderDashboard() {
       })
     : '<p class="dash-empty">모두 처리됐어요 👍</p>';
 
-  // 🧑‍🎨 작가 미확인 (30일 내)
-  const unconf = allUnconfirmed.filter((u) => !u.main_ok || !u.sub_ok);
-  if ($('dcUnconf')) $('dcUnconf').textContent = unconf.length;
-  if ($('listUnconf')) $('listUnconf').innerHTML = unconf.length
-    ? unconf.slice(0, 40).map((u) => {
-      const who = [];
-      if (!u.main_ok && u.assignee_id) who.push('메인 ' + staffName(u.assignee_id));
-      if (!u.sub_ok && u.sub_assignee_id) who.push('서브 ' + staffName(u.sub_assignee_id));
-      return `<div class="dl-item" data-id="${u.booking_id}">
+  /* 🧑‍🎨 작가 미확인 (30일 내) — 두 가지를 나눠 본다 (대표 요청 2026-08-28).
+       ① 월요일 체크 : 배정받고 누르는 참석·도착·옵션
+       ② 설문 확인   : 예식 하루 전 설문 톡을 받고 누르는 것
+     ⚠ 설문 쪽은 «톡을 보낸 사람» 만 센다. 안 보낸 것까지 세면 다음 달 예식이 전부 벌겋게 뜬다.
+        월요일 체크 쪽은 예전 기준을 그대로 둔다 — 지금 보고 계신 줄이 사라지면 안 된다 */
+  const unconfRow = (u, who) => `<div class="dl-item" data-id="${u.booking_id}">
         <div class="dl-main">
           <span class="dl-name">${esc(u.contractor_name || '-')}</span>
           <span class="dl-meta">${esc(fmtDate(u.wedding_date))} ${esc(kTimeShort(u.wedding_time))} · ${esc(u.wedding_venue || '-')} · <span class="unconf-who">${esc(who.join(', ') || '미확인')}</span></span>
         </div>
       </div>`;
-    }).join('')
-    : '<p class="dash-empty">모두 확인됐어요 👍</p>';
+  const unconfDraw = (cntId, listId, rows, empty) => {
+    if ($(cntId)) $(cntId).textContent = rows.length;
+    if ($(listId)) $(listId).innerHTML = rows.length
+      ? rows.slice(0, 40).map(([u, who]) => unconfRow(u, who)).join('')
+      : `<p class="dash-empty">${empty}</p>`;
+  };
+
+  const unconf = allUnconfirmed.filter((u) => !u.main_ok || !u.sub_ok).map((u) => {
+    const who = [];
+    if (!u.main_ok && u.assignee_id) who.push('메인 ' + staffName(u.assignee_id));
+    if (!u.sub_ok && u.sub_assignee_id) who.push('서브 ' + staffName(u.sub_assignee_id));
+    return [u, who];
+  });
+  unconfDraw('dcUnconf', 'listUnconf', unconf, '모두 확인됐어요 👍');
+
+  const unconfSv = allUnconfirmed
+    .filter((u) => (u.main_sv_sent && !u.main_sv_ok) || (u.sub_sv_sent && !u.sub_sv_ok))
+    .map((u) => {
+      const who = [];
+      if (u.main_sv_sent && !u.main_sv_ok && u.assignee_id) who.push('메인 ' + staffName(u.assignee_id));
+      if (u.sub_sv_sent && !u.sub_sv_ok && u.sub_assignee_id) who.push('서브 ' + staffName(u.sub_assignee_id));
+      return [u, who];
+    });
+  unconfDraw('dcUnconfSv', 'listUnconfSv', unconfSv, '설문도 모두 확인됐어요 👍');
 
   bindDashEvents();
   renderCalendar();
@@ -2747,7 +2766,7 @@ if ($('stAddBtn')) {
 
 /* ===== Gallery management ===== */
 // 다가오는 예식 / 다운로드 링크 — 한 박스 안 탭 전환
-const schedTabs = document.querySelector('.sched-tabs');
+const schedTabs = document.querySelector('#card-schedule .sched-tabs');
 if (schedTabs) {
   schedTabs.addEventListener('click', (e) => {
     const t = e.target.closest('.stab');
@@ -2756,6 +2775,19 @@ if (schedTabs) {
     schedTabs.querySelectorAll('.stab').forEach((x) => x.classList.toggle('active', x === t));
     $('listUpcoming').hidden = which !== 'upcoming';
     $('listDownload').hidden = which !== 'download';
+  });
+}
+
+// 작가 미확인 — 월요일 체크 / 설문 확인 (대표 요청 2026-08-28)
+const unconfTabs = $('unconfTabs');
+if (unconfTabs) {
+  unconfTabs.addEventListener('click', (e) => {
+    const t = e.target.closest('.stab');
+    if (!t) return;
+    const which = t.dataset.utab;
+    unconfTabs.querySelectorAll('.stab').forEach((x) => x.classList.toggle('active', x === t));
+    $('listUnconf').hidden = which !== 'chk';
+    $('listUnconfSv').hidden = which !== 'sv';
   });
 }
 
