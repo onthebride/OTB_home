@@ -19,23 +19,29 @@
   border-radius: 999px; padding: 2px 10px; }
 .rv-sec-d { margin: 0 0 22px; font-size: .86rem; color: var(--ink-soft); line-height: 1.75; }
 
-.rv-grid { display: grid; gap: 14px; align-items: start; }
 .rv-card { background: #fff; border: 1px solid var(--line); border-radius: var(--radius, 10px);
   min-width: 0; }
 
-/* ── 일반 후기: 작가 이름 / 홀 이름 / 후기 링크 석 줄. 카드째 누르면 열린다.
-      전에는 카드가 컸다 — 대표 «일반 후기 카드가 좀 커». 「블로그」 딱지도 뺐다 ── */
-.rv-sec-link .rv-grid { grid-template-columns: repeat(auto-fill, minmax(224px, 1fr)); }
-.rv-link { display: block; padding: 16px 18px 14px; background: var(--cream);
+/* ── 일반 후기: 이름 / 홀 이름 / 후기 링크 석 줄. 카드째 누르면 열린다.
+      전에는 카드가 컸다 — 대표 «일반 후기 카드가 좀 커». 「블로그」 딱지도 뺐다.
+      ⚠ align-items 를 start 로 두면 예식장 이름이 두 줄인 카드만 커져 들쭉날쭉해진다.
+      늘려서(stretch) 한 줄 안에서는 키를 맞추고, 링크는 아래로 내려 붙인다 ── */
+.rv-sec-link .rv-grid { display: grid; gap: 14px; align-items: stretch;
+  grid-template-columns: repeat(auto-fill, minmax(224px, 1fr)); }
+.rv-link { display: flex; flex-direction: column; padding: 16px 18px 14px; background: var(--cream);
   transition: border-color .2s ease, background .2s ease, transform .2s ease; }
 .rv-link:hover { border-color: var(--gold); background: #fff; transform: translateY(-2px); }
 .rv-link .rv-who { font-size: .92rem; }
-.rv-go { display: inline-block; margin-top: 9px; font-size: .82rem; color: var(--gold-deep); }
+.rv-go { margin-top: auto; padding-top: 10px; font-size: .82rem; color: var(--gold-deep); }
 .rv-link:hover .rv-go { text-decoration: underline; }
 
-/* ── 촬영 후 설문 후기: 본문이 주인공 ── */
-.rv-sec-survey .rv-grid { grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); }
-.rv-survey { padding: 24px 24px 20px; }
+/* ── 촬영 후 설문 후기: 본문이 주인공.
+      ⚠ 격자로 놓으면 글 길이가 5자에서 200자까지라 한 줄이 제일 긴 카드에 맞춰지고
+      나머지 밑이 통째로 빈다 — 대표 «박스가 너무 뒤죽박죽이네.. 빈공간도 많고».
+      단(column)으로 쌓으면 위아래로 촘촘히 붙어 빈자리가 안 생긴다 ── */
+.rv-sec-survey .rv-grid { display: block; column-count: 3; column-gap: 14px; }
+.rv-survey { display: block; break-inside: avoid; -webkit-column-break-inside: avoid;
+  margin: 0 0 14px; padding: 22px 22px 18px; }
 .rv-body { margin: 0 0 16px; line-height: 1.9; color: #3d3833; font-size: .93rem;
   white-space: pre-wrap; word-break: break-word; }
 .rv-body::before { content: '“'; font-family: var(--serif); font-size: 2.1rem;
@@ -54,13 +60,17 @@
 
 .rv-cta { margin-top: 34px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
 
+@media (max-width: 980px) {
+  .rv-sec-survey .rv-grid { column-count: 2; }
+}
 @media (max-width: 860px) {
   .rv-page { padding: 120px 0 72px; }
 }
 @media (max-width: 640px) {
   /* 좁으면 한 줄에 하나. 두 칸으로 버티면 글이 두 글자씩 끊긴다 */
-  .rv-sec-link .rv-grid, .rv-sec-survey .rv-grid { grid-template-columns: 1fr; gap: 10px; }
-  .rv-survey { padding: 19px 18px 16px; }
+  .rv-sec-link .rv-grid { grid-template-columns: 1fr; gap: 10px; }
+  .rv-sec-survey .rv-grid { column-count: 1; }
+  .rv-survey { margin-bottom: 10px; padding: 19px 18px 16px; }
   .rv-body { font-size: .9rem; line-height: 1.85; }
   .rv-sec + .rv-sec { margin-top: 36px; padding-top: 30px; }
   .rv-head { margin-bottom: 32px; }

@@ -32,13 +32,10 @@ const esc = (s) => (s == null ? '' : String(s)).replace(/[&<>"']/g, (c) => ({ '&
    둘 다 없으면 그 줄을 아예 안 그린다 — 「미지정」 을 손님께 보일 필요가 없다 */
 const brideLine = (r) => (r.who ? `<p class="rv-who">${esc(r.who)} 님</p>` : '');
 const staffLine = (r) => (r.staff ? `<p class="rv-who">${esc(r.staff)} 작가</p>` : '');
-// 예식장·날짜는 있는 것만. 없다고 「-」 를 늘어놓으면 지저분하다
-const metaLine = (r) => {
-  const bits = [];
-  if (r.venue) bits.push(esc(r.venue));
-  if (r.ym) bits.push(esc(r.ym));
-  return bits.length ? `<p class="rv-meta">${bits.join(' · ')}</p>` : '';
-};
+/* 예식장만 적는다. 날짜는 뺐다 (대표 «날짜 기니까 박스가 다른거랑 크기가 달라 /
+   딱히 의미가 없으니») — 예식장 이름이 길면 날짜가 다음 줄로 넘어가 카드 키가 제각각이 됐다.
+   자료(ym)는 그대로 받아둔다. 나중에 다시 넣자고 하면 한 줄이면 된다 */
+const metaLine = (r) => (r.venue ? `<p class="rv-meta">${esc(r.venue)}</p>` : '');
 
 // 설문 글 — 본문이 주인공이라 위에 놓고, 누구를 두고 한 말인지는 아래에
 function surveyCard(r) {

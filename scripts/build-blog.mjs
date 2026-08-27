@@ -162,6 +162,7 @@ function siteHeader() {
       <ul class="nav-menu">
         <li><a href="/#about">소개</a></li>
         <li><a href="/#gallery">갤러리</a></li>
+        <li><a href="/reviews">후기</a></li>
         <li><a href="/#pricing">가격</a></li>
         <li><a href="/#event">이벤트</a></li>
         <li><a href="/blog" aria-current="page">블로그</a></li>
@@ -176,7 +177,7 @@ function siteFooter() {
     <div class="blog-footer-inner">
       <p class="bf-brand">${esc(SITE.brand)} · ${esc(SITE.brandEn)}</p>
       <p class="bf-links">
-        <a href="/">홈</a> · <a href="/blog">블로그</a> · <a href="/#pricing">가격</a> ·
+        <a href="/">홈</a> · <a href="/blog">블로그</a> · <a href="/reviews">후기</a> · <a href="/#pricing">가격</a> ·
         <a href="/#booking">예약</a> · <a href="${SITE.instagram}" target="_blank" rel="noopener">인스타그램</a>
       </p>
       <p class="bf-copy">© 2013 ${esc(SITE.brandEn)}. All rights reserved.</p>
