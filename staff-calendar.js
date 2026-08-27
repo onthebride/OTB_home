@@ -433,8 +433,9 @@ function renderSet() {
       <section class="sc-set-row">
         <h3>알림</h3>
         <p class="sc-set-d">예식 <b>날짜·시간·장소</b>가 바뀌거나,
-          <b>연회장·폐백·2부 촬영</b>이 붙고 빠지거나, <b>취소</b>되면 폰으로 알려드려요.<br />
-          <b>한 기기에서만 받습니다.</b> 다른 기기에서 켜면 이전 기기는 저절로 꺼져요.</p>
+          <b>연회장·폐백·2부 촬영</b>이 붙고 빠지거나, <b>취소</b>되면 폰으로 알려드려요.</p>
+        <p class="sc-set-d"><b>한 기기에서만 받습니다.</b><br />
+          다른 기기에서 켜면 이전 기기는 저절로 꺼져요.</p>
         <button type="button" class="sc-sw" id="setPushSw" role="switch" aria-checked="false">
           <span class="sc-sw-k"></span><b>불러오는 중</b>
         </button>
@@ -443,8 +444,9 @@ function renderSet() {
 
       <section class="sc-set-row">
         <h3>스케줄 받기</h3>
-        <p class="sc-set-d">잠시 쉬실 때는 꺼두세요. 꺼두면 새 예식이 배정되지 않아요.
-          이미 배정된 예식은 그대로 있습니다.</p>
+        <p class="sc-set-d">잠시 쉬실 때는 꺼두세요. 꺼두면 <b>새 예식이 배정되지 않아요.</b></p>
+        <p class="sc-set-d"><b>이미 배정된 예식은 진행을 해주셔야 하고,</b><br />
+          그마저도 어려우시면 <b>대표와 상의</b>해 주세요.</p>
         <button type="button" class="sc-sw${d.accepting ? ' on' : ''}" id="setAccept"
           role="switch" aria-checked="${d.accepting ? 'true' : 'false'}">
           <span class="sc-sw-k"></span><b>${d.accepting ? '받는 중' : '쉬는 중'}</b>
@@ -453,20 +455,23 @@ function renderSet() {
 
       <section class="sc-set-row">
         <h3>지정 촬영비</h3>
-        <p class="sc-set-d">신부님이 <b>작가님을 지정해</b> 예약하실 때 기본가에 더해지는 금액이에요.
-          안 받으시려면 0 을 적어주세요.</p>
+        <p class="sc-set-d">신부님이 <b>작가님을 지정해</b> 예약하실 때
+          기본가에 더해지는 금액이에요.</p>
+        <p class="sc-set-d">기본 작가 페이가 <b>25만원</b>이니,
+          여기에 지정 촬영비를 더한 <b>총 금액</b>이 나갑니다.<br />
+          안 받으시려면 <b>0</b>을 적어주세요.</p>
         ${d.can_fee ? `
         <div class="sc-fee">
-          <input type="number" id="setFee" min="0" max="1000000" step="1000"
-            inputmode="numeric" value="${fee}" placeholder="예) 30000" />
+          <input type="text" id="setFee" inputmode="numeric" autocomplete="off"
+            value="${fee === '' ? '' : wonFmt(fee)}" placeholder="예) 30,000" />
           <span class="sc-fee-w">원</span>
           <button type="button" class="btn-sm primary" id="setFeeSave">저장</button>
         </div>
         <p class="sc-set-now" id="setFeeNow">${d.pick_fee == null ? '아직 안 정하셨어요.'
           : d.pick_fee === 0 ? '지금은 <b>안 받는 것</b>으로 되어 있어요.'
-          : `지금 <b>${wonFmt(d.pick_fee)}원</b>으로 되어 있어요.`}</p>`
+          : `지금 <b>${wonFmt(d.pick_fee)}원</b> — 신부님이 지정하시면 <b>${wonFmt(250000 + d.pick_fee)}원</b>이 나갑니다.`}</p>`
         : `
-        <p class="sc-set-lock">촬영 후기가 <b>${d.need}건</b> 쌓이면 적으실 수 있어요.
+        <p class="sc-set-lock">촬영 후기가 <b>${d.need}건</b> 쌓이면 적으실 수 있어요.<br />
           지금은 <b>${d.reviews}건</b>이에요.</p>`}
       </section>
     </div>`;
@@ -479,9 +484,17 @@ function renderSet() {
 
   const sw = $('setAccept');
   if (sw) sw.addEventListener('click', () => setSave({ accepting: !setData.accepting }, sw));
+  /* 금액에 쉼표를 찍어준다 (대표 «숫자표기로 해줘 쉼표넣어서»).
+     ⚠ <input type="number"> 는 쉼표를 못 담는다 — text 로 두고 우리가 찍는다.
+     보낼 때는 쉼표를 떼고 숫자만 보낸다 */
+  const feeEl = $('setFee');
+  if (feeEl) feeEl.addEventListener('input', () => {
+    const n = feeEl.value.replace(/[^0-9]/g, '').slice(0, 7);   // 100만원까지
+    feeEl.value = n === '' ? '' : wonFmt(n);
+  });
   const save = $('setFeeSave');
   if (save) save.addEventListener('click', () => {
-    const v = String($('setFee').value || '').trim();
+    const v = String(($('setFee').value || '')).replace(/[^0-9]/g, '');
     if (v === '') { toastSet('금액을 적어주세요.'); return; }
     setSave({ pick_fee: Number(v) }, save);
   });

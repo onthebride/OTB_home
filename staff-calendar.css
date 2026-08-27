@@ -425,3 +425,8 @@
 /* 설정 안의 안내 한 줄 (알림을 못 켤 때 등) */
 .sc-set-msg { margin: 9px 0 0; font-size: .8rem; line-height: 1.7; color: #b5462f; }
 .sc-sw:disabled { opacity: .55; cursor: default; }
+
+/* 설정 칸 줄 사이 (대표 «설정에 줄바꿈좀 해주고») — 설명이 여러 줄이라 붙으면 안 읽힌다 */
+.sc-set-d + .sc-set-d { margin-top: -6px; }
+.sc-set-row h3 + .sc-set-d { margin-bottom: 8px; }
+.sc-set-d:last-of-type { margin-bottom: 14px; }
