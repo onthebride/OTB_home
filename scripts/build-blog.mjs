@@ -429,6 +429,8 @@ function build() {
     // 블로그 밖 정적 페이지. 이 스크립트가 sitemap.xml 을 통째로 덮어쓰므로 여기 없으면 재빌드 때 사라짐.
     // ※ /rules 는 검색 비노출(noindex) 정책이라 일부러 넣지 않음.
     { loc: SITE.origin + '/privacy', pri: '0.3', lastmod: '2026-08-10' },
+    // 신부님 후기 모아보기 (2026-08-27 신설). 내용은 DB 에서 오지만 주소는 고정이라 여기 적어둔다
+    { loc: SITE.origin + '/reviews', pri: '0.7', lastmod: '2026-08-27' },
     { loc: SITE.origin + '/blog', pri: '0.8', lastmod: posts[0] && (posts[0].updated || posts[0].date) },
     ...posts.map((p) => ({ loc: `${SITE.origin}/blog/posts/${p.slug}`, pri: '0.7', lastmod: p.updated || p.date })),
   ];

@@ -4345,7 +4345,35 @@ if (stToggle) {
      · 링크 있는 것  = 신부가 실제로 글을 올린 것 (18건)
      · 직접 확인     = 대표가 예약 상세에서 체크만 한 것 — 글이 어디 있는지 모른다 (18건) */
 let rvData = null;
+let rvPosts = null;
 let rvFilter = 'all';
+
+/* 붙여넣은 글에서 후기를 뽑아낸다 (대표 «쌓여있는거 많거든? 그거 다 줄께»).
+   한 줄에 하나. 주소만 있어도 되고, 뒤에 이름·예식장·날짜를 아무 차례로 적어도 된다.
+   탭·쉼표·두 칸 이상 띄어쓰기로 나눈다 — 엑셀에서 긁어 붙이면 탭으로 온다 */
+function rvParse(text) {
+  const out = [];
+  for (const raw of String(text || '').split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    let url = (line.match(/https?:\/\/\S+/) || [])[0];
+    if (!url) continue;                                  // 주소가 없는 줄은 후기가 아니다
+    // 「주소, 이름, 예식장」 처럼 쉼표로 나눠 붙이면 쉼표까지 주소로 딸려온다.
+    // 그대로 두면 링크가 깨진다 — 끝에 붙은 문장부호를 뗀다
+    url = url.replace(/[,;.]+$/, '');
+    const rest = line.replace(url, ' ').split(/\t|,|\s{2,}/).map((s) => s.trim()).filter(Boolean);
+    let who = '', venue = '', date = '';
+    for (const bit of rest) {
+      const d = bit.match(/(20\d{2})\D(\d{1,2})\D(\d{1,2})/);
+      if (d && !date) { date = `${d[1]}-${String(d[2]).padStart(2, '0')}-${String(d[3]).padStart(2, '0')}`; continue; }
+      // 이름은 짧고, 예식장은 길다. 이름이 먼저 나오는 게 보통이라 앞의 짧은 것을 이름으로 본다
+      if (!who && bit.length <= 5) { who = bit; continue; }
+      if (!venue) { venue = bit; continue; }
+    }
+    out.push({ kind: 'link', url, who, venue, wedding_date: date });
+  }
+  return out;
+}
 
 async function renderEventReviews(force) {
   const wrap = $('revBody');
@@ -4355,6 +4383,10 @@ async function renderEventReviews(force) {
     const { data, error } = await sb.rpc('admin_event_reviews');
     if (error) { wrap.innerHTML = `<p class="empty">불러오기 실패: ${esc(error.message)}</p>`; return; }
     rvData = data || {};
+  }
+  if (!rvPosts || force) {
+    const { data: pd } = await sb.rpc('admin_review_posts');
+    rvPosts = pd || { rows: [], candidates: [], n: 0, shown: 0 };
   }
   const d = rvData;
   const all = d.rows || [];
@@ -4371,6 +4403,11 @@ async function renderEventReviews(force) {
   const btn = (k, label, n) => `<button type="button" class="btn-sm${rvFilter === k ? ' active' : ''}"`
     + ` data-rvf="${k}">${label} ${n}</button>`;
 
+  // 「홈페이지 게시」 를 고르면 참여 목록 대신 실은 것들을 보여준다.
+  // 칸을 또 만들지 않고 같은 자리를 나눠 쓴다 — 대표가 «박스 안에 박스» 를 싫어한다
+  const onPosts = rvFilter === 'posts';
+  const posts = rvPosts || { rows: [], candidates: [], shown: 0 };
+
   wrap.innerHTML =
     '<div class="st-cards">'
     + card('후기 이벤트 참여', d.n || 0, '앨범 ' + (d.album || 0) + ' · 할인 ' + (d.discount || 0))
@@ -4383,12 +4420,98 @@ async function renderEventReviews(force) {
     + btn('all', '전체', all.length)
     + btn('link', '링크 있는 것', all.filter((r) => r.has_link).length)
     + btn('nolink', '직접 확인', all.filter((r) => !r.has_link).length)
+    + '<span class="rv-sep"></span>'
+    + btn('posts', '🌐 홈페이지 게시', posts.shown || 0)
     + '</div>'
-    + (rows.length ? '<div class="rv-list">' + rows.map(rvRow).join('') + '</div>'
-      : '<p class="empty">해당하는 후기가 없어요.</p>');
+    + (onPosts ? rvPostsHtml(posts)
+      : (rows.length ? '<div class="rv-list">' + rows.map(rvRow).join('') + '</div>'
+        : '<p class="empty">해당하는 후기가 없어요.</p>'));
 
   wrap.querySelectorAll('[data-rvf]').forEach((b) =>
     b.addEventListener('click', () => { rvFilter = b.dataset.rvf; renderEventReviews(); }));
+  if (onPosts) rvBindPosts(wrap);
+}
+
+/* 홈페이지에 실은 것들 — 켜고 끄기·지우기·새로 넣기.
+   «내려달라» 는 말이 오면 바로 내릴 수 있어야 한다 (대표가 손님께 한 약속) */
+function rvPostsHtml(p) {
+  const cand = (p.candidates || []).length;
+  const rows = (p.rows || []).map((r) => {
+    const body = r.kind === 'survey'
+      ? `<p class="rv-pbody">${esc(String(r.body || '').slice(0, 140))}${String(r.body || '').length > 140 ? '…' : ''}</p>`
+      : `<a class="rv-link" href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.url)}</a>`;
+    const meta = [r.who, r.venue, r.wedding_date].filter(Boolean).map(esc).join(' · ');
+    return `
+    <div class="rv-item${r.published ? '' : ' off'}">
+      <div class="rv-main">
+        <p class="rv-who"><span class="rv-tag">${r.kind === 'survey' ? '촬영 후기' : esc(r.site || '링크')}</span> ${meta}</p>
+        ${body}
+      </div>
+      <div class="rv-side">
+        <button type="button" class="btn-sm" data-rvp="${r.published ? 'hide' : 'show'}" data-id="${r.id}">${r.published ? '내리기' : '올리기'}</button>
+        <button type="button" class="btn-sm od-cancel" data-rvp="delete" data-id="${r.id}">지우기</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+  <div class="rv-pub">
+    <div class="rv-pub-head">
+      <p class="rv-pub-t">홈페이지에 <b>${p.shown || 0}건</b> 실려 있습니다
+        <a href="/reviews" target="_blank" rel="noopener">게시 화면 열기 ↗</a></p>
+      ${cand ? `<button type="button" class="btn-sm" id="rvTakeAll">아직 안 실은 ${cand}건 모두 싣기</button>` : ''}
+      <button type="button" class="btn-sm btn-primary-sm" id="rvAddOpen">후기 붙여넣기</button>
+    </div>
+    <div class="rv-add" id="rvAdd" hidden>
+      <p class="rv-add-h">한 줄에 하나씩. <b>주소만 있어도 됩니다.</b>
+        뒤에 이름·예식장·날짜를 적으시면 같이 들어갑니다 (탭·쉼표로 나눠서).</p>
+      <textarea id="rvAddText" rows="7" placeholder="https://blog.naver.com/xxx/123
+https://blog.naver.com/yyy/456, 김지은, 상록아트홀, 2026-05-10
+https://cafe.naver.com/zzz/789	이서연	아펠가모 잠실	2026.06.14"></textarea>
+      <div class="rv-add-acts">
+        <span class="rv-add-msg" id="rvAddMsg"></span>
+        <button type="button" class="btn-sm" id="rvAddCancel">닫기</button>
+        <button type="button" class="btn-sm btn-primary-sm" id="rvAddGo">넣기</button>
+      </div>
+    </div>
+    ${rows ? `<div class="rv-list">${rows}</div>` : '<p class="empty">아직 홈페이지에 실은 후기가 없어요.</p>'}
+  </div>`;
+}
+
+function rvBindPosts(wrap) {
+  const box = wrap.querySelector('#rvAdd');
+  const open = wrap.querySelector('#rvAddOpen');
+  if (open && box) {
+    open.addEventListener('click', () => { box.hidden = !box.hidden; });
+    wrap.querySelector('#rvAddCancel').addEventListener('click', () => { box.hidden = true; });
+    wrap.querySelector('#rvAddGo').addEventListener('click', async () => {
+      const items = rvParse(wrap.querySelector('#rvAddText').value);
+      const msg = wrap.querySelector('#rvAddMsg');
+      if (!items.length) { msg.textContent = '주소가 있는 줄이 없어요.'; return; }
+      msg.textContent = `${items.length}건 넣는 중…`;
+      const { data, error } = await sb.rpc('admin_review_post_add', { p_items: items });
+      if (error) { msg.textContent = '실패: ' + error.message; return; }
+      toast(`${data.added}건 넣었어요` + (data.skipped ? ` (${data.skipped}건은 이미 있거나 주소가 아니라 건너뜀)` : ''));
+      renderEventReviews(true);
+    });
+  }
+  const take = wrap.querySelector('#rvTakeAll');
+  if (take) {
+    take.addEventListener('click', async () => {
+      const { data, error } = await sb.rpc('admin_review_post_add', { p_items: rvPosts.candidates });
+      if (error) { alert('실패: ' + error.message); return; }
+      toast(`${data.added}건 실었어요`);
+      renderEventReviews(true);
+    });
+  }
+  wrap.querySelectorAll('[data-rvp]').forEach((b) => b.addEventListener('click', async () => {
+    const act = b.dataset.rvp;
+    if (act === 'delete' && !confirm('이 후기를 목록에서 지울까요? (신부님이 남긴 원본은 그대로 있습니다)')) return;
+    const { error } = await sb.rpc('admin_review_post_set', { p_id: b.dataset.id, p_action: act });
+    if (error) { alert('실패: ' + error.message); return; }
+    toast({ show: '홈페이지에 올렸어요', hide: '홈페이지에서 내렸어요', delete: '지웠어요' }[act]);
+    renderEventReviews(true);
+  }));
 }
 
 function rvRow(r) {

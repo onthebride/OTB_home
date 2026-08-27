@@ -1478,3 +1478,29 @@ td .muted { color: var(--ink-soft); }
   .rv-side { flex-direction: row; align-items: center; flex-wrap: wrap; width: 100%; }
   .rv-when { margin-left: auto; }
 }
+
+/* 홈페이지 게시 관리 (통계 → 이벤트 후기 → 🌐 홈페이지 게시. 대표 요청 2026-08-27) */
+.rv-filter .rv-sep { width: 1px; background: var(--line); margin: 2px 4px; }
+.rv-pub-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+.rv-pub-t { margin: 0; margin-right: auto; font-size: .86rem; color: var(--ink-soft); }
+.rv-pub-t b { color: var(--ink); }
+.rv-pub-t a { margin-left: 8px; font-size: .8rem; color: var(--gold-deep); }
+.rv-add { border: 1px solid var(--line); border-radius: 9px; padding: 13px 14px;
+  background: var(--paper); margin-bottom: 12px; }
+.rv-add-h { margin: 0 0 8px; font-size: .8rem; color: var(--ink-soft); line-height: 1.65; }
+.rv-add-h b { color: var(--ink); }
+.rv-add textarea { width: 100%; box-sizing: border-box; font-family: var(--sans); font-size: .82rem;
+  line-height: 1.7; padding: 10px 11px; border: 1px solid var(--line); border-radius: 7px;
+  background: #fff; resize: vertical; }
+.rv-add-acts { display: flex; align-items: center; gap: 7px; margin-top: 9px; }
+.rv-add-msg { margin-right: auto; font-size: .78rem; color: var(--ink-soft); }
+/* 내려둔 것은 흐리게 — 목록에서 없애지 않는다. 다시 올릴 수 있어야 한다 */
+.rv-item.off { background: var(--paper); opacity: .62; }
+.rv-item.off .rv-who::after { content: ' · 내려둠'; color: #b5462f; font-weight: 600; font-size: .78rem; }
+.rv-pbody { margin: 4px 0 0; font-size: .82rem; color: var(--ink-soft); line-height: 1.7; }
+.rv-side .btn-sm { white-space: nowrap; }
+
+@media (max-width: 600px) {
+  .rv-pub-t { width: 100%; margin-right: 0; }
+  .rv-item.off .rv-who::after { content: ''; }
+}

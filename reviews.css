@@ -1,0 +1,50 @@
+/* 신부님 후기 모아보기 (/reviews) — 대표 요청 2026-08-27.
+   바탕·글꼴·머리말은 styles.css 의 rules-page 를 그대로 쓰고, 후기 카드만 여기 둔다 */
+
+.rv-lead { text-align: center; color: var(--ink-soft); line-height: 1.85; font-size: .93rem;
+  margin: -14px 0 26px; }
+.rv-lead b { color: var(--ink); font-weight: 600; }
+
+.rv-tabs { display: flex; justify-content: center; gap: 6px; margin: 0 0 24px; }
+.rv-tab { background: none; border: 1px solid var(--line); border-radius: 999px;
+  padding: 7px 16px; font-family: inherit; font-size: .86rem; color: var(--ink-soft);
+  cursor: pointer; transition: background .18s, color .18s, border-color .18s; }
+.rv-tab:hover { color: var(--ink); }
+.rv-tab.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+.rv-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.rv-card { background: #fff; border: 1px solid var(--line); border-radius: 12px;
+  padding: 22px 22px 20px; display: flex; flex-direction: column; min-width: 0; }
+
+/* 설문 글 — 본문이 주인공이라 위에 놓고, 누가 썼는지는 아래에 작게 */
+.rv-body { margin: 0 0 14px; line-height: 1.9; color: #3d3833; font-size: .93rem;
+  white-space: pre-wrap; word-break: break-word; }
+.rv-body::before { content: '“'; font-family: 'Cormorant Garamond', serif; font-size: 2.1rem;
+  color: var(--gold); line-height: 0; vertical-align: -.22em; margin-right: 4px; }
+
+.rv-who { margin: 0; font-size: .88rem; font-weight: 600; color: var(--ink); }
+.rv-meta { margin: 3px 0 0; font-size: .78rem; color: var(--ink-soft); }
+
+/* 밖에 올리신 글 — 본문이 없으니 카드가 짧다. 어디에 올린 글인지를 위에 딱지로 */
+.rv-link { background: var(--cream); }
+.rv-site { margin: 0 0 10px; display: inline-block; align-self: flex-start;
+  font-size: .74rem; color: var(--gold-deep); background: #fff;
+  border: 1px solid var(--line); border-radius: 999px; padding: 3px 11px; }
+.rv-go { margin-top: 14px; font-size: .84rem; color: var(--gold-deep); align-self: flex-start; }
+.rv-go:hover { text-decoration: underline; }
+
+.rv-empty { text-align: center; color: var(--ink-soft); padding: 40px 0; }
+
+.rv-note { margin: 26px 0 0; text-align: center; font-size: .8rem; color: var(--ink-soft);
+  line-height: 1.8; }
+.rv-note b { color: var(--ink); }
+.rv-note a { color: var(--gold-deep); }
+
+@media (max-width: 720px) {
+  /* 좁으면 한 줄에 하나. 두 칸으로 버티면 글이 두 글자씩 끊긴다 */
+  .rv-grid { grid-template-columns: 1fr; gap: 10px; }
+  .rv-card { padding: 18px 17px 16px; }
+  .rv-body { font-size: .9rem; line-height: 1.85; }
+  .rv-lead { font-size: .88rem; margin-bottom: 20px; }
+  .rv-tabs { flex-wrap: wrap; }
+}
