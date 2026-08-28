@@ -49,7 +49,8 @@
         <button class="dtab active" data-tab="dashboard">홈</button>
         <button class="dtab" data-tab="stats">통계</button>
         <button class="dtab" data-tab="calendar">캘린더</button>
-        <button class="dtab" data-tab="bookings">예약</button>
+        <!-- 예약은 캘린더 안 서브로 들어갔다. 작가는 새 상위 메뉴 (대표 지시 2026-08-28) -->
+        <button class="dtab" data-tab="people">작가</button>
         <button class="dtab" data-tab="select">셀렉</button>
         <button class="dtab" data-tab="album">발주</button>
         <button class="dtab" data-tab="settings">설정</button>
@@ -150,6 +151,14 @@
       </div>
 
       <div id="tab-calendar" hidden>
+        <!-- 예약을 캘린더 안으로 넣었다 (대표 «캘린더가 상위 메뉴 / 그 안에 예약 서브», 2026-08-28).
+             ⚠ 묶음에 .dash-subtabs 만 쓰면 설정 쪽 코드가 통째로 찾아 여기를 집는다 — id 로 가른다 -->
+        <div class="dash-subtabs cal-subtabs" id="calSubtabs">
+          <button type="button" class="sub-tab active" data-csub="cal">캘린더</button>
+          <button type="button" class="sub-tab" data-csub="book">예약</button>
+        </div>
+
+        <div id="calBody">
         <div class="dash-card dc-card">
           <div class="dash-card-head"><h3>🔎 날짜 조회 · 배정 가능 작가</h3></div>
           <!-- 문의 글을 그대로 붙여넣으면 아래 날짜 칸이 채워진다 -->
@@ -207,9 +216,10 @@
             <div id="schedList"></div>
           </div>
         </div>
-      </div>
+        </div><!-- /calBody -->
 
-      <div id="tab-bookings" hidden>
+        <div id="bookBody" hidden>
+        <div id="tab-bookings">
         <div class="filters" id="filters">
           <button class="filter active" data-f="전체">전체 <span id="c_all">0</span></button>
           <button class="filter" data-f="신규">신규 <span id="c_new">0</span></button>
@@ -238,6 +248,44 @@
             <tbody id="bkRows"></tbody>
           </table>
           <p class="empty" id="emptyMsg" hidden>예약이 없습니다.</p>
+        </div>
+      </div>
+
+        </div>
+      </div>
+
+      <!-- 작가 (대표 지시 2026-08-28) — 평가+감점 · 받은 응답 · 작가 관리 -->
+      <div id="tab-people" hidden>
+        <div class="dash-subtabs pe-subtabs" id="peSubtabs">
+          <button type="button" class="sub-tab active" data-psub="eval">평가</button>
+          <button type="button" class="sub-tab" data-psub="items">받은 응답</button>
+          <button type="button" class="sub-tab" data-psub="manage">작가 관리</button>
+        </div>
+
+        <div id="peEval">
+        <div id="fbBody"><p class="empty">불러오는 중…</p></div>
+        <div id="penBody"><p class="empty">불러오는 중…</p></div>
+        </div>
+
+        <div id="peItems" hidden>
+        <div id="fbItemsBody"><p class="empty">불러오는 중…</p></div>
+        </div>
+
+        <div id="peManage" hidden>
+        <div id="tab-staff">
+          <div class="staff-add">
+            <h3>작가 등록</h3>
+            <div class="staff-add-row">
+              <input type="text" id="stName" placeholder="이름" />
+              <input type="text" id="stPhone" class="phone" placeholder="연락처" />
+              <button class="btn-primary" id="stAddBtn">추가</button>
+            </div>
+            <p class="staff-msg" id="stMsg"></p>
+          </div>
+          <div class="staff-list" id="staffList"></div>
+          <p class="empty" id="staffEmpty" hidden>등록된 작가가 없습니다.</p>
+        </div>
+
         </div>
       </div>
 
@@ -308,11 +356,8 @@
         <div class="st-toggle" id="stToggle">
           <span class="st-tg-ind" aria-hidden="true"></span>
           <!-- 순서는 대표가 정한다 (2026-08-25). 맨 앞 칸이 곧 기본으로 열리는 칸 -->
-          <button type="button" class="st-tg active" data-sttab="feedback">작가 평가</button>
-          <!-- 감점·받은 응답은 따로 뺐다 (대표 «감점 박스는 따로줘 / 받은응답박스 꺼내주고», 2026-08-28) -->
-          <button type="button" class="st-tg" data-sttab="penalty">감점</button>
-          <button type="button" class="st-tg" data-sttab="fbitems">받은 응답</button>
-          <button type="button" class="st-tg" data-sttab="visits">방문 통계</button>
+          <!-- 작가 평가·감점·받은 응답은 「작가」 메뉴로 옮겼다 (대표 지시 2026-08-28) -->
+          <button type="button" class="st-tg active" data-sttab="visits">방문 통계</button>
           <button type="button" class="st-tg" data-sttab="sales">예약·매출</button>
           <button type="button" class="st-tg" data-sttab="reviews">이벤트 후기</button>
         </div>
@@ -328,9 +373,6 @@
           </div>
         </div>
         <!-- 맨 앞 칸(작가 평가)만 펴둔다. 나머지는 골랐을 때 그린다 -->
-        <div id="fbBody"><p class="empty">불러오는 중…</p></div>
-        <div id="penBody" hidden><p class="empty">불러오는 중…</p></div>
-        <div id="fbItemsBody" hidden><p class="empty">불러오는 중…</p></div>
         <div id="statsBody" hidden><p class="empty">불러오는 중…</p></div>
         <div id="salesBody" hidden><p class="empty">불러오는 중…</p></div>
         <div id="revBody" hidden><p class="empty">불러오는 중…</p></div>
@@ -338,27 +380,13 @@
 
       <div id="tab-settings" hidden>
         <div class="dash-subtabs">
-          <button class="sub-tab active" data-subtab="staff">작가관리</button>
-          <button class="sub-tab" data-subtab="pricing">상품·가격</button>
+          <!-- 작가관리는 「작가」 메뉴로 옮겼다 (대표 지시 2026-08-28) -->
+          <button class="sub-tab active" data-subtab="pricing">상품·가격</button>
           <button class="sub-tab" data-subtab="gallery">갤러리</button>
           <button class="sub-tab" data-subtab="audit">배정 이력</button>
         </div>
 
-        <div id="tab-staff">
-          <div class="staff-add">
-            <h3>작가 등록</h3>
-            <div class="staff-add-row">
-              <input type="text" id="stName" placeholder="이름" />
-              <input type="text" id="stPhone" class="phone" placeholder="연락처" />
-              <button class="btn-primary" id="stAddBtn">추가</button>
-            </div>
-            <p class="staff-msg" id="stMsg"></p>
-          </div>
-          <div class="staff-list" id="staffList"></div>
-          <p class="empty" id="staffEmpty" hidden>등록된 작가가 없습니다.</p>
-        </div>
-
-        <div id="tab-pricing" hidden>
+        <div id="tab-pricing">
           <div class="pricing-admin">
             <h3>상품·옵션 가격 관리</h3>
             <p class="pr-hint">가격·이름을 바꾸고 <b>저장</b>을 누르면 예약 폼·홈페이지·신부 포털에 바로 반영됩니다. <b>이미 접수된 예약은 그대로 유지</b>돼요(그때 단가로 저장됨). "폼 노출"을 끄면 예약 폼에서 그 옵션이 사라집니다.</p>
@@ -405,6 +433,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=d0d7115b18"></script>
+  <script src="admin.js?v=66bfbfdb27"></script>
 </body>
 </html>

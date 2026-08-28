@@ -2906,13 +2906,57 @@ function applyHash() {
   try {
     if (!btn.classList.contains('active') || tab === 'dashboard') btn.click();
     if (tab === 'settings' && sub) {
-      const sb2 = document.querySelector('.sub-tab[data-subtab="' + sub + '"]');
+      const sb2 = document.querySelector('#tab-settings .sub-tab[data-subtab="' + sub + '"]');
       if (sb2) sb2.click();
     }
+    // 2026-08-28 새 서브 칸들 — 새로고침해도 보던 자리로 돌아온다
+    if (tab === 'calendar') calSub(sub || 'cal');
+    if (tab === 'people') peSub(sub || 'eval');
     if (tab === 'stats' && (sub || stFirst()) !== stCur) stSub(sub || stFirst());
   } finally { applyingHash = false; }
 }
 window.addEventListener('hashchange', applyHash);
+
+/* ===== 캘린더 안의 두 칸 (캘린더 · 예약) — 대표 지시 2026-08-28
+   «캘린더가 상위 메뉴 / 그 안에 들어가면 기본은 캘린더 / 다른 서브메뉴로 예약» ===== */
+let calCur = 'cal';
+function calSub(sub) {
+  calCur = sub === 'book' ? 'book' : 'cal';
+  if ($('calBody')) $('calBody').hidden = calCur !== 'cal';
+  if ($('bookBody')) $('bookBody').hidden = calCur !== 'book';
+  const box = $('calSubtabs');
+  if (box) box.querySelectorAll('.sub-tab').forEach((b) =>
+    b.classList.toggle('active', b.dataset.csub === calCur));
+  if (calCur === 'cal') { renderCalendar(); renderSchedule(); }
+  setHash(calCur === 'cal' ? 'calendar' : 'calendar/book');
+}
+const calSubtabs = $('calSubtabs');
+if (calSubtabs) calSubtabs.addEventListener('click', (e) => {
+  const b = e.target.closest('.sub-tab');
+  if (b) calSub(b.dataset.csub);
+});
+
+/* ===== 「작가」 메뉴의 세 칸 — 대표 지시 2026-08-28
+   «작가 평가+감점 / 받은응답 / 작가관리»
+   ⚠ 평가와 받은 응답은 같은 자료를 쓴다 — 어느 칸이든 renderFeedback() 한 번이면 된다 ===== */
+let peCur = 'eval';
+function peSub(sub) {
+  peCur = ['eval', 'items', 'manage'].indexOf(sub) >= 0 ? sub : 'eval';
+  if ($('peEval')) $('peEval').hidden = peCur !== 'eval';
+  if ($('peItems')) $('peItems').hidden = peCur !== 'items';
+  if ($('peManage')) $('peManage').hidden = peCur !== 'manage';
+  const box = $('peSubtabs');
+  if (box) box.querySelectorAll('.sub-tab').forEach((b) =>
+    b.classList.toggle('active', b.dataset.psub === peCur));
+  if (peCur === 'eval' || peCur === 'items') renderFeedback();
+  if (peCur === 'manage') renderStaff();
+  setHash(peCur === 'eval' ? 'people' : 'people/' + peCur);
+}
+const peSubtabs = $('peSubtabs');
+if (peSubtabs) peSubtabs.addEventListener('click', (e) => {
+  const b = e.target.closest('.sub-tab');
+  if (b) peSub(b.dataset.psub);
+});
 
 const dashTabs = document.querySelector('.dash-tabs');
 if (dashTabs) {
@@ -2921,21 +2965,24 @@ if (dashTabs) {
     if (!t) return;
     document.querySelectorAll('.dtab').forEach((x) => x.classList.toggle('active', x === t));
     const tab = t.dataset.tab;
+    /* 2026-08-28 메뉴 재편 (대표 지시)
+         캘린더 안에 예약이 서브로 들어왔다 · 「작가」 상위 메뉴가 새로 생겼다 */
     $('tab-dashboard').hidden = tab !== 'dashboard';
     $('tab-calendar').hidden = tab !== 'calendar';
-    $('tab-bookings').hidden = tab !== 'bookings';
+    $('tab-people').hidden = tab !== 'people';
     $('tab-select').hidden = tab !== 'select';
     $('tab-album').hidden = tab !== 'album';
     $('tab-stats').hidden = tab !== 'stats';
     $('tab-settings').hidden = tab !== 'settings';
     if (tab === 'dashboard') { renderDashboard(); loadEvents(); }
-    if (tab === 'calendar') { renderCalendar(); renderSchedule(); }
+    if (tab === 'calendar') calSub(calCur);
+    if (tab === 'people') peSub(peCur);
     if (tab === 'select') renderSelect();
     if (tab === 'album') renderAlbum();
     // 통계를 열면 홈의 「한눈에」 숫자도 같이 새로 받아둔다
     if (tab === 'stats') { stSub(stCur); renderHomeStats(true); }
     if (tab === 'settings') showSubtab(currentSubtab);
-    setHash(tab === 'settings' ? 'settings/' + currentSubtab : tab);
+    if (tab !== 'calendar' && tab !== 'people' && tab !== 'settings' && tab !== 'stats') setHash(tab);
     if (window.scrollY > 0) window.scrollTo({ top: 0 });  // 새 탭 내용을 처음부터 보이게
   });
 }
@@ -3027,14 +3074,21 @@ function renderHomeReviews(items) {
   }).join('');
 }
 
-// 홈에서 통계 탭으로. 후기 쪽은 「작가 평가」 칸까지 열어준다
+// 홈에서 통계 탭으로
 function goStats(sub) {
   const t = document.querySelector('.dtab[data-tab="stats"]');
   if (t) t.click();
   if (sub) stSub(sub);
 }
+/* 「작가 평가」는 2026-08-28 부터 통계가 아니라 「작가」 메뉴에 있다.
+   홈에서 눌렀을 때 옛 자리로 보내면 아무것도 안 뜬다 */
+function goPeople(sub) {
+  const t = document.querySelector('.dtab[data-tab="people"]');
+  if (t) t.click();
+  if (sub) peSub(sub);
+}
 if ($('homeStatsMore')) $('homeStatsMore').addEventListener('click', () => goStats());
-if ($('homeReviewsMore')) $('homeReviewsMore').addEventListener('click', () => goStats('feedback'));
+if ($('homeReviewsMore')) $('homeReviewsMore').addEventListener('click', () => goPeople('eval'));
 
 async function renderStats() {
   const wrap = $('statsBody');
@@ -4554,7 +4608,7 @@ async function renderSales() {
    맨 앞 칸이 곧 «기본으로 열리는 칸» 이고, 그 칸만 주소가 짧다(#stats). */
 const stFirst = () => {
   const b = document.querySelector('.st-tg[data-sttab]');
-  return b ? b.dataset.sttab : 'feedback';
+  return b ? b.dataset.sttab : 'visits';   // 2026-08-28: 작가 평가가 「작가」 메뉴로 옮겨갔다
 };
 let stCur = '';                     // 아직 아무 칸도 안 열었다는 뜻
 function stSub(sub) {
@@ -4570,17 +4624,14 @@ function stSub(sub) {
   box.style.setProperty('--st-n', btns.length);       // 칸이 몇 개인지도 알려준다 (표시등 폭)
   $('salesBody').hidden = cur !== 'sales';
   $('statsBody').hidden = cur !== 'visits';
-  $('fbBody').hidden = cur !== 'feedback';
-  $('penBody').hidden = cur !== 'penalty';
-  $('fbItemsBody').hidden = cur !== 'fbitems';
+  // 작가 평가·감점·받은 응답은 「작가」 메뉴로 옮겼다 (대표 지시 2026-08-28)
   $('revBody').hidden = cur !== 'reviews';
   const bar = document.querySelector('.st-bar');
   if (bar) bar.hidden = cur !== 'visits';             // 기간 버튼·바로가기는 방문 통계 전용
   setHash(cur === stFirst() ? 'stats' : 'stats/' + cur);
   if (cur === 'sales') renderSales();
   if (cur === 'visits') renderStats();
-  // 셋이 같은 자료를 쓴다 — 어느 칸을 골라도 한 번만 받아 셋을 함께 그린다
-  if (cur === 'feedback' || cur === 'penalty' || cur === 'fbitems') renderFeedback();
+
   if (cur === 'reviews') renderEventReviews();
 }
 const stToggle = $('stToggle');
@@ -5179,22 +5230,23 @@ if ($('abPrices')) {
   });
 }
 
-/* ===== 설정 하위탭 (작가관리 · 상품·가격 · 갤러리) ===== */
-let currentSubtab = 'staff';
+/* ===== 설정 하위탭 (상품·가격 · 갤러리 · 배정 이력) =====
+   작가관리는 「작가」 메뉴로 옮겼다 (대표 지시 2026-08-28) ===== */
+let currentSubtab = 'pricing';
 function showSubtab(st) {
   currentSubtab = st;
-  if ($('tab-staff')) $('tab-staff').hidden = st !== 'staff';
   if ($('tab-pricing')) $('tab-pricing').hidden = st !== 'pricing';
   if ($('tab-gallery')) $('tab-gallery').hidden = st !== 'gallery';
   if ($('tab-audit')) $('tab-audit').hidden = st !== 'audit';
-  document.querySelectorAll('.sub-tab').forEach((b) => b.classList.toggle('active', b.dataset.subtab === st));
+  // ⚠ 설정 안의 단추만 만진다. 캘린더·작가 쪽도 .sub-tab 이라 통째로 찾으면 남의 것을 끈다
+  const box = document.querySelector('#tab-settings .dash-subtabs');
+  if (box) box.querySelectorAll('.sub-tab').forEach((b) => b.classList.toggle('active', b.dataset.subtab === st));
   setHash('settings/' + st);
-  if (st === 'staff') renderStaff();
   if (st === 'pricing') renderPricing();
   if (st === 'gallery') loadGallery();
   if (st === 'audit') renderAudit();
 }
-const dashSubtabs = document.querySelector('.dash-subtabs');
+const dashSubtabs = document.querySelector('#tab-settings .dash-subtabs');
 if (dashSubtabs) dashSubtabs.addEventListener('click', (e) => {
   const t = e.target.closest('.sub-tab'); if (!t) return;
   showSubtab(t.dataset.subtab);
