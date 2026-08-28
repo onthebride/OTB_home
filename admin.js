@@ -47,6 +47,7 @@ let bkSearchTerm = '';
 let bkMonth = null; // 예약 목록 월별 페이지 {y, m}
 let surveyIds = new Set(); // 설문 제출된 예약 ID
 let allUnconfirmed = []; // 작가 미확인 (admin_unconfirmed)
+let penaltyData = { sum: {}, rows: [] };  // 작가 감점 (admin_penalties)
 let alimtalkFails = []; // 알림톡 발송 실패 (admin_alimtalk_failures)
 let reminders = []; // 관리자 할 일 리마인더 (admin_reminders_list)
 let pricingList = []; // 상품·옵션 카탈로그 (admin_pricing_list)
@@ -195,16 +196,32 @@ async function refreshEventBadge() {
 // 작가 평가 점수를 받아둔다 — 배정 드롭다운에서 이름 옆에 보여준다 (대표 요청 2026-08-24).
 // 전체 기간으로 본다. 배정할 때 궁금한 건 «이 사람이 어떤 작가인가» 라 기간을 좁힐 이유가 없다
 async function loadStaffScores() {
-  const { data, error } = await sb.rpc('admin_feedback', { p_days: 3650 });
-  if (error || !data) return;
+  /* 설문 점수와 감점을 함께 받는다 (대표 요청 2026-08-28).
+     ⚠ 배정 드롭다운과 통계가 **같은 값**을 봐야 한다 — 한쪽만 감점을 빼면 순서가 어긋난다.
+     설문은 이름으로, 감점은 작가 번호로 온다. 여기서 한 번에 붙인다 */
+  const [fr, pr] = await Promise.all([
+    sb.rpc('admin_feedback', { p_days: 3650 }),
+    sb.rpc('admin_penalties'),
+  ]);
+  if (fr.error || !fr.data) return;
+  penaltyData = (pr && !pr.error && pr.data) ? pr.data : { sum: {}, rows: [] };
   const byName = {};
-  (data.staff || []).forEach((x) => { byName[x.staff_name] = x; });
+  (fr.data.staff || []).forEach((x) => { byName[x.staff_name] = x; });
   staffScore = {};
   allStaff.forEach((s) => {
     const v = byName[s.name];
+    const pen = Number((penaltyData.sum || {})[s.id] && penaltyData.sum[s.id].total) || 0;
     // 추천 의향도 같이 담는다 — 지정 근거로 보는 값이다 (2026-08-25)
-    if (v) staffScore[s.id] = { score: v.avg_score, n: Number(v.n) || 0,
-      rec: v.avg_rec, recN: Number(v.rec_n) || 0 };
+    if (v || pen) {
+      const base = v ? Number(v.avg_score) : null;
+      staffScore[s.id] = {
+        score: base, n: v ? Number(v.n) || 0 : 0,
+        rec: v ? v.avg_rec : null, recN: v ? Number(v.rec_n) || 0 : 0,
+        pen,
+        // 감점을 뺀 값. 설문이 아직 없으면 뺄 것도 없다
+        final: base == null ? null : Math.round((base - pen) * 10) / 10,
+      };
+    }
   });
 }
 
@@ -283,12 +300,18 @@ let staffScore = {};
 // 보면 안 된다. 아직 평가가 없는 작가는 «-» 로 두고 만점으로 채우지 않는다
 function scoreTag(id) {
   const v = staffScore[id];
-  if (!v || v.score == null) return ' · 평가 -';
+  if (!v || v.score == null) {
+    // 설문은 없는데 감점만 있는 경우도 알려준다
+    return v && v.pen ? ` · 평가 - · 감점 -${v.pen}` : ' · 평가 -';
+  }
   // 추천 의향이 쌓이면 같이 보여준다. 100점 점수는 다들 만점 언저리라 안 갈리는데
   // 이건 갈린다 — 지정할 때 실제로 볼 값이다 (2026-08-25).
   // 줄 세우는 기준은 아직 점수 그대로다. 추천이 충분히 쌓이면 그때 바꾼다
   const rec = v.rec == null ? '' : ' · 추천 ' + v.rec;
-  return ' · ' + v.score + '점' + rec + (v.n < FB_THIN ? '(응답 ' + v.n + ')' : '');
+  // 감점이 있으면 «깎인 뒤 점수 + 왜» 를 함께 보여준다. 안 그러면 왜 낮은지 알 수 없다
+  const pen = v.pen ? ` · 감점 -${v.pen}` : '';
+  return ' · ' + (v.pen ? v.final : v.score) + '점' + pen + rec
+    + (v.n < FB_THIN ? '(응답 ' + v.n + ')' : '');
 }
 
 function assigneeOptions(selId, conf, slot) {
@@ -302,10 +325,11 @@ function assigneeOptions(selId, conf, slot) {
   const ok = [], bad = [], other = [], off = [];
   // 배정 가능한 사람은 점수 높은 순으로. 평가가 없는 사람은 뒤로 —
   // 만점으로 쳐서 위로 올리면 거짓말이 된다
+  // ⚠ 줄 세우는 값도 «감점을 뺀 뒤» 여야 한다. 딱지만 고치면 보이는 점수와 순서가 어긋난다
   const byScore = allStaff.slice().sort((a, b) => {
     const x = staffScore[a.id], y = staffScore[b.id];
-    const xs = x && x.score != null ? Number(x.score) : -1;
-    const ys = y && y.score != null ? Number(y.score) : -1;
+    const xs = x && x.score != null ? Number(x.final != null ? x.final : x.score) : -1;
+    const ys = y && y.score != null ? Number(y.final != null ? y.final : y.score) : -1;
     return ys - xs;
   });
   byScore.forEach((s) => {
@@ -3999,6 +4023,115 @@ let fbPage = 0;          // 받은 응답 페이지 (0부터)
 const FB_PER = 10;       // 한 페이지에 보여줄 응답 수
 const fbRangeLabel = () => (fbDays >= 3650 ? '전체 기간' : fbDays >= 365 ? '최근 1년' : '최근 3개월');
 
+/* ===== 작가 감점 (대표 요청 2026-08-28) =====
+   설문 점수와 달리 **우리가 매기는 것**이다.
+     취소 : 예식이 코앞일수록 무겁게. 1개월 지나면 소멸
+     지각 : 설문 평균에서 빼내 절대 감점으로. 1년간 무지각이면 통째로 리셋
+   ⚠ 면제(waived)는 지우지 않는다 — 무슨 일이 있었는지는 남고 점수만 빼 준다.
+   ⚠ 지각은 설문으로만 알 수 있는데 응답률이 25% 다. 대표가 직접 넣을 수 있어야 한다 ===== */
+const PEN_LABEL = {
+  cancel: { m1: '취소 · 1개월 전', w2: '취소 · 2주 전', w1: '취소 · 1주 전' },
+  late: { small: '지각 · 조금(10분 이내)', big: '지각 · 많이(10분 넘게)' },
+};
+const penName = (k, g) => (PEN_LABEL[k] && PEN_LABEL[k][g]) || (k + '/' + g);
+let penOpen = false;
+
+function penaltyCard() {
+  const sum = penaltyData.sum || {};
+  const rows = penaltyData.rows || [];
+
+  // 지금 감점이 있는 작가만 위에 모아 보여준다
+  const now = allStaff.filter((s) => s.active && sum[s.id] && Number(sum[s.id].total) > 0)
+    .sort((a, b) => Number(sum[b.id].total) - Number(sum[a.id].total))
+    .map((s) => {
+      const v = sum[s.id];
+      const bits = [];
+      if (Number(v.cancel) > 0) bits.push(`취소 -${v.cancel}`);
+      if (Number(v.late) > 0) {
+        bits.push(`지각 -${v.late}` + (v.late_reset_in ? ` <i>${v.late_reset_in}일 뒤 리셋</i>` : ''));
+      }
+      return `<div class="pen-now"><b>${esc(s.name)}</b><span class="pen-tot">-${v.total}</span>
+        <span class="pen-why">${bits.join(' · ')}</span></div>`;
+    }).join('');
+
+  const list = rows.map((r) => `
+    <div class="pen-row${r.waived ? ' waived' : ''}">
+      <span class="pen-d">${esc(String(r.at).slice(0, 10))}</span>
+      <span class="pen-s">${esc(r.staff || '')}</span>
+      <span class="pen-w">${esc(penName(r.kind, r.grade))}</span>
+      <span class="pen-p">-${r.points}</span>
+      <span class="pen-n">${esc(r.note || '')}${r.booking ? ' · ' + esc(r.booking.name || '') : ''}</span>
+      <button type="button" class="btn-sm pen-wv" data-id="${r.id}" data-on="${r.waived ? '0' : '1'}">${r.waived ? '면제 취소' : '면제'}</button>
+      <button type="button" class="btn-sm pen-del" data-id="${r.id}">삭제</button>
+    </div>`).join('');
+
+  const opts = allStaff.filter((s) => s.active)
+    .map((s) => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
+  const kinds = Object.entries(PEN_LABEL).flatMap(([k, gs]) =>
+    Object.keys(gs).map((g) => `<option value="${k}:${g}">${esc(gs[g])}</option>`)).join('');
+  const today = new Date();
+  const ymdLocal = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0')
+    + '-' + String(today.getDate()).padStart(2, '0');
+
+  return '<div class="dash-card pen-card' + (penOpen ? ' open' : '') + '">'
+    + '<div class="dash-card-head"><button type="button" class="fb-pendtoggle" id="penToggle" aria-expanded="'
+      + (penOpen ? 'true' : 'false') + '">⚖️ 감점 <small>(취소 · 지각)</small> '
+      + '<span class="dash-count">' + rows.filter((r) => !r.waived).length + '</span> '
+      + '<span class="sv-caret">' + (penOpen ? '▴' : '▾') + '</span></button></div>'
+    + (now ? '<div class="pen-nows">' + now + '</div>'
+           : '<p class="st-note">지금 감점이 걸린 작가는 없습니다.</p>')
+    + (penOpen
+      ? '<div class="pen-add">'
+          + '<select id="penStaff">' + opts + '</select>'
+          + '<select id="penKind">' + kinds + '</select>'
+          + '<input type="date" id="penAt" value="' + ymdLocal + '" />'
+          + '<input type="text" id="penNote" placeholder="메모 (선택)" />'
+          + '<button type="button" class="btn-sm primary" id="penAdd">넣기</button>'
+        + '</div>'
+        + '<div class="pen-list">' + (list || '<p class="empty">아직 없습니다.</p>') + '</div>'
+        + '<p class="st-note">취소 감점은 <b>1개월</b>이 지나면 저절로 사라집니다. '
+          + '지각은 <b>1년 동안 한 번도 늦지 않으면</b> 그때 쌓인 것이 통째로 없어집니다. '
+          + '면제를 누르면 기록은 남고 점수만 빼 드립니다.</p>'
+      : '');
+}
+
+function bindPenalty(wrap) {
+  const tg = wrap.querySelector('#penToggle');
+  if (tg) tg.addEventListener('click', () => { penOpen = !penOpen; renderFeedback(); });
+  const add = wrap.querySelector('#penAdd');
+  if (add) add.addEventListener('click', async () => {
+    const kg = String((wrap.querySelector('#penKind') || {}).value || '').split(':');
+    const body = {
+      staff_id: (wrap.querySelector('#penStaff') || {}).value || '',
+      kind: kg[0], grade: kg[1],
+      at: (wrap.querySelector('#penAt') || {}).value || '',
+      note: (wrap.querySelector('#penNote') || {}).value || '',
+    };
+    if (!body.staff_id || !body.kind) { toast('작가와 종류를 고르세요.'); return; }
+    add.disabled = true;
+    const { error } = await sb.rpc('admin_penalty_add', { p_patch: body });
+    add.disabled = false;
+    if (error) { alert('넣지 못했어요: ' + error.message); return; }
+    toast('감점을 넣었어요');
+    await loadStaffScores();
+    renderFeedback();
+  });
+  wrap.querySelectorAll('.pen-wv').forEach((b) => b.addEventListener('click', async () => {
+    const { error } = await sb.rpc('admin_penalty_waive',
+      { p_id: Number(b.dataset.id), p_on: b.dataset.on === '1' });
+    if (error) { alert('바꾸지 못했어요: ' + error.message); return; }
+    await loadStaffScores();
+    renderFeedback();
+  }));
+  wrap.querySelectorAll('.pen-del').forEach((b) => b.addEventListener('click', async () => {
+    if (!confirm('이 기록을 아주 지울까요?\n(봐주시려는 것이면 [면제]를 쓰세요 — 기록은 남습니다)')) return;
+    const { error } = await sb.rpc('admin_penalty_del', { p_id: Number(b.dataset.id) });
+    if (error) { alert('지우지 못했어요: ' + error.message); return; }
+    await loadStaffScores();
+    renderFeedback();
+  }));
+}
+
 async function renderFeedback() {
   const wrap = $('fbBody');
   if (!wrap) return;
@@ -4162,9 +4295,11 @@ async function renderFeedback() {
     + '<div class="st-card"><span class="st-k">설문 안 온 예식</span><strong>' + pendAll.length + '</strong><span class="st-sub">최근 60일 · 미응답</span></div>'
     + '</div>'
     + '<div class="dash-card st-chart-card"><div class="dash-card-head"><h3>👤 작가별 <small>(점수 높은 순 · 누르면 그 작가 응답만)</small></h3></div>'
-      + '<p class="st-note">점수 = 도착 20 · 친절 20 · 요청 10 · 진행 15 · 하객 15 · <b>추천 20</b> (100점 만점)</p>'
+      + '<p class="st-note">점수 = 친절 20 · 요청 10 · 진행 15 · 하객 15 · <b>추천 20</b> (합 80 → 100점 환산)'
+        + ' · <b>도착</b>은 아래 「감점」에서 따로 봅니다 (대표 결정 2026-08-28)</p>'
 
       + staffRows + silentRow + subRow + '</div>'
+    + penaltyCard()
     + '<div class="dash-card">'
       + '<div class="dash-card-head"><h3>💬 받은 응답 <small>(최근순)</small></h3>'
         + '<span class="fb-rangebar">' + rangeBtn(90, '3개월') + rangeBtn(365, '1년') + rangeBtn(3650, '전체') + '</span></div>'
@@ -4186,6 +4321,8 @@ async function renderFeedback() {
         + '</div>'
       : '')
     + '<p class="st-note">응답은 지워지지 않고 계속 남습니다. 기간 버튼으로 예전 것도 언제든 다시 보실 수 있습니다. [작가에게 공유]를 누르면 손님 이름을 뺀 내용이 복사되어, 카톡에 붙여넣어 보내실 수 있습니다.</p>';
+
+  bindPenalty(wrap);
 
   const fbUrl = (id) => location.origin + '/f?b=' + id;
   wrap.querySelectorAll('.fb-copy').forEach((b) => b.addEventListener('click', async () => {

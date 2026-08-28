@@ -1541,3 +1541,25 @@ td .muted { color: var(--ink-soft); }
   width: 30px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: 6px;
   background: #fff; font-size: .95rem; line-height: 1; cursor: pointer; text-decoration: none; }
 .btn-ic:hover { border-color: var(--gold); background: #faf5ec; }
+
+/* ── 작가 감점 (대표 요청 2026-08-28) ── */
+.pen-nows { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 2px; }
+.pen-now { display: inline-flex; align-items: baseline; gap: 8px; padding: 7px 12px;
+  border: 1px solid #e7d7d2; background: #f9f2f0; border-radius: 8px; font-size: .86rem; }
+.pen-now b { font-weight: 600; }
+.pen-tot { font-weight: 700; color: #a3452f; }
+.pen-why { font-size: .78rem; color: var(--ink-soft); }
+.pen-why i { font-style: normal; opacity: .75; }
+.pen-add { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 10px; }
+.pen-add select, .pen-add input { border: 1px solid var(--line); border-radius: 6px;
+  padding: 7px 9px; font-size: .86rem; font-family: var(--sans); background: #fff; }
+.pen-add #penNote { flex: 1 1 160px; min-width: 0; }
+.pen-list { display: flex; flex-direction: column; gap: 4px; }
+.pen-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 7px 10px;
+  border: 1px solid var(--line); border-radius: 6px; font-size: .84rem; background: #fff; }
+.pen-row.waived { opacity: .5; text-decoration: line-through; }
+.pen-d { color: var(--ink-soft); white-space: nowrap; }
+.pen-s { font-weight: 600; min-width: 66px; }
+.pen-w { white-space: nowrap; }
+.pen-p { font-weight: 700; color: #a3452f; }
+.pen-n { flex: 1 1 120px; min-width: 0; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

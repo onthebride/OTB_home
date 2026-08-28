@@ -49,3 +49,8 @@
 @media (max-width: 600px) {
   .fb-star-txt { width: 100%; }
 }
+
+/* 도착 문항만 두 줄로 — 아래에 분 기준을 작게 (대표 2026-08-28 «10분 기준»).
+   지각이 점수에서 안 지워지는 감점이 되었으므로 기준이 눈에 보여야 한다 */
+#arrivalWrap .sv-pill span { flex-direction: column; gap: 1px; line-height: 1.35; }
+#arrivalWrap .sv-pill span i { font-style: normal; font-size: .74rem; opacity: .72; }

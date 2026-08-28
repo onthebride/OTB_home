@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="survey.css?v=ef64d2b331" />
-  <link rel="stylesheet" href="feedback.css?v=929d83d63f" />
+  <link rel="stylesheet" href="feedback.css?v=8d2cbefc51" />
 </head>
 <body>
   <header class="sv-header">
@@ -64,10 +64,13 @@
 
       <section class="sv-sec">
         <h2 class="sv-h">2. 약속한 시간에 도착하셨나요? <em class="fb-req">*</em></h2>
+        <!-- 10분을 기준으로 나눈다 (대표 2026-08-28).
+             ⚠ 이 답이 작가 평점의 감점으로 바로 이어진다. 기준 없이 「조금·많이」만 두면
+                같은 5분이 신부님에 따라 다르게 찍힌다 — 분을 적어 둔다 -->
         <div class="sv-choices" id="arrivalWrap">
           <label class="sv-pill"><input type="radio" name="arrival" value="ontime" /><span>네, 제시간에 오셨어요</span></label>
-          <label class="sv-pill"><input type="radio" name="arrival" value="late_small" /><span>조금 늦으셨어요</span></label>
-          <label class="sv-pill"><input type="radio" name="arrival" value="late_big" /><span>많이 늦으셨어요</span></label>
+          <label class="sv-pill"><input type="radio" name="arrival" value="late_small" /><span>조금 늦으셨어요 <i>10분 이내</i></span></label>
+          <label class="sv-pill"><input type="radio" name="arrival" value="late_big" /><span>많이 늦으셨어요 <i>10분 넘게</i></span></label>
         </div>
       </section>
 
