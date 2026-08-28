@@ -32,7 +32,8 @@ body {
 .pt-msg h1 { font-family: 'Noto Serif KR', serif; font-size: 1.2rem; margin-bottom: 10px; }
 .pt-msg p { color: var(--ink-soft); font-size: .92rem; }
 
-.pt-intro { text-align: center; padding: 14px 0 22px; }
+/* order: 인사말은 늘 맨 위 (#portalMain 이 flex — 다운로드 박스는 -4 로 그 아래) */
+.pt-intro { text-align: center; padding: 14px 0 22px; order: -5; }
 .pt-eyebrow { letter-spacing: .4em; font-size: .68rem; color: var(--gold-deep); font-weight: 500; }
 .pt-title { font-family: 'Noto Serif KR', serif; font-size: 1.5rem; font-weight: 600; margin: 6px 0 8px; }
 .pt-greet { color: var(--ink-soft); font-size: .96rem; }
@@ -165,7 +166,6 @@ body {
 
 /* 다운로드 링크가 올라오면 박스를 최상단으로 (인사 바로 아래) */
 #portalMain { display: flex; flex-direction: column; }
-.pt-intro { order: -5; }
 #downloadCard.dl-top { order: -4; border-color: var(--gold); box-shadow: 0 2px 10px -4px rgba(176,141,87,.4); }
 
 /* 원본 다운로드 링크(주소 복사 — PC에서 받기용) */

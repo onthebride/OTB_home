@@ -207,13 +207,11 @@ textarea { resize: vertical; }
   position: fixed; inset: 0; z-index: 100;
   background: rgba(20,17,15,.9);
   display: flex; align-items: center; justify-content: center;
-  padding: 30px;
+  padding: 30px; cursor: zoom-out;
 }
-.sv-lb img { max-width: 100%; max-height: 100%; border-radius: 6px; }
+.sv-lb img { max-width: 100%; max-height: 100%; border-radius: 6px; cursor: default; }
 /* 여러 장을 넘겨본다 (대표 요청) — 폰은 좌우로 밀어서, 컴퓨터는 ‹ › 나 화살표 키로.
    사진 자체를 눌러서는 안 닫힌다(밀다 손 떼면 눌린 것으로 잡힌다). 배경이나 X 로 닫는다 */
-.sv-lb { cursor: zoom-out; }
-.sv-lb img { cursor: default; }
 .sv-lb-nav {
   position: absolute; top: 50%; transform: translateY(-50%);
   width: 46px; height: 46px; border-radius: 50%;
