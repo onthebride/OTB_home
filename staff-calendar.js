@@ -143,6 +143,10 @@ async function load() {
   settingsInit();      // 「설정」 칸을 띄울지 정한다 (지금은 대표만)
   loadNotices();       // 확인할 것 — 폰 알림이 못 갔어도 여기서 본다
   clearBadge();        // 화면을 열었으니 아이콘 숫자를 지운다
+  /* 열었다는 것만 남긴다 (대표 «접속 기록이 있음 좋을거 같은데», 2026-08-28).
+     ⚠ 기다리지 않는다. 이게 늦거나 실패해도 캘린더는 그대로 떠야 한다.
+        하루에 여러 번 열어도 DB 에는 하루 한 줄로 모인다 */
+  try { sb.rpc('staff_seen', { p_staff_id: staffId }).then(() => {}, () => {}); } catch (e) { /* 지나간다 */ }
   show($('mainCard'));
 }
 
