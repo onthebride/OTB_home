@@ -522,15 +522,17 @@
 .sc-nx-sv { margin-left: auto; flex: 0 0 auto; font-size: .76rem; font-weight: 400;
   color: var(--gold-deep); white-space: nowrap; }
 .sc-nx-sv:hover { text-decoration: underline; }
-/* 오른쪽 끝 — 「설문 보기」와 그 아래 포스팅 여부 (대표 요청 2026-08-28).
-   전엔 포스팅이 시간·예식장 줄 끝에 붙어, 예식장 이름이 길면 혼자 아랫줄로 떨어졌다 */
-.sc-nx-r { margin-left: auto; flex: 0 0 auto;
-  display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+/* 줄의 아래칸 — 왼쪽에 신랑·신부, **오른쪽 끝**에 포스팅 여부 (대표 «포스팅 글자 우측하단에»).
+   ⚠ 이름이 없는 예식도 있다. 그때도 포스팅은 이 자리에 있어야 하므로 이 칸은 늘 만든다.
+   폰에서 이름이 세로로 쌓이면 포스팅은 그 **맨 아래**에 맞춘다 (flex-end) */
+.sc-nx-b { margin-top: 7px; display: flex; align-items: flex-end; gap: 10px; }
+.sc-nx-b .sc-nx-who { margin-top: 0; flex: 1 1 auto; min-width: 0; }
 
 /* 블로그·SNS 에 올려도 되는지.
    ⚠ 「안 뜸」과 「불가」는 다르다 — 둘 다 글자로 적는다.
    대표 «알약뱃지 빼고 글자 색깔로만 살짝 강조» — 바탕·테두리를 두지 않는다 */
-.sc-post { font-style: normal; font-size: .72rem; font-weight: 500; white-space: nowrap; }
+.sc-post { margin-left: auto; flex: 0 0 auto;
+  font-style: normal; font-size: .72rem; font-weight: 500; white-space: nowrap; }
 .sc-post.ok { color: #b86a8d; }   /* 가능 — 핑크로 살짝 */
 .sc-post.no { color: #a9a29a; }   /* 불가 — 연한 회색 */
 .sc-nx-opts { margin-top: 8px; }

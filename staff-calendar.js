@@ -196,11 +196,11 @@ function shootRow(x, extra) {
   return `
   <div class="sc-nx-row">
     <p class="sc-nx-t"><span>${esc(kTime(x.wedding_time) || '시간 미정')} · ${esc(x.wedding_venue || '-')}${mapLink(x.wedding_venue)}${
-      x.role === '서브' ? '<span class="sc-role sub">서브</span>' : ''}</span><span class="sc-nx-r">${sv}${
+      x.role === '서브' ? '<span class="sc-role sub">서브</span>' : ''}</span>${sv}</p>
+    <div class="sc-nx-b">${who ? `<div class="sc-nx-who">${who}</div>` : ''}${
       x.photo_usage_agree
         ? '<i class="sc-post ok">포스팅 가능</i>'
-        : '<i class="sc-post no">포스팅 불가</i>'}</span></p>
-    ${who ? `<div class="sc-nx-who">${who}</div>` : ''}
+        : '<i class="sc-post no">포스팅 불가</i>'}</div>
     ${extra || ''}
   </div>`;
 }
