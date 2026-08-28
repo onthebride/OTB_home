@@ -125,6 +125,23 @@ function opts(w) {
   return o;
 }
 
+/* 「이 작가가 캘린더를 열었다」 를 남긴다 (대표 «접속 기록이 있음 좋을거 같은데», 2026-08-28).
+
+   ⚠ 대표가 확인하려고 열어본 것은 세면 안 된다 («내가 들어가는게 카운트가 되네»).
+     ① 관리자 목록의 📅 단추는 adm=1 을 달고 온다
+     ② 그 브라우저가 관리자로 로그인돼 있으면 그것도 대표다 (같은 주소라 세션이 보인다)
+   ⚠ 기다리지 않는다. 늦거나 실패해도 캘린더는 그대로 떠야 한다.
+     하루에 여러 번 열어도 DB 에는 하루 한 줄로 모인다 */
+async function seenMark() {
+  if (!sb || !staffId) return;
+  try {
+    if (new URLSearchParams(location.search).get('adm') === '1') return;
+    const { data } = await sb.auth.getSession();
+    if (data && data.session) return;                 // 관리자로 로그인된 기기
+    await sb.rpc('staff_seen', { p_staff_id: staffId });
+  } catch (e) { /* 못 남겨도 화면은 그대로 */ }
+}
+
 async function load() {
   if (!sb || !staffId || !uuidRe.test(staffId)) { show($('errCard')); return; }
   const first = new Date(view.getFullYear(), view.getMonth(), 1);
@@ -143,10 +160,7 @@ async function load() {
   settingsInit();      // 「설정」 칸을 띄울지 정한다 (지금은 대표만)
   loadNotices();       // 확인할 것 — 폰 알림이 못 갔어도 여기서 본다
   clearBadge();        // 화면을 열었으니 아이콘 숫자를 지운다
-  /* 열었다는 것만 남긴다 (대표 «접속 기록이 있음 좋을거 같은데», 2026-08-28).
-     ⚠ 기다리지 않는다. 이게 늦거나 실패해도 캘린더는 그대로 떠야 한다.
-        하루에 여러 번 열어도 DB 에는 하루 한 줄로 모인다 */
-  try { sb.rpc('staff_seen', { p_staff_id: staffId }).then(() => {}, () => {}); } catch (e) { /* 지나간다 */ }
+  seenMark();          // 열었다는 것만 남긴다 (대표가 열어본 것은 빼고)
   show($('mainCard'));
 }
 

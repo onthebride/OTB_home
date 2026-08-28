@@ -2733,7 +2733,8 @@ function renderStaff() {
       <input type="text" class="st-name" data-id="${s.id}" value="${esc(s.name || '')}" placeholder="이름" />
       <input type="text" class="st-phone js-phone" data-id="${s.id}" value="${esc(s.phone || '')}" placeholder="연락처" />
       <!-- 캘린더 열기·안내문 복사 — 글자를 떼고 그림만 (대표 «이걸 이모티콘으로 연락처 옆에») -->
-      <a class="btn-ic st-cal" href="/staff-calendar?s=${s.id}" target="_blank" rel="noopener"
+      <!-- adm=1 — 대표가 확인하려고 여는 것이라 접속으로 세지 않는다 (2026-08-28) -->
+      <a class="btn-ic st-cal" href="/staff-calendar?s=${s.id}&adm=1" target="_blank" rel="noopener"
         title="작가 캘린더 열기" aria-label="작가 캘린더 열기">📅</a>
       <button type="button" class="btn-ic st-callink" data-id="${s.id}"
         title="작가에게 그대로 붙여넣을 안내문 복사" aria-label="안내문 복사">📋</button>
