@@ -486,11 +486,14 @@
 .sc-next-m > span { min-width: 0; }
 .sc-next-m em { font-style: normal; margin-left: 6px; font-size: .72rem; font-weight: 400;
   color: var(--gold-deep); }
-/* 접기 화살표 — 선 두 개로 만든 갈매기. 접으면 위를 본다 */
+/* 접기 화살표 — 선 두 개로 만든 갈매기.
+   ⚠ 「지금 상태」가 아니라 「누르면 어떻게 되는지」를 가리킨다 (대표 지적 2026-08-28).
+     펴 있을 때 ∧ = 누르면 접힌다 · 접혀 있을 때 ∨ = 누르면 펴진다.
+   테두리를 오른쪽·아래에 준 네모라 rotate(45deg) 가 ∨, rotate(-135deg) 가 ∧ 다 */
 .sc-next-m > i { flex: 0 0 auto; margin-left: auto; width: 7px; height: 7px;
   border-right: 1.5px solid var(--ink-soft); border-bottom: 1.5px solid var(--ink-soft);
-  transform: translateY(-3px) rotate(45deg); transition: transform .18s ease; }
-.sc-next-m.shut > i { transform: translateY(1px) rotate(-135deg); }
+  transform: translateY(1px) rotate(-135deg); transition: transform .18s ease; }
+.sc-next-m.shut > i { transform: translateY(-3px) rotate(45deg); }
 /* 접으면 아래 금은 지운다 — 접힌 채로 금만 남으면 뜬금없는 줄이 된다 */
 .sc-next-m.shut { border-bottom-color: transparent; }
 
