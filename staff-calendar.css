@@ -522,13 +522,17 @@
 .sc-nx-sv { margin-left: auto; flex: 0 0 auto; font-size: .76rem; font-weight: 400;
   color: var(--gold-deep); white-space: nowrap; }
 .sc-nx-sv:hover { text-decoration: underline; }
-/* 블로그·SNS 에 올려도 되는지 (대표 요청 2026-08-28).
+/* 오른쪽 끝 — 「설문 보기」와 그 아래 포스팅 여부 (대표 요청 2026-08-28).
+   전엔 포스팅이 시간·예식장 줄 끝에 붙어, 예식장 이름이 길면 혼자 아랫줄로 떨어졌다 */
+.sc-nx-r { margin-left: auto; flex: 0 0 auto;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+
+/* 블로그·SNS 에 올려도 되는지.
    ⚠ 「안 뜸」과 「불가」는 다르다 — 둘 다 글자로 적는다.
-   시간·예식장 줄에 같이 붙으므로 색은 아주 차분하게 */
-.sc-post { display: inline-block; margin-left: 7px; vertical-align: 1px;
-  font-size: .68rem; font-weight: 500; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
-.sc-post.ok { color: #4a6b52; background: #eef3ee; border: 1px solid #d6e2d8; }
-.sc-post.no { color: #8b6a63; background: #f6efed; border: 1px solid #e7d7d2; }
+   대표 «알약뱃지 빼고 글자 색깔로만 살짝 강조» — 바탕·테두리를 두지 않는다 */
+.sc-post { font-style: normal; font-size: .72rem; font-weight: 500; white-space: nowrap; }
+.sc-post.ok { color: #b86a8d; }   /* 가능 — 핑크로 살짝 */
+.sc-post.no { color: #a9a29a; }   /* 불가 — 연한 회색 */
 .sc-nx-opts { margin-top: 8px; }
 .sc-nx-rep { margin: 7px 0 0; font-size: .8rem; color: var(--ink-soft); }
 
