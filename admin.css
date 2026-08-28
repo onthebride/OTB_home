@@ -1529,11 +1529,7 @@ td .muted { color: var(--ink-soft); }
 }
 
 
-/* 작가가 캘린더를 마지막으로 연 때 (대표 요청 2026-08-28).
-   오래될수록 옅게 — 「접속 없음」이 제일 눈에 띄어야 한다 */
-.st-seen { flex: 0 0 auto; font-size: .72rem; white-space: nowrap; padding: 2px 7px;
-  border-radius: 999px; border: 1px solid transparent; }
-.st-seen.ok   { color: #4a6b52; background: #eef3ee; }
-.st-seen.mid  { color: var(--ink-soft); background: var(--cream); }
-.st-seen.old  { color: #8b6a63; background: #f6efed; }
-.st-seen.none { color: #a3452f; background: #fbeceb; border-color: #f0d3ce; font-weight: 600; }
+/* 작가가 캘린더를 마지막으로 연 때 — 연락처 옆 동그라미 하나 (대표 «이모티콘만해서 작게»).
+   글자 알약을 줄마다 붙이니 목록이 빽빽해졌다. 자세한 건 title 로만 보여준다 */
+.st-seen { flex: 0 0 auto; font-size: .78rem; line-height: 1; cursor: help;
+  margin-left: -2px; letter-spacing: 0; }

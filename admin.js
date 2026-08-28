@@ -229,18 +229,25 @@ async function loadStaffVisits() {
   renderStaff();              // 늦게 왔으면 그 자리에 채워 넣는다
 }
 
-// 「오늘 · 어제 · N일 전 · 접속 없음」
+/* 줄마다 글자를 붙이니 목록이 빽빽했다 (대표 «너무 많아서 복잡해», 2026-08-28).
+   화면에는 **동그라미 하나만** 남기고, 자세한 것은 손가락을 올리면 나오게 한다.
+     🟢 일주일 안 · 🟡 한 달 안 · ⚪ 한 달 넘음 · 🔴 연 적 없음 */
+const SEEN_ICON = { ok: '🟢', mid: '🟡', old: '⚪', none: '🔴' };
+
 function seenText(id) {
   const v = staffVisits[id];
-  if (!v || !v.last) return { txt: '접속 없음', cls: 'none', tip: '캘린더를 연 기록이 없습니다' };
+  if (!v || !v.last) {
+    return { txt: '접속 없음', cls: 'none', icon: SEEN_ICON.none, tip: '캘린더를 연 기록이 없습니다' };
+  }
   const day = new Date(v.last);
   const d0 = new Date(); d0.setHours(0, 0, 0, 0);
   const gap = Math.floor((d0 - new Date(day.getFullYear(), day.getMonth(), day.getDate())) / 86400000);
   const txt = gap <= 0 ? '오늘' : gap === 1 ? '어제' : gap + '일 전';
+  const cls = gap <= 7 ? 'ok' : gap <= 30 ? 'mid' : 'old';
   return {
-    txt,
-    cls: gap <= 7 ? 'ok' : gap <= 30 ? 'mid' : 'old',
-    tip: `마지막 접속 ${fmtDateTime(v.last)} · 최근 30일 ${v.days || 0}일 접속 (${v.opens || 0}번 열어봄)`,
+    txt, cls, icon: SEEN_ICON[cls],
+    tip: `캘린더 접속 ${txt} · 마지막 ${fmtDateTime(v.last)}`
+      + ` · 최근 30일 ${v.days || 0}일 (${v.opens || 0}번 열어봄)`,
   };
 }
 const staffName = (id) => (id && staffMap[id] ? staffMap[id].name : '');
@@ -2688,6 +2695,9 @@ function renderStaff() {
     <div class="staff-item${s.active ? '' : ' inactive'}" data-id="${s.id}">
       <input type="text" class="st-name" data-id="${s.id}" value="${esc(s.name || '')}" placeholder="이름" />
       <input type="text" class="st-phone js-phone" data-id="${s.id}" value="${esc(s.phone || '')}" placeholder="연락처" />
+      <!-- 캘린더를 마지막으로 연 때. 동그라미만 두고 자세한 건 손가락을 올리면 나온다 -->
+      ${(() => { const v = seenText(s.id);
+        return `<span class="st-seen ${v.cls}" title="${esc(v.tip)}" aria-label="${esc(v.tip)}">${v.icon}</span>`; })()}
       <span class="st-color-wrap" title="달력·스케줄에 표시될 작가 색">
         <input type="color" class="st-color" data-id="${s.id}" value="${isHex(s.color) ? s.color : (staffColor(s.id) || '#888888')}" ${isHex(s.color) ? '' : 'disabled'} />
         <label class="st-active"><input type="checkbox" class="st-auto" data-id="${s.id}" ${isHex(s.color) ? '' : 'checked'} /> 자동색</label>
@@ -2697,8 +2707,6 @@ function renderStaff() {
       <button type="button" class="st-rep${s.is_rep ? ' on' : ''}" data-id="${s.id}"
         title="${s.is_rep ? '대표입니다' : '이 분을 대표로 지정'}">대표</button>
       <label class="st-active"><input type="checkbox" class="st-act" data-id="${s.id}" ${s.active ? 'checked' : ''} /> 활성</label>
-      ${(() => { const v = seenText(s.id);
-        return `<span class="st-seen ${v.cls}" title="${esc(v.tip)}">${esc(v.txt)}</span>`; })()}
       <a class="btn-sm st-cal" href="/staff-calendar?s=${s.id}" target="_blank" rel="noopener" title="작가 캘린더 열기">📅 캘린더</a>
       <button class="btn-sm st-callink" data-id="${s.id}" title="작가에게 그대로 붙여넣을 안내문 복사">안내문 복사</button>
       <button class="btn-sm st-save" data-id="${s.id}">저장</button>
