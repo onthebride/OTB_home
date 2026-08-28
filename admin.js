@@ -2372,10 +2372,10 @@ function renderSchedule() {
           <div class="sched-mid">
             ${flag ? `<span class="sched-flag">⚠ ${flag}</span>` : ''}
             <span class="sched-venue">${esc(b.wedding_venue || '-')}</span>
-            ${post}
             ${opts.length ? `<span class="sched-opts">${opts.map((o) => `<span class="sched-optag">${esc(o)}</span>`).join('')}</span>` : ''}
           </div>
           <div class="sched-asg-ctrls">
+            ${post}
             <div class="sched-sels">
               <select class="sched-main" data-id="${b.id}" title="메인작가">${assigneeOptions(b.assignee_id, confOf(b), 'main')}</select>
               ${is2 ? `<select class="sched-sub" data-id="${b.id}" title="서브작가">${assigneeOptions(b.sub_assignee_id, confOf(b), 'sub')}</select>` : ''}
