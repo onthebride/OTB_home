@@ -1083,6 +1083,9 @@ td .muted { color: var(--ink-soft); }
 .fb-srow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px 14px; padding: 15px 12px; border-bottom: 1px solid var(--line); }
 .fb-srow:last-child { border-bottom: none; }
 .fb-sname { font-weight: 700; min-width: 68px; }
+/* ⚠ 굵기 300 은 온 저장소에서 이 규칙 하나만 쓴다. 그 한 벌이 압축 후 23KB 다.
+   그래도 남긴다 — 대표가 「작가님」을 «작고 얇게» 로 정했다 (2026-08-26).
+   손님 페이지(홈·설문·블로그)에서는 300 을 뺐다. 여기 관리자에서만 부른다 */
 .fb-sname i { font-style: normal; font-size: .5em; font-weight: 300; color: var(--ink-soft); margin-left: 3px; }
 /* 순위 점수는 100점 만점 가중 점수. 별 대신 숫자로 크게 */
 /* 점수는 박스에 넣어 강조한다 (대표 요청 2026-08-26) */
