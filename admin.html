@@ -309,6 +309,9 @@
           <span class="st-tg-ind" aria-hidden="true"></span>
           <!-- 순서는 대표가 정한다 (2026-08-25). 맨 앞 칸이 곧 기본으로 열리는 칸 -->
           <button type="button" class="st-tg active" data-sttab="feedback">작가 평가</button>
+          <!-- 감점·받은 응답은 따로 뺐다 (대표 «감점 박스는 따로줘 / 받은응답박스 꺼내주고», 2026-08-28) -->
+          <button type="button" class="st-tg" data-sttab="penalty">감점</button>
+          <button type="button" class="st-tg" data-sttab="fbitems">받은 응답</button>
           <button type="button" class="st-tg" data-sttab="visits">방문 통계</button>
           <button type="button" class="st-tg" data-sttab="sales">예약·매출</button>
           <button type="button" class="st-tg" data-sttab="reviews">이벤트 후기</button>
@@ -326,6 +329,8 @@
         </div>
         <!-- 맨 앞 칸(작가 평가)만 펴둔다. 나머지는 골랐을 때 그린다 -->
         <div id="fbBody"><p class="empty">불러오는 중…</p></div>
+        <div id="penBody" hidden><p class="empty">불러오는 중…</p></div>
+        <div id="fbItemsBody" hidden><p class="empty">불러오는 중…</p></div>
         <div id="statsBody" hidden><p class="empty">불러오는 중…</p></div>
         <div id="salesBody" hidden><p class="empty">불러오는 중…</p></div>
         <div id="revBody" hidden><p class="empty">불러오는 중…</p></div>
@@ -400,6 +405,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=ad39a506e0"></script>
+  <script src="admin.js?v=d0d7115b18"></script>
 </body>
 </html>

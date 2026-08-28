@@ -4095,17 +4095,18 @@ function penaltyCard() {
       : '');
 }
 
-function bindPenalty(wrap) {
-  const tg = wrap.querySelector('#penToggle');
+// q(하나 찾기) · qa(모두 찾기) 를 받는다 — 감점 칸이 따로 떨어져 나갔기 때문
+function bindPenalty(q, qa) {
+  const tg = q('#penToggle');
   if (tg) tg.addEventListener('click', () => { penOpen = !penOpen; renderFeedback(); });
-  const add = wrap.querySelector('#penAdd');
+  const add = q('#penAdd');
   if (add) add.addEventListener('click', async () => {
-    const kg = String((wrap.querySelector('#penKind') || {}).value || '').split(':');
+    const kg = String((q('#penKind') || {}).value || '').split(':');
     const body = {
-      staff_id: (wrap.querySelector('#penStaff') || {}).value || '',
+      staff_id: (q('#penStaff') || {}).value || '',
       kind: kg[0], grade: kg[1],
-      at: (wrap.querySelector('#penAt') || {}).value || '',
-      note: (wrap.querySelector('#penNote') || {}).value || '',
+      at: (q('#penAt') || {}).value || '',
+      note: (q('#penNote') || {}).value || '',
     };
     if (!body.staff_id || !body.kind) { toast('작가와 종류를 고르세요.'); return; }
     add.disabled = true;
@@ -4116,14 +4117,14 @@ function bindPenalty(wrap) {
     await loadStaffScores();
     renderFeedback();
   });
-  wrap.querySelectorAll('.pen-wv').forEach((b) => b.addEventListener('click', async () => {
+  qa('.pen-wv').forEach((b) => b.addEventListener('click', async () => {
     const { error } = await sb.rpc('admin_penalty_waive',
       { p_id: Number(b.dataset.id), p_on: b.dataset.on === '1' });
     if (error) { alert('바꾸지 못했어요: ' + error.message); return; }
     await loadStaffScores();
     renderFeedback();
   }));
-  wrap.querySelectorAll('.pen-del').forEach((b) => b.addEventListener('click', async () => {
+  qa('.pen-del').forEach((b) => b.addEventListener('click', async () => {
     if (!confirm('이 기록을 아주 지울까요?\n(봐주시려는 것이면 [면제]를 쓰세요 — 기록은 남습니다)')) return;
     const { error } = await sb.rpc('admin_penalty_del', { p_id: Number(b.dataset.id) });
     if (error) { alert('지우지 못했어요: ' + error.message); return; }
@@ -4298,9 +4299,14 @@ async function renderFeedback() {
       + '<p class="st-note">점수 = 친절 20 · 요청 10 · 진행 15 · 하객 15 · <b>추천 20</b> (합 80 → 100점 환산)'
         + ' · <b>도착</b>은 아래 「감점」에서 따로 봅니다 (대표 결정 2026-08-28)</p>'
 
-      + staffRows + silentRow + subRow + '</div>'
-    + penaltyCard()
-    + '<div class="dash-card">'
+      + staffRows + silentRow + subRow + '</div>';
+
+  /* 감점과 받은 응답은 각자 칸으로 (대표 2026-08-28).
+     ⚠ 칸이 없는 자리(시험 시늉 판 등)에서는 원래대로 한 곳에 이어 붙인다 —
+       한쪽에서만 보이고 다른 쪽에선 사라지면 안 된다 */
+  const penEl = $('penBody'), itemsEl = $('fbItemsBody');
+  const penHtml = penaltyCard();
+  const itemsHtml = '<div class="dash-card">'
       + '<div class="dash-card-head"><h3>💬 받은 응답 <small>(최근순)</small></h3>'
         + '<span class="fb-rangebar">' + rangeBtn(90, '3개월') + rangeBtn(365, '1년') + rangeBtn(3650, '전체') + '</span></div>'
       + (fbStaff ? '<div class="fb-filter"><b>' + esc(fbStaff) + '</b> 작가 응답만 보는 중 <button class="btn-sm fb-clear">전체 보기</button></div>' : '')
@@ -4322,21 +4328,29 @@ async function renderFeedback() {
       : '')
     + '<p class="st-note">응답은 지워지지 않고 계속 남습니다. 기간 버튼으로 예전 것도 언제든 다시 보실 수 있습니다. [작가에게 공유]를 누르면 손님 이름을 뺀 내용이 복사되어, 카톡에 붙여넣어 보내실 수 있습니다.</p>';
 
-  bindPenalty(wrap);
+  if (penEl) penEl.innerHTML = penHtml; else wrap.innerHTML += penHtml;
+  if (itemsEl) itemsEl.innerHTML = itemsHtml; else wrap.innerHTML += itemsHtml;
+
+  /* 단추를 걸 때는 세 칸을 다 뒤진다 — 나누기 전에는 wrap 하나면 됐다 */
+  const roots = [wrap, penEl, itemsEl].filter(Boolean);
+  const q = (sel) => { for (const r of roots) { const x = r.querySelector(sel); if (x) return x; } return null; };
+  const qa = (sel) => roots.reduce((acc, r) => acc.concat([].slice.call(r.querySelectorAll(sel))), []);
+
+  bindPenalty(q, qa);
 
   const fbUrl = (id) => location.origin + '/f?b=' + id;
-  wrap.querySelectorAll('.fb-copy').forEach((b) => b.addEventListener('click', async () => {
+  qa('.fb-copy').forEach((b) => b.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(fbUrl(b.dataset.id)); toast('설문 링크 복사됨 · 카톡에 붙여넣어 보내세요'); }
     catch (_) { prompt('아래 링크를 복사하세요:', fbUrl(b.dataset.id)); }
   }));
-  wrap.querySelectorAll('.fb-sharelink').forEach((b) => b.addEventListener('click', async () => {
+  qa('.fb-sharelink').forEach((b) => b.addEventListener('click', async () => {
     const nm = b.dataset.name;
     const text = (nm ? nm + '님, ' : '') + '결혼 진심으로 축하드립니다.\n촬영을 담당한 작가에 대해 짧게 여쭙고 싶습니다. 30초면 됩니다.\n' + fbUrl(b.dataset.id);
     if (navigator.share) { try { await navigator.share({ text }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
     try { await navigator.clipboard.writeText(text); toast('메시지 복사됨 · 카톡에 붙여넣어 보내세요'); }
     catch (_) { prompt('아래 내용을 복사하세요:', text); }
   }));
-  wrap.querySelectorAll('.fb-share').forEach((b) => b.addEventListener('click', () => {
+  qa('.fb-share').forEach((b) => b.addEventListener('click', () => {
     const it = allItems.find((x) => x.booking_id === b.dataset.id);
     if (!it) return;
     const txt = ['[촬영 후 설문]',
@@ -4346,27 +4360,27 @@ async function renderFeedback() {
     navigator.clipboard?.writeText(txt);
     toast('복사됐습니다 · 카톡에 붙여넣어 보내세요');
   }));
-  const pt = wrap.querySelector('.fb-pendtoggle');
+  const pt = q('.fb-pendtoggle');
   if (pt) pt.addEventListener('click', () => { fbPendOpen = !fbPendOpen; renderFeedback(); });
-  const more = wrap.querySelector('.fb-pendmore');
+  const more = q('.fb-pendmore');
   if (more) more.addEventListener('click', () => { fbPendAll = !fbPendAll; renderFeedback(); });
-  wrap.querySelectorAll('.fb-range').forEach((b) => b.addEventListener('click', () => {
+  qa('.fb-range').forEach((b) => b.addEventListener('click', () => {
     fbDays = Number(b.dataset.days) || 365; fbPage = 0; renderFeedback();
   }));
-  wrap.querySelectorAll('.fb-srow').forEach((r) => r.addEventListener('click', () => {
+  qa('.fb-srow').forEach((r) => r.addEventListener('click', () => {
     fbStaff = fbStaff === r.dataset.staff ? null : r.dataset.staff; fbPage = 0; renderFeedback();
   }));
   // 많이 간 곳 더보기 — 줄 전체를 누르면 작가가 걸리므로 여기서 멈춘다 (2026-08-25)
-  wrap.querySelectorAll('.fb-svn-btn').forEach((b) => b.addEventListener('click', (e) => {
+  qa('.fb-svn-btn').forEach((b) => b.addEventListener('click', (e) => {
     e.stopPropagation();
     const more = $('fbvn' + b.dataset.vn);
     if (!more) return;
     more.hidden = !more.hidden;
     b.textContent = more.hidden ? '더보기' : '접기';
   }));
-  const clr = wrap.querySelector('.fb-clear');
+  const clr = q('.fb-clear');
   if (clr) clr.addEventListener('click', (e) => { e.stopPropagation(); fbStaff = null; fbPage = 0; renderFeedback(); });
-  wrap.querySelectorAll('.fb-pg').forEach((b) => b.addEventListener('click', () => {
+  qa('.fb-pg').forEach((b) => b.addEventListener('click', () => {
     if (b.disabled) return;
     fbPage = Math.max(0, Number(b.dataset.pg) || 0); renderFeedback();
   }));
@@ -4557,13 +4571,16 @@ function stSub(sub) {
   $('salesBody').hidden = cur !== 'sales';
   $('statsBody').hidden = cur !== 'visits';
   $('fbBody').hidden = cur !== 'feedback';
+  $('penBody').hidden = cur !== 'penalty';
+  $('fbItemsBody').hidden = cur !== 'fbitems';
   $('revBody').hidden = cur !== 'reviews';
   const bar = document.querySelector('.st-bar');
   if (bar) bar.hidden = cur !== 'visits';             // 기간 버튼·바로가기는 방문 통계 전용
   setHash(cur === stFirst() ? 'stats' : 'stats/' + cur);
   if (cur === 'sales') renderSales();
   if (cur === 'visits') renderStats();
-  if (cur === 'feedback') renderFeedback();
+  // 셋이 같은 자료를 쓴다 — 어느 칸을 골라도 한 번만 받아 셋을 함께 그린다
+  if (cur === 'feedback' || cur === 'penalty' || cur === 'fbitems') renderFeedback();
   if (cur === 'reviews') renderEventReviews();
 }
 const stToggle = $('stToggle');
