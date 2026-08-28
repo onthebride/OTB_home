@@ -2725,30 +2725,38 @@ function renderStaff() {
   $('staffEmpty').hidden = allStaff.length > 0;
   $('staffList').innerHTML = allStaff.map((s) => `
     <div class="staff-item${s.active ? '' : ' inactive'}" data-id="${s.id}">
-      <!-- 캘린더를 마지막으로 연 때 — 줄 맨 왼쪽 (대표 «이름 왼쪽 제일 왼쪽에»).
-           ⚠ 폰에는 «손가락 올려두기» 가 없다. title 은 컴퓨터용으로 두고, **눌러서도** 보게 한다 -->
-      ${(() => { const v = seenText(s.id);
-        return `<button type="button" class="st-seen ${v.cls}" data-seen="${esc(v.tip)}"
-          title="${esc(v.tip)}" aria-label="${esc(v.tip)}">${v.icon}</button>`; })()}
-      <input type="text" class="st-name" data-id="${s.id}" value="${esc(s.name || '')}" placeholder="이름" />
-      <input type="text" class="st-phone js-phone" data-id="${s.id}" value="${esc(s.phone || '')}" placeholder="연락처" />
-      <!-- 캘린더 열기·안내문 복사 — 글자를 떼고 그림만 (대표 «이걸 이모티콘으로 연락처 옆에») -->
-      <!-- adm=1 — 대표가 확인하려고 여는 것이라 접속으로 세지 않는다 (2026-08-28) -->
-      <a class="btn-ic st-cal" href="/staff-calendar?s=${s.id}&adm=1" target="_blank" rel="noopener"
-        title="작가 캘린더 열기" aria-label="작가 캘린더 열기">📅</a>
-      <button type="button" class="btn-ic st-callink" data-id="${s.id}"
-        title="작가에게 그대로 붙여넣을 안내문 복사" aria-label="안내문 복사">📋</button>
-      <span class="st-color-wrap" title="달력·스케줄에 표시될 작가 색">
-        <input type="color" class="st-color" data-id="${s.id}" value="${isHex(s.color) ? s.color : (staffColor(s.id) || '#888888')}" ${isHex(s.color) ? '' : 'disabled'} />
-        <label class="st-active"><input type="checkbox" class="st-auto" data-id="${s.id}" ${isHex(s.color) ? '' : 'checked'} /> 자동색</label>
-      </span>
-      <label class="st-active" title="메인 작가로 배정할 수 있음"><input type="checkbox" class="st-main" data-id="${s.id}" ${s.can_main !== false ? 'checked' : ''} /> 메인</label>
-      <label class="st-active" title="2인 촬영 서브로 배정할 수 있음"><input type="checkbox" class="st-sub" data-id="${s.id}" ${s.can_sub !== false ? 'checked' : ''} /> 서브</label>
-      <button type="button" class="st-rep${s.is_rep ? ' on' : ''}" data-id="${s.id}"
-        title="${s.is_rep ? '대표입니다' : '이 분을 대표로 지정'}">대표</button>
-      <label class="st-active"><input type="checkbox" class="st-act" data-id="${s.id}" ${s.active ? 'checked' : ''} /> 활성</label>
-      <button class="btn-sm st-save" data-id="${s.id}">저장</button>
-      <button class="btn-sm st-del" data-id="${s.id}">삭제</button>
+      <!-- 폰에서 흩어지지 않게 세 묶음으로 나눈다 (대표 «모바일이 영 정리정돈이 안되네», 2026-08-28).
+           넓은 화면에서는 display: contents 라 예전처럼 한 줄로 늘어선다 -->
+      <div class="st-r1">
+        <!-- 캘린더를 마지막으로 연 때 — 줄 맨 왼쪽 (대표 «이름 왼쪽 제일 왼쪽에»).
+             ⚠ 폰에는 «손가락 올려두기» 가 없다. title 은 컴퓨터용으로 두고, **눌러서도** 보게 한다 -->
+        ${(() => { const v = seenText(s.id);
+          return `<button type="button" class="st-seen ${v.cls}" data-seen="${esc(v.tip)}"
+            title="${esc(v.tip)}" aria-label="${esc(v.tip)}">${v.icon}</button>`; })()}
+        <input type="text" class="st-name" data-id="${s.id}" value="${esc(s.name || '')}" placeholder="이름" />
+        <input type="text" class="st-phone js-phone" data-id="${s.id}" value="${esc(s.phone || '')}" placeholder="연락처" />
+      </div>
+      <div class="st-r2">
+        <span class="st-color-wrap" title="달력·스케줄에 표시될 작가 색">
+          <input type="color" class="st-color" data-id="${s.id}" value="${isHex(s.color) ? s.color : (staffColor(s.id) || '#888888')}" ${isHex(s.color) ? '' : 'disabled'} />
+          <label class="st-active"><input type="checkbox" class="st-auto" data-id="${s.id}" ${isHex(s.color) ? '' : 'checked'} /> 자동색</label>
+        </span>
+        <label class="st-active" title="메인 작가로 배정할 수 있음"><input type="checkbox" class="st-main" data-id="${s.id}" ${s.can_main !== false ? 'checked' : ''} /> 메인</label>
+        <label class="st-active" title="2인 촬영 서브로 배정할 수 있음"><input type="checkbox" class="st-sub" data-id="${s.id}" ${s.can_sub !== false ? 'checked' : ''} /> 서브</label>
+        <button type="button" class="st-rep${s.is_rep ? ' on' : ''}" data-id="${s.id}"
+          title="${s.is_rep ? '대표입니다' : '이 분을 대표로 지정'}">대표</button>
+        <label class="st-active"><input type="checkbox" class="st-act" data-id="${s.id}" ${s.active ? 'checked' : ''} /> 활성</label>
+      </div>
+      <div class="st-r3">
+        <!-- 캘린더 열기·안내문 복사 — 글자를 떼고 그림만 (대표 «이걸 이모티콘으로»)
+             adm=1 — 대표가 확인하려고 여는 것이라 접속으로 세지 않는다 (2026-08-28) -->
+        <a class="btn-ic st-cal" href="/staff-calendar?s=${s.id}&adm=1" target="_blank" rel="noopener"
+          title="작가 캘린더 열기" aria-label="작가 캘린더 열기">📅</a>
+        <button type="button" class="btn-ic st-callink" data-id="${s.id}"
+          title="작가에게 그대로 붙여넣을 안내문 복사" aria-label="안내문 복사">📋</button>
+        <button class="btn-sm st-save" data-id="${s.id}">저장</button>
+        <button class="btn-sm st-del" data-id="${s.id}">삭제</button>
+      </div>
     </div>`).join('');
 
   hookPhone($('staffList'));

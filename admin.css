@@ -336,11 +336,17 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
   .cal-cell { padding: 3px; }
   .cal-d { font-size: .7rem; }
 
-  /* 작가관리 */
-  /* 좁으면 한 줄에 하나씩. 위에서 준 고정 너비를 풀어준다 */
-  .staff-item input.st-name { flex: 1 1 100%; width: auto; }
-  .staff-item input.st-phone { flex: 1 1 100%; width: auto; }
+  /* 작가관리 — 폰에서는 세 줄로 (대표 «모바일이 영 정리정돈이 안되네», 2026-08-28).
+     ① 접속·이름·연락처  ② 색·자동색·메인·서브·대표·활성  ③ 📅·📋 … 저장·삭제 */
+  .staff-item { flex-direction: column; align-items: stretch; gap: 8px; }
+  .staff-item .st-r1, .staff-item .st-r2, .staff-item .st-r3 {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+  .staff-item input.st-name { flex: 1 1 34%; width: auto; }
+  .staff-item input.st-phone { flex: 1 1 46%; width: auto; }
+  /* 넓은 화면에서 오른쪽으로 밀던 것을 푼다 — 폰에서는 제 줄의 맨 앞이다 */
   .staff-item .st-color-wrap { margin-left: 0; }
+  /* 저장·삭제는 오른쪽 끝으로. 그림 단추는 왼쪽에 남는다 */
+  .staff-item .st-r3 .st-save { margin-left: auto; }
 }
 
 /* ===== Dashboard ===== */
@@ -562,6 +568,9 @@ td .muted { color: var(--ink-soft); }
 .staff-msg { font-size: .82rem; color: #c0392b; margin-top: 8px; min-height: 1em; }
 .staff-list { display: flex; flex-direction: column; gap: 8px; }
 .staff-item { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+/* 세 묶음은 폰에서만 줄이 된다. 넓은 화면에서는 없는 셈 치고 예전처럼 한 줄로 늘어선다
+   (display: contents — 상자는 사라지고 안엣것이 그대로 .staff-item 의 칸이 된다) */
+.st-r1, .st-r2, .st-r3 { display: contents; }
 .staff-item.inactive { opacity: .55; }
 /* 단추가 늘어나 줄이 빡빡해졌다 — 이름·번호 칸을 줄여 자리를 내준다 (대표 요청 2026-08-24).
    ⚠ flex-basis 만 줄이면 안 줄어든다. 가로로 늘어선 칸은 min-width 가 auto 라
