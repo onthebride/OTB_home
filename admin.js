@@ -252,7 +252,7 @@ function seenText(id) {
 }
 const staffName = (id) => (id && staffMap[id] ? staffMap[id].name : '');
 
-/* 배정 충돌 — 예약id별 { 작가id: {s:'off'|'tight', d:'사유'} }
+/* 배정 충돌 — 예약id별 { 작가id: {s:'off'|'tight'|'same', d:'사유', n:그날 건수} }
    off   = 작가가 그날을 촬영 불가로 찍음
    tight = 같은 날 다른 일정과 4시간 안에 붙음 */
 let confMap = {};
@@ -313,6 +313,10 @@ function assigneeOptions(selId, conf, slot) {
     if (!fits(s)) { other.push(one(s, scoreTag(s.id), false)); return; }
     const v = conf ? conf[s.id] : null;
     if (!v) { ok.push(one(s, scoreTag(s.id), false)); return; }
+    /* 겹치진 않지만 그날 다른 일정이 있다 (대표 «그날 1건 있음 살짝 넣어줘», 2026-08-28).
+       ⚠ 막지 않는다 — 시간이 넉넉하면 진짜로 배정할 수 있는 자리다.
+          「배정 가능」 에 그대로 두고 글자만 붙인다 */
+    if (v.s === 'same') { ok.push(one(s, scoreTag(s.id) + ` · 그날 ${v.n || 1}건`, false)); return; }
     const why = v.s === 'off' ? '불가' : '겹침';
     const d = v.d ? String(v.d) : '';
     const shortD = d.length > 16 ? d.slice(0, 16) + '…' : d;
@@ -2564,8 +2568,12 @@ async function bulkAssign(role) {
   const fitsRole = role === 'sub' ? who.can_sub !== false : who.can_main !== false;
   if (!fitsRole && !confirm(`${staffName(aid)} 작가는 ${role === 'sub' ? '서브' : '메인'} 배정 대상이 아닙니다.\n그래도 배정할까요?`)) return;
 
-  // 겹치거나 불가인 일정이 섞여 있으면 알려주고 물어본다
-  const clash = ids.filter((id) => (confMap[id] || {})[aid]);
+  // 겹치거나 불가인 일정이 섞여 있으면 알려주고 물어본다.
+  // ⚠ 'same'(그날 다른 일정은 있지만 시간은 넉넉함) 은 막을 일이 아니다 — 물어보지 않는다
+  const clash = ids.filter((id) => {
+    const v = (confMap[id] || {})[aid];
+    return v && v.s !== 'same';
+  });
   if (clash.length && !allowConf) {
     const lines = clash.slice(0, 6).map((id) => {
       const b = allBookings.find((x) => x.id === id) || {};
