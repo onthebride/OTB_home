@@ -1531,5 +1531,13 @@ td .muted { color: var(--ink-soft); }
 
 /* 작가가 캘린더를 마지막으로 연 때 — 연락처 옆 동그라미 하나 (대표 «이모티콘만해서 작게»).
    글자 알약을 줄마다 붙이니 목록이 빽빽해졌다. 자세한 건 title 로만 보여준다 */
-.st-seen { flex: 0 0 auto; font-size: .78rem; line-height: 1; cursor: help;
-  margin-left: -2px; letter-spacing: 0; }
+/* 줄 맨 왼쪽의 접속 동그라미. 눌러도 설명이 뜨므로 단추다 */
+.st-seen { flex: 0 0 auto; font-size: .8rem; line-height: 1; cursor: pointer;
+  border: none; background: none; padding: 2px; letter-spacing: 0; }
+.st-seen:hover { filter: brightness(1.15); }
+
+/* 그림만 있는 작은 단추 (캘린더 열기·안내문 복사) */
+.btn-ic { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: 6px;
+  background: #fff; font-size: .95rem; line-height: 1; cursor: pointer; text-decoration: none; }
+.btn-ic:hover { border-color: var(--gold); background: #faf5ec; }
