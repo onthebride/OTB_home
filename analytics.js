@@ -1,3 +1,34 @@
+/* ===== 대표가 확인하러 들어온 것은 어느 통계에도 넣지 않는다 =====
+ *  대표 지시 2026-08-28 «내가 들어가는게 카운트가 되네».
+ *  작가 캘린더(staff-calendar.js 의 seenMark)에 먼저 넣은 것과 같은 방식이다.
+ *
+ *  가려내는 법 셋 — 하나라도 걸리면 GA·클래리티·자체집계를 **전부** 건너뛴다.
+ *    ① 주소에 adm=1        관리자 화면에서 여는 링크에 붙는다. 그 방문 한 번만 뺀다
+ *    ② supabase 세션 열쇠   지금 관리자로 로그인돼 있는 기기
+ *    ③ otb_admin_device    한 번이라도 관리자로 로그인한 기기. admin.js 가 남긴다
+ *                          (로그아웃한 채 홈을 확인해도 방문으로 세면 안 되므로 남긴다)
+ *
+ *  ⚠ 손님 쪽에서는 아무도 로그인하지 않는다 — signInWithPassword 는 admin.js 에만 있다.
+ *     그래서 ②·③ 이 신부님을 잘못 빼는 일은 없다.
+ *  ⚠ 신부·작가에게 나가는 링크에 adm=1 을 붙이면 안 된다 — 붙으면 아무도 안 세어진다.
+ *     그래서 adm=1 은 그 방문만 빼고, ③ 의 영구 표시는 **남기지 않는다**.
+ *  ⚠ 이 파일은 supabase-js 가 없는 페이지(rules·privacy·blog)에도 실린다.
+ *     그래서 클라이언트 객체를 쓰지 않고 window.localStorage 만 직접 본다.
+ */
+window.OTB_ADMIN_DEVICE = (function () {
+  try {
+    if (new URLSearchParams(location.search || '').get('adm') === '1') return true;
+    var ls = window.localStorage;
+    if (!ls) return false;
+    if (ls.getItem('otb_admin_device') === '1') return true;
+    for (var i = 0; i < ls.length; i++) {
+      var k = ls.key(i);
+      if (k && k.indexOf('sb-') === 0 && k.indexOf('-auth-token') > 0) return true;
+    }
+  } catch (_) { /* 저장소를 못 읽으면 그냥 손님으로 본다 */ }
+  return false;
+})();
+
 /* ===== 방문 통계 — 손님용 공개 페이지 전용 =====
  *  구글 애널리틱스(GA4) + 마이크로소프트 클래리티(히트맵·세션 리플레이)를 함께 로드한다.
  *
@@ -17,6 +48,9 @@
   var CLARITY_ID = 'y3oqg71nzu';  // 마이크로소프트 클래리티 프로젝트 ID
 
   if (!GA_ID && !CLARITY_ID) return;
+
+  // 대표 기기면 아예 불러오지도 않는다 — 세션 리플레이에 대표 화면이 남을 이유도 없다
+  if (window.OTB_ADMIN_DEVICE) return;
 
   // 실서비스 도메인에서만 수집 — Vercel 미리보기·로컬 테스트가 통계에 섞이지 않게.
   // (도메인이 바뀌면 여기도 같이 고쳐야 수집이 이어진다)
@@ -52,6 +86,8 @@
 (function () {
   var host = location.hostname;
   if (host !== 'onthebride.com' && host !== 'www.onthebride.com') return;
+  // 관리자 화면 홈의 「오늘 방문·최근 7일·모바일 비율」이 대표 확인으로 부풀지 않게 (2026-08-28)
+  if (window.OTB_ADMIN_DEVICE) return;
   var cfg = window.OTB_CONFIG;
   if (!cfg || !cfg.SUPABASE_URL || !cfg.SUPABASE_KEY) return;
 

@@ -101,7 +101,12 @@ const showLogin = () => {
   const pw = $('password');
   if (savedEmail && pw) setTimeout(() => pw.focus(), 0);
 };
+// 이 브라우저는 대표 것이다 — 공개 사이트 통계에서 뺀다 (analytics.js 가 읽는다, 2026-08-28).
+// 로그인할 때만이 아니라 관리자 화면이 뜰 때마다 남긴다. 이미 로그인돼 있던 기기도 잡아야 해서.
+// 로그아웃해도 지우지 않는다 — 로그아웃한 채 홈을 확인하셔도 방문으로 세면 안 된다.
+const ADMIN_DEVICE_KEY = 'otb_admin_device';
 const showDash = (email) => {
+  try { localStorage.setItem(ADMIN_DEVICE_KEY, '1'); } catch (_) {}
   $('loginView').hidden = true;
   $('dashView').hidden = false;
   $('dashUser').textContent = email || '';
@@ -4773,7 +4778,7 @@ function rvPostsHtml(p) {
   <div class="rv-pub">
     <div class="rv-pub-head">
       <p class="rv-pub-t">홈페이지에 <b>${p.shown || 0}건</b> 실려 있습니다
-        <a href="/reviews" target="_blank" rel="noopener">게시 화면 열기 ↗</a></p>
+        <a href="/reviews?adm=1" target="_blank" rel="noopener">게시 화면 열기 ↗</a></p>
       ${cand ? `<button type="button" class="btn-sm" id="rvTakeAll">아직 안 실은 ${cand}건 모두 싣기</button>` : ''}
       ${p.no_staff ? `<button type="button" class="btn-sm" id="rvRefill">작가 이름 채우기 ${p.no_staff}</button>` : ''}
       <button type="button" class="btn-sm btn-primary-sm" id="rvAddOpen">후기 붙여넣기</button>
