@@ -790,8 +790,6 @@ function renderChecks(b, checks) {
   return `<div class="chk-box"><p class="chk-title">🧑‍🎨 작가 예식 전 확인</p>${line(b.assignee_id, '메인작가')}${(b.photographer === '2인 촬영' && b.sub_assignee_id) ? line(b.sub_assignee_id, '서브작가') : ''}</div>`;
 }
 
-const PROG_ALL = ['신랑신부 동시 입장', '예물교환', '주례말씀', '축사', '축가', '예배식'];
-
 function renderSurvey(s, bid) {
   const customerUrl = location.origin + '/survey?b=' + bid;
   if (!s) return ''; // 설문 미작성 박스는 표시 안 함 (설문은 고객 포털에 통합됨)
