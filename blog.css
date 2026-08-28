@@ -96,6 +96,9 @@ img { max-width: 100%; height: auto; display: block; }
 .post-tags { margin: 0 0 12px; display: flex; gap: 8px; flex-wrap: wrap; }
 .post-tag { color: var(--gold); font-size: .8rem; font-weight: 600; }
 .post-head h1 { font-family: var(--kserif); font-weight: 700; font-size: clamp(1.7rem, 5vw, 2.5rem); line-height: 1.35; letter-spacing: -.01em; margin: 0 0 16px; }
+/* 제목 아래 한 줄 (frontmatter 의 subtitle). 제목보다 작고 조용하게 */
+.post-sub { font-family: var(--kserif); font-size: 1.05rem; font-weight: 500;
+  color: var(--sage); margin: -6px 0 16px; word-break: keep-all; }
 .post-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; color: var(--sage); font-size: .85rem; margin: 0; }
 .post-cover { margin: 0 0 30px; border-radius: var(--radius); overflow: hidden; }
 .post-cover img { width: 100%; }

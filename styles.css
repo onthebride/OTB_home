@@ -182,6 +182,19 @@ a { color: inherit; text-decoration: none; }
   font-weight: 500; color: var(--ink) !important; line-height: 1.9 !important;
   margin-bottom: 40px !important;
 }
+/* 이야기 제목 — 소제목(.story-h)보다 크고, 왼쪽 금색 선은 없다.
+   clamp 로 폰에서 알아서 줄어든다 (긴 제목이 두 줄로 접힌다) */
+.story-title {
+  font-family: var(--kserif); font-weight: 700;
+  font-size: clamp(1.5rem, 4.4vw, 2.1rem); line-height: 1.42;
+  letter-spacing: -.01em; color: var(--ink);
+  text-align: center; margin: 0 0 10px; word-break: keep-all;
+}
+.story-title-sub {
+  text-align: center; font-family: var(--kserif);
+  font-size: 1rem !important; color: var(--ink-soft) !important;
+  margin: 0 0 44px !important;
+}
 .story-h {
   font-family: var(--kserif); font-weight: 600;
   font-size: 1.4rem; color: var(--ink);
@@ -193,6 +206,8 @@ a { color: inherit; text-decoration: none; }
   font-size: 1.25rem !important; color: var(--gold-deep) !important;
   text-align: center; margin: 8px 0 30px !important;
 }
+/* 두 약속 뒤의 «— 어떤 숫자에 대한 답» 은 조용하게 — 기울임 없이 작게 */
+.story-quote-note { font-style: normal; font-size: .8em; color: var(--ink-soft); }
 .story-list {
   list-style: none; margin: -6px 0 26px; padding: 0;
   display: grid; gap: 10px;

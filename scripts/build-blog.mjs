@@ -286,7 +286,7 @@ ${siteHeader('blog')}
     <article class="post">
       <header class="post-head">
         ${tagsHtml ? `<p class="post-tags">${tagsHtml}</p>` : ''}
-        <h1>${esc(post.title)}</h1>
+        <h1>${esc(post.title)}</h1>${post.subtitle ? `\n        <p class="post-sub">${esc(post.subtitle)}</p>` : ''}
         <p class="post-meta">
           <time datetime="${attr(post.date)}">${fmtDateK(post.date)}</time>
           ${post.updated && post.updated !== post.date ? `<span>·</span><span>${fmtDateK(post.updated)} 업데이트</span>` : ''}
@@ -403,6 +403,8 @@ function build() {
     posts.push({
       slug,
       title: meta.title || slug,
+      // 제목 아래 한 줄. 제목을 검색어에 맞춰 바꾸면서, 원래 제목을 여기로 내릴 때 쓴다
+      subtitle: meta.subtitle || '',
       description: meta.description || stripMd(body).slice(0, 120),
       summary: meta.summary || '',
       date: meta.date || '',
