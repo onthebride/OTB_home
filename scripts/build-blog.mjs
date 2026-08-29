@@ -103,7 +103,8 @@ function mdToHtml(md) {
     if (/^>\s?/.test(line)) {
       const buf = [];
       while (i < lines.length && /^>\s?/.test(lines[i])) { buf.push(lines[i].replace(/^>\s?/, '')); i++; }
-      blocks.push({ type: 'quote', text: buf.join(' ') }); continue;
+      // 줄바꿈을 살린다 — 문단과 같다. 「하나. / 둘.」처럼 줄을 나눠 강조하는 자리가 있다
+      blocks.push({ type: 'quote', lines: buf.slice(), text: buf.join(' ') }); continue;
     }
     if (/^\d+\.\s+/.test(line)) {
       const items = [];
@@ -139,7 +140,7 @@ function mdToHtml(md) {
     } else if (b.type === 'ol') {
       out.push(`<ol>${b.items.map((x) => `<li>${inline(x)}</li>`).join('')}</ol>`);
     } else if (b.type === 'quote') {
-      out.push(`<blockquote>${inline(b.text)}</blockquote>`);
+      out.push(`<blockquote>${(b.lines || [b.text]).map((l) => inline(l)).join('<br>\n')}</blockquote>`);
     } else if (b.type === 'img') {
       out.push(`<figure>${inline(b.text)}</figure>`);
     } else if (b.type === 'hr') {
