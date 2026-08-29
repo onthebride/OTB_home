@@ -353,7 +353,12 @@
 /* 스위치 — 글자는 밖으로 빼고 스위치만 오른쪽에 붙인다
    (대표 2026-08-29 «토글 버튼들 넘 안예쁘네 / 글자는 꺼내주고 그 옆에 토글 스위치»).
    예전에는 알약 모양 단추 안에 글자가 들어 있었다 */
-.sc-swrow { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+/* 스위치는 문단 제목줄 오른쪽 끝에 붙는다 (대표 2026-08-29
+   «온오프 토글을 문단제목줄 오른쪽 끝에 붙여 넣어줘»). 설명은 그 아래로 내려간다 */
+.sc-set-head { display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 5px; }
+.sc-set-head h3 { margin: 0; }
+.sc-swrow { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
 .sc-sw-lbl { font-size: .9rem; font-weight: 600; color: var(--ink-soft); }
 .sc-swrow.on .sc-sw-lbl { color: var(--gold-deep); }
 /* 스위치는 26px 인데 손가락이 닿는 자리는 44px 이어야 한다 — 위아래 여백으로 넓힌다 */
@@ -435,9 +440,10 @@
 .sc-set-msg { margin: 9px 0 0; font-size: .8rem; line-height: 1.7; color: #b5462f; }
 .sc-sw:disabled { opacity: .55; cursor: default; }
 
-/* 설정 칸 줄 사이 (대표 «설정에 줄바꿈좀 해주고») — 설명이 여러 줄이라 붙으면 안 읽힌다 */
+/* 설정 칸 줄 사이 (대표 «설정에 줄바꿈좀 해주고») — 설명이 여러 줄이라 붙으면 안 읽힌다.
+   ⚠ h3 는 이제 .sc-set-head 안에 있다. h3 + .sc-set-d 로는 안 잡힌다 (2026-08-29) */
 .sc-set-d + .sc-set-d { margin-top: -6px; }
-.sc-set-row h3 + .sc-set-d { margin-bottom: 8px; }
+.sc-set-head + .sc-set-d { margin-bottom: 8px; }
 .sc-set-d:last-of-type { margin-bottom: 14px; }
 
 /* ===== 머리말 — 왼쪽 로고 · 오른쪽 사진과 이름 (대표 요청 2026-08-27) =====

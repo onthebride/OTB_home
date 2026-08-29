@@ -566,30 +566,31 @@ function renderSet() {
   box.innerHTML = `
     <div class="sc-set">
       <section class="sc-set-row">
-        <h3>알림</h3>
-        <p class="sc-set-d">예식 <b>날짜·시간·장소</b>가 바뀌거나,
-          <b>연회장·폐백·2부 촬영</b>이 붙고 빠지거나, <b>취소</b>되면 폰으로 알려드려요.</p>
-        <p class="sc-set-d"><b>한 기기에서만 받습니다.</b><br />
-          다른 기기에서 켜면 이전 기기는 저절로 꺼져요.</p>
-        <div class="sc-swrow" id="setPushRow">
-          <b class="sc-sw-lbl" id="setPushLbl">불러오는 중</b>
-          <button type="button" class="sc-sw" id="setPushSw" role="switch"
-            aria-checked="false" aria-label="알림 받기"><span class="sc-sw-k"></span></button>
+        <div class="sc-set-head">
+          <h3>알림</h3>
+          <div class="sc-swrow" id="setPushRow">
+            <b class="sc-sw-lbl" id="setPushLbl">불러오는 중</b>
+            <button type="button" class="sc-sw" id="setPushSw" role="switch"
+              aria-checked="false" aria-label="알림 받기"><span class="sc-sw-k"></span></button>
+          </div>
         </div>
+        <p class="sc-set-d">예식이 <b>바뀌거나 취소</b>되면 폰으로 알려드려요.<br />
+          <b>한 기기에서만</b> 받아요 — 다른 기기에서 켜면 이전 기기는 꺼집니다.</p>
         <p class="sc-set-msg" id="setPushMsg" hidden></p>
       </section>
 
       <section class="sc-set-row">
-        <h3>스케줄 받기</h3>
-        <p class="sc-set-d">잠시 쉬실 때는 꺼두세요. 꺼두면 <b>새 예식이 배정되지 않아요.</b></p>
-        <p class="sc-set-d"><b>이미 배정된 예식은 진행을 해주셔야 하고,</b><br />
-          그마저도 어려우시면 <b>대표와 상의</b>해 주세요.</p>
-        <div class="sc-swrow${d.accepting ? ' on' : ''}">
-          <b class="sc-sw-lbl">${d.accepting ? '받는 중' : '쉬는 중'}</b>
-          <button type="button" class="sc-sw${d.accepting ? ' on' : ''}" id="setAccept"
-            role="switch" aria-checked="${d.accepting ? 'true' : 'false'}"
-            aria-label="스케줄 받기"><span class="sc-sw-k"></span></button>
+        <div class="sc-set-head">
+          <h3>스케줄 받기</h3>
+          <div class="sc-swrow${d.accepting ? ' on' : ''}">
+            <b class="sc-sw-lbl">${d.accepting ? '받는 중' : '쉬는 중'}</b>
+            <button type="button" class="sc-sw${d.accepting ? ' on' : ''}" id="setAccept"
+              role="switch" aria-checked="${d.accepting ? 'true' : 'false'}"
+              aria-label="스케줄 받기"><span class="sc-sw-k"></span></button>
+          </div>
         </div>
+        <p class="sc-set-d">꺼두면 <b>새 예식이 배정되지 않아요.</b> 쉬실 때 꺼두세요.<br />
+          <b>이미 배정된 예식은 그대로 진행</b>해 주세요. 어려우시면 대표와 상의해 주세요.</p>
       </section>
 
       <section class="sc-set-row">
@@ -597,12 +598,10 @@ function renderSet() {
         <!-- 대표 요청 2026-08-29. 아직 지정 예약을 안 받고 있어서, 금액만 적어두고
              «왜 지정이 안 들어오지» 하고 기다리시지 않게 먼저 알린다 -->
         <p class="sc-set-soon">지정 촬영은 <b>빠른 시일 내에 도입될 예정</b>입니다.<br />
-          미리 금액을 정해두시면 시작하는 날 바로 반영돼요.</p>
-        <p class="sc-set-d">신부님이 <b>작가님을 지정해</b> 예약하실 때
-          기본가에 더해지는 금액이에요.</p>
-        <p class="sc-set-d">기본 작가 페이가 <b>25만원</b>이니,
-          여기에 지정 촬영비를 더한 <b>총 금액</b>이 나갑니다.<br />
-          안 받으시려면 <b>0</b>을 적어주세요.</p>
+          미리 정해두시면 시작하는 날 바로 반영돼요.</p>
+        <p class="sc-set-d">신부님이 <b>작가님을 지정</b>하실 때 더해지는 금액이에요.<br />
+          기본 페이 <b>25만원</b> + 지정 촬영비 = 신부님이 내시는 총액.
+          안 받으시려면 <b>0</b>.</p>
         ${d.can_fee ? `
         <div class="sc-fee">
           <input type="text" id="setFee" inputmode="numeric" autocomplete="off"
