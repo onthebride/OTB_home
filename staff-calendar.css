@@ -525,6 +525,11 @@
 .sc-next-m.shut > i { transform: translateY(-3px) rotate(45deg); }
 /* 접으면 아래 금은 지운다 — 접힌 채로 금만 남으면 뜬금없는 줄이 된다 */
 .sc-next-m.shut { border-bottom-color: transparent; }
+/* 둘째 날부터는 「내일」·「모레」를 날짜 옆에 적어준다 (대표 2026-08-29).
+   첫째 날은 맨 윗줄에 이미 적혀 있어 두 번 쓰지 않는다 */
+.sc-next-w { font-weight: 500; font-size: .78rem; color: var(--gold-deep); margin-left: 6px; }
+/* 날이 여럿이면 줄 사이를 조금 띄운다 — 붙으면 어디까지가 그날 것인지 안 보인다 */
+.sc-next-b + .sc-next-m { margin-top: 10px; }
 
 /* 그날 예식 한 줄씩 — 두 건이면 두 줄 */
 .sc-nx-row { padding-top: 8px; }

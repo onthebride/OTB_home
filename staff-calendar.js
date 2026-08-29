@@ -252,35 +252,56 @@ function shootRow(x, extra) {
   </div>`;
 }
 
+const whenWord = (days) => (days === 0 ? '오늘' : days === 1 ? '내일' : `${days}일 뒤`);
+
+/* 하루치 — 날짜 줄과 그 아래 목록. 첫째 날과 그 뒤 날들이 **같은 모양**을 쓴다 */
+function nextDay(day, i, shut) {
+  const d = new Date(String(day.wedding_date) + 'T00:00:00');
+  const items = day.items || [];
+  return `
+    <button type="button" class="sc-next-m${shut ? ' shut' : ''}" data-nx="${i}"
+      aria-expanded="${shut ? 'false' : 'true'}" aria-controls="scNextB${i}">
+      <span>${d.getMonth() + 1}월 ${d.getDate()}일(${DOW[d.getDay()]})${
+        items.length > 1 ? ` <em>${items.length}건</em>` : ''}${
+        i > 0 ? ` <b class="sc-next-w">${esc(whenWord(day.days))}</b>` : ''}</span><i></i>
+    </button>
+    <div class="sc-next-b" id="scNextB${i}"${shut ? ' hidden' : ''}>${
+      items.map((x) => shootRow(x)).join('')}</div>`;
+}
+
 function renderNext(n) {
   const box = $('scNext');
   if (!box) return;
   if (!n || !n.items || !n.items.length) { box.hidden = true; box.innerHTML = ''; return; }
-  const d = new Date(String(n.wedding_date) + 'T00:00:00');
-  const when = n.days === 0 ? '오늘' : n.days === 1 ? '내일' : `${n.days}일 뒤`;
 
   // 날짜 줄을 눌러 그 아래를 접는다 (대표 «다음 촬영 날짜 밑으로는 접을 수 있게 해줘»).
-  // 접혀 있어도 날짜와 몇 건인지는 남는다 — 그것까지 감추면 무엇을 폈는지 알 수 없다
+  // 접혀 있어도 날짜와 몇 건인지는 남는다 — 그것까지 감추면 무엇을 폈는지 알 수 없다.
+  //
+  // ⚠ 이틀 뒤까지 보여준다 (대표 2026-08-29 «2틀전스케줄부터 보여주면 될거 같아»).
+  //   서버가 첫째 날은 next 로, 그 뒤 날들은 next.more 로 준다.
+  //   첫째 날만 «접었던 대로» 를 기억한다. 뒤 날들은 늘 접힌 채로 시작한다 —
+  //   카드가 길어지면 아래 달력이 밀려 내려가 정작 달력을 못 본다
+  const days = [n].concat(n.more || []);
   const shut = nextShut();
   box.hidden = false;
   box.innerHTML = `
-    <p class="sc-next-l">다음 촬영<i>${esc(when)}</i></p>
-    <button type="button" class="sc-next-m${shut ? ' shut' : ''}" id="scNextT"
-      aria-expanded="${shut ? 'false' : 'true'}" aria-controls="scNextB">
-      <span>${d.getMonth() + 1}월 ${d.getDate()}일(${DOW[d.getDay()]})${
-        n.items.length > 1 ? ` <em>${n.items.length}건</em>` : ''}</span><i></i>
-    </button>
-    <div class="sc-next-b" id="scNextB"${shut ? ' hidden' : ''}>${
-      n.items.map((x) => shootRow(x)).join('')}</div>`;
+    <p class="sc-next-l">다음 촬영<i>${esc(whenWord(n.days))}</i></p>
+    ${days.map((day, i) => nextDay(day, i, i === 0 ? shut : true)).join('')}`;
 
-  const tg = $('scNextT'), bd = $('scNextB');
-  if (!tg || !bd) return;
-  tg.addEventListener('click', () => {
-    const off = !bd.hidden;                    // 지금 펴 있으면 접는다
-    bd.hidden = off;
-    tg.classList.toggle('shut', off);
-    tg.setAttribute('aria-expanded', off ? 'false' : 'true');
-    try { localStorage.setItem(NEXT_KEY, off ? 'shut' : 'open'); } catch (e) { /* 저장이 막힌 기기 */ }
+  box.querySelectorAll('[data-nx]').forEach((tg) => {
+    const i = tg.dataset.nx;
+    const bd = $('scNextB' + i);
+    if (!bd) return;
+    tg.addEventListener('click', () => {
+      const off = !bd.hidden;                  // 지금 펴 있으면 접는다
+      bd.hidden = off;
+      tg.classList.toggle('shut', off);
+      tg.setAttribute('aria-expanded', off ? 'false' : 'true');
+      // 기억해 두는 것은 첫째 날뿐 (뒤 날들은 다음에 와도 접힌 채로 시작한다)
+      if (i === '0') {
+        try { localStorage.setItem(NEXT_KEY, off ? 'shut' : 'open'); } catch (e) { /* 저장이 막힌 기기 */ }
+      }
+    });
   });
 }
 
