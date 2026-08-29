@@ -350,17 +350,22 @@
 .sc-set-d b { color: var(--ink); font-weight: 600; }
 
 /* 스케줄 받기 스위치 — 지금 켜졌는지가 한눈에 보여야 한다 */
-.sc-sw { display: inline-flex; align-items: center; gap: 10px; cursor: pointer;
-  border: 1px solid var(--line); background: #fff; border-radius: 999px;
-  padding: 7px 16px 7px 8px; font-family: inherit; font-size: .88rem; color: var(--ink-soft); }
-.sc-sw b { font-weight: 600; }
-.sc-sw-k { width: 38px; height: 22px; border-radius: 999px; background: #d9d1c6;
+/* 스위치 — 글자는 밖으로 빼고 스위치만 오른쪽에 붙인다
+   (대표 2026-08-29 «토글 버튼들 넘 안예쁘네 / 글자는 꺼내주고 그 옆에 토글 스위치»).
+   예전에는 알약 모양 단추 안에 글자가 들어 있었다 */
+.sc-swrow { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.sc-sw-lbl { font-size: .9rem; font-weight: 600; color: var(--ink-soft); }
+.sc-swrow.on .sc-sw-lbl { color: var(--gold-deep); }
+/* 스위치는 26px 인데 손가락이 닿는 자리는 44px 이어야 한다 — 위아래 여백으로 넓힌다 */
+.sc-sw { display: inline-flex; align-items: center; cursor: pointer;
+  border: none; background: none; padding: 9px 0; flex: 0 0 auto; }
+.sc-sw-k { width: 46px; height: 26px; border-radius: 999px; background: #d9d1c6;
   position: relative; transition: background .2s ease; flex: 0 0 auto; }
-.sc-sw-k::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px;
-  border-radius: 50%; background: #fff; transition: left .2s ease; }
-.sc-sw.on { border-color: var(--gold); color: var(--gold-deep); background: #faf4ea; }
+.sc-sw-k::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px;
+  border-radius: 50%; background: #fff; transition: left .2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .22); }
 .sc-sw.on .sc-sw-k { background: var(--gold); }
-.sc-sw.on .sc-sw-k::after { left: 19px; }
+.sc-sw.on .sc-sw-k::after { left: 23px; }
 
 /* 지정 촬영비 */
 .sc-fee { display: flex; align-items: center; gap: 8px; }
@@ -371,6 +376,13 @@
 .sc-fee-w { font-size: .88rem; color: var(--ink-soft); }
 .sc-set-now { margin: 9px 0 0; font-size: .82rem; color: var(--ink-soft); }
 .sc-set-now b { color: var(--gold-deep); font-weight: 600; }
+/* 아직 지정 예약을 안 받는다는 안내 (대표 2026-08-29).
+   금액만 적어두고 «왜 지정이 안 들어오지» 하고 기다리시지 않게 맨 위에 둔다 */
+.sc-set-soon { margin: 0 0 12px; padding: 11px 13px; font-size: .84rem; line-height: 1.7;
+  color: var(--gold-deep); background: #faf4ea; border: 1px solid #ecdcc3;
+  border-radius: 8px; }
+.sc-set-soon b { font-weight: 700; }
+
 /* 후기가 모자라 아직 못 적는 상태 — 잠긴 이유를 숫자로 보여준다 */
 .sc-set-lock { margin: 0; padding: 11px 13px; font-size: .84rem; line-height: 1.7;
   color: var(--ink-soft); background: var(--cream, #f7f3ee); border: 1px solid var(--line);
