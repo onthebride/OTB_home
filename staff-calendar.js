@@ -159,6 +159,7 @@ async function load() {
   pushInit();          // 늦게 와도 된다 — 단추만 늦게 뜬다
   settingsInit();      // 「설정」 칸을 띄울지 정한다 (지금은 대표만)
   loadNotices();       // 확인할 것 — 폰 알림이 못 갔어도 여기서 본다
+  loadTopNotices();    // 그중 중요한 것은 맨 위에도 띄운다
   clearBadge();        // 화면을 열었으니 아이콘 숫자를 지운다
   seenMark();          // 열었다는 것만 남긴다 (대표가 열어본 것은 빼고)
   show($('mainCard'));
@@ -531,7 +532,41 @@ async function ntRead(id) {
   ntData = data;
   ntPage = data.page;
   renderNotices();
+  loadTopNotices();    // 위에 떠 있던 것도 같이 사라져야 한다
   clearBadge();        // 다 확인했으면 홈 화면 아이콘 숫자도 지운다
+}
+
+/* ===== 맨 위 중요 공지 (대표 2026-08-29
+   «내가 보내는 공지랑 비활성화 안내는 중요공지니까 캘린더 상단에 바로 보이게 뜨게해줘
+     그리고 알림화면에도 있어야해»)
+
+   여기 뜨는 것 — 대표 공지(notice) · 스케줄 멈춤 예고(pause_warn) · 멈춤 알림(pause).
+   예식 변경·취소는 안 띄운다. 그건 그 예식 카드에서 바로 보인다.
+   ⚠ 안 읽은 것만이다. 확인하면 여기서 사라지고 「알림」 칸에는 그대로 남는다.
+   ⚠ 위쪽은 좁다 — 서버가 셋까지만 준다. 나머지는 「알림」 칸에서 본다 */
+let topNt = [];
+
+async function loadTopNotices() {
+  if (!sb || !staffId) return;
+  const { data, error } = await sb.rpc('staff_top_notices', { p_staff_id: staffId });
+  if (error) return;
+  topNt = Array.isArray(data) ? data : [];
+  renderTopNotices();
+}
+
+function renderTopNotices() {
+  const box = $('scTopNt');
+  if (!box) return;
+  box.hidden = topNt.length === 0;
+  if (!topNt.length) { box.innerHTML = ''; return; }
+  box.innerHTML = topNt.map((r) => `
+    <div class="sc-tn${r.kind === 'notice' ? '' : ' warn'}">
+      <p class="sc-tn-t">${esc(r.title)}<span>${esc(r.at)}</span></p>
+      <p class="sc-tn-b">${esc(r.body)}</p>
+      <button type="button" class="btn-sm sc-tn-ok" data-tn="${r.id}">확인했어요</button>
+    </div>`).join('');
+  box.querySelectorAll('[data-tn]').forEach((b) =>
+    b.addEventListener('click', () => ntRead(Number(b.dataset.tn))));
 }
 
 /* ===== 설정 (대표 요청 2026-08-27

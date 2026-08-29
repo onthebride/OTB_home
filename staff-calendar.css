@@ -412,6 +412,21 @@
 .sc-nt-list { display: flex; flex-direction: column; gap: 8px; }
 
 /* 확인한 것은 보통, 안 한 것은 진하게 (대표 지시) */
+/* 맨 위 중요 공지 (대표 2026-08-29). 「알림」 칸의 줄과 같은 모양인데
+   눈에 먼저 들어와야 해서 테두리를 진하게 준다. 멈춤 예고·멈춤은 붉은 쪽으로 */
+.sc-top-nt { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.sc-tn { background: #fdf8f0; border: 1px solid var(--gold); border-radius: 9px;
+  padding: 13px 15px; box-shadow: 0 10px 26px -22px rgba(150, 110, 50, .6); }
+.sc-tn.warn { background: #fdf3f1; border-color: #d9b3aa;
+  box-shadow: 0 10px 26px -22px rgba(150, 60, 40, .6); }
+.sc-tn-t { margin: 0 0 4px; display: flex; align-items: baseline; gap: 8px;
+  font-size: .9rem; font-weight: 700; color: var(--ink); word-break: keep-all; }
+.sc-tn-t span { margin-left: auto; font-size: .74rem; font-weight: 400;
+  color: var(--ink-soft); flex: 0 0 auto; }
+.sc-tn-b { margin: 0; font-size: .84rem; line-height: 1.7; color: var(--ink);
+  white-space: pre-wrap; word-break: keep-all; }
+.sc-tn .sc-tn-ok { margin-top: 10px; }
+
 .sc-nt-item { background: #fff; border: 1px solid var(--line); border-radius: 9px; padding: 13px 15px; }
 .sc-nt-item.unread { border-color: var(--gold); background: #fdf8f0; }
 .sc-nt-t { margin: 0 0 4px; display: flex; align-items: baseline; gap: 8px;
