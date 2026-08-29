@@ -163,6 +163,9 @@ async function load() {
   clearBadge();        // 화면을 열었으니 아이콘 숫자를 지운다
   seenMark();          // 열었다는 것만 남긴다 (대표가 열어본 것은 빼고)
   show($('mainCard'));
+  // 언제·며칠 것을 받아왔는지 적어둔다 — 폰으로 돌아왔을 때 다시 받을지 여기서 판단한다
+  lastLoad = Date.now();
+  lastDay = krDay();
 }
 
 /* 아래로 당겨 새로고침이 부르는 곳 (대표 요청 2026-08-27).
@@ -175,6 +178,31 @@ async function refreshAll() {
   if (cur === 'me') { meLoaded = true; await loadMe(); }
   if (cur === 'set') renderSet();
   applyTab(cur);                 // 맨 마지막에 — render/renderPanel 이 열어둔 것을 닫는다
+}
+
+/* ===== 폰으로 돌아오면 다시 불러온다 (대표 요청 2026-08-29 «넣자그거»)
+   대표 «이거 내일되면 내일 스케줄 뜨는겨?» — 서버는 «오늘 이후 가장 가까운 예식 날» 을
+   주므로 자정을 넘기면 바뀐다. 그런데 화면은 열 때 한 번만 받아온다.
+   앱을 켜둔 채 밤을 넘기면 **어제 예식이 그대로 떠 있었다.**
+
+   ⚠ 보일 때마다 부르면 안 된다 — 키보드가 오르내리거나 잠깐 다른 앱을 봤다 와도
+     visibilitychange 가 뜬다. 그래서 둘 중 하나일 때만 부른다.
+       ① 한국 날짜가 바뀌었다 (이게 진짜 이유다 — 「다음 촬영」이 넘어가야 한다)
+       ② 마지막으로 받아온 지 5분이 지났다 (그 사이 배정이 바뀌었을 수 있다)
+   ⚠ bfcache 로 되살아나면 visibilitychange 가 안 뜨는 기기가 있어 pageshow 도 같이 본다.
+   ⚠ 이 자리에는 «판단» 만 둔다. document.addEventListener 는 파일 맨 아래 load() 옆에 건다 —
+     여기 두면 화면 시험들이 이 대목을 잘라 돌릴 때 document 가 없어 통째로 터진다 */
+const krDay = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+let lastLoad = 0;
+let lastDay = krDay();
+const STALE = 5 * 60e3;
+
+function refreshIfStale() {
+  if (!sb || !staffId) return;
+  if ($('mainCard') && $('mainCard').hidden) return;   // 아직 못 불러온 화면이면 놔둔다
+  const dayChanged = krDay() !== lastDay;
+  if (!dayChanged && Date.now() - lastLoad < STALE) return;
+  refreshAll().catch(() => {});
 }
 
 /* 머리말 — 왼쪽 로고, 오른쪽에 사진과 이름 (대표 요청 2026-08-27).
@@ -1215,6 +1243,14 @@ if (todayBtn) todayBtn.addEventListener('click', goToday);
 })();
 
 load();
+
+/* 폰으로 돌아왔을 때 다시 받아올지 refreshIfStale() 이 정한다 (위쪽에 있다).
+   ⚠ 거는 곳은 여기다 — 함수 옆에 두면 화면 시험이 그 대목을 잘라 돌릴 때
+     document 가 없어 통째로 터진다 (2026-08-29 에 calui.test 가 그렇게 터졌다) */
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') refreshIfStale();
+});
+window.addEventListener('pageshow', (e) => { if (e.persisted) refreshIfStale(); });
 
 /* 사용안내 팝업 (대표 요청)
    · 처음 오면 저절로 뜬다. 닫아도 다음에 또 뜬다 — 작가가 규칙을 알아야 해서
