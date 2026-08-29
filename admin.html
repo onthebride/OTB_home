@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="admin.css?v=30bcd6434a" />
+  <link rel="stylesheet" href="admin.css?v=0ee3d0ec99" />
 </head>
 <body>
 
@@ -260,6 +260,7 @@
           <button type="button" class="sub-tab active" data-psub="eval">평가</button>
           <button type="button" class="sub-tab" data-psub="items">받은 응답</button>
           <button type="button" class="sub-tab" data-psub="manage">작가 관리</button>
+          <button type="button" class="sub-tab" data-psub="notice">공지</button>
         </div>
 
         <div id="peEval">
@@ -286,6 +287,20 @@
           <p class="empty" id="staffEmpty" hidden>등록된 작가가 없습니다.</p>
         </div>
 
+        </div>
+
+        <!-- 전체 작가 공지 (대표 2026-08-29). 작가 캘린더 「알림」 칸에 남고 폰도 울린다.
+             알림톡으로는 안 나간다 — 대표가 그렇게 정했다 -->
+        <div id="peNotice" hidden>
+          <div class="nt-send">
+            <h3>전체 작가 공지</h3>
+            <p class="nt-who" id="ntWho">받을 사람을 세는 중…</p>
+            <input type="text" id="ntTitle" maxlength="60" placeholder="제목 (예: 9월 스케줄 안내)" />
+            <textarea id="ntBody" maxlength="1000" rows="6" placeholder="내용을 적어주세요."></textarea>
+            <p class="nt-len"><span id="ntLen">0</span> / 1,000자</p>
+            <button class="btn-primary" id="ntSend">공지 보내기</button>
+            <p class="staff-msg" id="ntMsg"></p>
+          </div>
         </div>
       </div>
 
@@ -433,6 +448,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=8627252221"></script>
+  <script src="admin.js?v=d2f45941e5"></script>
 </body>
 </html>

@@ -1211,6 +1211,22 @@ td .muted { color: var(--ink-soft); }
 @media (max-width: 600px) { .au-bk { margin-left: 0; width: 100%; } }
 
 /* '오늘 할 일'의 발송 버튼 */
+/* 전체 작가 공지 (대표 2026-08-29). 폰에서 쓰는 일이 많아 칸을 통째로 넓게 쓴다 */
+.nt-send { background: var(--paper); border: 1px solid var(--line); border-radius: 10px;
+  padding: 18px; max-width: 640px; }
+.nt-send h3 { font-size: 1rem; margin-bottom: 10px; }
+/* 누구에게 가는지 — 잘못 보내면 되돌릴 수 없어서 눈에 띄게 둔다 */
+.nt-who { font-size: .84rem; line-height: 1.7; color: var(--ink-soft); margin-bottom: 12px;
+  padding: 9px 11px; background: var(--cream); border-radius: 7px; word-break: keep-all; }
+.nt-who b { color: var(--gold-deep); }
+.nt-send input, .nt-send textarea { width: 100%; border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px 12px; font-family: var(--sans); font-size: .92rem; color: var(--ink);
+  background: var(--cream); margin-bottom: 8px; }
+.nt-send textarea { resize: vertical; line-height: 1.7; }
+.nt-send input:focus, .nt-send textarea:focus { outline: none; border-color: var(--gold); background: #fff; }
+.nt-len { font-size: .78rem; color: var(--ink-soft); text-align: right; margin-bottom: 12px; }
+.nt-send .btn-primary { width: 100%; padding: 12px; }
+
 /* 단추가 셋이 됐다 (지금 보내기 · 오늘은 안 보내기 · 확인).
    한 상자에 묶어 «셋이 통째로» 아랫줄로 내려가게 한다 — 안 묶으면 좁은 화면에서
    하나만 떨어져 나가 줄이 들쭉날쭉해진다 (2026-08-29) */

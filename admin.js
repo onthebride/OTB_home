@@ -2986,21 +2986,83 @@ if (calSubtabs) calSubtabs.addEventListener('click', (e) => {
   if (b) calSub(b.dataset.csub);
 });
 
-/* ===== 「작가」 메뉴의 세 칸 — 대표 지시 2026-08-28
-   «작가 평가+감점 / 받은응답 / 작가관리»
+/* ===== 「작가」 메뉴의 네 칸 — 대표 지시 2026-08-28
+   «작가 평가+감점 / 받은응답 / 작가관리», 2026-08-29 «공지» 하나 더
    ⚠ 평가와 받은 응답은 같은 자료를 쓴다 — 어느 칸이든 renderFeedback() 한 번이면 된다 ===== */
 let peCur = 'eval';
 function peSub(sub) {
-  peCur = ['eval', 'items', 'manage'].indexOf(sub) >= 0 ? sub : 'eval';
+  peCur = ['eval', 'items', 'manage', 'notice'].indexOf(sub) >= 0 ? sub : 'eval';
   if ($('peEval')) $('peEval').hidden = peCur !== 'eval';
   if ($('peItems')) $('peItems').hidden = peCur !== 'items';
   if ($('peManage')) $('peManage').hidden = peCur !== 'manage';
+  if ($('peNotice')) $('peNotice').hidden = peCur !== 'notice';
   const box = $('peSubtabs');
   if (box) box.querySelectorAll('.sub-tab').forEach((b) =>
     b.classList.toggle('active', b.dataset.psub === peCur));
   if (peCur === 'eval' || peCur === 'items') renderFeedback();
   if (peCur === 'manage') renderStaff();
+  if (peCur === 'notice') noticeInit();
   setHash(peCur === 'eval' ? 'people' : 'people/' + peCur);
+}
+
+/* ===== 전체 작가 공지 (대표 2026-08-29 «전체 작가 공지 캘린더로 할 수 있게 해줘»)
+   한 번 쓰면 받을 작가들 캘린더 「알림」 칸에 남고 폰도 울린다. 알림톡으로는 안 나간다.
+   받을 사람 = 활성화 + (스케줄 받는 중 이거나 앞으로 잡힌 예식이 있는 사람).
+   ⚠ 보내기 전에 **누구에게 가는지 이름을 먼저 보여준다** — 전체에게 한 번에 가는 것이라
+     잘못 보내면 되돌릴 수 없다 */
+let ntTargets = null;
+
+async function noticeInit() {
+  const who = $('ntWho');
+  const len = $('ntBody');
+  if (len && !len.dataset.bound) {
+    len.dataset.bound = '1';
+    len.addEventListener('input', () => { if ($('ntLen')) $('ntLen').textContent = len.value.length; });
+  }
+  const btn = $('ntSend');
+  if (btn && !btn.dataset.bound) { btn.dataset.bound = '1'; btn.addEventListener('click', noticeSend); }
+
+  if (ntTargets) { noticeWho(); return; }
+  const { data, error } = await sb.rpc('admin_staff_notice_targets');
+  if (error) { if (who) who.textContent = '받을 사람을 불러오지 못했습니다. (' + error.message + ')'; return; }
+  ntTargets = Array.isArray(data) ? data : [];
+  noticeWho();
+}
+
+function noticeWho() {
+  const who = $('ntWho');
+  if (!who) return;
+  const list = ntTargets || [];
+  if (!list.length) { who.textContent = '지금은 받을 작가가 없습니다.'; return; }
+  who.innerHTML = `<b>${list.length}명</b>에게 갑니다 — ${esc(list.map((x) => x.name).join(', '))}`;
+}
+
+async function noticeSend() {
+  const btn = $('ntSend');
+  const title = String(($('ntTitle') || {}).value || '').trim();
+  const body = String(($('ntBody') || {}).value || '').trim();
+  const msg = $('ntMsg');
+  if (msg) msg.textContent = '';
+  if (!title) { if (msg) msg.textContent = '제목을 적어주세요.'; return; }
+  if (!body) { if (msg) msg.textContent = '내용을 적어주세요.'; return; }
+
+  const list = ntTargets || [];
+  if (!confirm(`작가 ${list.length}명에게 공지를 보냅니다.\n\n`
+    + list.map((x) => '· ' + x.name).join('\n')
+    + `\n\n제목: ${title}\n\n${body}\n\n캘린더 알림 칸에 남고 폰으로도 울립니다. 알림톡은 안 갑니다.`)) return;
+
+  btn.disabled = true;
+  const before = btn.textContent;
+  btn.textContent = '보내는 중…';
+  const { data, error } = await sb.rpc('admin_staff_notice_send', { p_title: title, p_body: body });
+  btn.disabled = false;
+  btn.textContent = before;
+  if (error) { if (msg) msg.textContent = '보내지 못했습니다. (' + error.message + ')'; return; }
+
+  $('ntTitle').value = '';
+  $('ntBody').value = '';
+  if ($('ntLen')) $('ntLen').textContent = '0';
+  toast((data && data.n ? data.n : 0) + '명에게 보냈습니다');
 }
 const peSubtabs = $('peSubtabs');
 if (peSubtabs) peSubtabs.addEventListener('click', (e) => {
