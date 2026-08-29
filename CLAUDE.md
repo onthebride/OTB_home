@@ -52,6 +52,42 @@
 - 시험 파일은 `.backups/tests/` 에 사본을 둔다. 2026-08-28 에 작업 폴더에서 아홉 개가
   사라진 적이 있는데 이 사본으로 되살렸다.
 
+## 절대 규칙 — 예약과 배정 (2026-08-29 대표 지시)
+
+> 「스케줄 절대 지워지면 안됨 / 배정된거 내가 수정하는게아니면 절대 없어지면 안됨」
+
+이 둘은 다른 어떤 것보다 앞선다. 화면이 좀 못생겨도, 느려도, 이건 지킨다.
+
+1. **예약(`public.bookings`)은 지우지 않는다.**
+   손님이 취소해도 `status = '취소'` 로 둘 뿐 줄을 지우지 않는다.
+   내가 SQL 로 정리·시험을 할 때도 `delete from public.bookings` 를 운영에서 실행하지 않는다.
+   시험은 반드시 트랜잭션 안에서 하고 `rollback` 한다.
+
+2. **배정(`assignee_id`·`sub_assignee_id`)은 대표가 바꿀 때만 바뀐다.**
+   자동으로 비우는 코드를 만들지 않는다. 배정을 건드리는 일괄 작업은
+   먼저 대표에게 무엇이 어떻게 바뀌는지 보이고 허락을 받는다.
+
+3. **감시 장치를 끄거나 우회하지 않는다.**
+   - `trg_assignment_audit_upd`·`trg_assignment_audit_del` — 배정이 바뀌면 누가 바꾸든 기록이 남는다
+   - `private.assignment_health_check()` — 한 시간마다 셈이 줄지 않았나 본다
+   - `private.booking_backup_run()` — 낮 12시에 예약·배정을 통째로 떠 두고,
+     어제 것과 견주어 **감사 기록으로 설명되지 않는 차이**가 있으면 대표에게 알린다
+   트리거를 잠시 끄고 작업해야 하면 대표에게 먼저 말한다.
+
+4. **헛경보를 그냥 두지 않는다.**
+   2026-08-30 에 「배정 5건 줄어듦」이 울렸는데 예식이 지나간 것뿐이었다.
+   헛경보가 반복되면 진짜 경보를 안 믿게 된다. 원인을 찾아 그날 고친다.
+
+되살리는 법 (사고가 났을 때)
+```sql
+-- 그날 백업으로 배정만 되돌린다
+update public.bookings b set assignee_id = k.assignee_id, sub_assignee_id = k.sub_assignee_id
+from private.booking_backup k where k.taken_on = date '2026-08-30' and k.booking_id = b.id;
+-- 사라진 예약이 무엇이었는지 본다
+select * from private.booking_backup k where k.taken_on = date '2026-08-30'
+ and not exists (select 1 from public.bookings b where b.id = k.booking_id);
+```
+
 ## 손대면 안 되는 것
 
 - `.backups/` 와 셀렉 파일 폴더는 **절대 지우지 않는다.**
