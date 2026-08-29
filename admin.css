@@ -1211,8 +1211,20 @@ td .muted { color: var(--ink-soft); }
 @media (max-width: 600px) { .au-bk { margin-left: 0; width: 100%; } }
 
 /* '오늘 할 일'의 발송 버튼 */
-.reminder-item .rem-send { margin-left: auto; }
-.reminder-item .rem-send + .rem-dismiss { margin-left: 0; }
+/* 단추가 셋이 됐다 (지금 보내기 · 오늘은 안 보내기 · 확인).
+   한 상자에 묶어 «셋이 통째로» 아랫줄로 내려가게 한다 — 안 묶으면 좁은 화면에서
+   하나만 떨어져 나가 줄이 들쭉날쭉해진다 (2026-08-29) */
+.rem-acts { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-shrink: 0; }
+.reminder-item .rem-hold { color: var(--ink-soft); }
+/* 오늘 막아둔 줄은 한눈에 알아보게 흐리고, 그 이유를 글자로도 적는다 */
+.reminder-item.rem-held { background: var(--cream); }
+.reminder-item.rem-held .reminder-text b { color: var(--ink-soft); }
+.rem-held-tag { color: #b5462f; font-weight: 600; }
+/* 폰에서는 글과 단추가 한 줄에 안 들어간다. 단추 상자를 통째로 아랫줄에 내리고 오른쪽에 붙인다 */
+@media (max-width: 600px) {
+  .reminder-item { flex-wrap: wrap; }
+  .rem-acts { width: 100%; margin-left: 0; justify-content: flex-end; }
+}
 
 /* 작가관리 — 캘린더 링크 */
 .staff-item .st-cal { text-decoration: none; white-space: nowrap; }

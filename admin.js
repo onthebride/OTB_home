@@ -50,6 +50,8 @@ let allUnconfirmed = []; // 작가 미확인 (admin_unconfirmed)
 let penaltyData = { sum: {}, rows: [] };  // 작가 감점 (admin_penalties)
 let alimtalkFails = []; // 알림톡 발송 실패 (admin_alimtalk_failures)
 let reminders = []; // 관리자 할 일 리마인더 (admin_reminders_list)
+// 작가 톡을 오늘/이번 주만 안 보내기로 했나 — { today, T, S } (admin_send_hold_state)
+let sendHold = {};
 let pricingList = []; // 상품·옵션 카탈로그 (admin_pricing_list)
 let pricingMap = {}; // code → {name, price, active, ...}
 let calMonth = null; // 캘린더 현재 월 {y, m}
@@ -160,7 +162,7 @@ $('refreshBtn').addEventListener('click', () => loadBookings());
 /* ===== Load + render ===== */
 async function loadBookings() {
   // 모든 조회는 서로 독립적이라 한 번에 병렬로 — 순차 대기 제거(체감 속도 개선)
-  const [res, sres, ures, dres, fres, rres, pres] = await Promise.all([
+  const [res, sres, ures, dres, fres, rres, pres, hres] = await Promise.all([
     sb.rpc('admin_list_bookings'),    // 예약 목록
     sb.rpc('admin_survey_ids'),       // 설문 제출 여부
     sb.rpc('admin_unconfirmed'),      // 작가 미확인
@@ -168,6 +170,7 @@ async function loadBookings() {
     sb.rpc('admin_alimtalk_log'),     // 알림톡 발송 내역
     sb.rpc('admin_reminders_list'),   // 할 일 리마인더
     sb.rpc('admin_pricing_list'),     // 상품·옵션 카탈로그
+    sb.rpc('admin_send_hold_state'),  // 작가 톡을 오늘 막아뒀나
     loadStaff(),                      // 작가 목록
   ]);
   const { data, error } = res;
@@ -184,6 +187,7 @@ async function loadBookings() {
   eventDiscounts = (dres.data && typeof dres.data === 'object') ? dres.data : {};
   alimtalkFails = Array.isArray(fres.data) ? fres.data : [];
   reminders = Array.isArray(rres.data) ? rres.data : [];
+  sendHold = (hres.data && typeof hres.data === 'object') ? hres.data : {};
   pricingList = Array.isArray(pres.data) ? pres.data : [];
   pricingMap = {}; pricingList.forEach((p) => { pricingMap[p.code] = p; });
   render();
@@ -1717,21 +1721,35 @@ function renderReminders() {
   $('reminderList').innerHTML = items.map((r) => {
     const ico = r.kind === 'staff_survey' ? '📋' : r.kind === 'survey_share' ? '📋' : '🗓';
     const openable = !!r.booking_id;
-    // 알림톡을 대표 승인으로 내보내는 항목 — 자동 발송은 하지 않는다
-    const sendable = r.kind === 'staff_survey' ? '설문 안내 발송'
-                   : r.kind === 'weekly_schedule' ? '스케줄 톡 발송' : '';
+    // 작가에게 가는 톡은 «자동으로 나간다» — 설문은 매일 오전 10시 2분, 스케줄은 월요일 오전 10시.
+    // 이 알림은 나가기 전에 미리 보여주는 것이다 (대표 2026-08-29). 그래서 단추가 둘이다.
+    //   [지금 보내기]  — 10시를 기다리지 않고 바로
+    //   [오늘은 안 보내기] — 그날(스케줄은 그 주) 자동을 막는다. 다음 날은 다시 정상
+    const holdKind = r.kind === 'staff_survey' ? 'T' : r.kind === 'weekly_schedule' ? 'S' : '';
+    const held = holdKind ? !!sendHold[holdKind] : false;
+    const sendable = r.kind === 'staff_survey' ? '지금 보내기'
+                   : r.kind === 'weekly_schedule' ? '지금 보내기' : '';
+    // ⚠ 단추를 한 상자에 묶는다 — 안 묶으면 좁은 화면에서 아무 데서나 접힌다
+    const acts = holdKind ? `
+      <div class="rem-acts">
+        ${held ? '' : `<button class="btn-sm btn-kakao-sm rem-send" data-id="${r.id}" data-kind="${esc(r.kind)}">${sendable}</button>`}
+        <button class="btn-sm rem-hold" data-id="${r.id}" data-hold="${holdKind}" data-on="${held ? '0' : '1'}">${held ? '↩ 다시 보내기로' : '오늘은 안 보내기'}</button>
+        <button class="btn-sm rem-dismiss" data-id="${r.id}">✓ 확인</button>
+      </div>` : `
+      <div class="rem-acts"><button class="btn-sm rem-dismiss" data-id="${r.id}">✓ 확인</button></div>`;
     return `
-    <div class="reminder-item" data-id="${r.id}">
+    <div class="reminder-item${held ? ' rem-held' : ''}" data-id="${r.id}">
       <span class="reminder-ico">${ico}</span>
       <div class="reminder-text${openable ? ' rem-open' : ''}"${openable ? ` data-bid="${r.booking_id}"` : ''}>
         <b>${esc(r.title)}</b>${r.body ? `<span>${esc(r.body)}</span>` : ''}
-      </div>
-      ${sendable ? `<button class="btn-sm btn-kakao-sm rem-send" data-id="${r.id}" data-kind="${esc(r.kind)}">${sendable}</button>` : ''}
-      <button class="btn-sm rem-dismiss" data-id="${r.id}">✓ 확인</button>
+        ${held ? '<span class="rem-held-tag">오늘은 안 나갑니다</span>' : ''}
+      </div>${acts}
     </div>`;
   }).join('');
   $('reminderList').querySelectorAll('.rem-send').forEach((btn) =>
     btn.addEventListener('click', (e) => { e.stopPropagation(); sendReminderBatch(btn); }));
+  $('reminderList').querySelectorAll('.rem-hold').forEach((btn) =>
+    btn.addEventListener('click', (e) => { e.stopPropagation(); toggleSendHold(btn); }));
   $('reminderList').querySelectorAll('.rem-dismiss').forEach((btn) =>
     btn.addEventListener('click', (e) => { e.stopPropagation(); dismissReminder(btn.dataset.id); }));
   $('reminderList').querySelectorAll('.rem-open').forEach((el) =>
@@ -1739,8 +1757,28 @@ function renderReminders() {
 }
 
 
+/* ===== 오늘 자동 발송을 막기 / 다시 풀기 =====
+   작가에게 가는 톡은 크론이 스스로 내보낸다. 이 단추는 그날 것만 막는다 — 끄는 게 아니다.
+   내일이 되면 다시 정상으로 나간다. (대표 2026-08-29 «확인 후 발송 아니었나?») */
+async function toggleSendHold(btn) {
+  const kind = btn.dataset.hold;             // 'T' 설문 · 'S' 스케줄
+  const on = btn.dataset.on === '1';
+  const what = kind === 'T' ? '내일 예식 작가 설문 안내' : '이번 주 작가 스케줄 톡';
+  if (on && !confirm(what + '를 보내지 않습니다.\n\n오늘 오전 10시에 나갈 것이 나가지 않습니다.\n내일은 다시 정상으로 나갑니다.')) return;
+
+  btn.disabled = true;
+  const { data, error } = await sb.rpc('admin_send_hold_set', { p_kind: kind, p_on: on });
+  btn.disabled = false;
+  if (error) { alert('처리 실패: ' + error.message); return; }
+
+  sendHold[kind] = !!(data && data.held);
+  renderReminders();
+  toast(sendHold[kind] ? '오늘은 안 보냅니다' : '다시 보내기로 했습니다');
+}
+
 /* ===== '오늘 할 일'에서 알림톡 일괄 발송 =====
-   자동으로 나가는 알림톡은 없다. 대표가 이 버튼을 눌러야 나간다.
+   10시를 기다리지 않고 지금 바로 보낸다. 자동으로도 나가지만, 손으로 먼저 보내면
+   같은 표시(alimtalk_sent 의 'T:<작가ID>')를 남기므로 10시에 또 가지 않는다.
    한 명씩 순서대로 보내고, 중간에 실패해도 나머지는 계속 보낸 뒤 결과를 알려준다. */
 async function sendReminderBatch(btn) {
   const kind = btn.dataset.kind;
