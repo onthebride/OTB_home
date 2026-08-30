@@ -892,22 +892,42 @@ function renderView(b, flash) {
       ${b.photographer === '2인 촬영' ? `<span class="md-asg-label">서브작가</span><select id="mSubAssignee" class="md-sel">${assigneeOptions(b.sub_assignee_id, confOf(b), 'sub')}</select>` : ''}
     </div>
 
+    <!-- 세 덩이로 묶는다 (대표 2026-08-30 «다 늘어져잇으니까 눈에 잘 안들어오네»).
+         ① 예식 — 날짜·시간·장소·신랑·신부   ② 무엇을 찍나 — 상품·옵션·사용동의
+         ③ 돈 — 합계·계약금·잔금
+         연락처·이메일은 맨 위 이름 아래에 그대로 둔다 (계약자에 딸린 것이라) -->
     <div class="detail-grid">
       ${field('연락처', b.contractor_phone)}
       ${field('이메일', b.contractor_email)}
-      ${field('예식일', fmtDate(b.wedding_date))}
-      ${field('예식시간', kTimeDisp(b.wedding_time))}
-      <div class="full2">${field('예식장소', b.wedding_venue)}</div>
-      ${field('신랑님', (b.groom_name || '') + ' / ' + (b.groom_phone || ''))}
-      ${field('신부님', (b.bride_name || '') + ' / ' + (b.bride_phone || ''))}
-      <div class="full2"><p class="dl">상품 · 옵션</p>${productOptionsHtml(b)}</div>
-      <div><p class="dl">촬영본 사용동의</p><p class="dv"><span class="usage-${b.photo_usage_agree ? 'yes' : 'no'}">${b.photo_usage_agree ? 'YES' : 'NO'}</span></p></div>
-      ${field('합계', won(b.total_price))}
-      <div><p class="dl">계약금</p><p class="dv">${won(10)} · <span class="pay-st ${b.deposit_paid ? 'paid' : ''}">${b.deposit_paid ? '입금완료 ✓' : '미입금'}</span> <button class="pay-toggle" data-pay="deposit">${b.deposit_paid ? '해제' : '입금확인'}</button></p></div>
-      ${evDc(b) > 0 ? `<div><p class="dl">이벤트 할인</p><p class="dv" style="color:#2f7d4f;font-weight:600">−${evDc(b)}만원</p></div>` : ''}
-      <div><p class="dl">잔금${evDc(b) > 0 ? ' <small style="color:#2f7d4f">(할인적용)</small>' : ''}</p><p class="dv">${effBalance(b) != null ? won(effBalance(b)) : '-'} · <span class="pay-st ${b.balance_paid ? 'paid' : ''}">${b.balance_paid ? '입금완료 ✓' : '미입금'}</span> <button class="pay-toggle" data-pay="balance">${b.balance_paid ? '해제' : '입금확인'}</button></p></div>
-      ${b.admin_note ? `<div class="full2">${field('관리자 메모', b.admin_note)}</div>` : ''}
     </div>
+
+    <div class="md-box">
+      <div class="detail-grid">
+        ${field('예식일', fmtDate(b.wedding_date))}
+        ${field('예식시간', kTimeDisp(b.wedding_time))}
+        <div class="full2">${field('예식장소', b.wedding_venue)}</div>
+        ${field('신랑님', (b.groom_name || '') + ' / ' + (b.groom_phone || ''))}
+        ${field('신부님', (b.bride_name || '') + ' / ' + (b.bride_phone || ''))}
+      </div>
+    </div>
+
+    <div class="md-box">
+      <div class="detail-grid">
+        <div class="full2"><p class="dl">상품 · 옵션</p>${productOptionsHtml(b)}</div>
+        <div class="full2"><p class="dl">촬영본 사용동의</p><p class="dv"><span class="usage-${b.photo_usage_agree ? 'yes' : 'no'}">${b.photo_usage_agree ? 'YES' : 'NO'}</span></p></div>
+      </div>
+    </div>
+
+    <div class="md-box">
+      <div class="detail-grid">
+        ${field('합계', won(b.total_price))}
+        <div><p class="dl">계약금</p><p class="dv">${won(10)} · <span class="pay-st ${b.deposit_paid ? 'paid' : ''}">${b.deposit_paid ? '입금완료 ✓' : '미입금'}</span> <button class="pay-toggle" data-pay="deposit">${b.deposit_paid ? '해제' : '입금확인'}</button></p></div>
+        ${evDc(b) > 0 ? `<div><p class="dl">이벤트 할인</p><p class="dv" style="color:#2f7d4f;font-weight:600">−${evDc(b)}만원</p></div>` : ''}
+        <div><p class="dl">잔금${evDc(b) > 0 ? ' <small style="color:#2f7d4f">(할인적용)</small>' : ''}</p><p class="dv">${effBalance(b) != null ? won(effBalance(b)) : '-'} · <span class="pay-st ${b.balance_paid ? 'paid' : ''}">${b.balance_paid ? '입금완료 ✓' : '미입금'}</span> <button class="pay-toggle" data-pay="balance">${b.balance_paid ? '해제' : '입금확인'}</button></p></div>
+      </div>
+    </div>
+
+    ${b.admin_note ? `<div class="detail-grid"><div class="full2">${field('관리자 메모', b.admin_note)}</div></div>` : ''}
 
     ${b.assignee_id ? `<div id="checkSlot" data-bid="${esc(b.id)}">${renderChecks(b, [])}</div>` : ''}
     <div id="eventSlot" data-bid="${esc(b.id)}">${eventSlotHtml(null)}</div>

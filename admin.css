@@ -176,6 +176,14 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .modal-sub { color: var(--ink-soft); font-size: .85rem; margin-bottom: 22px; }
 .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; margin-bottom: 22px; }
 .detail-grid .full2 { grid-column: 1 / -1; }
+/* 예약 상세를 세 덩이로 묶는 상자 (대표 2026-08-30 «다 늘어져잇으니까 눈에 잘 안들어오네»).
+   ① 예식  ② 상품·옵션·사용동의  ③ 돈 */
+.md-box { background: var(--cream); border: 1px solid var(--line); border-radius: 10px;
+  padding: 14px 16px; margin-bottom: 12px; }
+/* 상자 안에서는 아래 여백을 상자가 대신 준다 — 안 그러면 상자 밑이 뜬다 */
+.md-box .detail-grid { margin-bottom: 0; }
+/* 상자 바로 앞 줄(연락처·이메일)은 상자와 사이를 조금만 띄운다 */
+.detail-grid + .md-box { margin-top: -8px; }
 .dl { font-size: .72rem; color: var(--ink-soft); margin-bottom: 2px; }
 .dv { font-size: .98rem; color: var(--ink); }
 .opt-tags { display: flex; flex-wrap: wrap; gap: 6px; }
