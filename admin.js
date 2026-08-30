@@ -2163,10 +2163,21 @@ function dayItems(y, m, d) {
 function showDayList(y, m, d) { dayOvKey = { y, m, d }; renderDayOv(); }
 
 function closeDayOv() { dayOvKey = null; const o = document.getElementById('dayOv'); if (o) o.remove(); }
+/* 「신랑 ○○○ · 신부 ○○○」 — 한 사람만 적혀 있으면 그 사람만, 둘 다 없으면 계약자 */
+function dayOvWho(b) {
+  const who = [b.groom_name && '신랑 ' + esc(b.groom_name),
+               b.bride_name && '신부 ' + esc(b.bride_name)].filter(Boolean);
+  return who.length ? who.join(' · ') : esc(b.contractor_name || '-');
+}
+
 function renderDayOv() {
   if (!dayOvKey) return;
   const { y, m, d } = dayOvKey;
   const sorted = dayItems(y, m, d);
+  /* 날짜 카드에 신랑·신부 이름을 다 적는다 (대표 2026-08-30 «카드 신랑 신부 이름 다 나오게»).
+     예전엔 계약자 한 사람만 나왔다. 계약자는 늘 신랑 아니면 신부라(246건 다 그랬다)
+     둘을 적으면 계약자도 그 안에 들어 있다.
+     ⚠ 이름이 비어 있는 예약이 생길 수 있으니 그때는 예전처럼 계약자를 쓴다 */
   const old = document.getElementById('dayOv');
   if (sorted.length === 0) { closeDayOv(); return; } // 그날 예약이 다 없어지면 팝업 닫기
   const label = `${y}년 ${m + 1}월 ${d}일`;
@@ -2187,7 +2198,7 @@ function renderDayOv() {
         const balf = !b.balance_paid ? '<span class="dchip bal">잔금 미입금</span>' : '';
         return `<button class="day-ov-item" data-id="${b.id}">
           <span class="day-ov-time">${esc(kTimeShort(b.wedding_time)) || '-'}</span>
-          <span class="day-ov-name">${esc(b.contractor_name || '-')}${phBadge(b)}</span>
+          <span class="day-ov-name">${dayOvWho(b)}${phBadge(b)}</span>
           <span class="day-ov-venue">${esc(b.wedding_venue || '-')}</span>
           <span class="day-ov-status">${main}${sub}${balf}</span>
         </button>`;
