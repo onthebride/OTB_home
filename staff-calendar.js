@@ -641,6 +641,52 @@ async function settingsInit() {
 
 const wonFmt = (n) => Number(n || 0).toLocaleString('ko-KR');
 
+/* ===== 지정 촬영 요건 (대표 2026-08-30)
+   «온더브라이드 스케줄을 최소 3회 이상 촬영 / 후기 3개 이상 /
+     신부님들 yes하신 촬영건 중 갤러리에 10장이상 올라가야함»
+
+   ⚠ 숫자는 **서버에서 받아 쓴다**(`d.elig`). 여기에 3·3·10 을 적어두면 대표가 요건을
+     바꾸실 때 화면과 서버가 어긋난다 — 「화면엔 됐다는데 저장이 안 된다」 가 된다.
+     못 받았을 때만 옛 값으로 버틴다 */
+const baseOf = (d) => (d && d.base) || 250000;
+const taxOf = (d) => (d && d.tax_bp) || 330;
+// 3.3% 를 뗀 실수령. 원 단위로 버린다
+const netPay = (d, total) => Math.floor(total * (10000 - taxOf(d)) / 10000);
+
+function reqList(d) {
+  const e = d.elig;
+  if (!e) return '';
+  const rows = [
+    ['우리 촬영', e.shots, e.need_shots, '회'],
+    ['후기', e.reviews, e.need_reviews, '개'],
+    ['갤러리 사진', e.gallery, e.need_gallery, '장'],
+  ];
+  const li = rows.map(([nm, now, need, unit]) => {
+    const done = now >= need;
+    const rest = need - now;
+    return `<li class="${done ? 'ok' : 'no'}"><i aria-hidden="true">${done ? '✓' : '·'}</i>`
+      + `<b>${nm}</b><span>${now}${unit}`
+      + (done ? '' : ` <em>${rest}${unit} 더</em>`) + `</span></li>`;
+  }).join('');
+  // 셋을 다 채웠는데도 안 되는 경우는 「스케줄 받기」 를 꺼두신 때뿐이다
+  const shut = e.ok === false && e.accepting === false;
+  return `<div class="sc-req${d.can_fee ? ' done' : ''}">
+      <p class="sc-req-t">${d.can_fee ? '지정을 받으실 수 있어요.' : '지정을 받으시려면'}</p>
+      <ul>${li}</ul>
+      ${shut ? '<p class="sc-req-shut">지금은 <b>스케줄 받기</b>가 꺼져 있어요. 켜시면 지정도 함께 열립니다.</p>' : ''}
+    </div>`;
+}
+
+/* 지금 얼마로 되어 있나 + 3.3% 를 뗀 실수령
+   (대표 2026-08-30 «지정비는 전체페이에대한 비용이야 / 차차 지금 페이도 세금공제 할 예정») */
+function feeNow(d) {
+  if (d.pick_fee == null) return '아직 안 정하셨어요.';
+  if (d.pick_fee === 0) return '지금은 <b>안 받는 것</b>으로 되어 있어요.';
+  const total = baseOf(d) + d.pick_fee;
+  return `지금 <b>${wonFmt(d.pick_fee)}원</b> — 신부님이 지정하시면 <b>${wonFmt(total)}원</b>이 나갑니다.`
+    + `<br />세금 3.3%를 떼고 <b>${wonFmt(netPay(d, total))}원</b>을 받으세요.`;
+}
+
 function renderSet() {
   const box = $('setBody');
   if (!box) return;
@@ -684,10 +730,11 @@ function renderSet() {
              «왜 지정이 안 들어오지» 하고 기다리시지 않게 먼저 알린다 -->
         <p class="sc-set-soon">지정 촬영은 <b>빠른 시일 내에 도입될 예정</b>입니다.<br />
           ${d.can_fee ? '미리 정해두시면 시작하는 날 바로 반영돼요.'
-            : '도입 전까지 후기가 쌓이면 그때 정하실 수 있어요.'}</p>
+            : '도입 전까지 아래를 채우시면 그때 정하실 수 있어요.'}</p>
         <p class="sc-set-d">신부님이 <b>작가님을 지정</b>하실 때 더해지는 금액이에요.<br />
-          기본 페이 <b>25만원</b> + 지정 촬영비 = 신부님이 내시는 총액.
+          기본 페이 <b>${wonFmt(baseOf(d))}원</b> + 지정 촬영비 = 신부님이 내시는 총액.
           안 받으시려면 <b>0</b>.</p>
+        ${reqList(d)}
         ${d.can_fee ? `
         <div class="sc-fee">
           <input type="text" id="setFee" inputmode="numeric" autocomplete="off"
@@ -695,12 +742,8 @@ function renderSet() {
           <span class="sc-fee-w">원</span>
           <button type="button" class="btn-sm primary" id="setFeeSave">저장</button>
         </div>
-        <p class="sc-set-now" id="setFeeNow">${d.pick_fee == null ? '아직 안 정하셨어요.'
-          : d.pick_fee === 0 ? '지금은 <b>안 받는 것</b>으로 되어 있어요.'
-          : `지금 <b>${wonFmt(d.pick_fee)}원</b> — 신부님이 지정하시면 <b>${wonFmt(250000 + d.pick_fee)}원</b>이 나갑니다.`}</p>`
-        : `
-        <p class="sc-set-lock">촬영 후기가 <b>${d.need}건</b> 쌓이면 적으실 수 있어요.<br />
-          지금은 <b>${d.reviews}건</b>이에요.</p>`}
+        <p class="sc-set-now" id="setFeeNow">${feeNow(d)}</p>`
+        : ''}
       </section>
     </div>`;
 
@@ -738,10 +781,23 @@ async function setSave(patch, btn) {
   const { data, error } = await sb.rpc('staff_settings_set', { p_staff_id: staffId, p_patch: patch });
   if (btn) btn.disabled = false;
   if (error || !data) {
-    // 후기가 모자라면 서버가 막는다. 그 말을 그대로 옮기지 않고 알아듣게 바꿔준다
-    const m = /need (\d+) reviews \(now (\d+)\)/.exec(error && error.message || '');
-    toastSet(m ? `촬영 후기가 ${m[1]}건 쌓이면 적으실 수 있어요. 지금은 ${m[2]}건이에요.`
-      : '저장하지 못했어요. 잠시 후 다시 해주세요.');
+    /* 요건이 모자라면 서버가 막는다. 그 말을 그대로 옮기지 않고 알아듣게 바꿔준다.
+       서버는 이렇게 보낸다:
+         not eligible: shots 9/3 reviews 2/3 gallery 24/10 accepting true */
+    const msg = (error && error.message) || '';
+    const m = /not eligible: shots (\d+)\/(\d+) reviews (\d+)\/(\d+) gallery (\d+)\/(\d+) accepting (\w+)/.exec(msg);
+    if (m) {
+      const n = m.map(Number);
+      if (m[7] === 'false') { toastSet('<b>스케줄 받기</b>를 켜셔야 지정을 받으실 수 있어요.'); return; }
+      const rest = [
+        n[1] < n[2] && `촬영 ${n[2] - n[1]}회`,
+        n[3] < n[4] && `후기 ${n[4] - n[3]}개`,
+        n[5] < n[6] && `갤러리 사진 ${n[6] - n[5]}장`,
+      ].filter(Boolean);
+      toastSet(rest.length ? `${rest.join(' · ')}이 더 필요해요.` : '아직 요건이 모자라요.');
+      return;
+    }
+    toastSet('저장하지 못했어요. 잠시 후 다시 해주세요.');
     return;
   }
   setData = data;

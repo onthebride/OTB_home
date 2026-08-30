@@ -388,11 +388,23 @@
   border-radius: 8px; }
 .sc-set-soon b { font-weight: 700; }
 
-/* 후기가 모자라 아직 못 적는 상태 — 잠긴 이유를 숫자로 보여준다 */
-.sc-set-lock { margin: 0; padding: 11px 13px; font-size: .84rem; line-height: 1.7;
-  color: var(--ink-soft); background: var(--cream, #f7f3ee); border: 1px solid var(--line);
-  border-radius: 8px; }
-.sc-set-lock b { color: var(--ink); font-weight: 600; }
+/* 지정 요건 — 촬영 · 후기 · 갤러리 (대표 2026-08-30).
+   못 넘은 것만이 아니라 셋을 다 숫자로 보여준다. 뭘 더 하면 되는지가 보여야 한다 */
+.sc-req { margin: 0 0 12px; padding: 11px 13px; font-size: .84rem;
+  background: var(--cream, #f7f3ee); border: 1px solid var(--line); border-radius: 8px; }
+.sc-req.done { background: #f2f7f1; border-color: #d4e4d0; }
+.sc-req-t { margin: 0 0 8px; color: var(--ink-soft); font-weight: 600; }
+.sc-req.done .sc-req-t { color: #3f7040; }
+.sc-req ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.sc-req li { display: flex; align-items: baseline; gap: 8px; line-height: 1.6; }
+.sc-req li i { flex: 0 0 14px; font-style: normal; color: var(--ink-soft); }
+.sc-req li.ok i { color: #4a8a4c; font-weight: 700; }
+.sc-req li b { flex: 0 0 84px; color: var(--ink-soft); font-weight: 600; }
+.sc-req li.ok b { color: var(--ink); }
+.sc-req li span { color: var(--ink); }
+.sc-req li em { font-style: normal; color: var(--gold-deep); font-weight: 600; }
+.sc-req-shut { margin: 8px 0 0; color: var(--gold-deep); line-height: 1.6; }
+.sc-req-shut b { font-weight: 700; }
 
 /* 알림 단추를 이 칸으로 옮겨 오므로 가운데 정렬을 풀어준다 */
 #setPushSlot .sc-a2hs { margin: 0; }
