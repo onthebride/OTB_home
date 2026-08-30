@@ -1149,6 +1149,9 @@ td .muted { color: var(--ink-soft); }
    실제로 고칠 거리라 눈에 띄게 둔다 */
 .fb-inext { margin-top: 8px; font-size: .88rem; line-height: 1.6; color: var(--gold-deep);
   background: #faf4ea; border: 1px solid #ecdcc3; border-radius: 6px; padding: 8px 11px; }
+/* 물음과 답을 줄로 갈라 놓는다 — 한 줄로 붙으면 「다음엔 — 없습니다」 처럼 읽힌다 */
+.fb-inext b { display: block; font-size: .8rem; font-weight: 600; margin-bottom: 3px; }
+.fb-inext span { display: block; color: var(--ink); }
 .fb-share { margin-top: 10px; }
 
 @media (max-width: 600px) {

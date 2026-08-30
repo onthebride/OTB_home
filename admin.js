@@ -4429,8 +4429,13 @@ async function renderFeedback() {
         + (x.recommend == null ? '' : chip('추천', x.recommend, Number(x.recommend) <= FB_LOW))
       + '</div>'
       // 「다음에 부탁드리고 싶은 것」 — 점수는 만점인데 여기에만 적히는 경우가 있다.
-      // 실제로 고칠 거리라 제일 눈에 띄게 둔다
-      + (x.next_req ? '<div class="fb-inext">📝 다음엔 — ' + esc(x.next_req) + '</div>' : '')
+      // 실제로 고칠 거리라 제일 눈에 띄게 둔다.
+      // ⚠ 예전엔 「📝 다음엔 — 없습니다 완벽한 작가님」처럼 나와 대표가 «저건 뭐야?» 하셨다
+      //   (2026-08-30). 설문 8번 질문을 그대로 적고, 신부님 말은 따옴표로 감싼다.
+      //   부탁이 없으면 칭찬을 적어주시는 분도 있어서, 물음과 답이 갈라져 보여야 한다
+      + (x.next_req
+         ? '<div class="fb-inext"><b>📝 다음에 부탁드리고 싶은 것</b>'
+           + '<span>“' + esc(x.next_req) + '”</span></div>' : '')
       + (x.issue && x.issue_text ? '<div class="fb-iissue">⚠️ ' + esc(x.issue_text) + '</div>'
          : (x.issue ? '<div class="fb-iissue">⚠️ 불편했던 점 있음(내용 미작성)</div>' : ''))
       + (x.message ? '<div class="fb-imsg">💬 ' + esc(x.message) + '</div>' : '')
