@@ -164,6 +164,22 @@ function section(key, title, desc, rows, card, cls) {
   </section>`;
 }
 
+/* 들어올 때마다 차례를 섞는다 (대표 2026-08-30 «나오는거 랜덤으로 나오게 해줄 수 있어?»).
+   맨 위 열 개만 보고 나가시는 분이 많은데, 늘 같은 열 개만 보이면 나머지는 아무도 안 본다.
+
+   ⚠ 서버에서 섞으면 안 된다. 열 개씩 쪽을 나눠 보여주는데, 쪽을 넘길 때마다 다시 섞이면
+     같은 후기가 두 번 나오거나 아예 안 나온다. **들어올 때 한 번만** 섞고 그 차례를 쭉 쓴다.
+   ⚠ 견주는 함수에 난수를 주는 흔한 수법은 고르게 안 섞인다 — 앞쪽 것이 앞에 남는다.
+     피셔–예이츠로 뒤에서부터 하나씩 뽑아 바꾼다 */
+function shuffle(rows) {
+  const a = rows.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 let rvAll = [];
 
 function renderReviews() {
@@ -196,6 +212,6 @@ function renderReviews() {
     return;
   }
   if (!data.length) { body.innerHTML = '<p class="rv-empty">아직 올라온 후기가 없습니다.</p>'; return; }
-  rvAll = data;
+  rvAll = shuffle(data);
   renderReviews();
 })();
