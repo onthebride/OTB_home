@@ -5807,6 +5807,12 @@ function renderGalleryGrid() {
     .slice(start, start + GL_PER)
     .map((g) => `<div class="gl-item${glPicked.has(g.id) ? ' picked' : ''}"><label class="gl-pick"><input type="checkbox" class="gl-pick-cb" data-id="${esc(g.id)}"${glPicked.has(g.id) ? ' checked' : ''} /></label><img src="${esc(imgThumb(g.image_url, 400))}" alt="" loading="lazy" decoding="async" /><div class="gl-meta"><input class="gl-venue-edit" data-id="${esc(g.id)}" value="${esc(g.venue || '')}" placeholder="장소 태그" /><button class="gl-del" data-id="${esc(g.id)}" data-path="${esc(g.image_path)}">삭제</button></div><select class="gl-staff${g.staff_id ? '' : ' none'}" data-id="${esc(g.id)}">${glStaffOptions(g.staff_id)}</select></div>`)
     .join('');
+  // 사진을 누르면 크게 본다 (대표 요청 2026-08-30 «썸네일로만 보이고 전체를 볼 수 없어서»).
+  // 체크칸·작가고르개·장소칸·삭제는 제 일을 해야 하므로 사진에만 건다
+  grid.querySelectorAll('.gl-item img').forEach((im) => {
+    const id = im.closest('.gl-item').querySelector('.gl-staff').dataset.id;
+    im.addEventListener('click', () => glLbOpen(id));
+  });
   // 체크 — 여러 장 골라서 한 작가로 찍을 때 쓴다 (대표 요청 2026-08-25)
   grid.querySelectorAll('.gl-pick-cb').forEach((cb) => {
     cb.addEventListener('change', () => {
@@ -5866,6 +5872,127 @@ function renderGalleryGrid() {
   pg.querySelectorAll('.gpg').forEach((b) =>
     b.addEventListener('click', () => { if (b.disabled) return; glPage = Number(b.dataset.p); renderGalleryGrid(); $('glTags').scrollIntoView({ behavior: 'smooth', block: 'start' }); })
   );
+}
+
+/* ===== 사진 크게 보기 (대표 요청 2026-08-30
+   «갤러리는 이제 이름을 채워야지 / 근데 관리자에서는 사진이 썸네일로만 보이고 전체를 볼 수
+     없어서 누구건지 좀 판단이 어렵네»)
+
+   작가 이름을 채우는 일이 목적이다. 그래서 크게 보는 김에 **여기서 바로 작가를 고르고,
+   고르면 다음 장으로 넘어간다.** 451장을 훑어야 해서 한 장마다 닫았다 열면 못 한다.
+
+   ⚠ 「작가 미지정」 만 보고 있을 때, 작가를 고르면 그 사진은 목록에서 빠진다.
+     그때마다 목록이 줄면 «다음 장» 이 엉뚱한 데로 튄다. 그래서 열 때 목록을 **찍어 두고**
+     그 사본으로 넘긴다. 닫을 때 한 번만 다시 그린다.
+   ⚠ admin.html 은 줄끝이 CRLF 라 손대지 않았다. 이 화면은 여기서 만든다 */
+let glLbList = [];      // 열 때 찍어둔 목록 (사본)
+let glLbIdx = 0;
+let glLbEl = null;
+
+function glLbBuild() {
+  if (glLbEl) return glLbEl;
+  const d = document.createElement('div');
+  d.className = 'gl-lb';
+  d.hidden = true;
+  d.innerHTML =
+    '<button type="button" class="gl-lb-x" aria-label="닫기">✕</button>'
+    + '<button type="button" class="gl-lb-nav prev" aria-label="이전 사진">‹</button>'
+    + '<button type="button" class="gl-lb-nav next" aria-label="다음 사진">›</button>'
+    + '<div class="gl-lb-stage"><img alt="" /></div>'
+    + '<div class="gl-lb-bar">'
+    +   '<div class="gl-lb-info"><b class="gl-lb-venue"></b><span class="gl-lb-n"></span></div>'
+    +   '<div class="gl-lb-pick">'
+    +     '<label for="glLbStaff">찍은 작가</label>'
+    +     '<select id="glLbStaff"></select>'
+    +   '</div>'
+    +   '<p class="gl-lb-tip">작가를 고르면 <b>다음 장</b>으로 넘어갑니다. ← → 로도 넘길 수 있어요.</p>'
+    + '</div>';
+  document.body.appendChild(d);
+  glLbEl = d;
+
+  d.querySelector('.gl-lb-x').addEventListener('click', glLbClose);
+  d.querySelector('.prev').addEventListener('click', () => glLbGo(-1));
+  d.querySelector('.next').addEventListener('click', () => glLbGo(1));
+  // 사진 바깥(어두운 곳)을 누르면 닫는다. 사진·아래 띠를 눌렀을 때는 안 닫는다
+  d.addEventListener('click', (e) => { if (e.target === d) glLbClose(); });
+
+  d.querySelector('#glLbStaff').addEventListener('change', glLbSaveStaff);
+  return d;
+}
+
+function glLbOpen(id) {
+  const list = glVisible();
+  const i = list.findIndex((g) => g.id === id);
+  if (i < 0) return;
+  glLbList = list.slice();          // ← 사본. 아래에서 목록이 줄어도 여기는 안 흔들린다
+  glLbIdx = i;
+  const d = glLbBuild();
+  d.hidden = false;
+  document.body.classList.add('gl-lb-on');
+  document.addEventListener('keydown', glLbKey);
+  glLbRender();
+}
+
+function glLbClose() {
+  if (!glLbEl) return;
+  glLbEl.hidden = true;
+  document.body.classList.remove('gl-lb-on');
+  document.removeEventListener('keydown', glLbKey);
+  renderGalleryAdmin();             // 그동안 찍은 작가를 목록에 반영한다 (여기서 한 번만)
+}
+
+function glLbKey(e) {
+  if (e.key === 'Escape') { glLbClose(); return; }
+  // 작가를 고르는 중에는 ← → 가 목록을 넘겨야 하지, 사진을 넘기면 안 된다
+  if (e.target && e.target.tagName === 'SELECT') return;
+  if (e.key === 'ArrowLeft') glLbGo(-1);
+  if (e.key === 'ArrowRight') glLbGo(1);
+}
+
+function glLbGo(step) {
+  const n = glLbIdx + step;
+  if (n < 0 || n >= glLbList.length) return;
+  glLbIdx = n;
+  glLbRender();
+}
+
+function glLbRender() {
+  const d = glLbEl;
+  const g = glLbList[glLbIdx];
+  if (!d || !g) return;
+  // 늘 최신 값을 쓴다 — 사본은 차례만 잡아둔 것이고, 작가는 그새 바뀌었을 수 있다
+  const cur = glAllItems.find((x) => x.id === g.id) || g;
+  const img = d.querySelector('img');
+  img.src = imgThumb(cur.image_url, 1400);
+  d.querySelector('.gl-lb-venue').textContent = cur.venue || '장소 없음';
+  const left = glLbList.filter((x) => {
+    const it = glAllItems.find((y) => y.id === x.id) || x;
+    return !it.staff_id;
+  }).length;
+  d.querySelector('.gl-lb-n').textContent =
+    (glLbIdx + 1) + ' / ' + glLbList.length + (left ? ' · 미지정 ' + left + '장' : ' · 다 채웠습니다');
+  const sel = d.querySelector('#glLbStaff');
+  sel.innerHTML = glStaffOptions(cur.staff_id);
+  sel.value = cur.staff_id || '';
+  sel.classList.toggle('none', !cur.staff_id);
+  d.querySelector('.prev').disabled = glLbIdx === 0;
+  d.querySelector('.next').disabled = glLbIdx === glLbList.length - 1;
+}
+
+async function glLbSaveStaff(e) {
+  const sel = e.target;
+  const g = glLbList[glLbIdx];
+  if (!g) return;
+  const val = sel.value || null;
+  sel.disabled = true;
+  const { error } = await sb.rpc('admin_gallery_staff', { p_id: g.id, p_staff_id: val });
+  sel.disabled = false;
+  if (error) { alert('작가 지정 실패: ' + error.message); glLbRender(); return; }
+  const it = glAllItems.find((x) => x.id === g.id);
+  if (it) it.staff_id = val;
+  g.staff_id = val;
+  // 골랐으면 다음 장으로. 마지막 장이면 그 자리에 남아 셈만 고쳐 그린다
+  if (glLbIdx < glLbList.length - 1) glLbGo(1); else glLbRender();
 }
 
 async function deleteGalleryItem(id, path) {

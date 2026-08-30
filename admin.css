@@ -104,7 +104,7 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .gl-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .gl-item { border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--paper);
   position: relative; }   /* relative: 왼쪽 위 고르기 체크(.gl-pick)가 여기 붙는다 */
-.gl-item img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
+.gl-item img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; cursor: zoom-in; }
 .gl-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 8px; }
 
 /* 사진마다 누가 찍었는지 (2026-08-25). 아직 안 찍은 것은 흐리게 둬서 남은 일이 보이게 한다 */
@@ -1619,3 +1619,60 @@ td .muted { color: var(--ink-soft); }
 .pen-w { white-space: nowrap; }
 .pen-p { font-weight: 700; color: #a3452f; }
 .pen-n { flex: 1 1 120px; min-width: 0; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ===== 갤러리 사진 크게 보기 (대표 요청 2026-08-30
+   «썸네일로만 보이고 전체를 볼 수 없어서 누구건지 좀 판단이 어렵네»)
+   작가 이름을 채우는 화면이다. 사진을 크게 두고 아래 띠에서 바로 고른다 */
+/* 누르면 커진다는 표시(cursor: zoom-in)는 위 .gl-item img 안에 넣었다 —
+   같은 고르개를 두 번 쓰면 시험의 rule() 이 앞엣것만 본다 */
+body.gl-lb-on { overflow: hidden; }          /* 뒤 목록이 같이 굴러다니지 않게 */
+
+.gl-lb { position: fixed; inset: 0; z-index: 9000; display: flex; flex-direction: column;
+  background: rgba(20, 17, 14, .93); }
+.gl-lb[hidden] { display: none; }
+
+.gl-lb-stage { flex: 1 1 auto; display: flex; align-items: center; justify-content: center;
+  min-height: 0; padding: 44px 56px 12px; }
+.gl-lb-stage img { max-width: 100%; max-height: 100%; object-fit: contain;
+  border-radius: 4px; background: #100e0c; }
+
+.gl-lb-x { position: absolute; top: 10px; right: 12px; z-index: 2; width: 40px; height: 40px;
+  border: 0; border-radius: 999px; background: rgba(255, 255, 255, .12); color: #fff;
+  font-size: 1.1rem; line-height: 1; cursor: pointer; }
+.gl-lb-x:hover { background: rgba(255, 255, 255, .22); }
+
+.gl-lb-nav { position: absolute; top: 50%; transform: translateY(-50%); z-index: 2;
+  width: 44px; height: 72px; border: 0; border-radius: 6px;
+  background: rgba(255, 255, 255, .10); color: #fff; font-size: 1.8rem; line-height: 1; cursor: pointer; }
+.gl-lb-nav:hover { background: rgba(255, 255, 255, .2); }
+.gl-lb-nav:disabled { opacity: .18; cursor: default; }
+.gl-lb-nav.prev { left: 8px; }
+.gl-lb-nav.next { right: 8px; }
+
+.gl-lb-bar { flex: 0 0 auto; display: flex; align-items: center; flex-wrap: wrap; gap: 10px 18px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: rgba(0, 0, 0, .55); border-top: 1px solid rgba(255, 255, 255, .12); }
+.gl-lb-info { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.gl-lb-venue { color: #fff; font-size: .95rem; font-weight: 600; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; }
+.gl-lb-n { color: rgba(255, 255, 255, .62); font-size: .82rem; white-space: nowrap; }
+
+.gl-lb-pick { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.gl-lb-pick label { color: rgba(255, 255, 255, .72); font-size: .84rem; white-space: nowrap; }
+.gl-lb-pick select { padding: 8px 10px; min-width: 160px; font-size: .9rem;
+  border: 1px solid rgba(255, 255, 255, .3); border-radius: 6px;
+  background: rgba(255, 255, 255, .95); color: var(--ink); }
+.gl-lb-pick select.none { border-style: dashed; color: #7a7168; }
+
+.gl-lb-tip { flex: 1 0 100%; margin: 0; color: rgba(255, 255, 255, .5); font-size: .78rem; }
+.gl-lb-tip b { color: rgba(255, 255, 255, .8); font-weight: 600; }
+
+/* 폰 — 대표는 거의 폰으로 본다. 사진을 최대한 넓게 쓰고, 고르개는 한 줄을 통째로 */
+@media (max-width: 640px) {
+  .gl-lb-stage { padding: 44px 8px 8px; }
+  .gl-lb-nav { width: 38px; height: 60px; font-size: 1.5rem; }
+  .gl-lb-pick { margin-left: 0; flex: 1 1 100%; }
+  .gl-lb-pick select { flex: 1 1 auto; min-width: 0; }
+  /* ← → 가 없는 화면이라 이 안내는 접는다 */
+  .gl-lb-tip { display: none; }
+}
