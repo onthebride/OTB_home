@@ -463,6 +463,12 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 /* 신랑·신부를 다 적으니 줄이 길어졌다 (2026-08-30). 폰에서 시간 옆에 안 들어가면
    통째로 아랫줄로 내린다 — 이름이 가운데서 잘리면 못 읽는다 */
 .day-ov-name { font-weight: 700; min-width: 0; word-break: keep-all; }
+/* 「신랑」·「신부」 딱지는 작고 얇게 — 이름이 먼저 읽혀야 한다 (대표 2026-08-30).
+   작가 캘린더의 .sc-nx-p i 와 같은 값이다 */
+.day-ov-name i { font-style: normal; font-weight: 400; font-size: .74rem;
+  color: var(--ink-soft); margin-right: 4px; }
+.day-ov-name em { font-style: normal; font-weight: 400; color: var(--line);
+  margin: 0 6px; }
 .day-ov-venue { flex-basis: 100%; color: var(--ink-soft); font-size: .84rem; }
 .day-ov-status { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 5px; margin-top: 3px; }
 .dchip { font-size: .73rem; font-weight: 600; border-radius: 5px; padding: 2px 8px; white-space: nowrap; }

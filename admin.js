@@ -2163,11 +2163,14 @@ function dayItems(y, m, d) {
 function showDayList(y, m, d) { dayOvKey = { y, m, d }; renderDayOv(); }
 
 function closeDayOv() { dayOvKey = null; const o = document.getElementById('dayOv'); if (o) o.remove(); }
-/* 「신랑 ○○○ · 신부 ○○○」 — 한 사람만 적혀 있으면 그 사람만, 둘 다 없으면 계약자 */
+/* 「신랑 ○○○ · 신부 ○○○」 — 한 사람만 적혀 있으면 그 사람만, 둘 다 없으면 계약자.
+   ⚠ 「신랑」·「신부」는 <i> 로 감싼다. 이름보다 작고 얇게 둬야 이름이 먼저 읽힌다
+     (대표 2026-08-30 «신랑 신부 글자 크기 줄이고 얇은 폰트로»).
+     작가 캘린더의 .sc-nx-p i 와 같은 방식이다 — 두 화면이 같은 모양이라야 한다 */
 function dayOvWho(b) {
-  const who = [b.groom_name && '신랑 ' + esc(b.groom_name),
-               b.bride_name && '신부 ' + esc(b.bride_name)].filter(Boolean);
-  return who.length ? who.join(' · ') : esc(b.contractor_name || '-');
+  const who = [b.groom_name && '<i>신랑</i>' + esc(b.groom_name),
+               b.bride_name && '<i>신부</i>' + esc(b.bride_name)].filter(Boolean);
+  return who.length ? who.join('<em>·</em>') : esc(b.contractor_name || '-');
 }
 
 function renderDayOv() {
