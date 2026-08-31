@@ -2036,12 +2036,20 @@ function renderDashboard() {
     });
   unconfDraw('dcUnconfAs', 'listUnconfAs', unconfAs, '배정을 모두 확인했어요 👍');
 
-  const unconf = allUnconfirmed.filter((u) => !u.main_ok || !u.sub_ok).map((u) => {
-    const who = [];
-    if (!u.main_ok && u.assignee_id) who.push('메인 ' + staffName(u.assignee_id));
-    if (!u.sub_ok && u.sub_assignee_id) who.push('서브 ' + staffName(u.sub_assignee_id));
-    return [u, who];
-  });
+  /* ⚠ **보낸 것만 센다.** 2026-08-31 대표 «저거 한효림이 왜 월요일체크에 들어가 있나?» —
+       배정만 하고 월요일 체크는 안 나간 예식이 여기 떴다. 작가님이 안 한 게 아니라
+       받은 적이 없는 것이다.
+     전에는 바깥 울타리(admin_unconfirmed 의 where)가 대신 막아주고 있었는데,
+     배정 알림을 «보낸 것» 에 넣으면서 그 울타리가 넓어져 뚫렸다.
+     묶음마다 제 «보냈나» 를 봐야 한다 — 설문·배정 쪽은 처음부터 그랬다 */
+  const unconf = allUnconfirmed
+    .filter((u) => (u.main_chk_sent && !u.main_ok) || (u.sub_chk_sent && !u.sub_ok))
+    .map((u) => {
+      const who = [];
+      if (u.main_chk_sent && !u.main_ok && u.assignee_id) who.push('메인 ' + staffName(u.assignee_id));
+      if (u.sub_chk_sent && !u.sub_ok && u.sub_assignee_id) who.push('서브 ' + staffName(u.sub_assignee_id));
+      return [u, who];
+    });
   unconfDraw('dcUnconf', 'listUnconf', unconf, '모두 확인됐어요 👍');
 
   const unconfSv = allUnconfirmed
