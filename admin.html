@@ -99,18 +99,26 @@
               <div class="dash-list" id="listUnpaid"></div>
             </div>
 
-            <!-- 작가 미확인 — 두 가지를 나눠 본다 (대표 요청 2026-08-28).
-                 ① 월요일 체크 : 배정받고 누르는 참석·도착·옵션
-                 ② 설문 확인   : 예식 하루 전 설문 톡을 받고 누르는 것
+            <!-- 작가 미확인 — 셋으로 나눠 본다 (2026-08-28 둘 · 2026-08-31 스케줄 확인 추가).
+                 ① 스케줄 확인 : 배정 알림을 봤나
+                 ② 월요일 체크 : 배정받고 누르는 참석·도착·옵션
+                 ③ 설문 확인   : 예식 하루 전 설문 톡을 받고 누르는 것
+                 ⚠ 「30일내」 였는데 앞날 전부로 넓혔다 — 배정은 몇 달 앞서 하신다.
+                   넓혀도 «보낸 것만» 세므로 목록이 불어나지 않는다.
                  ⚠ 탭 묶음이 「다가오는 예식」 것보다 **앞에** 온다.
                    그쪽 코드가 .sched-tabs 를 통째로 찾으면 여기를 집는다 — id 로 갈라 쓴다 -->
             <div class="dash-card" id="card-unconfirmed">
-              <div class="dash-card-head"><h3>🧑‍🎨 작가 미확인 <small>(30일내)</small></h3></div>
+              <div class="dash-card-head"><h3>🧑‍🎨 작가 미확인 <small>(앞으로 예식)</small></h3></div>
               <div class="sched-tabs" id="unconfTabs">
-                <button class="stab active" data-utab="chk">월요일 체크 <span class="dash-count" id="dcUnconf">0</span></button>
+                <!-- 「스케줄 확인」이 먼저다 (대표 2026-08-31 «홈에 작가 미확인 박스에
+                     스케줄확인넣어줘»). 배정 → 월요일 체크 → 예식 전 설문 차례로 일어난다.
+                     ⚠ 스케줄 확인은 «봤다», 월요일 체크는 «하겠다» — 다른 것이다 -->
+                <button class="stab active" data-utab="as">스케줄 확인 <span class="dash-count" id="dcUnconfAs">0</span></button>
+                <button class="stab" data-utab="chk">월요일 체크 <span class="dash-count" id="dcUnconf">0</span></button>
                 <button class="stab" data-utab="sv">설문 확인 <span class="dash-count" id="dcUnconfSv">0</span></button>
               </div>
-              <div class="dash-list" id="listUnconf"></div>
+              <div class="dash-list" id="listUnconfAs"></div>
+              <div class="dash-list" id="listUnconf" hidden></div>
               <div class="dash-list" id="listUnconfSv" hidden></div>
             </div>
           </div>
@@ -448,6 +456,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=c86d4d0e09"></script>
+  <script src="admin.js?v=dbd7462a4f"></script>
 </body>
 </html>

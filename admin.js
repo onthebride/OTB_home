@@ -2022,6 +2022,20 @@ function renderDashboard() {
       : `<p class="dash-empty">${empty}</p>`;
   };
 
+  /* ③ 스케줄 확인 — 배정 알림을 읽었나 (대표 2026-08-31
+       «이거 배정을 작가가 확인했다는 사실을 나는 어디서 알 수 있나?»)
+     ⚠ 알림이 **간 사람만** 센다. 배정 알림은 2026-08-31 부터 나므로 그 전 배정은 여기 안 뜬다.
+     ⚠ 「봤다」이지 「하겠다」가 아니다 — 진짜 확답은 월요일 체크다. 묶음을 따로 두는 까닭이다 */
+  const unconfAs = allUnconfirmed
+    .filter((u) => (u.main_as_sent && !u.main_as_ok) || (u.sub_as_sent && !u.sub_as_ok))
+    .map((u) => {
+      const who = [];
+      if (u.main_as_sent && !u.main_as_ok && u.assignee_id) who.push('메인 ' + staffName(u.assignee_id));
+      if (u.sub_as_sent && !u.sub_as_ok && u.sub_assignee_id) who.push('서브 ' + staffName(u.sub_assignee_id));
+      return [u, who];
+    });
+  unconfDraw('dcUnconfAs', 'listUnconfAs', unconfAs, '배정을 모두 확인했어요 👍');
+
   const unconf = allUnconfirmed.filter((u) => !u.main_ok || !u.sub_ok).map((u) => {
     const who = [];
     if (!u.main_ok && u.assignee_id) who.push('메인 ' + staffName(u.assignee_id));
@@ -2961,7 +2975,10 @@ if (schedTabs) {
   });
 }
 
-// 작가 미확인 — 월요일 체크 / 설문 확인 (대표 요청 2026-08-28)
+/* 작가 미확인 — 스케줄 확인 / 월요일 체크 / 설문 확인
+   (2026-08-28 둘로 나눔 · 2026-08-31 「스케줄 확인」이 앞에 붙음)
+   ⚠ 묶음을 더할 때 여기 줄도 같이 늘려야 한다. 안 그러면 새 목록이 안 닫힌다 */
+const UNCONF_LISTS = { as: 'listUnconfAs', chk: 'listUnconf', sv: 'listUnconfSv' };
 const unconfTabs = $('unconfTabs');
 if (unconfTabs) {
   unconfTabs.addEventListener('click', (e) => {
@@ -2969,8 +2986,7 @@ if (unconfTabs) {
     if (!t) return;
     const which = t.dataset.utab;
     unconfTabs.querySelectorAll('.stab').forEach((x) => x.classList.toggle('active', x === t));
-    $('listUnconf').hidden = which !== 'chk';
-    $('listUnconfSv').hidden = which !== 'sv';
+    Object.entries(UNCONF_LISTS).forEach(([k, id]) => { if ($(id)) $(id).hidden = which !== k; });
   });
 }
 
