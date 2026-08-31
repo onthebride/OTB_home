@@ -2439,6 +2439,21 @@ if ($('schedToggle')) {
 
 const WD = ['일', '월', '화', '수', '목', '금', '토'];
 const wdLabel = (b) => { const d = wDate(b); return d ? WD[d.getDay()] : ''; };
+/* 작가에게 보여줄 옵션은 **촬영에만** 관계된 것이다 (대표 2026-08-31
+   «옵션은 촬영옵션만 보이게 되어 있을텐데? 앨범 플러스 같은거 빼고
+     연회장 2부 폐백 2인촬영 옵션들은 보여»).
+   앨범·출장·대표지정·직접 넣은 옵션은 작가가 할 일이 아니다 — 그날 판이 달라지지 않는다.
+   ⚠ 작가 체크 페이지(staff-schedule.js 의 opts)와 **같은 넷**이라야 한다 */
+function shootOpts(b) {
+  const o = [];
+  if (b.option_reception) o.push('연회장 인사촬영');
+  if (b.option_pyebaek) o.push('폐백촬영');
+  if (b.option_part2) o.push('2부 촬영');
+  if (b.photographer === '2인 촬영') o.push('2인 촬영');
+  return o;
+}
+
+// 대표가 보는 목록용 — 여기는 앨범·출장까지 다 보여야 한다
 function bookingOpts(b) {
   const o = [];
   if (b.option_album) { const q = albumSnap(b).qty; o.push(q > 1 ? `앨범×${q}` : '앨범'); }
@@ -2710,7 +2725,8 @@ function schedShareText(rows) {
   const fmtDot = (s) => (s ? String(s).slice(0, 10).replace(/-/g, '.') : '-');
   const pkg = (b) => ((b.package || '').replace(/\s*\(.*\)\s*/, '') || '베이직');
   return rows.map((b) => {
-    const opts = bookingOpts(b);
+    // ⚠ 작가에게 나가는 글이다. 앨범·출장·대표지정은 뺀다 (대표 2026-08-31)
+    const opts = shootOpts(b);
     return [
       `* 예식날짜 : ${fmtDot(b.wedding_date)}`,
       `* 예식장소 : ${b.wedding_venue || '-'}`,

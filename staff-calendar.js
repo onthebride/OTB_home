@@ -231,6 +231,19 @@ const nextShut = () => { try { return localStorage.getItem(NEXT_KEY) === 'shut';
    (대표 «지금 이 스타일이 좋네 / 아래 날짜누르면 뜨는 카드도 이렇게 바꾸자»).
    두 군데서 따로 만들면 한쪽만 고쳐져 곧 어긋난다 — 여기 하나만 고친다.
    연락처는 늘 펴 둔다 (대표 «연락처 안접어도 되겠다 그냥 펴주고 접었따 폈다 버튼 없애주고») */
+/* 상품과 촬영 옵션 (대표 2026-08-31). 대표가 카톡에 붙이시던 글에서 캘린더에 없던 둘이다.
+   ⚠ 옵션은 **촬영에 관계된 것만** 온다 — 앨범·출장·대표지정은 서버가 아예 안 보낸다
+     (대표 «앨범 플러스 같은거 빼고 연회장 2부 폐백 2인촬영 옵션들은 보여»).
+     여기서 거르지 않는다. 거르는 곳이 둘이 되면 한쪽만 고쳐진다 */
+function prodRow(x) {
+  const opts = Array.isArray(x.opts) ? x.opts : [];
+  if (!x.product && !opts.length) return '';
+  return '<div class="sc-nx-prod">'
+    + (x.product ? `<b>${esc(x.product)}</b>` : '')
+    + opts.map((o) => `<span class="sc-opt${o === '2인 촬영' ? ' two' : ''}">${esc(o)}</span>`).join('')
+    + '</div>';
+}
+
 function shootRow(x, extra) {
   // 설문이 아직이면 그렇게 적는다 — 자리를 비워두면 「단추가 왜 없지」가 된다
   const sv = x.has_survey
@@ -248,6 +261,7 @@ function shootRow(x, extra) {
       x.photo_usage_agree
         ? '<i class="sc-post ok">포스팅 가능</i>'
         : '<i class="sc-post no">포스팅 불가</i>'}</div>
+    ${prodRow(x)}
     ${extra || ''}
   </div>`;
 }

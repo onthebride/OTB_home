@@ -632,6 +632,16 @@
 .sc-nx-opts { margin-top: 8px; }
 .sc-nx-rep { margin: 7px 0 0; font-size: .8rem; color: var(--ink-soft); }
 
+/* 상품 · 촬영 옵션 (대표 2026-08-31 «옵션은 촬영옵션만 ... 연회장 2부 폐백 2인촬영»).
+   ⚠ 폰에서 옵션이 넷까지 붙는다 — 줄을 넘겨야지 옆으로 밀리면 안 된다 */
+.sc-nx-prod { margin-top: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 5px 6px; }
+.sc-nx-prod b { font-size: .8rem; font-weight: 700; color: var(--ink); margin-right: 2px; }
+.sc-opt { font-size: .72rem; font-weight: 500; color: var(--ink-soft);
+  background: var(--cream, #f7f3ee); border: 1px solid var(--line);
+  border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+/* 2인 촬영은 그날 판이 제일 크게 달라진다 — 눈에 먼저 들어오게 */
+.sc-opt.two { color: var(--gold-deep); border-color: var(--gold); background: #fdf8f0; font-weight: 600; }
+
 /* 날짜를 눌러 여는 칸도 같은 결로 — 바깥 상자만 두고 안쪽은 위와 같다 */
 .sc-item.bk { padding: 13px 16px 12px; }
 .sc-item.bk .sc-nx-row { padding-top: 0; }
