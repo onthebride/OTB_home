@@ -337,8 +337,9 @@
 
 /* 폰 알림 단추 (대표 요청 2026-08-27) */
 .sc-a2hs.on { border-color: var(--gold); color: var(--gold-deep); background: #faf4ea; }
+/* ⚠ 줄바꿈을 살린다 — 카톡 안에서 켜려 할 때 두 줄로 안내한다 (2026-08-31) */
 .sc-push-note { max-width: 320px; margin: 8px auto 0; font-size: .78rem; line-height: 1.6;
-  color: var(--ink-soft); text-align: center; }
+  color: var(--ink-soft); text-align: center; white-space: pre-line; }
 
 /* ===== 설정 칸 (대표 요청 2026-08-27) ===== */
 .sc-set { max-width: 460px; margin: 0 auto; }

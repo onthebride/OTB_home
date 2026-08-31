@@ -325,6 +325,15 @@ function clearBadge() {
   try { if (navigator.clearAppBadge) navigator.clearAppBadge(); } catch (_) {}
 }
 
+/* 어디서 보고 있나 — 알림 켜기와 홈 화면 추가가 같은 것을 봐야 한다.
+   ⚠ 카카오톡 링크를 누르면 **카톡 안의 브라우저**가 열린다. 홈에 저장한 앱이 아니다.
+     (아이폰은 절대 안 넘어가고, 안드로이드도 카톡이 자기 브라우저로 연다)
+     보는 것과 확인하는 것은 거기서도 다 되지만, 알림 켜기·홈 추가는 안 된다 */
+const UA = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
+const IN_APP = /KAKAOTALK|NAVER|Instagram|FBAN|FBAV|Line\//i.test(UA);
+const IS_IOS = /iPhone|iPad|iPod/i.test(UA)
+  || (typeof navigator !== 'undefined' && navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
 /* 알림 상태를 **한 곳**에 둔다 — 캘린더 아래 단추와 「설정」 칸 스위치가 같은 값을 보고 그린다.
    두 군데가 저마다 상태를 들고 있으면 한쪽만 바뀌어 어긋난다 (2026-08-27 대표 요청으로 둘이 됐다) */
 let pushState = 'unknown';        // unknown | unsupported | off | on
@@ -409,6 +418,16 @@ async function pushToggle() {
 }
 
 async function pushEnable() {
+  /* ⚠ 카카오톡 링크를 누르면 **카톡 안의 브라우저**가 열린다. 홈에 저장한 앱이 아니다.
+       거기서는 알림을 켤 수 없다 — 켜지는 듯해도 카톡 브라우저에만 붙어서 곧 사라진다.
+       아무 말 없이 실패하면 작가님이 「켰는데 왜 안 와요」 하시게 된다. 먼저 막고 알린다.
+       (홈 화면 추가도 같은 이유로 안 된다 — a2hs 가 같은 안내를 한다) */
+  if (IN_APP) {
+    pushMsg = '카카오톡 안에서는 알림을 켤 수 없어요.\n오른쪽 위 ⋮ 메뉴에서 '
+      + (IS_IOS ? 'Safari' : 'Chrome') + '로 연 뒤에 켜주세요.';
+    syncPush();
+    return;
+  }
   try {
     if ((await Notification.requestPermission()) !== 'granted') {
       pushMsg = '알림이 거부되어 있어요. 폰 설정에서 이 앱의 알림을 켜주세요.';
@@ -1280,10 +1299,10 @@ async function del(id, group) {
 (function a2hs() {
   const btn = $('a2hs'), modal = $('a2hsModal');
   if (!btn || !modal) return;
-  const ua = navigator.userAgent || '';
-  const inApp = /KAKAOTALK|NAVER|Instagram|FBAN|FBAV|Line\//i.test(ua);
-  const iOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const android = /Android/i.test(ua);
+  // ⚠ 어디서 보고 있나는 **위 한 곳**에서 정한다 (IN_APP·IS_IOS).
+  //   여기서 또 재면 알림 켜기와 서로 다른 말을 하게 된다
+  const inApp = IN_APP, iOS = IS_IOS;
+  const android = /Android/i.test(UA);
   const installed = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
   if (installed) { btn.hidden = true; return; }   // 이미 홈 화면에서 연 경우
 
