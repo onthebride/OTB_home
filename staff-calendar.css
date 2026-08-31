@@ -284,23 +284,39 @@
   font-family: var(--sans); font-size: .74rem; font-weight: 700; line-height: 1;
   cursor: pointer; vertical-align: 1px; padding: 0; }
 .sc-help-ic:hover { border-color: var(--gold); color: var(--gold-deep); }
-/* 글이 길어 작은 폰에서 넘칠 수 있다 — 상자 안에서만 굴러가게 */
-.sc-help-modal { position: relative; max-width: 400px; text-align: left;
-  max-height: calc(100vh - 60px); overflow-y: auto; }
-.sc-help-modal h3 { margin-bottom: 12px; padding-right: 28px; }
-.sc-help-modal .sc-help { font-size: .82rem; line-height: 1.75; }
-.sc-help-modal .sc-help p { margin-bottom: 1em; }
 .sc-modal-x { position: absolute; top: 10px; right: 12px; width: 30px; height: 30px;
   border: none; background: none; font-size: 1.5rem; line-height: 1; color: var(--ink-soft); cursor: pointer; }
 .sc-modal-x:hover { color: var(--ink); }
-.sc-help-acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+/* ===== 「안내」 칸 (대표 2026-08-31 «사용안내를 상단메뉴에 넣고 내용을 채우자») =====
+   전에는 팝업이었다. 이제 칸이라 글이 길어도 괜찮다 — 묶음으로 나눠 적는다.
+   ⚠ 맨 아래 색깔 설명(.sc-help)이 같은 이름을 쓴다. 여기서만 키운다 */
+#helpBody .sc-help { font-size: .86rem; line-height: 1.8; color: var(--ink-soft); }
+#helpBody .sc-help p { margin: 0 0 .85em; }
+#helpBody .sc-help p:last-child { margin-bottom: 0; }
+.sc-help-s { padding: 0 0 18px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+.sc-help-s:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.sc-help-s h3 { margin: 0 0 10px; font-size: .98rem; font-weight: 700; color: var(--ink); }
+/* 제목 옆 한마디 — 무엇을 하는 칸인지 한눈에 */
+.sc-help-s h3 em { margin-left: 7px; font-style: normal; font-size: .76rem; font-weight: 400;
+  color: var(--ink-soft); }
+/* 꼭 알아야 할 것은 상자로 묶는다 — 안 읽고 지나치면 곤란한 것들 */
+.sc-help-warn { padding: 10px 12px; border-radius: 8px;
+  background: #fdf8f0; border: 1px solid #ecdcc3; color: var(--ink); }
+.sc-help-warn b { color: var(--gold-deep); }
 
 /* ===== 캘린더 · 내 기록 칸 나누기 (대표 요청 2026-08-26) =====
    금색으로 꽉 채운 알약은 이 화면에 너무 세다 — 관리자 탭과 같은 «밑줄» 로 간다.
    인사말 밑줄과 탭 밑줄이 겹쳐 두 줄이 되던 것도 없앤다 (대표: 「선이랑 붙어버렸어」) —
    인사말 쪽 선을 지우고 탭 밑줄이 그 자리를 대신한다 */
+/* ⚠ 칸이 다섯이 됐다 (캘린더 · 확인 · 내 기록 · 안내 · 설정, 2026-08-31).
+     폰에서 한 줄에 들어가야 한다 — 좁으면 사이를 줄인다. 줄바꿈은 안 한다 */
 .sc-tabs { display: flex; justify-content: center; gap: 26px; margin: 6px 0 20px;
   border-bottom: 1px solid var(--line); }
+@media (max-width: 420px) {
+  .sc-tabs { gap: 13px; }
+  .sc-tab { font-size: .86rem; padding-left: 2px; padding-right: 2px; }
+}
 .sc-tab { padding: 9px 4px 11px; border: none; background: none; cursor: pointer;
   font-family: var(--sans); font-size: .93rem; color: var(--ink-soft);
   border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s, border-color .15s; }

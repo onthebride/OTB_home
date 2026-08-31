@@ -510,6 +510,7 @@ function applyTab(cur) {
   $('ntBody').hidden = cur !== 'nt';
   $('meBody').hidden = cur !== 'me';
   $('setBody').hidden = cur !== 'set';
+  $('helpBody').hidden = cur !== 'help';
 }
 
 /* 칸을 연다. 손으로 눌러서든(tabsInit), 위 안내 박스의 「확인하러 가기」 로든
@@ -1486,27 +1487,23 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('pageshow', (e) => { if (e.persisted) refreshIfStale(); });
 
-/* 사용안내 팝업 (대표 요청)
-   · 처음 오면 저절로 뜬다. 닫아도 다음에 또 뜬다 — 작가가 규칙을 알아야 해서
-   · [그만 띄우기] 를 누른 기기에서만 저절로 뜨지 않는다
-   · 어느 경우든 인사말 옆 ? 아이콘을 누르면 다시 열린다
-   저장이 막힌 기기(사파리 비공개 모드 등)에서도 화면은 그대로 돌아가야 한다 */
+/* 사용안내 (대표 2026-08-31 «사용안내를 상단메뉴에 넣고 내용을 채우자»)
+   전에는 팝업이었다 — 처음 한 번 뜨고 닫으면 끝이라, 나중에 「그거 어디서 봤더라」가 됐다.
+   이제 「안내」 칸이다. 언제든 열어볼 수 있다.
+   · 처음 오시는 분께는 이 칸을 먼저 열어드린다 (한 기기에서 한 번만)
+   · 그 뒤로는 칸을 누르거나 인사말 옆 ? 를 누르면 열린다
+   ⚠ 저장이 막힌 기기(사파리 비공개 모드 등)에서도 화면은 그대로 돌아가야 한다 —
+     못 읽으면 «본 적 있다» 로 친다. 매번 안내부터 열리면 성가시다 */
 const HELP_KEY = 'otb_sc_help';
-const helpMuted = () => { try { return localStorage.getItem(HELP_KEY) === 'shut'; } catch (e) { return false; } };
+const helpSeen = () => { try { return !!localStorage.getItem(HELP_KEY); } catch (e) { return true; } };
 
 function helpInit() {
-  const modal = $('helpModal'), ic = $('helpIc');
-  if (!modal || !ic || modal.dataset.bound) return;
-  modal.dataset.bound = '1';
-  const open = () => { modal.hidden = false; };
-  const close = () => { modal.hidden = true; };
-  ic.addEventListener('click', open);
-  $('helpClose').addEventListener('click', close);
-  $('helpX').addEventListener('click', close);
-  $('helpStop').addEventListener('click', () => {
-    try { localStorage.setItem(HELP_KEY, 'shut'); } catch (e) { /* 저장이 막힌 기기 */ }
-    close();
-  });
-  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
-  if (!helpMuted()) open();
+  const ic = $('helpIc');
+  if (!ic || ic.dataset.bound) return;
+  ic.dataset.bound = '1';
+  ic.addEventListener('click', () => openTab('help'));
+  if (!helpSeen()) {
+    try { localStorage.setItem(HELP_KEY, 'seen'); } catch (e) { /* 저장이 막힌 기기 */ }
+    openTab('help');
+  }
 }
