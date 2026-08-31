@@ -1427,22 +1427,35 @@ if (todayBtn) todayBtn.addEventListener('click', goToday);
   const OFF = 50;                  // 평소엔 이만큼 위로 숨어 있다
   const MAX = 96;                  // 이보다 더 당겨도 안 내려온다
   const ON = 56;                   // 이만큼 당기고 놓으면 새로고침
+  /* 폰에서 하듯 **화면이 내려가고 그 위에 동그란 것이 돈다**
+     (대표 2026-08-31 «알약뜨는거말고 페이지가 스크롤되면서 헤더 위에 스피너 뜨는거»).
+     ⚠ body 를 통째로 옮기지 않는다 — body 에 transform 을 걸면 그 안의 position:fixed
+       (팝업·맨 아래 단추)가 body 를 기준으로 잡혀 같이 딸려 내려간다.
+       머리글(.sc-top)과 몸통(.sv-wrap)만 옮기고, 도는 것은 그 **바깥**에 둔다 */
   const bar = document.createElement('div');
   bar.className = 'sc-pull';
-  bar.innerHTML = '<span class="sc-pull-c"><i></i><b>당기면 새로고침</b></span>';
+  bar.innerHTML = '<i></i>';
   document.body.appendChild(bar);
-  const txt = bar.querySelector('b');
 
   let y0 = null, x0 = 0, axis = null, dist = 0, busy = false;
   const atTop = () => (window.scrollY || document.documentElement.scrollTop || 0) <= 0;
+  const setVar = (px) => {
+    if (document.body.style && document.body.style.setProperty) {
+      document.body.style.setProperty('--pull', px + 'px');
+    }
+  };
   const put = (d, o) => {
-    bar.style.transform = 'translateY(' + (Math.min(d, MAX) - OFF) + 'px)';
+    const y = Math.min(d, MAX);
+    setVar(y);
+    // 동그란 것은 화면 끝에서 따라 내려온다. 당길수록 조금씩 돈다 — 손맛
+    bar.style.transform = 'translateY(' + (y - OFF) + 'px) rotate(' + Math.round(y * 3) + 'deg)';
     bar.style.opacity = String(o);
   };
   const reset = () => {
     bar.classList.remove('ready', 'go');
+    document.body.classList.remove('sc-pulling');
     bar.style.transform = ''; bar.style.opacity = '';
-    txt.textContent = '당기면 새로고침';
+    setVar(0);
     y0 = null; axis = null; dist = 0;
   };
 
@@ -1462,21 +1475,25 @@ if (todayBtn) todayBtn.addEventListener('click', goToday);
     }
     if (axis !== 'y' || dy <= 0 || !atTop()) { reset(); return; }
     e.preventDefault();            // 고무줄처럼 튕기는 것을 막아야 당겨진다
+    // 당기는 동안에는 손가락을 그대로 따라가야 한다 — 미끄러지는 시늉을 끈다
+    document.body.classList.add('sc-pulling');
+    document.body.classList.remove('sc-pull-ease');
+    bar.classList.remove('ease');
     dist = dy * 0.6;               // 손가락보다 천천히 — 당기는 손맛
     put(dist, Math.min(1, dist / ON));
-    const ready = dist >= ON;
-    bar.classList.toggle('ready', ready);
-    txt.textContent = ready ? '놓으면 새로고침' : '당기면 새로고침';
+    bar.classList.toggle('ready', dist >= ON);
   }, { passive: false });
 
   document.addEventListener('touchend', () => {
     if (y0 === null) return;
     const go = dist >= ON;
     y0 = null; axis = null;
+    // 손을 뗀 뒤로는 미끄러지듯 움직인다 (당기는 동안에는 안 붙였다)
+    document.body.classList.add('sc-pull-ease');
+    bar.classList.add('ease');
     if (!go) { reset(); return; }
     busy = true;
-    bar.classList.add('go');
-    txt.textContent = '새로고침 중…';
+    bar.classList.add('go');       // 제자리에서 돌기 시작
     put(ON, 1);
     Promise.resolve(refreshAll()).catch(() => {}).then(() => { busy = false; reset(); });
   }, { passive: true });

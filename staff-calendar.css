@@ -670,18 +670,27 @@
 /* ── 아래로 당겨 새로고침 (대표 요청 2026-08-27) ──
    평소엔 화면 위로 숨어 있다가 당긴 만큼 내려온다.
    팝업(z-index 60)보다 **아래**에 둔다 — 팝업 위로 올라오면 안 된다 */
-.sc-pull { position: fixed; top: 0; left: 0; right: 0; z-index: 50;
-  display: flex; justify-content: center; pointer-events: none;
+/* 당겨서 새로고침 — 폰에서 하듯 **화면이 내려가고 그 위에 동그란 것이 돈다**
+   (대표 2026-08-31 «알약뜨는거말고 페이지가 스크롤되면서 헤더 위에 스피너 뜨는거»).
+   ⚠ body 에 transform 을 걸면 안 된다 — 그 안의 position:fixed 가 body 를 기준으로
+     잡혀 팝업·맨 아래 단추까지 같이 딸려 내려간다. 머리글과 몸통만 옮긴다 */
+body.sc-pulling .sc-top,
+body.sc-pulling .sv-wrap { transform: translateY(var(--pull, 0px)); }
+/* 당기는 동안에는 손가락을 그대로 따라간다. 손을 뗀 뒤에만 미끄러진다 */
+body.sc-pull-ease .sc-top,
+body.sc-pull-ease .sv-wrap { transition: transform .22s ease; }
+
+.sc-pull { position: fixed; top: 0; left: 50%; z-index: 50; pointer-events: none;
+  width: 30px; height: 30px; margin-left: -15px; margin-top: 10px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: #fff;
+  box-shadow: 0 3px 10px -2px rgba(43, 39, 36, .25);
   transform: translateY(-50px); opacity: 0; }
-.sc-pull-c { display: inline-flex; align-items: center; gap: 7px;
-  margin-top: 8px; padding: 7px 15px; border-radius: 999px;
-  background: #fff; border: 1px solid var(--line);
-  box-shadow: 0 4px 14px -4px rgba(43,39,36,.22);
-  font-size: .78rem; font-weight: 500; color: var(--ink-soft); white-space: nowrap; }
-.sc-pull-c i { width: 13px; height: 13px; border-radius: 50%; flex: 0 0 auto;
+.sc-pull i { width: 15px; height: 15px; border-radius: 50%;
   border: 2px solid var(--line); border-top-color: var(--gold); }
-.sc-pull.ready .sc-pull-c { color: var(--gold-deep); border-color: var(--gold); }
+/* 놓으면 새로고침되는 지점을 넘겼다는 표 */
+.sc-pull.ready i { border-top-color: var(--gold-deep); border-width: 2.5px; }
+.sc-pull.ease { transition: transform .22s ease, opacity .22s ease; }
 /* 놓은 뒤엔 제자리에서 돌기만 한다 */
-.sc-pull.go { transition: transform .18s ease; }
-.sc-pull.go .sc-pull-c i { animation: sc-spin .7s linear infinite; }
+.sc-pull.go i { animation: sc-spin .7s linear infinite; }
 @keyframes sc-spin { to { transform: rotate(360deg); } }
