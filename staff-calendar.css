@@ -422,6 +422,10 @@
 .sc-req li em { font-style: normal; color: var(--gold-deep); font-weight: 600; }
 .sc-req-shut { margin: 8px 0 0; color: var(--gold-deep); line-height: 1.6; }
 .sc-req-shut b { font-weight: 700; }
+/* 갤러리 사진을 어떻게 채우는지 — 올리는 것은 대표라 작가님이 모르실 수 있다 */
+.sc-req-how { margin: 10px 0 0; padding-top: 10px; border-top: 1px dashed var(--line);
+  color: var(--ink-soft); line-height: 1.7; }
+.sc-req-how b { color: var(--ink); font-weight: 600; }
 
 /* 알림 단추를 이 칸으로 옮겨 오므로 가운데 정렬을 풀어준다 */
 #setPushSlot .sc-a2hs { margin: 0; }
