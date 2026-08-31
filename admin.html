@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="admin.css?v=c01fdfa5fe" />
+  <link rel="stylesheet" href="admin.css?v=ae72481bdf" />
 </head>
 <body>
 
@@ -309,6 +309,19 @@
             <button class="btn-primary" id="ntSend">공지 보내기</button>
             <p class="staff-msg" id="ntMsg"></p>
           </div>
+
+          <!-- 다 같이 보내는 캘린더 안내문 (대표 2026-08-31
+               «작가한테 캘린더 안내보내는거 그냥 통일해서 한꺼번에 보내게 다시 적어줘봐
+                 링크 안줘도 돼»).
+               작가마다 다른 링크가 없으니 단체 대화방에 한 번만 붙이면 된다.
+               ⚠ 사람마다 다른 링크가 필요하면 작가 관리의 📋 를 쓴다 — 그건 그대로 있다 -->
+          <div class="nt-send nt-guide">
+            <h3>캘린더 안내문 <small>(다 같이 보낼 것 · 링크 없음)</small></h3>
+            <p class="nt-who">단체 대화방에 그대로 붙여넣으세요. 링크는 전에 보내드린 각자 것을 쓰십니다.</p>
+            <pre class="nt-guide-box" id="guideBox"></pre>
+            <button class="btn-sm" id="guideCopy">안내문 복사</button>
+            <p class="staff-msg" id="guideMsg"></p>
+          </div>
         </div>
       </div>
 
@@ -456,6 +469,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=bd955a3fbc"></script>
+  <script src="admin.js?v=7c24c4d938"></script>
 </body>
 </html>

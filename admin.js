@@ -2796,6 +2796,41 @@ const STAFF_CHANNEL_NAME = '온더브라이드 작가전용';
    ⚠ 그래도 이 넷은 뺄 수 없다.
      ① 링크 ② 홈 화면 추가·알림 켜기 ③ 카톡 안에서는 그 둘이 안 된다는 것
      ④ 개인 일정은 대표가 못 본다는 것 (안 적으면 아무도 안 쓰신다) */
+/* 다 같이 보내는 캘린더 안내문 (대표 2026-08-31
+   «작가한테 캘린더 안내보내는거 그냥 통일해서 한꺼번에 보내게 다시 적어줘봐 링크 안줘도 돼»)
+
+   작가마다 다른 링크가 없어서 단체 대화방에 한 번만 붙이면 된다.
+   링크는 전에 각자 받으신 것을 쓰시면 된다 — 그래서 「전에 보내드린 링크」 로 짚어준다.
+   ⚠ 사람마다 다른 링크가 필요하면 staffCalMsg 를 쓴다 (작가 관리의 📋). 그건 그대로 둔다.
+   ⚠ 두 글이 서로 다른 말을 하면 안 된다. 고칠 때 둘 다 본다 */
+function staffGuideMsg() {
+  return [
+    '[온더브라이드] 작가님, 캘린더가 새로워졌습니다.',
+    '',
+    '예식이 배정되면 캘린더에 바로 뜨고 알림도 갑니다.',
+    '전에 보내드린 작가님 캘린더 링크로 들어가 주세요.',
+    '',
+    '두 가지만 부탁드립니다.',
+    '1. 맨 아래 [📱 홈 화면에 추가]',
+    '2. 홈에 생긴 앱을 열고 [🔔 알림 받기]',
+    '',
+    '※ 이 둘은 카카오톡 안에서는 안 됩니다.',
+    '   링크를 누른 뒤 오른쪽 위 ⋮ 를 눌러',
+    '   [다른 브라우저로 열기] 로 열어주세요.',
+    '',
+    '배정·변경·취소는 [확인] 칸에 모입니다.',
+    '보시고 [확인했어요] 만 눌러주시면 됩니다.',
+    '',
+    '촬영이 안 되는 날은 [촬영불가],',
+    '다른 촬영은 [다른촬영등록],',
+    '개인 일정은 [개인일정등록] 에 적어주세요.',
+    '개인 일정은 저에게 「개인 일정」 이라고만 보입니다.',
+    '',
+    '자세한 사용법은 [안내] 칸에 있습니다.',
+    '링크를 잃어버리셨으면 말씀해 주세요. 다시 보내드립니다.',
+  ].join('\n');
+}
+
 function staffCalMsg(id) {
   const s = staffMap[id] || {};
   const url = location.origin + '/staff-calendar?s=' + id;
@@ -3092,6 +3127,21 @@ async function noticeInit() {
   }
   const btn = $('ntSend');
   if (btn && !btn.dataset.bound) { btn.dataset.bound = '1'; btn.addEventListener('click', noticeSend); }
+
+  /* 다 같이 보낼 캘린더 안내문 — 보이는 대로 복사된다 (대표 2026-08-31).
+     ⚠ 화면에 글을 두 벌 두지 않는다. 상자에 채운 그 글을 그대로 복사한다 —
+       따로 만들면 보시는 것과 붙여넣는 것이 어긋나는 날이 온다 */
+  const gb = $('guideBox');
+  if (gb) gb.textContent = staffGuideMsg();
+  const gc = $('guideCopy');
+  if (gc && !gc.dataset.bound) {
+    gc.dataset.bound = '1';
+    gc.addEventListener('click', async () => {
+      const text = gb ? gb.textContent : staffGuideMsg();
+      try { await navigator.clipboard.writeText(text); if ($('guideMsg')) $('guideMsg').textContent = '복사됐습니다. 단체 대화방에 붙여넣으세요.'; }
+      catch (_) { prompt('아래 내용을 복사하세요:', text); }
+    });
+  }
 
   if (ntTargets) { noticeWho(); return; }
   const { data, error } = await sb.rpc('admin_staff_notice_targets');

@@ -1260,6 +1260,16 @@ td .muted { color: var(--ink-soft); }
 .nt-len { font-size: .78rem; color: var(--ink-soft); text-align: right; margin-bottom: 12px; }
 .nt-send .btn-primary { width: 100%; padding: 12px; }
 
+/* 다 같이 보낼 캘린더 안내문 (대표 2026-08-31). 보이는 그대로 복사된다 */
+.nt-guide { margin-top: 14px; }
+.nt-guide h3 small { font-weight: 400; font-size: .78rem; color: var(--ink-soft); margin-left: 6px; }
+/* ⚠ 줄바꿈과 사이 여백을 그대로 보여준다 — 붙여넣은 모습이 이것과 같아야 한다 */
+.nt-guide-box { white-space: pre-wrap; word-break: keep-all; margin: 0 0 10px;
+  padding: 13px 15px; max-height: 320px; overflow-y: auto;
+  font-family: var(--sans); font-size: .85rem; line-height: 1.75; color: var(--ink);
+  background: var(--cream); border: 1px solid var(--line); border-radius: 8px; }
+.nt-guide .btn-sm { width: 100%; padding: 10px; }
+
 /* 단추가 셋이 됐다 (지금 보내기 · 오늘은 안 보내기 · 확인).
    한 상자에 묶어 «셋이 통째로» 아랫줄로 내려가게 한다 — 안 묶으면 좁은 화면에서
    하나만 떨어져 나가 줄이 들쭉날쭉해진다 (2026-08-29) */
