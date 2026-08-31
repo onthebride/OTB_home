@@ -431,9 +431,23 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 
 /* Calendar */
 .cal-card { margin-top: 4px; }
-.cal-nav { display: flex; align-items: center; gap: 12px; }
+/* 달 넘기는 자리를 제목 바로 옆으로 (대표 2026-08-31
+   «이거 월 바꾸는거 왼쪽으로 옮겨줘 예식캘린더 오른쪽에»).
+   ⚠ .dash-card-head 는 space-between 이라 그냥 두면 오른쪽 끝으로 밀린다.
+     margin-right: auto 로 남는 자리를 오른쪽에 몰아준다 — 머리글 규칙은 안 건드린다
+     (다른 카드가 다 같이 쓴다) */
+.cal-card .dash-card-head { gap: 14px; flex-wrap: wrap; }
+.cal-nav { display: flex; align-items: center; gap: 12px; margin-right: auto; }
 .cal-nav span { font-weight: 600; min-width: 96px; text-align: center; }
 .cal-nav .btn-ghost { padding: 4px 12px; }
+/* 폰 — 제목과 한 줄에 넣으려면 좁혀야 한다. 그래도 안 들어가면 아랫줄로 내려간다
+   (위 flex-wrap). 왼쪽에 붙는 것은 그대로다 */
+@media (max-width: 600px) {
+  .cal-card .dash-card-head { gap: 10px; }
+  .cal-nav { gap: 6px; }
+  .cal-nav span { min-width: 78px; font-size: .9rem; }
+  .cal-nav .btn-ghost { padding: 4px 8px; }
+}
 .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
 .cal-wd { text-align: center; font-size: .76rem; color: var(--ink-soft); padding: 6px 0; font-weight: 600; }
 .cal-wd:first-child { color: #c0392b; }
