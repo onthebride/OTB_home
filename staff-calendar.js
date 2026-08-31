@@ -159,7 +159,7 @@ async function load() {
   pushInit();          // 늦게 와도 된다 — 단추만 늦게 뜬다
   settingsInit();      // 「설정」 칸을 띄울지 정한다 (지금은 대표만)
   loadNotices();       // 확인할 것 — 폰 알림이 못 갔어도 여기서 본다
-  loadTopNotices();    // 그중 중요한 것은 맨 위에도 띄운다
+  loadTodo();          // 확인할 것 — 숫자 뱃지와 맨 위 안내 박스를 만든다
   clearBadge();        // 화면을 열었으니 아이콘 숫자를 지운다
   seenMark();          // 열었다는 것만 남긴다 (대표가 열어본 것은 빼고)
   show($('mainCard'));
@@ -479,6 +479,20 @@ function applyTab(cur) {
   $('setBody').hidden = cur !== 'set';
 }
 
+/* 칸을 연다. 손으로 눌러서든(tabsInit), 위 안내 박스의 「확인하러 가기」 로든
+   **여기 하나만** 쓴다 — 두 곳에서 따로 열면 딱지(active)와 몸통이 어긋난다 */
+function openTab(cur) {
+  const tabs = $('scTabs');
+  if (!tabs) return;
+  const b = tabs.querySelector(`.sc-tab[data-sct="${cur}"]`);
+  if (!b || b.hidden) return;
+  tabs.querySelectorAll('.sc-tab').forEach((x) => x.classList.toggle('active', x === b));
+  applyTab(cur);
+  if (cur === 'me' && !meLoaded) { meLoaded = true; loadMe(); }
+  if (cur === 'set') renderSet();
+  if (cur === 'nt') renderNotices();
+}
+
 function tabsInit() {
   const tabs = $('scTabs');
   if (!tabs || tabs.dataset.on) return;
@@ -486,11 +500,7 @@ function tabsInit() {
   tabs.addEventListener('click', (e) => {
     const b = e.target.closest('.sc-tab');
     if (!b) return;
-    const cur = b.dataset.sct;                 // cal | nt | me | set
-    tabs.querySelectorAll('.sc-tab').forEach((x) => x.classList.toggle('active', x === b));
-    applyTab(cur);
-    if (cur === 'me' && !meLoaded) { meLoaded = true; loadMe(); }
-    if (cur === 'set') renderSet();
+    openTab(b.dataset.sct);                    // cal | nt | me | set
   });
 }
 
@@ -505,41 +515,101 @@ function tabsInit() {
 let ntData = null;
 let ntPage = 1;
 
+/* ===== 확인할 것 (대표 2026-08-31)
+   «알림은 확인으로 바꾸고 확인할게 있으면 캘린더 상단에 확인할 사항이 있습니다. 라고
+     안내박스가 가는거야 그리고 확인 글자에 숫자뱃지»
+   «월요일 체크나 금요일 설문체크도 캘린더 기반으로 하고 싶어»
+
+   흩어져 있던 셋을 한 곳으로 모은다 — 알림함 · 월요일 체크 페이지 · 설문 페이지.
+   ⚠ 숫자는 **서버가 센다**(staff_todo 의 n). 화면에서 또 세면 «뱃지는 3인데 안에는 2개»
+     가 된다. 목록과 숫자가 같은 함수에서 나와야 한다 */
+let todo = null;
+
+async function loadTodo() {
+  if (!sb || !staffId) return;
+  const { data, error } = await sb.rpc('staff_todo', { p_staff_id: staffId });
+  if (error || !data) return;
+  todo = data;
+  ntBadge();
+  renderTopTodo();
+  if (curTab() === 'nt') renderNotices();
+}
+
 async function loadNotices(page) {
   if (!sb || !staffId) return;
+  // 「지난 소식」은 **읽은 것만**. 안 읽은 것은 위 「확인이 필요해요」가 들고 있다 —
+  // 두 곳에 같은 줄이 뜨면 «아까 확인했는데 왜 또 있지» 가 된다
   const { data, error } = await sb.rpc('staff_notices',
-    { p_staff_id: staffId, p_page: page || ntPage });
+    { p_staff_id: staffId, p_page: page || ntPage, p_read_only: true });
   if (error || !data) return;
   ntData = data;
   ntPage = data.page;
   renderNotices();
 }
 
-// 안 읽은 수는 칸 이름 옆에. 0 이면 딱지를 아예 없앤다
+// 확인 안 한 수는 칸 이름 옆에. 0 이면 딱지를 아예 없앤다
 function ntBadge() {
   const el = $('ntCount');
   if (!el) return;
-  const n = (ntData && ntData.unread) || 0;
+  const n = (todo && todo.n) || 0;
   el.hidden = !n;
   el.textContent = n > 99 ? '99+' : String(n);
+}
+
+/* 확인할 것 한 줄. 무엇이냐에 따라 누를 것이 다르다
+     check  — 세 가지를 체크하고 「확인 완료」 (월요일 체크와 같은 것)
+     survey — 신부 설문을 보고 「확인했어요」
+     notice — 배정·변경·취소·공지. 읽었다고 누르면 「지난 소식」으로 내려간다 */
+function todoItem(r) {
+  const head = `<p class="sc-td-t">${esc(r.title)}`
+    + (r.role ? `<em class="sc-td-role${r.role === '서브' ? ' sub' : ''}">${esc(r.role)}</em>` : '')
+    + (r.at ? `<span>${esc(r.at)}</span>` : '') + '</p>'
+    + (r.body ? `<p class="sc-td-b">${esc(r.body)}</p>` : '');
+
+  if (r.kind === 'check') {
+    /* 글귀는 월요일 체크 페이지와 **똑같이** 둔다. 작가님들이 그 말로 익혀 두셨다 */
+    const cb = (k, t) => `<label class="sc-td-chk"><input type="checkbox" data-k="${k}" /><span>${t}</span></label>`;
+    return `<div class="sc-td check" data-b="${esc(r.booking_id)}">${head}
+      ${cb('attend', '참석 / 스케줄 확정')}
+      ${cb('arrival', '도착 시간 숙지 (예식 1시간 30분 전)')}
+      ${cb('options', '촬영 옵션 확인')}
+      <button type="button" class="btn-sm sc-td-go" data-do="check">확인 완료</button>
+    </div>`;
+  }
+  if (r.kind === 'survey') {
+    return `<div class="sc-td survey" data-b="${esc(r.booking_id)}">${head}
+      <div class="sc-td-acts">
+        <a class="btn-sm sc-td-sv" href="/survey-view?b=${encodeURIComponent(r.booking_id)}&s=${encodeURIComponent(staffId)}">설문 보기</a>
+        <button type="button" class="btn-sm sc-td-go" data-do="survey">확인했어요</button>
+      </div>
+    </div>`;
+  }
+  return `<div class="sc-td notice">${head}
+    <button type="button" class="btn-sm sc-td-go" data-do="notice" data-nt="${r.notice_id}">확인했어요</button>
+  </div>`;
 }
 
 function renderNotices() {
   ntBadge();
   const box = $('ntBody');
-  if (!box || !ntData) return;
-  const rows = ntData.rows || [];
-  if (!rows.length) {
-    box.innerHTML = '<p class="sc-nt-empty">아직 알림이 없어요.<br />예식 날짜·시간·장소가 바뀌거나 취소되면 여기에 남습니다.</p>';
-    return;
-  }
+  if (!box) return;
+  const items = (todo && todo.items) || [];
+  const rows = (ntData && ntData.rows) || [];
 
-  // 확인 안 한 것은 진하게, 확인한 것은 보통으로 (대표 지시)
+  const todoBox = items.length
+    ? `<section class="sc-tdwrap">
+         <h3 class="sc-td-h">확인이 필요해요 <i>${items.length}</i></h3>
+         ${items.map(todoItem).join('')}
+       </section>`
+    : '<p class="sc-nt-empty">확인하실 것이 없어요. 🙂<br />새 배정·변경·취소나 예식 확인이 생기면 여기에 모입니다.</p>';
+
+  if (!rows.length) { box.innerHTML = todoBox; bindTodo(); return; }
+
+  // 이미 확인한 것은 아래에 「지난 소식」으로 (대표 지시 — 확인한 건 보통으로)
   const item = (r) => `
-    <div class="sc-nt-item${r.unread ? ' unread' : ''}">
+    <div class="sc-nt-item">
       <p class="sc-nt-t">${esc(r.title)}<span>${esc(r.at)}</span></p>
       <p class="sc-nt-b">${esc(r.body)}</p>
-      ${r.unread ? `<button type="button" class="btn-sm sc-nt-ok" data-nt="${r.id}">확인했어요</button>` : ''}
     </div>`;
 
   const pg = ntData.pages || 1;
@@ -553,24 +623,74 @@ function renderNotices() {
     }
   }
 
-  box.innerHTML = `
-    <div class="sc-nt-head">
-      <b>알림 ${ntData.total}건${ntData.unread ? ` <i>안 읽음 ${ntData.unread}</i>` : ''}</b>
-      ${ntData.unread ? '<button type="button" class="btn-sm" id="ntAll">모두 확인</button>' : ''}
-    </div>
-    <div class="sc-nt-list">${rows.map(item).join('')}</div>
-    ${pg > 1 ? `<div class="sc-pg">
-      <button type="button" class="sc-pg-a" data-ntp="${ntPage - 1}"${ntPage <= 1 ? ' disabled' : ''}>‹</button>
-      ${nums.join('')}
-      <button type="button" class="sc-pg-a" data-ntp="${ntPage + 1}"${ntPage >= pg ? ' disabled' : ''}>›</button>
-    </div>` : ''}`;
+  box.innerHTML = todoBox + `
+    <section class="sc-pastwrap">
+      <h3 class="sc-td-h past">지난 소식 <i>${ntData.total}</i></h3>
+      <div class="sc-nt-list">${rows.map(item).join('')}</div>
+      ${pg > 1 ? `<div class="sc-pg">
+        <button type="button" class="sc-pg-a" data-ntp="${ntPage - 1}"${ntPage <= 1 ? ' disabled' : ''}>‹</button>
+        ${nums.join('')}
+        <button type="button" class="sc-pg-a" data-ntp="${ntPage + 1}"${ntPage >= pg ? ' disabled' : ''}>›</button>
+      </div>` : ''}
+    </section>`;
 
-  box.querySelectorAll('[data-nt]').forEach((b) =>
-    b.addEventListener('click', () => ntRead(Number(b.dataset.nt))));
+  bindTodo();
   box.querySelectorAll('[data-ntp]').forEach((b) =>
     b.addEventListener('click', () => { if (!b.disabled) loadNotices(Number(b.dataset.ntp)); }));
-  const all = $('ntAll');
-  if (all) all.addEventListener('click', () => ntRead(null));
+}
+
+/* 「확인이 필요해요」의 단추들. 무엇을 눌렀느냐에 따라 부르는 곳이 다르다 */
+function bindTodo() {
+  const box = $('ntBody');
+  if (!box) return;
+  box.querySelectorAll('.sc-td-go').forEach((b) =>
+    b.addEventListener('click', () => todoDo(b)));
+}
+
+async function todoDo(btn) {
+  const card = btn.closest('.sc-td');
+  const what = btn.dataset.do;
+  const bid = card && card.dataset.b;
+  btn.disabled = true;
+  let err = null;
+
+  if (what === 'check') {
+    // ⚠ 셋을 다 체크해야 확인이다. 월요일 체크 페이지와 같은 규칙이라야 한다
+    const on = (k) => !!card.querySelector(`input[data-k="${k}"]`).checked;
+    if (!(on('attend') && on('arrival') && on('options'))) {
+      btn.disabled = false;
+      toastNt('세 가지를 모두 체크해 주세요.');
+      return;
+    }
+    ({ error: err } = await sb.rpc('submit_assignment_check', {
+      payload: { booking_id: bid, staff_id: staffId, attend: true, arrival: true, options: true },
+    }));
+  } else if (what === 'survey') {
+    ({ error: err } = await sb.rpc('survey_ack', { p_booking_id: bid, p_staff_id: staffId }));
+  } else {
+    ({ error: err } = await sb.rpc('staff_notice_read',
+      { p_staff_id: staffId, p_page: ntPage, p_id: Number(btn.dataset.nt) }));
+  }
+
+  btn.disabled = false;
+  if (err) { toastNt('저장하지 못했어요. 잠시 후 다시 해주세요.'); return; }
+  // 셋 다 같은 곳을 다시 그린다 — 확인한 것은 목록에서 빠지고 숫자가 하나 준다
+  await Promise.all([loadTodo(), loadNotices(ntPage)]);
+  clearBadge();
+}
+
+function toastNt(msg) {
+  const box = $('ntBody');
+  if (!box) return;
+  let el = box.querySelector('.sc-td-toast');
+  if (!el) {
+    el = document.createElement('p');
+    el.className = 'sc-td-toast';
+    box.prepend(el);
+  }
+  el.textContent = msg;
+  clearTimeout(toastNt._t);
+  toastNt._t = setTimeout(() => el.remove(), 3000);
 }
 
 async function ntRead(id) {
@@ -581,41 +701,41 @@ async function ntRead(id) {
   ntData = data;
   ntPage = data.page;
   renderNotices();
-  loadTopNotices();    // 위에 떠 있던 것도 같이 사라져야 한다
+  loadTodo();          // 위 안내 박스와 숫자 뱃지도 같이 줄어야 한다
   clearBadge();        // 다 확인했으면 홈 화면 아이콘 숫자도 지운다
 }
 
-/* ===== 맨 위 중요 공지 (대표 2026-08-29
-   «내가 보내는 공지랑 비활성화 안내는 중요공지니까 캘린더 상단에 바로 보이게 뜨게해줘
-     그리고 알림화면에도 있어야해»)
+/* ===== 맨 위 안내 박스 =====
+   2026-08-29 대표 «내가 보내는 공지랑 비활성화 안내는 중요공지니까 캘린더 상단에 바로
+   보이게 뜨게해줘» 로 만들었고, 그때는 중요 공지 셋만 띄웠다(staff_top_notices).
 
-   여기 뜨는 것 — 대표 공지(notice) · 스케줄 멈춤 예고(pause_warn) · 멈춤 알림(pause).
-   예식 변경·취소는 안 띄운다. 그건 그 예식 카드에서 바로 보인다.
-   ⚠ 안 읽은 것만이다. 확인하면 여기서 사라지고 「알림」 칸에는 그대로 남는다.
-   ⚠ 위쪽은 좁다 — 서버가 셋까지만 준다. 나머지는 「알림」 칸에서 본다 */
-let topNt = [];
+   2026-08-31 대표 «확인할게 있으면 캘린더 상단에 확인할 사항이 있습니다. 라고 안내박스가
+   가는거야» 로 **확인할 것 전부**를 세게 바뀌었다. 월요일 체크·설문 확인이 빠져 있던 것을
+   메운 것이다. 그래서 staff_top_notices 는 이제 화면이 안 쓴다 — staff_todo 하나가 준다.
+   ⚠ 위쪽은 좁다 — 셋까지만 적고 나머지는 「확인」 칸에서 본다 */
 
-async function loadTopNotices() {
-  if (!sb || !staffId) return;
-  const { data, error } = await sb.rpc('staff_top_notices', { p_staff_id: staffId });
-  if (error) return;
-  topNt = Array.isArray(data) ? data : [];
-  renderTopNotices();
-}
-
-function renderTopNotices() {
+/* 대표 2026-08-31 «확인할게 있으면 캘린더 상단에 확인할 사항이 있습니다. 라고 안내박스가
+   가는거야». 그래서 이 자리는 이제 **확인할 것 전부**를 센다 (staff_todo).
+   전에는 중요 공지 셋만 띄웠는데, 월요일 체크·설문 확인이 빠져 있었다.
+   ⚠ 위쪽은 좁다 — 셋까지만 적고 나머지는 「확인」 칸에서 본다 */
+function renderTopTodo() {
   const box = $('scTopNt');
   if (!box) return;
-  box.hidden = topNt.length === 0;
-  if (!topNt.length) { box.innerHTML = ''; return; }
-  box.innerHTML = topNt.map((r) => `
-    <div class="sc-tn${r.kind === 'notice' ? '' : ' warn'}">
-      <p class="sc-tn-t">${esc(r.title)}<span>${esc(r.at)}</span></p>
-      <p class="sc-tn-b">${esc(r.body)}</p>
-      <button type="button" class="btn-sm sc-tn-ok" data-tn="${r.id}">확인했어요</button>
-    </div>`).join('');
-  box.querySelectorAll('[data-tn]').forEach((b) =>
-    b.addEventListener('click', () => ntRead(Number(b.dataset.tn))));
+  const items = (todo && todo.items) || [];
+  box.hidden = items.length === 0;
+  if (!items.length) { box.innerHTML = ''; return; }
+  const three = items.slice(0, 3);
+  box.innerHTML = `
+    <div class="sc-tn warn">
+      <p class="sc-tn-t">확인하실 것이 ${items.length}개 있습니다</p>
+      <ul class="sc-tn-l">${three.map((r) =>
+        `<li><b>${esc(r.title)}</b>${r.body ? `<span>${esc(r.body)}</span>` : ''}</li>`).join('')}
+        ${items.length > 3 ? `<li class="more">그 밖에 ${items.length - 3}개</li>` : ''}
+      </ul>
+      <button type="button" class="btn-sm sc-tn-ok" id="scTodoGo">확인하러 가기</button>
+    </div>`;
+  const go = $('scTodoGo');
+  if (go) go.addEventListener('click', () => openTab('nt'));
 }
 
 /* ===== 설정 (대표 요청 2026-08-27

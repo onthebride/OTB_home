@@ -453,6 +453,50 @@
 .sc-nt-empty { text-align: center; color: var(--ink-soft); font-size: .88rem; line-height: 1.8;
   padding: 34px 0; }
 
+/* ===== 「확인」 칸 (대표 2026-08-31)
+   «알림은 확인으로 바꾸고 ... 확인 글자에 숫자뱃지»
+   «월요일 체크나 금요일 설문체크도 캘린더 기반으로 하고 싶어»
+   위: 확인이 필요해요 (누를 것이 있다)  ·  아래: 지난 소식 (이미 확인한 것) */
+.sc-td-h { margin: 0 0 10px; font-size: .95rem; font-weight: 700; color: var(--ink); }
+.sc-td-h i { font-style: normal; margin-left: 6px; font-size: .76rem; font-weight: 700;
+  color: #fff; background: #b5462f; border-radius: 999px; padding: 1px 7px; vertical-align: 2px; }
+.sc-td-h.past { color: var(--ink-soft); font-weight: 600; }
+.sc-td-h.past i { color: var(--ink-soft); background: none; padding: 0; font-weight: 600; }
+.sc-tdwrap { display: flex; flex-direction: column; gap: 8px; margin-bottom: 26px; }
+.sc-tdwrap .sc-td-h { margin-bottom: 2px; }
+
+.sc-td { background: #fdf8f0; border: 1px solid var(--gold); border-radius: 9px; padding: 13px 15px; }
+.sc-td-t { margin: 0 0 4px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  font-size: .9rem; font-weight: 700; color: var(--ink); word-break: keep-all; }
+.sc-td-t span { margin-left: auto; font-size: .74rem; font-weight: 400; color: var(--ink-soft);
+  flex: 0 0 auto; }
+.sc-td-role { font-style: normal; font-size: .72rem; font-weight: 700; color: var(--gold-deep);
+  background: #fff; border: 1px solid var(--gold); border-radius: 999px; padding: 1px 7px; }
+.sc-td-role.sub { color: #5b6b8a; border-color: #b8c3d6; }
+.sc-td-b { margin: 0; font-size: .84rem; line-height: 1.7; color: var(--ink);
+  white-space: pre-wrap; word-break: keep-all; }
+
+/* 월요일 체크 — 글귀는 예전 체크 페이지와 같게 두고 모양만 여기에 맞춘다.
+   ⚠ 손가락 자리를 44px 로 (체크네모는 작다) */
+.sc-td-chk { display: flex; align-items: center; gap: 9px; padding: 9px 0; cursor: pointer;
+  font-size: .86rem; line-height: 1.5; color: var(--ink); }
+.sc-td-chk input { width: 19px; height: 19px; flex: 0 0 auto; accent-color: var(--gold-deep); }
+.sc-td .sc-td-go { margin-top: 8px; }
+.sc-td-acts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.sc-td-acts .sc-td-go { margin-top: 0; }
+/* 「설문 보기」는 링크지만 단추처럼 보여야 한다 */
+.sc-td-sv { text-decoration: none; display: inline-flex; align-items: center; }
+
+.sc-td-toast { margin: 0 0 10px; padding: 9px 12px; font-size: .84rem; line-height: 1.6;
+  color: #8c3a26; background: #fdf3f1; border: 1px solid #d9b3aa; border-radius: 8px; }
+
+/* 맨 위 안내 박스 안의 목록 (확인할 것 셋까지) */
+.sc-tn-l { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 5px; }
+.sc-tn-l li { font-size: .84rem; line-height: 1.6; color: var(--ink); word-break: keep-all; }
+.sc-tn-l li b { font-weight: 700; }
+.sc-tn-l li span { display: block; font-size: .8rem; color: var(--ink-soft); }
+.sc-tn-l li.more { font-size: .8rem; color: var(--ink-soft); }
+
 /* 쪽 나누기 — 캘린더 화살표(.btn-nav)와 같은 결로 */
 .sc-pg { display: flex; justify-content: center; align-items: center; gap: 4px; margin-top: 16px; }
 .sc-pg-a, .sc-pg-n { min-width: 32px; height: 32px; padding: 0 6px; border: 1px solid var(--line);
