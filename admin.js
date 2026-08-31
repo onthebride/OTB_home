@@ -1920,14 +1920,12 @@ function renderDashboard() {
         <div class="dl-actions">
           ${b.assignee_id
             ? `<div class="chk-rolerow">
-                 <button class="btn-sm chk-send" data-id="${b.id}" data-staff="${b.assignee_id}" data-role="메인">${mainSent ? '메인 재전송' : '메인 체크'}</button>
-                 <button class="btn-sm btn-kakao-sm chk-share" data-id="${b.id}" data-staff="${b.assignee_id}" data-role="메인" title="카톡으로 공유">공유</button>
+                 <button class="btn-sm btn-kakao-sm chk-share" data-id="${b.id}" data-staff="${b.assignee_id}" data-role="메인">${needsSub ? '메인 공유' : '공유'}</button>
                  ${roleFlag(mainSent, mainOk, '메인')}
                  ${svCopyBtn(b)}
                </div>
                ${needsSub ? `<div class="chk-rolerow">
-                 <button class="btn-sm chk-send" data-id="${b.id}" data-staff="${b.sub_assignee_id}" data-role="서브">${subSent ? '서브 재전송' : '서브 체크'}</button>
-                 <button class="btn-sm btn-kakao-sm chk-share" data-id="${b.id}" data-staff="${b.sub_assignee_id}" data-role="서브" title="카톡으로 공유">공유</button>
+                 <button class="btn-sm btn-kakao-sm chk-share" data-id="${b.id}" data-staff="${b.sub_assignee_id}" data-role="서브">서브 공유</button>
                  ${roleFlag(subSent, subOk, '서브')}
                </div>` : ''}`
             : `<div class="chk-rolerow"><span class="dl-na">작가 미배정</span>${svCopyBtn(b)}</div>`}
@@ -2052,10 +2050,10 @@ function bindDashEvents() {
   document.querySelectorAll('#listUnpaid .upt').forEach((btn) =>
     btn.addEventListener('click', () => { unpaidTab = btn.dataset.upt; renderDashboard(); })
   );
-  // 작가 체크 링크 전송(복사 + 보냄 표시)
-  document.querySelectorAll('#tab-dashboard .chk-send').forEach((btn) =>
-    btn.addEventListener('click', (e) => { e.stopPropagation(); copyCheckLink(btn.dataset.id, btn.dataset.staff, `${btn.dataset.role} 작가(${staffName(btn.dataset.staff)})`, btn.dataset.role); })
-  );
+  /* 「메인 체크」·「서브 체크」 단추는 뺐다 (대표 2026-08-31
+     «다가오는 예식 체크 버튼은 필요없는거 같고 공유만 하나 넣어줘»).
+     월요일 아침 알림톡이 알아서 나가므로 손으로 보낼 일이 거의 없다.
+     ⚠ copyCheckLink 자체는 살아 있다 — 예약 상세의 `.chk-link` 가 아직 쓴다 */
   // 작가 체크 링크 카톡 공유(공유 시트 + 보냄 표시)
   document.querySelectorAll('#tab-dashboard .chk-share').forEach((btn) =>
     btn.addEventListener('click', (e) => { e.stopPropagation(); shareCheckLink(btn.dataset.id, btn.dataset.staff, `${btn.dataset.role} 작가(${staffName(btn.dataset.staff)})`, btn.dataset.role); })
