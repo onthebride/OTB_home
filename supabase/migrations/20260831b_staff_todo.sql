@@ -21,7 +21,16 @@ drop function if exists public.staff_todo(uuid);
 create or replace function public.staff_todo(p_staff_id uuid)
 returns jsonb language plpgsql stable security definer
 set search_path to 'public', 'pg_temp' as $$
-declare today date := (now() at time zone 'Asia/Seoul')::date; items jsonb;
+declare
+  today date := (now() at time zone 'Asia/Seoul')::date;
+  items jsonb;
+  /* ⚠ 2026-08-31 대표 «알림톡링크는 그냥 두자 나중에 / 캘린더는 월요일체크 설문 체크는
+       그냥 확인에 띄우지 말고».
+     알림톡 링크를 캘린더로 넘기지 않기로 했으므로, 체크는 알림톡이 데려가는 그 페이지에서
+     한다. 캘린더에도 띄우면 같은 일이 두 군데 있는 셈이라 어디서 해야 하는지 헷갈린다.
+     **셈하는 길은 그대로 살려 뒀다** — 나중에 합칠 때 이 한 줄만 true 로 바꾸면 된다.
+     (화면도 이미 check·survey 를 그릴 줄 안다) */
+  SHOW_WEDDING constant boolean := false;
 begin
   if not exists (select 1 from public.staff where id = p_staff_id and coalesce(active,false)) then
     raise exception 'staff not found';
@@ -49,7 +58,8 @@ begin
            (case when m.is_main then '메인' else '서브' end) as role,
            null::text as at
     from mine m
-    where (case when m.is_main then m.check_sent_at else m.sub_check_sent_at end) is not null
+    where SHOW_WEDDING
+      and (case when m.is_main then m.check_sent_at else m.sub_check_sent_at end) is not null
       and not public.check_done(m.id, p_staff_id)
   ),
   /* ② 예식 전 신부 설문 확인 — 설문 톡(T)을 받은 사람만.
@@ -62,7 +72,8 @@ begin
            (case when m.is_main then '메인' else '서브' end),
            null::text
     from mine m
-    where (coalesce(m.alimtalk_sent, '{}'::jsonb) -> ('T:' || p_staff_id::text)) is not null
+    where SHOW_WEDDING
+      and (coalesce(m.alimtalk_sent, '{}'::jsonb) -> ('T:' || p_staff_id::text)) is not null
       and exists (select 1 from public.surveys s where s.booking_id = m.id)
       and not exists (select 1 from public.assignment_checks c
                        where c.booking_id = m.id and c.staff_id = p_staff_id

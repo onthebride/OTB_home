@@ -620,7 +620,9 @@ function renderNotices() {
          <h3 class="sc-td-h">확인이 필요해요 <i>${items.length}</i></h3>
          ${items.map(todoItem).join('')}
        </section>`
-    : '<p class="sc-nt-empty">확인하실 것이 없어요. 🙂<br />새 배정·변경·취소나 예식 확인이 생기면 여기에 모입니다.</p>';
+    /* ⚠ 월요일 체크·설문 확인은 여기 안 뜬다 (대표 2026-08-31 «확인에 띄우지 말고»).
+         그것들은 알림톡이 데려가는 페이지에서 한다. 없는 것을 여기 적으면 안 된다 */
+    : '<p class="sc-nt-empty">확인하실 것이 없어요. 🙂<br />예식이 새로 배정되거나 바뀌거나 취소되면 여기에 모입니다.</p>';
 
   if (!rows.length) { box.innerHTML = todoBox; bindTodo(); return; }
 
