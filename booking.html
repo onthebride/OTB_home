@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="google-site-verification" content="eBAt8b6db4nscxmP4fxkt2gh3BQy_SCL2kxy03_yjkk" />
+  <meta name="naver-site-verification" content="08b5593e6cb1e3487fcd9d0f3ed62251e5f1e2bc" />
+  <title>예약신청 · 온더브라이드</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/favicon.png" />
+  <meta name="description" content="온더브라이드 본식스냅 예약신청. 예식 일정과 상품을 골라 간편하게 신청하세요." />
+  <link rel="canonical" href="https://onthebride.com/booking" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="온더브라이드" />
+  <meta property="og:locale" content="ko_KR" />
+  <meta property="og:title" content="예약신청 · 온더브라이드" />
+  <meta property="og:description" content="예식 일정과 상품을 골라 간편하게 신청하세요." />
+  <meta property="og:url" content="https://onthebride.com/booking" />
+  <meta property="og:image" content="https://onthebride.com/assets/logo-black.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "@id": "https://onthebride.com/#business",
+  "name": "온더브라이드",
+  "alternateName": "ONTHEBRIDE",
+  "description": "거품을 뺀 합리적인 견적, 검증된 작가의 본식스냅. 결혼식 당일 현장을 자연스럽게 기록하는 웨딩 본식스냅 스튜디오.",
+  "url": "https://onthebride.com/",
+  "logo": "https://onthebride.com/assets/logo-black.png",
+  "image": "https://onthebride.com/assets/logo-black.png",
+  "email": "onthebride@naver.com",
+  "telephone": "+82-10-3860-6264",
+  "address": { "@type": "PostalAddress", "addressCountry": "KR" },
+  "areaServed": "KR",
+  "sameAs": ["https://www.instagram.com/onthebride/"],
+  "knowsAbout": ["본식스냅", "웨딩스냅", "결혼식 사진", "웨딩 촬영"]
+}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://cthpxcgesorvtgjdgrtu.supabase.co" crossorigin />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Noto+Serif+KR:wght@300;400;500;600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <link rel="stylesheet" href="styles.css?v=cb2379ca7b" />
+</head>
+<body>
+
+  <!-- ===== Header / Nav ===== -->
+  <header class="site-header" id="top">
+    <nav class="nav container">
+      <a href="/" class="brand">
+        <img src="assets/logo-white.png" alt="온더브라이드" class="brand-logo brand-logo-light" />
+        <img src="assets/logo-black.png" alt="온더브라이드" class="brand-logo brand-logo-dark" />
+      </a>
+      <button class="nav-toggle" aria-label="메뉴 열기">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-menu">
+        <li><a href="/#about">소개</a></li>
+        <li><a href="/#gallery">갤러리</a></li>
+        <li><a href="/reviews">후기</a></li>
+        <li><a href="/#pricing">가격</a></li>
+        <li><a href="/#event">이벤트</a></li>
+        <li><a href="/blog">블로그</a></li>
+        <li><a href="/#contact">문의</a></li>
+        <li><a href="/booking" class="nav-cta" aria-current="page">예약하기</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- ===== 예약신청 =====
+       홈 맨 끝 섹션이었던 것을 이 페이지로 옮겼다 (대표 2026-09-01
+       «사람들이 자꾸 예약신청을 못보네 부킹링크로 들어가도 문의하기까지만 나와»).
+       ⚠ 까닭: 홈의 맨 끝이라 **화면 맨 위로 올라올 수가 없었다.** 더 내려갈 데가 없으니
+         브라우저가 끝까지 내려도 화면 대부분은 그 위 문의하기가 차지했다.
+         위에 아무것도 없는 제 페이지로 옮겨 그 문제를 없앤다.
+       ⚠ 폼은 여기서 **접어두지 않는다** — 이 주소로 온 사람은 이미 신청하러 온 것이다.
+       ⚠ 폼 코드는 main.js 한 곳에 있다. 홈에는 이제 이 폼이 없다 — 두 벌이 되면 갈라진다 -->
+  <section class="booking section" id="booking">
+    <div class="container section-head center">
+      <p class="overline">BOOKING</p>
+      <h2 class="section-title">예약신청</h2>
+      <p class="section-desc">예식 일정과 상품을 선택해 간편하게 예약을 신청하세요.</p>
+      <!-- ⚠ [예약신청 시작하기] 단추는 여기 없다. 이 주소로 오신 분은 이미 신청하러 온 것이라
+           한 번 더 누르게 할 까닭이 없다. 홈에 있던 그 단추가 이 페이지로 보내는 단추가 됐다 -->
+    </div>
+
+    <form class="booking-form" id="bookingForm" onsubmit="return false;" data-clarity-mask="true">
+      <!-- 규정 안내 -->
+      <fieldset class="bk-group">
+        <legend>규정 안내</legend>
+        <p class="rules-link-text">예약 전 규정을 반드시 확인해 주세요. <button type="button" class="rules-link" id="rulesOpen">규정 전문 보기 →</button></p>
+      </fieldset>
+
+      <!-- 확인사항 -->
+      <fieldset class="bk-group">
+        <legend>확인사항</legend>
+        <label class="check"><input type="checkbox" id="f_agree_available" /> <span>예약가능한 답변을 받으셨으면 체크</span></label>
+        <label class="check"><input type="checkbox" id="f_agree_terms" /> <span>위 규정 내용을 확인했으며 동의합니다!</span></label>
+        <label class="check"><input type="checkbox" id="f_agree_privacy" /> <span>개인정보 수집·이용에 동의합니다 <em class="req">*</em></span></label>
+        <p class="field-hint">수집 항목 : 계약자·신랑·신부의 성함과 연락처, 계약자 이메일, 예식 정보 · 이용 목적 : 예약 접수와 촬영 진행 · 보유 기간 : 5년<br />자세한 내용은 <a href="/privacy" target="_blank" rel="noopener" class="rules-link" style="font-size:inherit">개인정보처리방침</a>에서 확인하실 수 있습니다.</p>
+      </fieldset>
+
+      <!-- 계약자 정보 -->
+      <fieldset class="bk-group">
+        <legend>계약자 정보</legend>
+        <div class="bk-grid">
+          <div class="field"><label>계약자 성함 <em>*</em></label><input type="text" id="f_contractor_name" /><p class="field-hint">계약자에게만 진행 관련 안내톡 드립니다!</p></div>
+          <div class="field"><label>연락처 <em>*</em></label><input type="tel" class="phone" id="f_contractor_phone" placeholder="010-0000-0000" maxlength="13" /></div>
+          <div class="field full"><label>이메일 <em>*</em></label><input type="email" id="f_contractor_email" placeholder="example@mail.com" /><p class="field-hint">개인사진이나 중요한 내용이 메일로 보내질 수 있습니다.<br />정확한 메일 기재 부탁드려요!</p></div>
+        </div>
+      </fieldset>
+
+      <!-- 예식 정보 -->
+      <fieldset class="bk-group">
+        <legend>예식 정보</legend>
+        <div class="bk-grid">
+          <div class="field"><label>예식날짜 <em>*</em></label><input type="text" id="f_wedding_date" placeholder="날짜를 선택하세요" /></div>
+          <div class="field"><label>예식시간 <em>*</em></label>
+            <div class="timepicker" id="timepicker">
+              <input type="hidden" id="f_wedding_time" />
+              <button type="button" class="tp-display" id="tpDisplay">시간을 선택하세요</button>
+              <div class="tp-panel" id="tpPanel" hidden>
+                <div class="tp-ampm">
+                  <button type="button" class="tp-ampm-btn" data-ampm="AM">오전</button>
+                  <button type="button" class="tp-ampm-btn" data-ampm="PM">오후</button>
+                </div>
+                <div class="tp-cols">
+                  <div class="tp-col" id="tpHours" aria-label="시"></div>
+                  <div class="tp-col" id="tpMins" aria-label="분"></div>
+                </div>
+                <button type="button" class="tp-confirm" id="tpConfirm">확인</button>
+              </div>
+            </div>
+          </div>
+          <div class="field"><label>예식장소 <em>*</em></label><input type="text" id="f_wedding_venue" placeholder="예식장 이름 / 홀" /></div>
+        </div>
+      </fieldset>
+
+      <!-- 신랑 / 신부 정보 -->
+      <fieldset class="bk-group">
+        <legend>신랑 · 신부 정보</legend>
+        <div class="person-row">
+          <div class="person-head">
+            <span class="person-title">신랑님</span>
+            <label class="same-check"><input type="checkbox" id="f_groom_same" /> <span>계약자와 동일</span></label>
+          </div>
+          <div class="bk-grid">
+            <div class="field"><label>성함 <em>*</em></label><input type="text" id="f_groom_name" /></div>
+            <div class="field"><label>연락처 <em>*</em></label><input type="tel" class="phone" id="f_groom_phone" placeholder="010-0000-0000" maxlength="13" /></div>
+          </div>
+        </div>
+        <div class="person-row">
+          <div class="person-head">
+            <span class="person-title">신부님</span>
+            <label class="same-check"><input type="checkbox" id="f_bride_same" /> <span>계약자와 동일</span></label>
+          </div>
+          <div class="bk-grid">
+            <div class="field"><label>성함 <em>*</em></label><input type="text" id="f_bride_name" /></div>
+            <div class="field"><label>연락처 <em>*</em></label><input type="tel" class="phone" id="f_bride_phone" placeholder="010-0000-0000" maxlength="13" /></div>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- 기본 상품 -->
+      <fieldset class="bk-group">
+        <legend>기본 상품 <small>(필수)</small></legend>
+        <ul class="opt-list">
+          <li class="opt"><label class="check"><input type="checkbox" id="f_basic" data-price="55" checked /> <span class="opt-name">베이직 (데이터형)</span></label><span class="opt-price">55만원</span></li>
+          <li class="opt"><label class="check"><input type="checkbox" id="f_travel" data-price="5" /> <span class="opt-name">출장비</span></label><span class="opt-price">5만원</span></li>
+        </ul>
+        <ul class="opt-desc">
+          <li>기본상품(베이직)은 필수 선택입니다.</li>
+          <li>서울 이외의 지역은 출장비를 체크해 주세요. (경기·용인·수원·송도 등)</li>
+          <li>2인 촬영은 출장비가 작가별로 적용되어 10만원입니다. (자동 계산돼요)</li>
+        </ul>
+      </fieldset>
+
+      <!-- 옵션 1 -->
+      <fieldset class="bk-group">
+        <legend>옵션 1 · 추가 서비스 <small>(선택)</small></legend>
+        <p class="opt-hint">중복선택 가능 / 필수 아님!</p>
+        <ul class="opt-list">
+          <li class="opt opt-album">
+            <label class="check"><input type="checkbox" id="f_option_album" data-price="5" /> <span class="opt-name">앨범 추가</span></label>
+            <div class="qty-stepper" data-qty-for="album">
+              <button type="button" class="qty-btn" data-step="-1" aria-label="앨범 수량 줄이기">−</button>
+              <input type="number" id="f_album_qty" class="qty-input" value="0" min="0" max="9" step="1" inputmode="numeric" readonly aria-label="앨범 수량" />
+              <button type="button" class="qty-btn" data-step="1" aria-label="앨범 수량 늘리기">+</button>
+            </div>
+            <span class="opt-price">+5만원</span>
+          </li>
+          <li class="opt"><label class="check"><input type="checkbox" id="f_option_reception" data-price="5" /> <span class="opt-name">연회장 인사촬영</span></label><span class="opt-price">+5만원</span></li>
+          <li class="opt"><label class="check"><input type="checkbox" id="f_option_pyebaek" data-price="10" /> <span class="opt-name">폐백촬영</span></label><span class="opt-price">+10만원</span></li>
+          <li class="opt"><label class="check"><input type="checkbox" id="f_option_part2" data-price="10" /> <span class="opt-name">2부 촬영</span></label><span class="opt-price">+10만원</span></li>
+        </ul>
+        <ul class="opt-list" id="extraOptions"></ul>
+        <ul class="opt-notes">
+          <li>앨범이 필요하시면 “앨범 추가”에서 원하시는 수량만큼 선택해 주세요. 추후에 언제든 추가·변경도 가능합니다!</li>
+          <li>호텔이나 2부 식순이 추가로 있는 경우는 “2부 촬영”을 추가하시면 됩니다.</li>
+          <li>단순 하객 인사는 “연회장 인사촬영”을 추가하시면 됩니다.</li>
+          <li>2부 촬영은 연회장 인사촬영이 포함되어 있습니다.</li>
+          <li>2부가 1시간 이상 길어질 경우 추가 비용이 있을 수 있습니다.</li>
+        </ul>
+      </fieldset>
+
+      <!-- 옵션 2 -->
+      <fieldset class="bk-group">
+        <legend>옵션 2 · 작가 선택 <small>(선택)</small></legend>
+        <p class="opt-hint">기본/2인 중 하나 + 대표지정은 추가로 선택 가능</p>
+        <ul class="opt-list">
+          <li class="opt"><label class="check"><input type="radio" name="photographer" value="기본" data-price="0" checked /> <span class="opt-name">기본 (1인 촬영)</span></label><span class="opt-price">+0원</span></li>
+          <li class="opt"><label class="check"><input type="radio" name="photographer" value="2인 촬영" data-price="25" /> <span class="opt-name">2인 촬영</span></label><span class="opt-price">+25만원</span></li>
+        </ul>
+        <ul class="opt-list" style="margin-top:10px">
+          <li class="opt"><label class="check"><input type="checkbox" id="f_rep" data-price="35" /> <span class="opt-name">대표지정</span></label><span class="opt-price">+35만원</span></li>
+        </ul>
+        <ul class="opt-notes">
+          <li>선택 안 하셔도 되며, 선택을 안 하시면 대표 포함 모든 작가분들 중 랜덤 배정됩니다.</li>
+          <li>대표지정 : 오랜 경력에서 오는 안정적인 촬영과 서비스가 있습니다!</li>
+          <li>대표지정 혜택 : 당일 원본 발송(대표 1인 촬영일 경우)과 빠른 보정작업 진행 혜택!</li>
+        </ul>
+      </fieldset>
+
+      <!-- 촬영본 사용 동의 -->
+      <fieldset class="bk-group">
+        <legend>촬영본 사용 동의</legend>
+        <p class="bk-note">촬영된 사진의 홍보·포트폴리오 사용에 동의 여부를 선택해 주세요.</p>
+        <ul class="opt-list">
+          <li class="opt"><label class="check"><input type="radio" name="usage" value="yes" data-price="0" /> <span class="opt-name">YES · 동의합니다</span></label><span class="opt-price"></span></li>
+          <li class="opt"><label class="check"><input type="radio" name="usage" value="no" data-price="0" checked /> <span class="opt-name">NO · 동의하지 않습니다</span></label><span class="opt-price"></span></li>
+        </ul>
+      </fieldset>
+
+      <!-- 합계 -->
+      <div class="bk-total">
+        <span>예상 합계</span>
+        <strong id="bkTotal">60만원</strong>
+      </div>
+
+      <button type="submit" class="btn btn-primary full bk-submit">제출하기</button>
+      <p class="bk-status" id="bkStatus" role="status"></p>
+    </form>
+  </section>
+
+  <!-- ===== Footer ===== -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <img src="assets/logo-white.png" alt="온더브라이드" class="footer-logo" />
+      <p class="muted">온더브라이드 · onthebride@naver.com</p>
+      <p class="muted small"><a href="/reviews">신부님 후기</a> · 촬영을 맡겨주신 분들이 남겨주신 이야기</p>
+      <p class="muted small"><a href="/blog">블로그</a> · 본식스냅 정보와 웨딩 준비 가이드</p>
+      <p class="muted small"><a href="/rules">규정 안내</a> · <a href="/privacy">개인정보처리방침</a></p>
+      <p class="muted small">© 2013 onthebride. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- 규정 전문 모달 -->
+  <div class="rules-modal" id="rulesModal" hidden>
+    <div class="rules-backdrop" id="rulesBackdrop"></div>
+    <div class="rules-modal-card">
+      <button class="rules-close" id="rulesClose" aria-label="닫기">&times;</button>
+      <h2 class="rules-title">규정 안내</h2>
+      <p class="rules-modal-head"><a href="/rules" target="_blank" rel="noopener" class="rules-openpage">전문 페이지로 열기 (링크 공유용) ↗</a></p>
+      <div class="rules-content" id="rulesContent">
+        <p class="rules-loading">규정 전문을 불러오는 중…</p>
+      </div>
+    </div>
+  </div>
+
+  <button class="to-top" id="toTop" aria-label="맨 위로">↑</button>
+
+  <script defer src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="config.js"></script>
+  <script defer src="main.js?v=9d88522c48"></script>
+  <script defer src="/analytics.js?v=abe79d1dba"></script>
+</body>
+</html>

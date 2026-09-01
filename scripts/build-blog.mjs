@@ -435,6 +435,10 @@ function build() {
     { loc: SITE.origin + '/privacy', pri: '0.3', lastmod: '2026-08-10' },
     // 신부님 후기 모아보기 (2026-08-27 신설). 내용은 DB 에서 오지만 주소는 고정이라 여기 적어둔다
     { loc: SITE.origin + '/reviews', pri: '0.7', lastmod: '2026-08-27' },
+    /* 예약신청 (2026-09-01 신설). 홈 맨 끝 섹션이던 것을 제 페이지로 뺐다 —
+       홈의 끝이라 화면 맨 위로 올라올 수가 없어 손님이 못 찾으셨다.
+       돈이 들어오는 길이라 높게 둔다 */
+    { loc: SITE.origin + '/booking', pri: '0.9', lastmod: '2026-09-01' },
     { loc: SITE.origin + '/blog', pri: '0.8', lastmod: posts[0] && (posts[0].updated || posts[0].date) },
     ...posts.map((p) => ({ loc: `${SITE.origin}/blog/posts/${p.slug}`, pri: '0.7', lastmod: p.updated || p.date })),
   ];
