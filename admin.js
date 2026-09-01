@@ -2390,6 +2390,20 @@ function dcParse(text, today) {
   return { date, time: `${String(hh).padStart(2, '0')}:${String(mi).padStart(2, '0')}` };
 }
 
+/* 조회한 날을 캘린더에서 짚어준다 (대표 2026-09-01).
+   ⚠ renderCalendar() 는 칸을 통째로 다시 그린다. 그래서 그린 **뒤에** 표시를 붙인다.
+     달을 안 옮겨도 (이미 그 달을 보고 있어도) 짚어줘야 한다 — 어느 칸인지 찾는 게 일이다 */
+function dcMark(ymd) {
+  document.querySelectorAll('.cal-cell.dc-pick').forEach((el) => el.classList.remove('dc-pick'));
+  if (!ymd) return;
+  const d = new Date(ymd + 'T00:00:00');
+  ensureCalMonth();
+  if (calMonth.y !== d.getFullYear() || calMonth.m !== d.getMonth()) return;
+  const cells = document.querySelectorAll('.cal-grid .cal-cell:not(.empty)');
+  const cell = cells[d.getDate() - 1];
+  if (cell) cell.classList.add('dc-pick');
+}
+
 async function dayCheck() {
   const box = $('dcResult');
   const d = $('dcDate') ? $('dcDate').value : '';
@@ -2399,6 +2413,19 @@ async function dayCheck() {
   const { data, error } = await sb.rpc('admin_day_check', { p_date: d, p_time: $('dcTime').value || null });
   if (error) { box.innerHTML = `<p class="dash-empty">${esc(error.message)}</p>`; return; }
   box.innerHTML = dayCheckHtml(data);
+  /* 조회한 날의 달로 아래 캘린더도 같이 옮긴다 (대표 2026-09-01
+     «날짜 조회 넣잖아? 확인 넣으면 아래 캘린더도 그 월로 딱가게 되나?»)
+     — 10월 3일을 물어보고 아래를 보면 8월이 떠 있어 두 번 손이 갔다.
+     ⚠ 보고 있던 달과 같으면 다시 그리지 않는다. 괜히 화면이 깜빡인다 */
+  const dd = new Date(d + 'T00:00:00');
+  ensureCalMonth();
+  if (calMonth.y !== dd.getFullYear() || calMonth.m !== dd.getMonth()) {
+    calMonth = { y: dd.getFullYear(), m: dd.getMonth() };
+    renderCalendar();
+    renderSchedule();      // 월별 일정도 같은 달을 봐야 한다
+  }
+  // 그 날을 캘린더에서 짚어준다 — 달만 맞으면 어느 칸인지 또 찾아야 한다
+  dcMark(d);
   const more = $('dcMore');
   if (more) more.addEventListener('click', () => {
     const rest = $('dcRest');

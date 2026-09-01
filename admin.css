@@ -454,6 +454,9 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .cal-cell { min-height: 92px; min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 5px; background: #fff; display: flex; flex-direction: column; gap: 3px; overflow: hidden; }
 .cal-cell.empty { background: transparent; border: none; }
 .cal-cell.today { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+/* 날짜 조회로 찾아본 날 (대표 2026-09-01 «확인 넣으면 아래 캘린더도 그 월로 딱가게»).
+   ⚠ 오늘(금색)과 갈려야 한다 — 둘이 같은 색이면 어느 게 찾던 날인지 모른다 */
+.cal-cell.dc-pick { border-color: #8a6a4f; box-shadow: inset 0 0 0 2px #8a6a4f; background: #fdf6ee; }
 .cal-cell.has { background: #fdfbf7; cursor: pointer; }
 .cal-cell.has:hover { background: #f6efe4; }
 .cal-d { font-size: .78rem; color: var(--ink-soft); }
