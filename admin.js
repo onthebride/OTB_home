@@ -3566,7 +3566,12 @@ async function selNumFor(root) {
     const r = await sb.rpc('admin_dbx_ls_req', { p_path: root, p_cursor: null });
     if (r.error || (r.data && r.data.error) || !r.data) return '';
     const res = await dbxWait('admin_dbx_ls_res', { p_req: r.data.req });
-    if (res.error || res.missing) return '';
+    if (res.error) return '';
+    /* ⚠ 해가 바뀌면 「2027 자동셀렉」이 아직 없다. 그때 «못 찾음» 을 빈손으로 돌려주면
+         그 해 **첫 건이 번호를 못 받고**, 다음 건이 0002 가 되어 0001 이 빈다.
+         폴더가 없다 = 그 해 첫 건이다 → 0001 (대표 2026-09-02
+         «해가 바뀌면 2027 폴더생기면서 다시 0001 부터 되는거지») */
+    if (res.missing) { selNumCache[root] = '0001'; return '0001'; }
     const n = selNextNum(res.entries);
     selNumCache[root] = n;
     return n;
