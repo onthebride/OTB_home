@@ -3528,6 +3528,51 @@ function selDestName(dateStr, folder, who) {
   return tail ? ymd + '-' + tail : (ymd + ' ' + (who || '')).trim();
 }
 
+/* 넣을 폴더에 번호를 붙인다 (대표 2026-09-02
+   «자동셀렉 올리는거 업로드되는거 폴더 앞에 넘버링 해줄 수 있어? / 가 하자 근데 4자리로 하자»)
+
+   0001. 부터. 네 자리로 채우는 까닭은 차례가 어긋나지 않게 하기 위해서다 —
+   0 을 안 채우면 드롭박스가 1, 10, 100, 2 순으로 늘어놓는다.
+
+   ⚠ 다음 번호는 **그 폴더 안을 실제로 세어** 정한다. 우리 기록(dropbox_copy_log)으로
+     세면 안 된다 — 대표가 드롭박스에서 손으로 지우거나 옮기신 것이 반영되지 않는다.
+   ⚠ 이미 붙은 번호 중 제일 큰 것과 폴더 수 중 **큰 쪽** 다음을 쓴다.
+     번호 붙은 게 하나도 없으면(지금이 그렇다) 폴더 수 다음부터 이어 붙는다. */
+const SEL_NUM_RE = /^(\d{4})\.\s/;
+const selNextNum = (entries) => {
+  const dirs = (entries || []).filter((e) => e.dir);
+  let top = 0;
+  dirs.forEach((e) => {
+    const m = SEL_NUM_RE.exec(String(e.name || ''));
+    if (m) top = Math.max(top, Number(m[1]) || 0);
+  });
+  return String(Math.max(top, dirs.length) + 1).padStart(4, '0');
+};
+// 이미 번호가 붙어 있으면 또 붙이지 않는다 (다시 올릴 때 0002. 0001. 이 되면 안 된다)
+const selWithNum = (num, name) => (SEL_NUM_RE.test(name) ? name : num + '. ' + name);
+
+/* 그 해 폴더 안을 세어 다음 번호를 돌려준다. 못 세면 '' — 그러면 번호 없이 간다.
+   ⚠ 번호를 못 붙인다고 셀렉 자체가 막히면 안 된다. 번호는 편하자고 붙이는 것이다.
+   ⚠ 한 화면에서 여러 번 부르므로 한 번 센 것은 기억해 둔다 (드롭박스를 자꾸 두드리지 않게) */
+const selNumCache = {};
+/* 한 건 넣고 나면 기억해 둔 것을 버린다.
+   ⚠ 안 버리면 연달아 두 건 넣을 때 둘 다 같은 번호가 붙는다.
+     드롭박스는 같은 이름이면 «(1)» 을 붙여 딴 폴더를 만든다 — 그러면 짝이 어긋난다 */
+const selNumBump = () => { Object.keys(selNumCache).forEach((k) => delete selNumCache[k]); };
+
+async function selNumFor(root) {
+  if (selNumCache[root]) return selNumCache[root];
+  try {
+    const r = await sb.rpc('admin_dbx_ls_req', { p_path: root, p_cursor: null });
+    if (r.error || (r.data && r.data.error) || !r.data) return '';
+    const res = await dbxWait('admin_dbx_ls_res', { p_req: r.data.req });
+    if (res.error || res.missing) return '';
+    const n = selNextNum(res.entries);
+    selNumCache[root] = n;
+    return n;
+  } catch (_) { return ''; }
+}
+
 const selDayPath = (dateStr) => {
   const s = String(dateStr || '').slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
@@ -3854,7 +3899,12 @@ async function selShow(rbox, ctx, folder, got, items) {
   // 연도는 예식 연도가 아니라 셀렉한 시점이다. 해가 바뀌면 저절로 다음 해 폴더를 쓴다.
   const thisYear = new Date().getFullYear() + ' 자동셀렉';
   const roots = [ '/' + thisYear ].concat((selRoots || []).filter((p) => p !== '/' + thisYear));
-  const name = selDestName(ctx.date, ctx.folder, ctx.b && ctx.b.contractor_name);
+  /* 넣을 폴더 이름 앞에 번호를 붙인다 (대표 2026-09-02 «4자리로 하자 0001 이렇게»).
+     ⚠ 그 폴더 안을 실제로 세어 다음 번호를 정한다. 못 세면(드롭박스가 늦거나 막히면)
+       번호 없이 간다 — 번호 때문에 셀렉이 막히면 안 된다 */
+  let baseName = selDestName(ctx.date, ctx.folder, ctx.b && ctx.b.contractor_name);
+  const num = await selNumFor('/' + thisYear);
+  const name = num ? selWithNum(num, baseName) : baseName;
   const bytes = ups.reduce((s, it) => s + ((it.file && it.file.size) || 0), 0);
 
   rbox.innerHTML =
@@ -3957,6 +4007,7 @@ async function selShow(rbox, ctx, folder, got, items) {
         + '<a href="' + esc(selDbxUrl(dest)) + '" target="_blank" rel="noopener">' + esc(dest) + ' 열어보기 ↗</a>'
         + warn;
       toast('JPG ' + upDone + '장 올렸습니다');
+      selNumBump();
       selRecent();
       return;
     }
@@ -4002,6 +4053,7 @@ async function selShow(rbox, ctx, folder, got, items) {
       + warn;
     cp.textContent = '완료 ✓';
     toast((upDone ? upDone + '장 올리고 ' : '') + res.n + '장 복사했습니다');
+    selNumBump();
     selRecent();
   });
 }
