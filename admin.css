@@ -413,6 +413,25 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
   #listUnpaid .dl-item { flex-direction: column; align-items: stretch; gap: 10px; }
   #listUnpaid .dl-actions { justify-content: flex-end; }
 }
+
+/* 작가비 (대표 2026-09-03 «홈화면에 작가 입금 처리 목록을 따로 줘 체크해서 없애는걸로»)
+   미입금 카드와 같은 모양으로 둔다 — 대표가 이미 손에 익은 자리다.
+   ⚠ 미입금은 «손님이 우리에게», 여기는 «우리가 작가에게» 다. 색으로 갈라둔다 */
+#listPay .dl-item { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 10px; }
+#listPay .dl-main { flex: 1 1 auto; min-width: 0; }
+#listPay .dl-actions { margin-top: 0; flex: 0 0 auto; justify-content: flex-end; }
+.pay-role { display: inline-block; font-size: .7rem; font-weight: 600; margin: 0 3px;
+  padding: 1px 6px; border-radius: 999px; color: #6a5b45; background: var(--cream); border: 1px solid var(--line); }
+.pay-role.sub { color: #4a6a7a; background: #f1f5f7; border-color: #cddbe2; }
+/* 일주일 넘은 것 — 알림이 나가는 것과 같은 기준이라 눈에도 그렇게 보여야 한다 */
+.pay-late { color: #8c3a26; font-weight: 700; }
+.btn-sm.pay-ok { color: #3f7040; border-color: #cfe0cd; background: #f2f7f1; font-weight: 600; }
+.btn-sm.pay-ok:hover { border-color: #4a8a4c; }
+.btn-sm.pay-ok:disabled { opacity: .55; cursor: default; }
+@media (max-width: 640px) {
+  #listPay .dl-item { flex-direction: column; align-items: stretch; gap: 10px; }
+  #listPay .dl-actions { justify-content: flex-end; }
+}
 .chk-sentflag { font-size: .72rem; color: #2f7d4f; font-weight: 600; }
 .dl-na { font-size: .8rem; color: var(--ink-soft); }
 .dl-dlrow { margin-top: 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }

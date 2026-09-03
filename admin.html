@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="admin.css?v=72dbfe1298" />
+  <link rel="stylesheet" href="admin.css?v=073cea881b" />
 </head>
 <body>
 
@@ -97,6 +97,16 @@
             <div class="dash-card" id="card-unpaid">
               <div class="dash-card-head"><h3>💳 미입금</h3><span class="dash-count" id="dcUnpaid">0</span></div>
               <div class="dash-list" id="listUnpaid"></div>
+            </div>
+
+            <!-- 작가비 입금 (대표 2026-09-03 «홈화면에 작가 입금 처리 목록을 따로 줘
+                 그래서 체크해서 없애는걸로»).
+                 ⚠ 바로 위 「💳 미입금」은 **손님이 우리에게** 넣는 돈이다.
+                   여기는 **우리가 작가에게** 주는 돈이다. 반대 방향이라 글자로 갈라 적는다.
+                 ⚠ 줄 것이 없으면 카드를 통째로 감춘다 (renderPay 에서 hidden) -->
+            <div class="dash-card" id="card-pay" hidden>
+              <div class="dash-card-head"><h3>💸 작가비 <small>(예식 끝난 것)</small></h3><span class="dash-count" id="dcPay">0</span></div>
+              <div class="dash-list" id="listPay"></div>
             </div>
 
             <!-- 작가 미확인 — 셋으로 나눠 본다 (2026-08-28 둘 · 2026-08-31 스케줄 확인 추가).
@@ -469,6 +479,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=7dda8af6d6"></script>
+  <script src="admin.js?v=d40fdd672d"></script>
 </body>
 </html>

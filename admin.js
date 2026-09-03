@@ -50,6 +50,13 @@ let allUnconfirmed = []; // 작가 미확인 (admin_unconfirmed)
 let penaltyData = { sum: {}, rows: [] };  // 작가 감점 (admin_penalties)
 let alimtalkFails = []; // 알림톡 발송 실패 (admin_alimtalk_failures)
 let reminders = []; // 관리자 할 일 리마인더 (admin_reminders_list)
+/* 작가비를 아직 안 드린 것 (admin_pay_overdue)
+   ⚠ 목록과 알림의 범위가 **다르다.** 일부러 그렇다.
+     · 목록 : 예식이 지난 것 **전부**. 여기서 밀린 것을 다 처리하시게 한다.
+     · 알림 : 2026-09-03 부터. 그 앞은 «안 드린 것»이 아니라 **우리가 안 적어둔 것**이라,
+       알림까지 옆으로 열면 첫날부터 55건이 밀렸다고 울린다.
+       헛경보를 한 번 내면 다음 경보를 안 믿게 된다 */
+let payList = [];
 // 작가 톡을 오늘/이번 주만 안 보내기로 했나 — { today, T, S } (admin_send_hold_state)
 let sendHold = {};
 let pricingList = []; // 상품·옵션 카탈로그 (admin_pricing_list)
@@ -162,7 +169,7 @@ $('refreshBtn').addEventListener('click', () => loadBookings());
 /* ===== Load + render ===== */
 async function loadBookings() {
   // 모든 조회는 서로 독립적이라 한 번에 병렬로 — 순차 대기 제거(체감 속도 개선)
-  const [res, sres, ures, dres, fres, rres, pres, hres] = await Promise.all([
+  const [res, sres, ures, dres, fres, rres, pres, hres, yres] = await Promise.all([
     sb.rpc('admin_list_bookings'),    // 예약 목록
     sb.rpc('admin_survey_ids'),       // 설문 제출 여부
     sb.rpc('admin_unconfirmed'),      // 작가 미확인
@@ -171,6 +178,9 @@ async function loadBookings() {
     sb.rpc('admin_reminders_list'),   // 할 일 리마인더
     sb.rpc('admin_pricing_list'),     // 상품·옵션 카탈로그
     sb.rpc('admin_send_hold_state'),  // 작가 톡을 오늘 막아뒀나
+    // 작가비를 아직 안 드린 것. p_days 0 = 예식 지난 것 전부, p_since = 옛것까지
+    // (알림은 9/3 부터만 — 아래 loadPay 설명 참고)
+    sb.rpc('admin_pay_overdue', { p_days: 0, p_since: '2000-01-01' }),
     loadStaff(),                      // 작가 목록
   ]);
   const { data, error } = res;
@@ -190,8 +200,10 @@ async function loadBookings() {
   sendHold = (hres.data && typeof hres.data === 'object') ? hres.data : {};
   pricingList = Array.isArray(pres.data) ? pres.data : [];
   pricingMap = {}; pricingList.forEach((p) => { pricingMap[p.code] = p; });
+  payList = Array.isArray(yres.data) ? yres.data : [];
   render();
   renderDashboard();
+  renderPay();
   renderReminders();
   refreshEventBadge();
 }
@@ -2251,6 +2263,60 @@ function renderDayOv() {
   ov.querySelector('.day-ov-bg').addEventListener('click', closeDayOv);
   ov.querySelector('.day-ov-x').addEventListener('click', closeDayOv);
   ov.querySelectorAll('.day-ov-item').forEach((it) => it.addEventListener('click', () => openDetail(it.dataset.id)));
+}
+
+/* ===== 작가비 입금 (대표 2026-09-03)
+   처음에는 «캘린더 날짜 카드에 체크» 였는데 바로 바꾸셨다 —
+   «아니다 간단하게 홈화면에 작가 입금 처리 목록을 따로 줘 그래서 체크해서 없애는걸로».
+   그 편이 낫다. 캘린더 카드에 넣으면 그 날짜를 찾아 들어가야 하는데,
+   여기서는 줄 것이 한 곳에 모여 있고 누르면 사라진다.
+
+   ⚠ 「입금」이 두 가지라 헷갈린다. 이것은 **우리가 작가에게 주는 돈**이다.
+     손님이 우리에게 넣는 계약금·잔금과 다르다. 그래서 「작가비」로 적는다.
+   ⚠ 준 뒤에 배정을 바꾸시면 «받은 적 없는 사람»이 받은 것처럼 보인다.
+     그래서 준 사람을 같이 적어두고(pay_to), 어긋나면 말해준다. */
+function renderPay() {
+  const box = $('listPay');
+  if (!box) return;
+  if ($('dcPay')) $('dcPay').textContent = payList.length;
+  const card = $('card-pay');
+  if (card) card.hidden = payList.length === 0;   // 줄 것이 없으면 통째로 접는다
+  if (!payList.length) { box.innerHTML = ''; return; }
+
+  /* ⚠ 단추 이름에 dl-paid 를 쓰면 안 된다. 그 이름은 「#tab-dashboard .dl-paid」 로
+       손님 계약금·잔금 확인에 통째로 걸려 있어서 여기까지 같이 집힌다 —
+       작가비를 누르면 손님 입금이 확인 처리되고 알림톡(F)까지 나간다 */
+  const today = startOfToday();
+  box.innerHTML = payList.map((p) => {
+    const d = new Date(String(p.wedding_date).slice(0, 10) + 'T00:00:00');
+    const days = Math.round((today - d) / 86400000);
+    return `<div class="dl-item pay-item" data-id="${esc(p.booking_id)}">
+      <div class="dl-main">
+        <span class="dl-name">${esc(p.contractor_name || '-')}
+          <span class="pay-role${p.role === '서브' ? ' sub' : ''}">${esc(p.role)}</span>
+          ${esc(p.staff_name || '')}</span>
+        <span class="dl-meta">${esc(fmtDate(p.wedding_date))}${
+          days >= 7 ? ` · <b class="pay-late">${days}일 지남</b>` : ` · ${days}일 지남`}</span>
+      </div>
+      <div class="dl-actions">
+        <button class="btn-sm pay-ok" data-pay-id="${esc(p.booking_id)}"
+          data-pay-role="${esc(p.role)}">입금 확인</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  box.querySelectorAll('[data-pay-id]').forEach((btn) => btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    const { error } = await sb.rpc('admin_mark_pay',
+      { p_id: btn.dataset.payId, p_role: btn.dataset.payRole, p_on: true });
+    btn.disabled = false;
+    if (error) { toast(error.message); return; }
+    /* 누른 줄만 지운다. 통째로 다시 불러오면 화면이 깜빡이고, 여러 건 처리하실 때
+       방금 어디까지 했는지 놓치신다 */
+    payList = payList.filter((p) => !(p.booking_id === btn.dataset.payId && p.role === btn.dataset.payRole));
+    renderPay();
+    toast('작가비 입금 확인했습니다');
+  }));
 }
 
 function ensureCalMonth() { if (!calMonth) { const t = new Date(); calMonth = { y: t.getFullYear(), m: t.getMonth() }; } }
