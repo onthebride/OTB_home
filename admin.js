@@ -3538,7 +3538,11 @@ function selDestName(dateStr, folder, who) {
      세면 안 된다 — 대표가 드롭박스에서 손으로 지우거나 옮기신 것이 반영되지 않는다.
    ⚠ 이미 붙은 번호 중 제일 큰 것과 폴더 수 중 **큰 쪽** 다음을 쓴다.
      번호 붙은 게 하나도 없으면(지금이 그렇다) 폴더 수 다음부터 이어 붙는다. */
-const SEL_NUM_RE = /^(\d{4})\.\s/;
+/* ⚠ 대표가 이미 손으로 0001~0021 을 붙여두셨는데 형식이 두 가지였다.
+     19개는 «0003. 251129» (점 뒤 빈칸), 2개는 «0001.260221» (빈칸 없음).
+     둘 다 번호로 알아봐야 한다 — 안 그러면 그 둘에 번호가 또 붙는다.
+     새로 만드는 것은 빈칸 있는 쪽으로 통일한다 (많은 쪽) */
+const SEL_NUM_RE = /^(\d{4})\s*\.\s*/;
 const selNextNum = (entries) => {
   const dirs = (entries || []).filter((e) => e.dir);
   let top = 0;
@@ -3563,7 +3567,11 @@ const selNumBump = () => { Object.keys(selNumCache).forEach((k) => delete selNum
 async function selNumFor(root) {
   if (selNumCache[root]) return selNumCache[root];
   try {
-    const r = await sb.rpc('admin_dbx_ls_req', { p_path: root, p_cursor: null });
+    /* ⚠ admin_dbx_ls_req 는 **백업 폴더만** 읽는다. 자동셀렉 폴더는 거기서 막힌다 —
+         2026-09-02 에 번호를 붙이기 시작했는데 이것 때문에 한 번도 안 붙었다.
+       그 빗장은 일부러 걸어둔 것이라 넓히지 않고, 자동셀렉만 읽는 길을 따로 냈다
+       (admin_dbx_sel_ls_req · 「/YYYY 자동셀렉」 꼴만 받는다) */
+    const r = await sb.rpc('admin_dbx_sel_ls_req', { p_path: root });
     if (r.error || (r.data && r.data.error) || !r.data) return '';
     const res = await dbxWait('admin_dbx_ls_res', { p_req: r.data.req });
     if (res.error) return '';
@@ -3942,7 +3950,11 @@ async function selShow(rbox, ctx, folder, got, items) {
           + (ups.length ? '<b>신부 JPG ' + ups.length + '장</b>' + (bytes ? ' (' + selMB(bytes) + ')' : '') : '')
           + (ups.length && hit.length ? ' 과 ' : '')
           + (hit.length ? '<b>RAW ' + hit.length + '장</b>' : '')
-          + ' 을 넣습니다.</p>'
+          + ' 을 넣습니다.'
+          /* ⚠ 번호를 못 붙였으면 **말해준다.** 2026-09-02~03 에 조용히 안 붙고 있었는데
+               아무 표시가 없어 대표가 물어보실 때까지 몰랐다. 조용히 넘어가면 안 된다 */
+          + (num ? '' : '<br /><b class="sel-warn">번호를 붙이지 못했습니다</b> — 드롭박스를 못 읽었습니다. 폴더 이름 앞에 손으로 붙여주세요.')
+          + '</p>'
           // 이름은 왔는데 알맹이가 안 온 것 — 그대로 두면 «올렸습니다» 라고 하면서
           // 조용히 그 수만큼 모자라게 들어간다 (대표 신고 2026-08-24: RAW 40 · JPG 38)
           + (ups.length && noBody.length
