@@ -420,7 +420,9 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 #listPay .dl-item { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 10px; }
 #listPay .dl-main { flex: 1 1 auto; min-width: 0; }
 #listPay .dl-actions { margin-top: 0; flex: 0 0 auto; justify-content: flex-end; }
-.pay-role { display: inline-block; font-size: .7rem; font-weight: 600; margin: 0 3px;
+/* 「메인 황지성」— 딱지가 이름 앞에 온다 (대표 2026-09-03 «메인 누구누구»).
+   앞에 붙으므로 왼쪽 여백은 없앤다 */
+.pay-role { display: inline-block; font-size: .7rem; font-weight: 600; margin: 0 3px 0 0;
   padding: 1px 6px; border-radius: 999px; color: #6a5b45; background: var(--cream); border: 1px solid var(--line); }
 .pay-role.sub { color: #4a6a7a; background: #f1f5f7; border-color: #cddbe2; }
 /* 일주일 넘은 것 — 알림이 나가는 것과 같은 기준이라 눈에도 그렇게 보여야 한다 */

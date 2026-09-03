@@ -54,33 +54,29 @@ end$$;
 revoke all on function public.admin_mark_pay(uuid, text, boolean) from public, anon;
 grant execute on function public.admin_mark_pay(uuid, text, boolean) to authenticated;
 
-/* ===== 일주일 넘게 안 준 것 =====
-   대표 «일주일 넘게 입금체크가 안되면 나한테 알려줘».
-   ⚠ 「예식이 끝난 지 일주일」이다. 예식 전에는 줄 일이 없다.
-   ⚠ 배정된 사람만 센다. 미배정은 줄 사람이 없으니 여기 낄 것이 아니다.
-   ⚠ 취소된 예식은 뺀다. */
 drop function if exists private.pay_overdue(int);
 drop function if exists private.pay_overdue(int, date);
 create or replace function private.pay_overdue(p_days int default 7, p_since date default null)
-returns table (booking_id uuid, contractor_name text, wedding_date date,
-               role text, staff_id uuid, staff_name text, days_over int)
+returns table (booking_id uuid, contractor_name text, bride_name text, groom_name text,
+               wedding_date date, role text, staff_id uuid, staff_name text, days_over int)
 language sql stable security definer set search_path = public, pg_temp as $$
   /* ⚠ 세기 시작한 날. 그 앞의 예식은 «안 줬다» 가 아니라 **우리가 안 적어둔 것**이다.
        이 줄이 없으면 첫날부터 55건이 밀린 것으로 잡혀 헛경보가 나간다.
        (자동 멈춤 때 «접속기록은 오늘부터 다시 재» 와 같은 까닭이다)
      ⚠ 체크는 옛 예약에도 할 수 있다. 여기서 막는 것은 **알림**뿐이다. */
   with x as (
-    select b.id, b.contractor_name, b.wedding_date,
+    select b.id, b.contractor_name, b.bride_name, b.groom_name, b.wedding_date,
            '메인'::text as role, b.assignee_id as sid, b.main_pay_at as pay_at
       from public.bookings b
      where b.status <> '취소' and b.assignee_id is not null
     union all
-    select b.id, b.contractor_name, b.wedding_date,
+    select b.id, b.contractor_name, b.bride_name, b.groom_name, b.wedding_date,
            '서브', b.sub_assignee_id, b.sub_pay_at
       from public.bookings b
      where b.status <> '취소' and b.sub_assignee_id is not null
   )
-  select x.id, x.contractor_name, x.wedding_date, x.role, x.sid, st.name,
+  select x.id, x.contractor_name, x.bride_name, x.groom_name, x.wedding_date,
+         x.role, x.sid, st.name,
          ((now() at time zone 'Asia/Seoul')::date - x.wedding_date - p_days)::int
     from x join public.staff st on st.id = x.sid
    where x.pay_at is null
@@ -115,10 +111,12 @@ create table if not exists private.pay_alert_sent (
   primary key (booking_id, role)
 );
 
+/* 알림 글도 같이 고친다 — 화면과 같은 말을 써야 헷갈리지 않는다.
+   ⚠ 위에서 pay_overdue 를 drop 했으므로 이 함수도 다시 만든다 */
 create or replace function private.pay_overdue_notify()
 returns jsonb language plpgsql security definer
 set search_path to 'private', 'public', 'extensions', 'pg_temp' as $$
-declare n int := 0; tot int; r record; lines text := '';
+declare n int := 0; tot int; r record; lines text := ''; who text;
 begin
   select count(*) into tot from private.pay_overdue(7, null);
 
@@ -128,8 +126,12 @@ begin
                         where s.booking_id = t.booking_id and s.role = t.role)
      order by t.wedding_date limit 5
   loop
-    lines := lines || E'\n' || to_char(r.wedding_date, 'FMMM/FMDD') || ' '
-          || coalesce(r.contractor_name, '') || ' · ' || r.role || ' ' || coalesce(r.staff_name, '');
+    -- 신부·신랑을 적고, 둘 다 비었으면 계약자로 (옛 예약이 그렇다)
+    who := coalesce(nullif(concat_ws(' / ', nullif(trim(r.bride_name), ''),
+                                     nullif(trim(r.groom_name), '')), ''),
+                    coalesce(r.contractor_name, ''));
+    lines := lines || E'\n' || r.role || ' ' || coalesce(r.staff_name, '')
+          || ' · ' || who || ' · ' || to_char(r.wedding_date, 'FMMM/FMDD');
     insert into private.pay_alert_sent(booking_id, role) values (r.booking_id, r.role)
       on conflict (booking_id, role) do nothing;
     n := n + 1;
@@ -141,6 +143,7 @@ begin
                       where t.booking_id = s.booking_id and t.role = s.role);
 
   if n > 0 then
+    -- ⚠ 대표에게만. staff_id 를 넘기면 그 작가에게 간다 — 절대 넘기지 않는다
     perform private.otb_push('💸 작가비 입금 확인이 밀렸습니다',
       '예식 끝난 지 일주일이 넘었는데 아직 체크가 안 된 것이 ' || tot || '건입니다.' || lines,
       '/admin');

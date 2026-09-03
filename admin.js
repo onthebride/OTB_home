@@ -2290,13 +2290,17 @@ function renderPay() {
   box.innerHTML = payList.map((p) => {
     const d = new Date(String(p.wedding_date).slice(0, 10) + 'T00:00:00');
     const days = Math.round((today - d) / 86400000);
+    /* 대표 2026-09-03 «카드 이름만 바꾸자 / 메인 누구누구 / 신부 이름 / 신랑 이름 / 예식날짜».
+       윗줄은 **누구에게 줄 돈인지**, 아랫줄은 **어느 예식인지**.
+       ⚠ 옛 예약은 신부·신랑이 비어 있을 수 있다. 그때는 계약자로 (날짜 카드와 같은 규칙) */
+    const who = [p.bride_name, p.groom_name].filter((x) => x && String(x).trim()).join(' / ')
+      || (p.contractor_name || '-');
     return `<div class="dl-item pay-item" data-id="${esc(p.booking_id)}">
       <div class="dl-main">
-        <span class="dl-name">${esc(p.contractor_name || '-')}
-          <span class="pay-role${p.role === '서브' ? ' sub' : ''}">${esc(p.role)}</span>
+        <span class="dl-name"><span class="pay-role${p.role === '서브' ? ' sub' : ''}">${esc(p.role)}</span>
           ${esc(p.staff_name || '')}</span>
-        <span class="dl-meta">${esc(fmtDate(p.wedding_date))}${
-          days >= 7 ? ` · <b class="pay-late">${days}일 지남</b>` : ` · ${days}일 지남`}</span>
+        <span class="dl-meta">${esc(who)} / <span class="${days >= 7 ? 'pay-late' : ''}"
+          >${esc(fmtDate(p.wedding_date))}</span></span>
       </div>
       <div class="dl-actions">
         <button class="btn-sm pay-ok" data-pay-id="${esc(p.booking_id)}"
