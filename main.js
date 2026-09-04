@@ -10,6 +10,37 @@ document.querySelectorAll('.story p').forEach((p) => {
   p.innerHTML = p.innerHTML.replace(/\.\s+/g, '.<br>');
 });
 
+/* ===== 화면을 덮는 창을 띄우는 동안 뒤가 안 움직이게 =====
+   대표 2026-09-04 «갤러리 사진 보려고 누르면 일단 뒷배경이 움직여».
+   ⚠ `body { overflow: hidden }` 만으로는 **폰에서 안 잠긴다.**
+     아이폰 사파리는 그대로 밀리고, 어떤 브라우저는 맨 위로 튀어 오른다.
+     그래서 있던 자리를 적어두고 body 를 통째로 고정한 뒤, 닫을 때 그 자리로 돌려놓는다.
+   ⚠ `html { scroll-behavior: smooth }` 가 걸려 있어 그냥 되돌리면 스르륵 움직이는 게 보인다.
+     되돌리는 동안만 끈다.
+   ⚠ 창이 겹칠 수 있으니 몇 겹인지 센다 — 하나 닫았다고 풀리면 뒤엣것이 움직인다. */
+let scrollLockN = 0;
+let scrollLockY = 0;
+function lockScroll() {
+  if (scrollLockN++ > 0) return;
+  scrollLockY = window.scrollY || document.documentElement.scrollTop || 0;
+  const b = document.body.style;
+  b.position = 'fixed';
+  b.top = -scrollLockY + 'px';
+  b.left = '0';
+  b.right = '0';
+  b.width = '100%';
+}
+function unlockScroll() {
+  if (scrollLockN === 0 || --scrollLockN > 0) return;
+  const b = document.body.style;
+  b.position = ''; b.top = ''; b.left = ''; b.right = ''; b.width = '';
+  const h = document.documentElement.style;
+  const had = h.scrollBehavior;
+  h.scrollBehavior = 'auto';          // 되돌리는 것은 «움직임» 이 아니라 «제자리»
+  window.scrollTo(0, scrollLockY);
+  h.scrollBehavior = had;
+}
+
 // Header background on scroll
 const header = document.querySelector('.site-header');
 const toTop = document.getElementById('toTop');
@@ -87,12 +118,12 @@ if (rulesModal) {
 
   const open = () => {
     rulesModal.hidden = false;
-    document.body.style.overflow = 'hidden';
+    lockScroll();
     loadRules();
   };
   const close = () => {
     rulesModal.hidden = true;
-    document.body.style.overflow = '';
+    unlockScroll();
   };
   if (openBtn) openBtn.addEventListener('click', open);
   closeBtn.addEventListener('click', close);
@@ -764,8 +795,8 @@ function whenNear(el, margin) {
     const p = curList[curIdx];
     lbVenue.textContent = [p.venue, p.staff_name ? p.staff_name + ' 작가' : ''].filter(Boolean).join(' · ');
   };
-  const open = (i) => { curList = visible(); show(i); lb.hidden = false; document.body.style.overflow = 'hidden'; };
-  const close = () => { lb.hidden = true; document.body.style.overflow = ''; };
+  const open = (i) => { curList = visible(); show(i); lb.hidden = false; lockScroll(); };
+  const close = () => { lb.hidden = true; unlockScroll(); };
   grid.addEventListener('click', (e) => {
     if (Date.now() - swipeGuard < 350) return; // 스와이프 직후 클릭 무시
     const t = e.target.closest('.gthumb');
