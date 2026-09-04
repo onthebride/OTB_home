@@ -161,7 +161,6 @@ function siteHeader() {
       <a href="/" class="brand"><img src="${SITE.logo}" alt="${attr(SITE.brand)}" class="brand-logo brand-logo-dark" /></a>
       <button class="nav-toggle" aria-label="메뉴 열기"><span></span><span></span><span></span></button>
       <ul class="nav-menu">
-        <li><a href="/#about">소개</a></li>
         <li><a href="/#gallery">갤러리</a></li>
         <li><a href="/reviews">후기</a></li>
         <li><a href="/#pricing">가격</a></li>

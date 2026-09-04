@@ -41,7 +41,7 @@
   <link rel="preconnect" href="https://cthpxcgesorvtgjdgrtu.supabase.co" crossorigin />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Noto+Serif+KR:wght@300;400;500;600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=cb6b35eb78" />
+  <link rel="stylesheet" href="styles.css?v=63126d9b0d" />
 </head>
 <body>
 
@@ -56,7 +56,6 @@
         <span></span><span></span><span></span>
       </button>
       <ul class="nav-menu">
-        <li><a href="#about">소개</a></li>
         <li><a href="#gallery">갤러리</a></li>
         <li><a href="/reviews">후기</a></li>
         <li><a href="#pricing">가격</a></li>
@@ -99,6 +98,16 @@
       <p>그래서 업체를 선택하실 때, 이것 하나만큼은 꼭 확인해 보셨으면 합니다.<br />갤러리에 걸린 저 사진을 실제로 누가 찍는지.<br />대표가 직접 촬영하는지, 다른 작가가 배정되는지,<br />그렇다면 내가 배정받을 작가의 실제 작업을 미리 확인할 수 있는지.</p>
 
       <p>저희와 계약하지 않으셔도 꼭 확인해야 할 이야기입니다.<br />짧지 않은 글입니다.</p>
+
+      <!-- 「짧지 않은 글입니다」에서 한 번 접는다 (대표 2026-09-04
+           «전문 이야기도 짧지 않을글 입니다까지 하고 접자 계속보기 누르면 다 보이는걸로»).
+           ⚠ hidden 으로 감추지 않고 CSS 로 접는다 — 글이 그대로 남아 있어야
+             검색에 걸린다. 이 이야기는 블로그에도 같은 글이 있다.
+           ⚠ 화살표는 «지금 상태»가 아니라 «누르면 벌어질 일»을 가리킨다.
+             접혀 있으면 ∨(누르면 펴진다) -->
+      <button type="button" class="story-toggle" id="storyToggle"
+        aria-expanded="false" aria-controls="storyMore">계속 보기 <i>∨</i></button>
+      <div class="story-more" id="storyMore">
 
       <p>2010년 본식스냅 업체에 입사해 3년간 직원으로 일했습니다.</p>
 
@@ -267,6 +276,7 @@
       <p class="story-close">저희를 찾아주신 분들 중에는 견적 때문에 오신 분도, 사진이 마음에 들어 오신 분도 계실 겁니다.<br />어느 쪽이든 온더브라이드와 인연을 맺어주신 마음은 똑같이 감사하게 생각하고 있습니다.<br /><br />저희는 단순히 싸게 드리는 것이 아닙니다.<br />지킬 수 없는 약속과 불필요한 비용을 가격에서 뺀 것입니다.<br /><br />검수를 통과한 경력 작가라는 기준,<br />예식의 흐름과 주요 순간을 놓치지 않기 위한 안정적인 촬영,<br />대표가 직접 하는 후반작업,<br />그리고 일한 만큼 공정하게 나누는 원칙.<br /><br />저희가 지킬 수 있는 것만 가격에 담았습니다.<br />반대로 일반 작가 지정과 특정한 결과에 대한 보장은 기본 가격에 넣지 않았습니다.<br />그래서 이 가격이 나옵니다.<br /><br />한 번뿐인 두 분의 결혼식을 가볍게 대하지 않겠습니다.<br />두 분이 가장 축복받아야 할 하루에 저희도 조금이나마 도움이 되기를 바랄 뿐입니다.<br /><br />궁금하신 점은 <a href="#contact">문의하기</a>를 통해 남겨주시면 답변드리겠습니다.</p>
 
       <p class="story-sign">긴 글 읽어주셔서 감사합니다.<br /><span>온더브라이드.</span></p>
+      </div>
     </div>
   </section>
 
@@ -472,7 +482,7 @@
 
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="config.js"></script>
-  <script defer src="main.js?v=6c8fa305b1"></script>
+  <script defer src="main.js?v=1af7072e88"></script>
   <script defer src="/analytics.js?v=abe79d1dba"></script>
 </body>
 </html>

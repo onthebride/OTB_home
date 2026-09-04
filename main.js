@@ -47,6 +47,23 @@ function unlockScroll() {
   h.scrollBehavior = had;
 }
 
+/* 이야기 「계속 보기」 (대표 2026-09-04
+     «전문 이야기도 짧지 않을글 입니다까지 하고 접자 계속보기 누르면 다 보이는걸로»)
+   ⚠ main.js 는 /booking 과 같이 쓴다. 거기엔 이 단추가 없으므로 반드시 확인하고 건다.
+   ⚠ 화살표는 «누르면 벌어질 일»을 가리킨다 — 접혀 있으면 ∨, 펴져 있으면 ∧.
+   ⚠ 한 번 펴면 다시 접을 수 있어야 한다. 다 읽고 아래로 못 내려가면 갇힌 느낌이다.
+     접을 때는 이야기 첫머리로 데려다 놓는다 — 안 그러면 갑자기 저 아래에 서 있게 된다 */
+const storyToggle = document.getElementById('storyToggle');
+const storyMore = document.getElementById('storyMore');
+if (storyToggle && storyMore) {
+  storyToggle.addEventListener('click', () => {
+    const open = storyMore.classList.toggle('open');
+    storyToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    storyToggle.innerHTML = open ? '접기 <i>∧</i>' : '계속 보기 <i>∨</i>';
+    if (!open) storyToggle.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+}
+
 // Header background on scroll
 const header = document.querySelector('.site-header');
 const toTop = document.getElementById('toTop');
