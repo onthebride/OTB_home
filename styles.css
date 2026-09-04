@@ -281,6 +281,22 @@ a { color: inherit; text-decoration: none; }
 .lightbox { position: fixed; inset: 0; z-index: 120; display: flex; align-items: center; justify-content: center; }
 .lb-backdrop { position: absolute; inset: 0; background: rgba(20,16,14,.92); }
 .lb-img { position: relative; max-width: 90vw; max-height: 86vh; object-fit: contain; border-radius: 4px; box-shadow: 0 20px 60px -20px rgba(0,0,0,.7); }
+/* 사진이 넘어갈 때 살짝 움직인다 (대표 2026-09-04 «약간 넘어가는 모션 줄 수 없나?»).
+   민 쪽 반대에서 들어온다 — 왼쪽으로 밀면 다음 장이 오른쪽에서. 손과 맞아야 한다.
+   ⚠ 열 때는 방향이 없다(--lb-from: 0). 옆에서 튀어나오면 어수선하다 */
+.lb-img.lb-in { animation: lbIn .26s cubic-bezier(.22,.61,.36,1) both; }
+@keyframes lbIn {
+  from { opacity: 0; transform: translateX(var(--lb-from, 0px)) scale(.985); }
+  to   { opacity: 1; transform: none; }
+}
+/* 움직임을 줄여달라고 해둔 분에게는 움직이지 않는다 */
+@media (prefers-reduced-motion: reduce) {
+  .lb-img.lb-in { animation: none; }
+}
+/* 사진을 보는 동안 아래로 당겨도 새로고침이 되지 않게
+   (대표 2026-09-04 «당겨서 새로고침되는것도 막아줘»).
+   ⚠ 손가락 동작 자체를 막지는 않는다 — 두 손가락으로 키워 보는 것은 그대로 둔다 */
+html.no-pull, html.no-pull body { overscroll-behavior: none; }
 .lb-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,.12); color: #fff; border: none; width: 52px; height: 52px; border-radius: 50%; font-size: 2rem; line-height: 1; cursor: pointer; transition: background .2s; z-index: 2; }
 .lb-nav:hover { background: rgba(255,255,255,.25); }
 .lb-prev { left: 24px; }

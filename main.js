@@ -29,9 +29,15 @@ function lockScroll() {
   b.left = '0';
   b.right = '0';
   b.width = '100%';
+  /* 폰에서 아래로 당기면 브라우저가 새로고침을 한다 — 사진 보다가 화면이 날아간다
+     (대표 2026-09-04 «당겨서 새로고침되는것도 막아줘»).
+     ⚠ 손가락 동작 자체(touch-action)를 막지는 않는다. 그러면 사진을 두 손가락으로
+       키워 보는 것까지 막힌다. 홈은 확대가 열려 있다 */
+  document.documentElement.classList.add('no-pull');
 }
 function unlockScroll() {
   if (scrollLockN === 0 || --scrollLockN > 0) return;
+  document.documentElement.classList.remove('no-pull');
   const b = document.body.style;
   b.position = ''; b.top = ''; b.left = ''; b.right = ''; b.width = '';
   const h = document.documentElement.style;
@@ -787,15 +793,34 @@ function whenNear(el, margin) {
   const lbVenue = document.getElementById('lbVenue');
   let curList = [];
   let curIdx = 0;
-  const show = (i) => {
+  /* 넘어갈 때 살짝 움직여 준다 (대표 2026-09-04 «이거 약간 넘어가는 모션 줄 수 없나?»).
+     ⚠ 확대보기는 원본(고화질)이라 곧바로 바꾸면 잠깐 빈 자리가 보인다.
+       **다 받아온 뒤에** 바꾼다 — 그 전까지는 보던 사진이 그대로 있다.
+     ⚠ 빨리 여러 번 넘기면 늦게 온 것이 나중에 덮어쓴다. 번호를 매겨 마지막 것만 그린다.
+     ⚠ 방향을 준다. 왼쪽으로 밀었으면 다음 장이 오른쪽에서 들어와야 손과 맞는다. */
+  let showSeq = 0;
+  const show = (i, dir) => {
     curIdx = (i + curList.length) % curList.length;
-    lbImg.src = curList[curIdx].image_url; // 확대보기는 원본(고화질)
-    // 누가 찍었는지 같이 보여준다 (대표 요청 2026-08-25 — 작가를 보고 고르시라고).
-    // 아직 작가를 안 찍은 사진은 예식장만 나온다
     const p = curList[curIdx];
-    lbVenue.textContent = [p.venue, p.staff_name ? p.staff_name + ' 작가' : ''].filter(Boolean).join(' · ');
+    const mine = ++showSeq;
+    const paint = () => {
+      if (mine !== showSeq) return;              // 그 사이 또 넘겼다
+      lbImg.classList.remove('lb-in');
+      lbImg.style.setProperty('--lb-from', (dir > 0 ? 28 : dir < 0 ? -28 : 0) + 'px');
+      lbImg.src = p.image_url;
+      void lbImg.offsetWidth;                    // 애니메이션을 다시 시작시킨다
+      lbImg.classList.add('lb-in');
+      // 누가 찍었는지 같이 보여준다 (대표 요청 2026-08-25 — 작가를 보고 고르시라고).
+      // 아직 작가를 안 찍은 사진은 예식장만 나온다
+      lbVenue.textContent = [p.venue, p.staff_name ? p.staff_name + ' 작가' : ''].filter(Boolean).join(' · ');
+    };
+    const pre = new Image();
+    pre.src = p.image_url;
+    if (pre.decode) pre.decode().then(paint, paint);
+    else if (pre.complete) paint();
+    else { pre.onload = paint; pre.onerror = paint; }
   };
-  const open = (i) => { curList = visible(); show(i); lb.hidden = false; lockScroll(); };
+  const open = (i) => { curList = visible(); show(i, 0); lb.hidden = false; lockScroll(); };
   const close = () => { lb.hidden = true; unlockScroll(); };
   grid.addEventListener('click', (e) => {
     if (Date.now() - swipeGuard < 350) return; // 스와이프 직후 클릭 무시
@@ -804,8 +829,8 @@ function whenNear(el, margin) {
   });
   document.getElementById('lbClose').addEventListener('click', close);
   document.getElementById('lbBackdrop').addEventListener('click', close);
-  document.getElementById('lbPrev').addEventListener('click', () => show(curIdx - 1));
-  document.getElementById('lbNext').addEventListener('click', () => show(curIdx + 1));
+  document.getElementById('lbPrev').addEventListener('click', () => show(curIdx - 1, -1));
+  document.getElementById('lbNext').addEventListener('click', () => show(curIdx + 1, 1));
   // 모바일: 라이트박스 좌우 스와이프로 이전/다음 사진
   let lbTx = 0, lbTy = 0;
   lb.addEventListener('touchstart', (e) => { lbTx = e.changedTouches[0].clientX; lbTy = e.changedTouches[0].clientY; }, { passive: true });
@@ -813,13 +838,13 @@ function whenNear(el, margin) {
     const dx = e.changedTouches[0].clientX - lbTx;
     const dy = e.changedTouches[0].clientY - lbTy;
     if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-    if (dx < 0) show(curIdx + 1); else show(curIdx - 1);
+    if (dx < 0) show(curIdx + 1, 1); else show(curIdx - 1, -1);
   }, { passive: true });
   document.addEventListener('keydown', (e) => {
     if (lb.hidden) return;
     if (e.key === 'Escape') close();
-    else if (e.key === 'ArrowLeft') show(curIdx - 1);
-    else if (e.key === 'ArrowRight') show(curIdx + 1);
+    else if (e.key === 'ArrowLeft') show(curIdx - 1, -1);
+    else if (e.key === 'ArrowRight') show(curIdx + 1, 1);
   });
 })();
 
