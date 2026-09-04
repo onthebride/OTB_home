@@ -4358,6 +4358,17 @@ function clarityHtml(d) {
       + '<p class="dash-empty">아직 받아온 기록이 없습니다. 매일 아침 9시 30분에 하루치가 쌓입니다.</p></div>';
   }
   const md = String(L.the_date).slice(5).replace('-', '.');
+  /* 며칠째 안 들어왔는지 (2026-09-04 대표 «방문자 행동이 업데이트가 안되는거 같아»).
+     8/18 이후 17일을 조용히 굶었는데 아무 데서도 표가 안 났다 — 대표가 날짜를 보고 아셨다.
+     이제는 화면이 먼저 말한다. 0 이면 어제 것까지 들어와 있다는 뜻이라 아무 말도 안 한다.
+     ⚠ 하루치는 다음 날 아침에 들어온다. 그래서 1 부터가 «밀린 것» 이다 */
+  const stale = Number(d.stale_days) || 0;
+  const warn = stale >= 1
+    ? '<p class="cl-stale">⚠ ' + stale + '일치가 안 들어왔습니다. '
+      + '매일 아침 9시 30분에 받아 9시 40분에 쌓습니다.'
+      + (d.last_error ? '<br /><small>마지막 오류 — ' + esc(d.last_error) + '</small>' : '')
+      + '</p>'
+    : '';
   const num = (v) => (v == null ? '-' : stNum(v));
   const card = (k, v, sub) => '<div class="st-card"><span class="st-k">' + k + '</span><strong>' + v
     + '</strong><span class="st-sub">' + (sub || '') + '</span></div>';
@@ -4378,6 +4389,7 @@ function clarityHtml(d) {
   }).join('');
   return '<div class="dash-card st-chart-card">'
     + '<div class="dash-card-head"><h3>🖱 방문자 행동 <small>(클래리티 · ' + esc(md) + ' 하루치)</small></h3></div>'
+    + warn
     + '<div class="st-cards">'
       + card('세션', num(L.sessions), (L.bots ? '봇 ' + num(L.bots) + ' 제외 전' : ''))
       + card('순 방문자', num(L.users), '')

@@ -1367,6 +1367,11 @@ td .muted { color: var(--ink-soft); }
 .dc-row.subonly .dc-name { font-weight: 500; }
 
 /* 클래리티 — 손님이 어디서 막혔나 */
+/* 며칠째 안 들어왔다 (2026-09-04). 17일을 조용히 굶은 적이 있어 눈에 띄게 둔다 */
+.cl-stale { margin: 12px 0 0; padding: 9px 12px; border-radius: 8px;
+  background: #fdf3f1; border: 1px solid #d9b3aa; color: #8c3a26;
+  font-size: .82rem; line-height: 1.6; }
+.cl-stale small { color: #a06a58; word-break: break-all; }
 .cl-sigs { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; margin-top: 14px; }
 .cl-sig { border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; background: #fff;
   display: grid; grid-template-columns: auto auto 1fr; align-items: baseline; gap: 6px; }
