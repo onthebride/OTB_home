@@ -226,14 +226,18 @@ a { color: inherit; text-decoration: none; }
      높이만 0 으로 접는다. */
 .story-more { max-height: 0; overflow: hidden; }
 .story-more.open { max-height: none; }
-/* 폰에서 손가락으로 누르기 좋게 큼직하게 (대표는 거의 폰으로 보신다) */
+/* 알약이 아니라 글자에 밑줄만 (대표 2026-09-04 «알약말고 그냥 아래 선 있게 심플하게»).
+   ⚠ 아래 여백을 넉넉히 둔다 — 펴면 바로 밑에 본문이 이어져서 붙어 보인다
+     (대표 «접기 버튼이랑 본문이랑 너무 붙어있어»).
+   ⚠ 위아래 padding 은 폰에서 손가락이 닿을 자리다. 밑줄이 글자에서 뜨지 않게
+     아래쪽만 짧게 준다 */
 .story-toggle {
-  display: block; margin: 30px auto 0; padding: 13px 30px;
-  font-family: var(--kserif); font-size: .98rem; color: var(--ink);
-  background: none; border: 1px solid var(--line); border-radius: 999px;
-  cursor: pointer; transition: border-color .2s, background .2s;
+  display: block; margin: 34px auto 44px; padding: 10px 6px 6px;
+  font-family: var(--kserif); font-size: .95rem; color: var(--ink-soft);
+  background: none; border: none; border-bottom: 1px solid var(--line);
+  cursor: pointer; transition: color .2s, border-color .2s;
 }
-.story-toggle:hover { border-color: var(--gold); background: rgba(255,255,255,.5); }
+.story-toggle:hover { color: var(--ink); border-bottom-color: var(--gold); }
 /* 화살표는 «지금 상태»가 아니라 «누르면 벌어질 일»을 가리킨다 */
 .story-toggle i { font-style: normal; margin-left: 6px; color: var(--gold-deep); }
 
