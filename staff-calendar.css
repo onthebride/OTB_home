@@ -619,6 +619,10 @@
 .sc-nx-p { font-size: .84rem; font-weight: 400; color: var(--ink); white-space: nowrap; }
 .sc-nx-p i { font-style: normal; margin-right: 6px; font-size: .74rem; color: var(--ink-soft); }
 .sc-nx-p .sc-tel { margin-left: 7px; }
+/* 같이 가는 작가 (대표 2026-09-05). 신부·신랑과 한 줄에 서므로 갈라 보여야 한다 —
+   손님 번호와 동료 번호를 헷갈려 걸면 안 된다 */
+.sc-nx-p.peer i { color: var(--gold-deep); font-weight: 600; }
+.sc-nx-p.peer { color: var(--ink-soft); }
 
 /* 길찾기 — 받침선 없이 글자만 (대표 «길찾기 뱃지는 아래받침선은 없애줘») */
 .sc-map { display: inline-block; margin-left: 8px; padding: 0; font-size: .76rem; font-weight: 400;

@@ -252,6 +252,14 @@ function shootRow(x, extra) {
   const who = [
     x.groom_name ? `<span class="sc-nx-p"><i>신랑</i>${esc(x.groom_name)}${tel(x.groom_phone)}</span>` : '',
     x.bride_name ? `<span class="sc-nx-p"><i>신부</i>${esc(x.bride_name)}${tel(x.bride_phone)}</span>` : '',
+    /* 같이 가는 작가 (대표 2026-09-05
+       «2인촬영인경우 작가들캘린더에서 서브인경우 메인연락처 메인은 서브연락처 기재해줘»).
+       ⚠ 서버가 «상대»로 준다 — 내가 메인이면 서브, 내가 서브면 메인.
+         2인 촬영이고 둘 다 배정됐을 때만 칸이 온다.
+       ⚠ 신부·신랑과 한 줄에 서므로 색을 달리한다. 손님 연락처와 헷갈리면 큰일이다 */
+    x.peer_name
+      ? `<span class="sc-nx-p peer"><i>${esc(x.peer_role || '')}</i>${esc(x.peer_name)}${tel(x.peer_phone)}</span>`
+      : '',
   ].filter(Boolean).join('');
   return `
   <div class="sc-nx-row">
