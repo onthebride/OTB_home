@@ -4416,7 +4416,12 @@ async function renderClarity() {
   box.innerHTML = clarityHtml(data);
 }
 
-const stRange = document.querySelector('.st-range');
+/* ⚠⚠ 「.st-range」 만으로 찾으면 안 된다. 화면에 그 이름이 둘이다 —
+     발주 탭의 결제 거르개(.st-range.ab-paid)가 **먼저** 나와서 그쪽이 집혔다.
+     그래서 7일·30일·90일이 2026-08-24(발주 탭이 생긴 날)부터 먹통이었다.
+     대표 2026-09-05 «7일 30일 90일 안바뀌는거같은데?» — 열이틀 동안 아무도 몰랐다.
+     제 상자 안에서만 찾는다 (CLAUDE.md 「자잘하지만 매번 걸리는 것」). */
+const stRange = document.querySelector('#tab-stats .st-range');
 if (stRange) {
   stRange.addEventListener('click', (e) => {
     const b = e.target.closest('button[data-days]');
