@@ -38,16 +38,21 @@ begin
     'skip_today', coalesce(p_skip_today, false),
     -- 마지막으로 센 날. 화면이 「9/4까지」 라고 적을 수 있게
     'last_day', last_day,
-    /* ⚠ 오늘·이번 주는 창과 상관없이 «지금» 을 보여주는 자리다.
-         오늘을 빼고 세더라도 이 둘은 진짜 오늘을 봐야 한다 — 따로 센다 */
+    /* 오늘은 창과 상관없이 «지금» 을 보여주는 자리다 — 늘 진짜 오늘을 센다.
+       ⚠ 다만 오늘을 빼고 보는 중이면 화면이 이 칸을 아예 안 그린다.
+         대표 2026-09-05 «오늘 안빠졌는뎅» — 30일을 골랐는데 「오늘 34」 가 서 있으면
+         뺐다는 말과 어긋나 보인다. 숫자는 주되, 쓸지 말지는 화면이 정한다. */
     'today',  (select jsonb_build_object('visits', count(distinct coalesce(sid, 'row-' || id::text)),
                                          'views', count(*))
                  from public.pageviews
                 where (ts at time zone 'Asia/Seoul')::date = kst_today),
+    /* 「7일」 칸도 창을 따른다 — 오늘을 빼고 보는 중이면 어제까지 이레다.
+       한 화면에 반쪽짜리 하루가 섞인 숫자와 안 섞인 숫자가 같이 있으면 안 된다 */
     'week',   (select jsonb_build_object('visits', count(distinct coalesce(sid, 'row-' || id::text)),
                                          'views', count(*))
                  from public.pageviews
-                where (ts at time zone 'Asia/Seoul')::date > kst_today - 7),
+                where (ts at time zone 'Asia/Seoul')::date >  last_day - 7
+                  and (ts at time zone 'Asia/Seoul')::date <= last_day),
     'range',  jsonb_build_object('visits', (select count(distinct s) from v),
                                  'views',  (select count(*) from v)),
     'mobile_pct', coalesce((select round(100.0 * count(*) filter (where mobile) / nullif(count(*), 0)) from v), 0),

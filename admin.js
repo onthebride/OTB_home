@@ -3471,8 +3471,15 @@ async function renderStats() {
 
   wrap.innerHTML =
     '<div class="st-cards">'
-    + '<div class="st-card"><span class="st-k">오늘</span><strong>' + stNum(d.today.visits) + '</strong><span class="st-sub">방문 · 페이지뷰 ' + stNum(d.today.views) + '</span></div>'
-    + '<div class="st-card"><span class="st-k">최근 7일</span><strong>' + stNum(d.week.visits) + '</strong><span class="st-sub">방문 · 페이지뷰 ' + stNum(d.week.views) + '</span></div>'
+    /* ⚠ 오늘을 빼고 보는 중이면 「오늘」 칸을 아예 안 그린다.
+         대표 2026-09-05 «오늘 안빠졌는뎅» — 30일을 골랐는데 「오늘 34」 가 서 있으면
+         뺐다는 말과 어긋나 보인다. 오늘이 궁금하시면 7일로 바꾸시면 된다.
+       ⚠ 「7일」 칸도 같이 어제까지로 당긴다 (서버가 창을 따라 센다).
+         한 화면에 반쪽짜리 하루가 섞인 숫자와 안 섞인 숫자가 같이 있으면 안 된다 */
+    + (d.skip_today ? ''
+      : '<div class="st-card"><span class="st-k">오늘</span><strong>' + stNum(d.today.visits) + '</strong><span class="st-sub">방문 · 페이지뷰 ' + stNum(d.today.views) + '</span></div>')
+    + '<div class="st-card"><span class="st-k">' + (d.skip_today ? '직전 7일' : '최근 7일') + '</span><strong>' + stNum(d.week.visits) + '</strong><span class="st-sub">방문 · 페이지뷰 ' + stNum(d.week.views)
+      + (d.skip_today ? '<em class="st-note-in">오늘 빼고</em>' : '') + '</span></div>'
     // 기간이 7일이면 바로 위 칸과 똑같은 숫자가 두 번 나온다 — 그때는 뺀다 (대표 요청 2026-08-24)
     // ⚠ 오늘을 뺀 기간이면 그렇게 적는다. 안 적으면 「30일인데 왜 오늘 게 없지」 가 된다
     + (Number(d.days) === 7 ? ''
