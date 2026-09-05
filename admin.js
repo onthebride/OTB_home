@@ -3430,7 +3430,13 @@ async function renderStats() {
   const wrap = $('statsBody');
   if (!wrap) return;
   if (!statsLoaded) wrap.innerHTML = '<p class="empty">불러오는 중…</p>';
-  const { data, error } = await sb.rpc('admin_analytics', { p_days: statsDays });
+  /* 30일·90일은 오늘을 빼고 센다 (대표 2026-09-05 «30일 90일은 오늘 수치 빼도 될꺼같은데»).
+     오늘은 아직 안 끝난 날이라 막대 하나가 늘 짧게 서 있고, 그 반쪽이 합계에도 섞인다.
+     ⚠ 7일은 그대로 둔다 — 짧게 보는 자리는 «오늘 어떤가»가 궁금한 자리다.
+     ⚠ 막대만 빼면 안 된다. 합계도 같이 빠져야 그림과 숫자가 안 어긋난다 (서버가 창을 당긴다) */
+  const skipToday = statsDays >= 30;
+  const { data, error } = await sb.rpc('admin_analytics',
+    { p_days: statsDays, p_skip_today: skipToday });
   if (error || !data) {
     wrap.innerHTML = '<p class="empty">통계를 불러오지 못했습니다. (' + esc(error ? error.message : '응답 없음') + ')</p>';
     return;
@@ -3468,8 +3474,12 @@ async function renderStats() {
     + '<div class="st-card"><span class="st-k">오늘</span><strong>' + stNum(d.today.visits) + '</strong><span class="st-sub">방문 · 페이지뷰 ' + stNum(d.today.views) + '</span></div>'
     + '<div class="st-card"><span class="st-k">최근 7일</span><strong>' + stNum(d.week.visits) + '</strong><span class="st-sub">방문 · 페이지뷰 ' + stNum(d.week.views) + '</span></div>'
     // 기간이 7일이면 바로 위 칸과 똑같은 숫자가 두 번 나온다 — 그때는 뺀다 (대표 요청 2026-08-24)
+    // ⚠ 오늘을 뺀 기간이면 그렇게 적는다. 안 적으면 「30일인데 왜 오늘 게 없지」 가 된다
     + (Number(d.days) === 7 ? ''
-      : '<div class="st-card"><span class="st-k">최근 ' + d.days + '일</span><strong>' + stNum(d.range.visits) + '</strong><span class="st-sub">방문 · 페이지뷰 ' + stNum(d.range.views) + '</span></div>')
+      : '<div class="st-card"><span class="st-k">최근 ' + d.days + '일</span><strong>' + stNum(d.range.visits)
+        + '</strong><span class="st-sub">방문 · 페이지뷰 ' + stNum(d.range.views)
+        + (d.skip_today ? '<em class="st-note-in">오늘 빼고 ' + esc(String(d.last_day || '').slice(5).replace('-', '.')) + '까지</em>' : '')
+        + '</span></div>')
     + '<div class="st-card"><span class="st-k">모바일</span><strong>' + stNum(d.mobile_pct) + '%</strong><span class="st-sub">휴대폰으로 본 비율</span></div>'
     // 한 번 들어와서 몇 쪽이나 보고 가나. 새로 받아올 것 없이 이미 있는 두 숫자를 나눈다.
     // 1쪽에 가까우면 첫 화면만 보고 나간 것, 커질수록 이것저것 눌러본 것이다.
