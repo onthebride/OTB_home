@@ -1124,7 +1124,8 @@ function openRefLightbox(list, start) {
     if (cnt) cnt.textContent = `${i + 1} / ${list.length}`;
   };
   const go = (step) => { i = (i + step + list.length) % list.length; draw(); };
-  const close = () => { lb.remove(); document.removeEventListener('keydown', onKey); };
+  // 뒤가 안 움직이게 잠근다 (대표 2026-09-06). 셈은 config.js 한 곳에 있다
+  const close = () => { lb.remove(); document.removeEventListener('keydown', onKey); window.otbUnlockScroll(); };
   const onKey = (e) => {
     if (e.key === 'Escape') close();
     else if (e.key === 'ArrowRight') go(1);
@@ -1151,6 +1152,7 @@ function openRefLightbox(list, start) {
   }, { passive: true });
   document.addEventListener('keydown', onKey);
   draw();
+  window.otbLockScroll();
   document.body.appendChild(lb);
 }
 

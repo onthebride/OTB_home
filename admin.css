@@ -260,6 +260,11 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .sv-row.col { flex-direction: column; gap: 8px; }
 .sv-l { flex: 0 0 110px; color: var(--ink-soft); }
 .sv-v { flex: 1; white-space: pre-wrap; word-break: break-word; }
+/* 사진을 보는 동안 아래로 당겨도 새로고침이 되지 않게 (대표 2026-09-06).
+   ⚠ 잠그는 셈은 config.js 한 곳에 있고, 이 표는 그때 붙는 no-pull 을 받는다.
+     이 줄이 없으면 잠가도 폰에서 당김 새로고침만은 그대로 된다 */
+html.no-pull, html.no-pull body { overscroll-behavior: none; }
+
 .sv-refs { display: flex; flex-wrap: wrap; gap: 8px; }
 .sv-refs img { width: 84px; height: 84px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); cursor: pointer; }
 .sv-lb { position: fixed; inset: 0; z-index: 1000; background: rgba(20,17,15,.9); display: flex; align-items: center; justify-content: center; padding: 30px; cursor: zoom-out; }

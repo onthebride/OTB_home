@@ -10,42 +10,13 @@ document.querySelectorAll('.story p').forEach((p) => {
   p.innerHTML = p.innerHTML.replace(/\.\s+/g, '.<br>');
 });
 
-/* ===== 화면을 덮는 창을 띄우는 동안 뒤가 안 움직이게 =====
-   대표 2026-09-04 «갤러리 사진 보려고 누르면 일단 뒷배경이 움직여».
-   ⚠ `body { overflow: hidden }` 만으로는 **폰에서 안 잠긴다.**
-     아이폰 사파리는 그대로 밀리고, 어떤 브라우저는 맨 위로 튀어 오른다.
-     그래서 있던 자리를 적어두고 body 를 통째로 고정한 뒤, 닫을 때 그 자리로 돌려놓는다.
-   ⚠ `html { scroll-behavior: smooth }` 가 걸려 있어 그냥 되돌리면 스르륵 움직이는 게 보인다.
-     되돌리는 동안만 끈다.
-   ⚠ 창이 겹칠 수 있으니 몇 겹인지 센다 — 하나 닫았다고 풀리면 뒤엣것이 움직인다. */
-let scrollLockN = 0;
-let scrollLockY = 0;
-function lockScroll() {
-  if (scrollLockN++ > 0) return;
-  scrollLockY = window.scrollY || document.documentElement.scrollTop || 0;
-  const b = document.body.style;
-  b.position = 'fixed';
-  b.top = -scrollLockY + 'px';
-  b.left = '0';
-  b.right = '0';
-  b.width = '100%';
-  /* 폰에서 아래로 당기면 브라우저가 새로고침을 한다 — 사진 보다가 화면이 날아간다
-     (대표 2026-09-04 «당겨서 새로고침되는것도 막아줘»).
-     ⚠ 손가락 동작 자체(touch-action)를 막지는 않는다. 그러면 사진을 두 손가락으로
-       키워 보는 것까지 막힌다. 홈은 확대가 열려 있다 */
-  document.documentElement.classList.add('no-pull');
-}
-function unlockScroll() {
-  if (scrollLockN === 0 || --scrollLockN > 0) return;
-  document.documentElement.classList.remove('no-pull');
-  const b = document.body.style;
-  b.position = ''; b.top = ''; b.left = ''; b.right = ''; b.width = '';
-  const h = document.documentElement.style;
-  const had = h.scrollBehavior;
-  h.scrollBehavior = 'auto';          // 되돌리는 것은 «움직임» 이 아니라 «제자리»
-  window.scrollTo(0, scrollLockY);
-  h.scrollBehavior = had;
-}
+/* 화면을 덮는 창을 띄우는 동안 뒤가 안 움직이게.
+   ⚠ 셈은 config.js 한 곳에 있다 — 같은 확대창이 네 군데에 복사돼 있어서,
+     여기에도 두면 한쪽만 고쳐진다 (대표 2026-09-06 «작가 설문에서 ... 뒷배경 스크롤»).
+   ⚠ config.js 는 모든 화면이 함께 읽고 no-cache 라 고치면 바로 퍼진다 */
+const lockScroll = () => window.otbLockScroll();
+const unlockScroll = () => window.otbUnlockScroll();
+
 
 /* 이야기 「계속 보기」 (대표 2026-09-04
      «전문 이야기도 짧지 않을글 입니다까지 하고 접자 계속보기 누르면 다 보이는걸로»)

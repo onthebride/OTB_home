@@ -94,7 +94,9 @@ function openLb(src) {
   const lb = document.createElement('div');
   lb.className = 'sv-lb';
   lb.innerHTML = `<img src="${src}" alt="" />`;
-  lb.addEventListener('click', () => lb.remove());
+  // 뒤가 안 움직이게 잠근다 (대표 2026-09-06). 셈은 config.js 한 곳에 있다
+  lb.addEventListener('click', () => { lb.remove(); window.otbUnlockScroll(); });
+  window.otbLockScroll();
   document.body.appendChild(lb);
 }
 
