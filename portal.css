@@ -147,6 +147,15 @@ body {
 .pt-state.good { background: #e7f3ec; border-color: #c7e3d2; color: #2f7d4f; }
 .pt-state.wait { background: #faf4ea; border-color: #ecdcc3; color: var(--gold-deep); }
 .pt-state b { color: inherit; }
+/* 「글 제목에 예식장 이름과 온더브라이드를」 (대표 2026-09-06).
+   링크 넣는 칸 바로 위에 둔다 — 다 쓰고 나서 보면 늦다 */
+.pt-tip {
+  margin: 0 0 12px; padding: 11px 13px; border-radius: 8px;
+  background: #faf4ea; border: 1px solid #ecdcc3;
+  font-size: .86rem; line-height: 1.65; color: var(--gold-deep);
+}
+.pt-tip b { font-weight: 700; }
+.pt-tip span { display: block; margin-top: 3px; color: var(--ink-soft); font-size: .82rem; word-break: keep-all; }
 
 .pt-form { display: grid; gap: 10px; }
 .pt-field label { display: block; font-size: .82rem; color: var(--ink-soft); margin-bottom: 5px; }

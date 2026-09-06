@@ -310,6 +310,18 @@ async function confirmBuddy(id, accept, reward) {
 }
 
 /* ===== 후기 ===== */
+/* 「글 제목에 예식장 이름과 온더브라이드를 넣어주세요」 (대표 2026-09-06
+     «제목에 예식장 이름이랑 온더브라이드 이름 넣어서 후기 써달라고 수정 해줘»)
+   검색으로 찾아오시는 분들이 보려면 제목에 그 둘이 있어야 한다.
+   ⚠ 보기글에 **그 신부님 예식장 이름**을 그대로 넣는다. 남의 예식장을 예로 들면
+     자기 것으로 바꿔 쓸 생각을 못 하신다.
+   ⚠ 예식장이 아직 안 정해진 분도 있다 — 그때는 「예식장 이름」이라고만 적는다 */
+function reviewTitleTip() {
+  const v = (info.wedding_venue || '').trim();
+  return `<p class="pt-tip">글 제목에 <b>예식장 이름</b>과 <b>온더브라이드</b>를 꼭 넣어주세요.
+    <span>예) ${esc(v || '예식장 이름')} 본식스냅 온더브라이드 후기</span></p>`;
+}
+
 function renderReview() {
   const r = info.review;
   const box = $('reviewBody');
@@ -324,6 +336,7 @@ function renderReview() {
   box.innerHTML = `
     ${pending ? '<div class="pt-state wait">후기를 접수했어요. <b>관리자 확인</b> 후 적용됩니다. 아래에서 수정할 수 있어요.</div>' : ''}
     ${rejected ? '<div class="pt-state wait">후기가 반려되었어요. 링크를 확인 후 다시 등록해 주세요.</div>' : ''}
+    ${reviewTitleTip()}
     <div class="pt-form" style="margin-top:${pending || rejected ? '10px' : '0'}">
       <div class="pt-field"><label>후기 링크</label><input type="url" id="rv_link" placeholder="https://..." value="${esc(r?.link || '')}" /></div>
       <div class="pt-field"><label>받을 혜택</label>

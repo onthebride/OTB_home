@@ -385,7 +385,14 @@ html.no-pull, html.no-pull body { overscroll-behavior: none; }
 .event-card > p { color: var(--ink-soft); font-size: 1rem; }
 .event-how { background: var(--paper); border-left: 3px solid var(--gold); border-radius: 2px; padding: 16px 18px; margin: 18px 0; }
 .how-label { font-family: var(--sans); font-size: .76rem; font-weight: 600; letter-spacing: .08em; color: var(--gold-deep); text-transform: uppercase; margin-bottom: 6px; }
-.event-how p:last-child { color: var(--ink); font-size: .96rem; line-height: 1.7; }
+/* ⚠ 예전엔 p:last-child 였다. 2026-09-06 에 문단이 하나 더 붙으면서 이 서식이
+     새 문단으로 옮겨가 원래 「참여방법」 글이 맨몸이 됐다. 라벨만 빼고 다 잡는다 */
+.event-how p:not(.how-label) { color: var(--ink); font-size: .96rem; line-height: 1.7; }
+/* 제목에 예식장 이름과 온더브라이드를 넣어달라는 부탁 (대표 2026-09-06).
+   그냥 한 줄 더 두면 참여방법에 묻힌다 — 위에 선을 그어 갈라 둔다 */
+.how-title { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.how-title b { color: var(--gold-deep); }
+.how-title span { display: inline-block; margin-top: 4px; font-size: .88rem; color: var(--ink-soft); }
 .event-cond { font-size: .87rem; color: var(--ink-soft); line-height: 1.75; }
 .event-foot { text-align: center; margin-top: 40px; color: var(--ink-soft); font-size: .96rem; max-width: 720px; margin-left: auto; margin-right: auto; }
 
