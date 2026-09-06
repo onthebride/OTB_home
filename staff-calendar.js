@@ -817,6 +817,39 @@ const taxOf = (d) => (d && d.tax_bp) || 330;
 // 3.3% 를 뗀 실수령. 원 단위로 버린다
 const netPay = (d, total) => Math.floor(total * (10000 - taxOf(d)) / 10000);
 
+/* ===== 지정비 한도 (대표 2026-09-06
+     «마음대로 지정비를 넣는거말고 / 일정 후기랑 갤러리 사진이 쌓이면
+       지정비 한도를 늘리게해주는걸로»)
+
+   ⚠ 사다리 두 칸(후기·갤러리)을 **둘 다** 넘어야 그 단으로 간다.
+     후기만 많고 갤러리가 비면 신부님이 보고 고를 것이 없다.
+   ⚠ 지금 한도만 적으면 «왜 여기까지밖에 안 되지» 로 끝난다.
+     **다음 단까지 얼마나 남았는지**를 같이 적어야 채울 마음이 생긴다.
+   ⚠ 숫자는 서버에서 받아 쓴다. 여기 적어두면 대표가 바꾸실 때 어긋난다.
+   ⚠ 대표는 한도를 안 탄다 — 대표지정은 우리가 값을 정해 파는 상품이다 */
+function capBox(d) {
+  const e = d.elig;
+  if (!e || e.is_rep) return '';
+  const cap = Number(e.fee_cap) || 0;
+  const nx = e.next_tier;
+  const tiers = Array.isArray(e.tiers) ? e.tiers : [];
+  const rows = tiers.map((t) => {
+    const got = e.reviews >= t.reviews && e.gallery >= t.gallery;
+    return `<li class="${got ? 'ok' : ''}"><i aria-hidden="true">${got ? '✓' : '·'}</i>`
+      + `<span>후기 ${t.reviews}개 · 갤러리 ${t.gallery}장</span>`
+      + `<b>${wonFmt(t.cap)}원</b></li>`;
+  }).join('');
+  return `<div class="sc-cap">
+    <p class="sc-cap-t">지금 정하실 수 있는 최대 <b>${wonFmt(cap)}원</b>
+      <em>${e.fee_tier}/${e.tiers_n}단</em></p>
+    ${nx ? `<p class="sc-cap-nx">후기 <b>${nx.reviews}개</b> · 갤러리 <b>${nx.gallery}장</b>이 되면
+      <b>${wonFmt(nx.cap)}원</b>까지 올라가요.
+      <span>지금 후기 ${e.reviews}개 · 갤러리 ${e.gallery}장</span></p>`
+      : '<p class="sc-cap-nx">맨 윗단이에요. 더 올라갈 곳이 없습니다.</p>'}
+    <ul class="sc-cap-l">${rows}</ul>
+  </div>`;
+}
+
 function reqList(d) {
   const e = d.elig;
   if (!e) return '';
@@ -907,6 +940,7 @@ function renderSet() {
           안 받으시려면 <b>0</b>.</p>
         ${reqList(d)}
         ${d.can_fee ? `
+        ${capBox(d)}
         <div class="sc-fee">
           <input type="text" id="setFee" inputmode="numeric" autocomplete="off"
             value="${fee === '' ? '' : wonFmt(fee)}" placeholder="예) 30,000" />
@@ -929,9 +963,17 @@ function renderSet() {
   /* 금액에 쉼표를 찍어준다 (대표 «숫자표기로 해줘 쉼표넣어서»).
      ⚠ <input type="number"> 는 쉼표를 못 담는다 — text 로 두고 우리가 찍는다.
      보낼 때는 쉼표를 떼고 숫자만 보낸다 */
+  /* 한도를 넘으면 넘는 순간 도로 내려준다 (대표 2026-09-06).
+     ⚠ 서버도 막지만, 다 적고 저장을 눌러서야 「안 됩니다」 를 보면 답답하다.
+     ⚠ 대표는 한도가 없다 — fee_cap 이 넉넉히 와 있어 걸릴 일이 없다 */
+  const feeCap = Number(d.elig && d.elig.fee_cap) || 0;
   const feeEl = $('setFee');
   if (feeEl) feeEl.addEventListener('input', () => {
-    const n = feeEl.value.replace(/[^0-9]/g, '').slice(0, 7);   // 100만원까지
+    let n = feeEl.value.replace(/[^0-9]/g, '').slice(0, 7);   // 100만원까지
+    if (n !== '' && feeCap > 0 && Number(n) > feeCap) {
+      n = String(feeCap);
+      toastSet(`지금 한도는 ${wonFmt(feeCap)}원이에요. 후기와 갤러리가 쌓이면 올라갑니다.`);
+    }
     feeEl.value = n === '' ? '' : wonFmt(n);
   });
   const save = $('setFeeSave');

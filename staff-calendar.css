@@ -427,6 +427,27 @@
   color: var(--ink-soft); line-height: 1.7; }
 .sc-req-how b { color: var(--ink); font-weight: 600; }
 
+/* 지정비 한도 사다리 (대표 2026-09-06 «후기랑 갤러리 사진이 쌓이면 지정비 한도를 늘리게»).
+   지금 한도만 적으면 «왜 여기까지밖에» 로 끝난다 — 다음 단을 같이 보여준다 */
+.sc-cap { margin: 0 0 12px; padding: 12px 13px; font-size: .84rem;
+  background: #faf6ef; border: 1px solid #e7dcc8; border-radius: 8px; }
+.sc-cap-t { margin: 0 0 6px; color: var(--ink); font-weight: 600; line-height: 1.6; }
+.sc-cap-t b { color: var(--gold-deep); font-size: 1.02rem; }
+.sc-cap-t em { font-style: normal; margin-left: 6px; font-size: .76rem; color: var(--ink-soft); font-weight: 400; }
+.sc-cap-nx { margin: 0 0 10px; color: var(--ink-soft); line-height: 1.7; }
+.sc-cap-nx b { color: var(--ink); font-weight: 600; }
+.sc-cap-nx span { display: block; margin-top: 2px; font-size: .78rem; }
+.sc-cap-l { margin: 0; padding: 10px 0 0; list-style: none; display: grid; gap: 5px;
+  border-top: 1px dashed var(--line); }
+/* 폰에서 세 칸이 한 줄에 들어가야 한다 — 가운데 칸만 늘린다 */
+.sc-cap-l li { display: flex; align-items: baseline; gap: 8px; line-height: 1.55; color: var(--ink-soft); }
+.sc-cap-l li i { flex: 0 0 14px; font-style: normal; }
+.sc-cap-l li span { flex: 1 1 auto; min-width: 0; word-break: keep-all; }
+.sc-cap-l li b { flex: 0 0 auto; font-weight: 600; }
+.sc-cap-l li.ok { color: var(--ink); }
+.sc-cap-l li.ok i { color: #4a8a4c; font-weight: 700; }
+.sc-cap-l li.ok b { color: var(--gold-deep); }
+
 /* 알림 단추를 이 칸으로 옮겨 오므로 가운데 정렬을 풀어준다 */
 #setPushSlot .sc-a2hs { margin: 0; }
 #setPushSlot .sc-push-note { margin: 8px 0 0; text-align: left; max-width: none; }
