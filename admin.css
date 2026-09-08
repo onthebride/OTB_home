@@ -674,6 +674,20 @@ td .muted { color: var(--ink-soft); }
 .md-asg-label { font-size: .8rem; color: var(--ink-soft); font-weight: 600; white-space: nowrap; }
 .md-sel { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font-size: .85rem; background: #fff; color: var(--ink); }
 .md-sel:focus { outline: none; border-color: var(--gold); }
+/* 고르개와 「확인함」 표시를 한 칸에 묶는다 (대표 2026-09-08).
+   ⚠ 폰에서는 자리가 좁다 — 모자라면 표시가 아랫줄로 내려간다 */
+.md-asg-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-width: 0; }
+.md-asg-pick .md-sel { flex: 1 1 140px; width: auto; }
+/* 배정을 작가가 확인했나 (대표 «작가들이 확인 누르면 내가 알 수 있게해줘») */
+.ackm { flex: 0 0 auto; display: inline-flex; align-items: baseline; gap: 4px;
+  font-size: .76rem; font-weight: 600; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+.ackm.ok { color: #3f7040; background: #f2f7f1; border: 1px solid #cfe0cd; }
+.ackm.no { color: #8c6a2b; background: #fbf4e6; border: 1px solid #e6d6b4; }
+.ackm em { font-style: normal; font-weight: 400; font-size: .72rem; opacity: .8; }
+/* 날짜 카드는 좁아서 표 하나만 */
+.ackt { font-style: normal; margin-left: 4px; font-size: .78rem; }
+.ackt.ok { color: #4a8a4c; }
+.ackt.no { color: #b3a894; }
 
 /* 입금 토글 */
 /* 촬영본 사용동의는 YES/NO 를 늘 보여준다.

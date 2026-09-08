@@ -40,6 +40,11 @@ const fmtDateTime = (s) =>
 
 let allBookings = [];
 let eventDiscounts = {}; // {booking_id: 승인된 할인 만원}
+/* 배정을 작가가 확인했나 {booking_id: {main_sent,main_ok,main_at,sub_sent,sub_ok,sub_at}}
+   (대표 2026-09-08 «앞으로 배정하는거 작가들이 확인 누르면 내가 알 수 있게해줘»)
+   ⚠ **알림이 나간 것만** 들어 있다. 8/31 이전 배정분은 물어본 적이 없어 아예 없다 —
+     없는 것을 「확인 안 함」으로 그리면 작가가 안 한 것처럼 보인다 */
+let assignAck = {};
 const evDc = (b) => Number(eventDiscounts[b.id]) || 0;
 const effBalance = (b) => (b.total_price != null ? b.total_price - 10 - evDc(b) : null);
 let filter = '전체';
@@ -169,7 +174,7 @@ $('refreshBtn').addEventListener('click', () => loadBookings());
 /* ===== Load + render ===== */
 async function loadBookings() {
   // 모든 조회는 서로 독립적이라 한 번에 병렬로 — 순차 대기 제거(체감 속도 개선)
-  const [res, sres, ures, dres, fres, rres, pres, hres, yres] = await Promise.all([
+  const [res, sres, ures, dres, fres, rres, pres, hres, yres, ares] = await Promise.all([
     sb.rpc('admin_list_bookings'),    // 예약 목록
     sb.rpc('admin_survey_ids'),       // 설문 제출 여부
     sb.rpc('admin_unconfirmed'),      // 작가 미확인
@@ -181,6 +186,7 @@ async function loadBookings() {
     // 작가비를 아직 안 드린 것. p_days 0 = 예식 지난 것 전부, p_since = 옛것까지
     // (알림은 9/3 부터만 — 아래 loadPay 설명 참고)
     sb.rpc('admin_pay_overdue', { p_days: 0, p_since: '2000-01-01' }),
+    sb.rpc('admin_assign_ack'),          // 배정을 작가가 확인했나
     loadStaff(),                      // 작가 목록
   ]);
   const { data, error } = res;
@@ -201,6 +207,7 @@ async function loadBookings() {
   pricingList = Array.isArray(pres.data) ? pres.data : [];
   pricingMap = {}; pricingList.forEach((p) => { pricingMap[p.code] = p; });
   payList = Array.isArray(yres.data) ? yres.data : [];
+  assignAck = (ares.data && typeof ares.data === 'object') ? ares.data : {};
   render();
   renderDashboard();
   renderPay();
@@ -311,6 +318,45 @@ async function ensureConf(y, m, onLoad) {
 function invalidateConf() { confMap = {}; confMonths.clear(); }
 // 예약 하나에 대한 충돌표(없으면 아직 안 불러온 것)
 function confOf(b) { return confMap[b && b.id] || null; }
+
+/* 배정을 작가가 확인했나 (대표 2026-09-08
+     «작가들 스케줄 줬는데 작가들이 확인을 햇는지 물어보기전에 알 수가 없네»
+     «그냥 앞으로 배정하는거 작가들이 확인 누르면 내가 알 수 있게해줘»)
+
+   지금까지는 홈의 「작가 미확인」에 **안 누른 것만** 떴다. 누르면 목록에서 사라질 뿐이라,
+   없어진 것을 보고 짐작해야 했다. 이제 예약을 열면 그 자리에 적힌다.
+
+   세 가지다.
+     · 알림이 가고 눌렀다   → 확인함 (언제 눌렀는지까지)
+     · 알림이 갔는데 안 눌렀다 → 확인 전
+     · 알림이 간 적이 없다   → **아무것도 안 적는다**
+   ⚠ 마지막을 「확인 안 함」으로 적으면 안 된다. 작가가 안 한 게 아니라 물어본 적이 없는 것이다.
+     8/31 이전 배정 92건이 여기 해당한다 (대표가 그건 그냥 두기로 하셨다) */
+function ackMark(b, role) {
+  const a = assignAck[b && b.id];
+  if (!a) return '';
+  const who = role === 'main' ? b.assignee_id : b.sub_assignee_id;
+  if (!who) return '';
+  const sent = role === 'main' ? a.main_sent : a.sub_sent;
+  if (!sent) return '';
+  const ok = role === 'main' ? a.main_ok : a.sub_ok;
+  const at = role === 'main' ? a.main_at : a.sub_at;
+  return ok
+    ? `<span class="ackm ok" title="작가가 확인 눌렀습니다">✓ 확인함<em>${esc(at || '')}</em></span>`
+    : '<span class="ackm no" title="알림은 갔는데 아직 안 눌렀습니다">확인 전</span>';
+}
+
+/* 날짜 카드에는 이름 옆에 표 하나만. 카드가 좁아 글자를 더 넣을 자리가 없다.
+   ⚠ 폰에서는 손가락을 올려두는 동작이 없어 title 이 안 뜬다 —
+     그래서 여기는 «있다/없다» 만 말하고, 자세한 것은 예약을 열면 나온다 */
+function ackTick(b, role) {
+  const a = assignAck[b && b.id];
+  if (!a) return '';
+  const sent = role === 'main' ? a.main_sent : a.sub_sent;
+  const ok = role === 'main' ? a.main_ok : a.sub_ok;
+  if (!sent) return '';
+  return ok ? '<i class="ackt ok">✓</i>' : '<i class="ackt no">…</i>';
+}
 
 // slot: 'main' | 'sub' — 그 자리를 맡을 수 있는 작가를 위로 올린다.
 // 역할이 안 맞아도 잠그지는 않는다. 겹침과 달리 '못 하는 것'이 아니라 '보통 안 하는 것'이라서.
@@ -899,9 +945,11 @@ function renderView(b, flash) {
     ${flash ? `<p class="save-msg ok" style="text-align:left;margin:0 0 12px">${esc(flash)}</p>` : ''}
 
     <div class="md-assignee">
+      <!-- ⚠ 이 상자는 두 칸짜리 격자다(이름표 · 고르개). 확인 표시를 그냥 더하면
+           다음 줄 이름표 자리로 밀려 들어간다 — 고르개와 한 칸에 묶는다 -->
       <span class="md-asg-label">메인작가</span>
-      <select id="mAssignee" class="md-sel">${assigneeOptions(b.assignee_id, confOf(b), 'main')}</select>
-      ${b.photographer === '2인 촬영' ? `<span class="md-asg-label">서브작가</span><select id="mSubAssignee" class="md-sel">${assigneeOptions(b.sub_assignee_id, confOf(b), 'sub')}</select>` : ''}
+      <span class="md-asg-pick"><select id="mAssignee" class="md-sel">${assigneeOptions(b.assignee_id, confOf(b), 'main')}</select>${ackMark(b, 'main')}</span>
+      ${b.photographer === '2인 촬영' ? `<span class="md-asg-label">서브작가</span><span class="md-asg-pick"><select id="mSubAssignee" class="md-sel">${assigneeOptions(b.sub_assignee_id, confOf(b), 'sub')}</select>${ackMark(b, 'sub')}</span>` : ''}
     </div>
 
     <!-- 세 덩이로 묶는다 (대표 2026-08-30 «다 늘어져잇으니까 눈에 잘 안들어오네»).
@@ -2246,11 +2294,13 @@ function renderDayOv() {
     <div class="day-ov-card">
       <div class="day-ov-head"><strong>${esc(label)}</strong> <span class="muted">${sorted.length}건</span><button class="day-ov-x" aria-label="닫기">&times;</button></div>
       <div class="day-ov-list">${sorted.map((b) => {
+        // 이름 옆에 ✓ 하나 (대표 2026-09-08). 날짜를 훑을 때도 확인 여부가 보이게 —
+        // 자세한 것(누른 때)은 예약을 열면 나온다
         const main = b.assignee_id
-          ? `<span class="dchip ok" style="color:${staffColor(b.assignee_id)}">● ${esc(staffName(b.assignee_id))}</span>`
+          ? `<span class="dchip ok" style="color:${staffColor(b.assignee_id)}">● ${esc(staffName(b.assignee_id))}${ackTick(b, 'main')}</span>`
           : '<span class="dchip warn">메인 미배정</span>';
         const sub = b.photographer === '2인 촬영'
-          ? (b.sub_assignee_id ? `<span class="dchip ok" style="color:${staffColor(b.sub_assignee_id)}">● ${esc(staffName(b.sub_assignee_id))}</span>` : '<span class="dchip warn">서브 미배정</span>')
+          ? (b.sub_assignee_id ? `<span class="dchip ok" style="color:${staffColor(b.sub_assignee_id)}">● ${esc(staffName(b.sub_assignee_id))}${ackTick(b, 'sub')}</span>` : '<span class="dchip warn">서브 미배정</span>')
           : '';
         const balf = !b.balance_paid ? '<span class="dchip bal">잔금 미입금</span>' : '';
         return `<button class="day-ov-item" data-id="${b.id}">
