@@ -713,6 +713,12 @@ td .muted { color: var(--ink-soft); }
 .chk-sv small { font-weight: 400; color: var(--ink-soft); }
 .chk-note { font-size: .82rem; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 6px 9px; margin-top: 5px; }
 .unconf-who { color: #b5462f; font-weight: 600; }
+/* 보낸 지 하루가 넘도록 안 누른 것 (대표 2026-09-08 «하루이상 확인이 안되는거는 홈에서 알려줘»).
+   ⚠ 칸을 안 열고 있어도 알아채셔야 해서, 줄과 숫자 둘 다에 표시한다 */
+.dl-item.late { border-color: #d9b3aa; background: #fdf3f1; }
+.lateb { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px;
+  font-size: .7rem; font-weight: 700; color: #fff; background: #b5462f; white-space: nowrap; }
+.dash-count.late { background: #b5462f; }
 
 /* 커스텀 옵션 */
 .custom-opts { display: flex; flex-direction: column; gap: 6px; }

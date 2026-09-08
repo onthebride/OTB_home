@@ -2060,17 +2060,32 @@ function renderDashboard() {
        ② 설문 확인   : 예식 하루 전 설문 톡을 받고 누르는 것
      ⚠ 설문 쪽은 «톡을 보낸 사람» 만 센다. 안 보낸 것까지 세면 다음 달 예식이 전부 벌겋게 뜬다.
         월요일 체크 쪽은 예전 기준을 그대로 둔다 — 지금 보고 계신 줄이 사라지면 안 된다 */
-  const unconfRow = (u, who) => `<div class="dl-item" data-id="${u.booking_id}">
+  const unconfRow = (u, who, late) => `<div class="dl-item${late ? ' late' : ''}" data-id="${u.booking_id}">
         <div class="dl-main">
-          <span class="dl-name">${esc(u.contractor_name || '-')}</span>
+          <span class="dl-name">${esc(u.contractor_name || '-')}${late ? `<span class="lateb">${esc(late)}</span>` : ''}</span>
           <span class="dl-meta">${esc(fmtDate(u.wedding_date))} ${esc(kTimeShort(u.wedding_time))} · ${esc(u.wedding_venue || '-')} · <span class="unconf-who">${esc(who.join(', ') || '미확인')}</span></span>
         </div>
       </div>`;
   const unconfDraw = (cntId, listId, rows, empty) => {
     if ($(cntId)) $(cntId).textContent = rows.length;
     if ($(listId)) $(listId).innerHTML = rows.length
-      ? rows.slice(0, 40).map(([u, who]) => unconfRow(u, who)).join('')
+      ? rows.slice(0, 40).map(([u, who, late]) => unconfRow(u, who, late)).join('')
       : `<p class="dash-empty">${empty}</p>`;
+  };
+
+  /* 보낸 지 하루가 넘도록 안 누른 것 (대표 2026-09-08
+       «하루이상 확인이 안되는거는 홈에서 알려줘»)
+     ⚠ 예식이 코앞인지가 아니라 **보낸 지 얼마나 됐나**로 잰다. 대표가 물으신 것은
+       「내가 준 지 하루가 지났는데 아직도 안 봤나」 이지 「예식이 며칠 남았나」가 아니다.
+     ⚠ 시간은 서버가 센다(admin_assign_ack 의 *_hrs). 브라우저 시계로 재면
+       기기 시계가 틀어진 만큼 어긋난다 */
+  const lateWord = (u) => {
+    const a = assignAck[u.booking_id];
+    if (!a) return '';
+    const h = Math.max(Number(a.main_hrs) || 0, Number(a.sub_hrs) || 0);
+    if (h < 24) return '';
+    const d = Math.floor(h / 24);
+    return d >= 1 ? `${d}일째 확인 없음` : '';
   };
 
   /* ③ 스케줄 확인 — 배정 알림을 읽었나 (대표 2026-08-31
@@ -2083,9 +2098,21 @@ function renderDashboard() {
       const who = [];
       if (u.main_as_sent && !u.main_as_ok && u.assignee_id) who.push('메인 ' + staffName(u.assignee_id));
       if (u.sub_as_sent && !u.sub_as_ok && u.sub_assignee_id) who.push('서브 ' + staffName(u.sub_assignee_id));
-      return [u, who];
-    });
+      return [u, who, lateWord(u)];
+    })
+    // 오래 묵은 것을 위로 (대표 2026-09-08). 아래로 밀리면 못 보신다
+    .sort((a, b) => (b[2] ? 1 : 0) - (a[2] ? 1 : 0));
   unconfDraw('dcUnconfAs', 'listUnconfAs', unconfAs, '배정을 모두 확인했어요 👍');
+  /* 하루 넘은 것이 있으면 칸 이름 옆 숫자를 붉게 (대표 «홈에서 알려줘»).
+     ⚠ 그 칸을 안 열고 있어도 보여야 한다 — 숫자만으로도 눈에 들어오게 */
+  {
+    const n = unconfAs.filter((x) => x[2]).length;
+    const el = $('dcUnconfAs');
+    if (el) {
+      el.classList.toggle('late', n > 0);
+      el.title = n > 0 ? `${n}건이 하루 넘게 확인되지 않았습니다` : '';
+    }
+  }
 
   /* ⚠ **보낸 것만 센다.** 2026-08-31 대표 «저거 한효림이 왜 월요일체크에 들어가 있나?» —
        배정만 하고 월요일 체크는 안 나간 예식이 여기 떴다. 작가님이 안 한 게 아니라
@@ -3197,7 +3224,11 @@ function setHash(v) {
   if (location.hash.slice(1) !== v) history.replaceState(null, '', '#' + v);
 }
 function applyHash() {
-  const [tab, sub] = (location.hash.slice(1) || 'dashboard').split('/');
+  let [tab, sub] = (location.hash.slice(1) || 'dashboard').split('/');
+  /* 배정 이력이 설정 → 캘린더로 옮겨갔다 (대표 2026-09-08).
+     예전 주소(#settings/audit)를 눌러 들어오시면 새 자리로 보낸다 —
+     그냥 두면 설정만 열리고 이력은 안 나온다 */
+  if (tab === 'settings' && sub === 'audit') { tab = 'calendar'; sub = 'audit'; }
   const btn = document.querySelector('.dtab[data-tab="' + (tab || 'dashboard') + '"]');
   if (!btn) return;
   applyingHash = true;
@@ -3217,16 +3248,21 @@ window.addEventListener('hashchange', applyHash);
 
 /* ===== 캘린더 안의 두 칸 (캘린더 · 예약) — 대표 지시 2026-08-28
    «캘린더가 상위 메뉴 / 그 안에 들어가면 기본은 캘린더 / 다른 서브메뉴로 예약» ===== */
+/* 2026-09-08 「배정 이력」이 설정에서 여기로 왔다 (대표 «캘린더메뉴에 서브로 넣어줘
+   캘린더에서 배정하고 바로 확인 할 수 있게»). 세 칸이 됐다 */
+const CAL_SUBS = ['cal', 'book', 'audit'];
 let calCur = 'cal';
 function calSub(sub) {
-  calCur = sub === 'book' ? 'book' : 'cal';
+  calCur = CAL_SUBS.indexOf(sub) >= 0 ? sub : 'cal';
   if ($('calBody')) $('calBody').hidden = calCur !== 'cal';
   if ($('bookBody')) $('bookBody').hidden = calCur !== 'book';
+  if ($('tab-audit')) $('tab-audit').hidden = calCur !== 'audit';
   const box = $('calSubtabs');
   if (box) box.querySelectorAll('.sub-tab').forEach((b) =>
     b.classList.toggle('active', b.dataset.csub === calCur));
   if (calCur === 'cal') { renderCalendar(); renderSchedule(); }
-  setHash(calCur === 'cal' ? 'calendar' : 'calendar/book');
+  if (calCur === 'audit') renderAudit();
+  setHash(calCur === 'cal' ? 'calendar' : 'calendar/' + calCur);
 }
 const calSubtabs = $('calSubtabs');
 if (calSubtabs) calSubtabs.addEventListener('click', (e) => {
@@ -5730,14 +5766,13 @@ function showSubtab(st) {
   currentSubtab = st;
   if ($('tab-pricing')) $('tab-pricing').hidden = st !== 'pricing';
   if ($('tab-gallery')) $('tab-gallery').hidden = st !== 'gallery';
-  if ($('tab-audit')) $('tab-audit').hidden = st !== 'audit';
+  // ⚠ 배정 이력은 2026-09-08 에 캘린더 밑으로 갔다. 여기서 건드리면 남의 칸을 끈다
   // ⚠ 설정 안의 단추만 만진다. 캘린더·작가 쪽도 .sub-tab 이라 통째로 찾으면 남의 것을 끈다
   const box = document.querySelector('#tab-settings .dash-subtabs');
   if (box) box.querySelectorAll('.sub-tab').forEach((b) => b.classList.toggle('active', b.dataset.subtab === st));
   setHash('settings/' + st);
   if (st === 'pricing') renderPricing();
   if (st === 'gallery') loadGallery();
-  if (st === 'audit') renderAudit();
 }
 const dashSubtabs = document.querySelector('#tab-settings .dash-subtabs');
 if (dashSubtabs) dashSubtabs.addEventListener('click', (e) => {

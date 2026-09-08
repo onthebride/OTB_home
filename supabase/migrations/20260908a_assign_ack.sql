@@ -29,17 +29,23 @@ begin
              'main_ok',   (m.read_at is not null),
              -- 언제 눌렀는지. 「어제 눌렀네」 가 보이면 물어볼 일이 없다
              'main_at',   to_char(m.read_at at time zone 'Asia/Seoul', 'MM/DD HH24:MI'),
+             -- 보낸 지 몇 시간 됐나. 하루가 넘도록 안 누르면 홈에서 알린다
+             -- (대표 2026-09-08 «하루이상 확인이 안되는거는 홈에서 알려줘»)
+             'main_hrs',  case when m.read_at is null and m.id is not null
+                               then floor(extract(epoch from (now() - m.created_at)) / 3600)::int end,
              'sub_sent',  (s.id is not null),
              'sub_ok',    (s.read_at is not null),
-             'sub_at',    to_char(s.read_at at time zone 'Asia/Seoul', 'MM/DD HH24:MI'))) as v
+             'sub_at',    to_char(s.read_at at time zone 'Asia/Seoul', 'MM/DD HH24:MI'),
+             'sub_hrs',   case when s.read_at is null and s.id is not null
+                               then floor(extract(epoch from (now() - s.created_at)) / 3600)::int end)) as v
       from public.bookings b
       -- 그 사람에게 간 **마지막** 배정 알림. 배정을 바꾸면 새로 가므로 마지막 것이 지금 것이다
       left join lateral (
-        select n.id, n.read_at from public.staff_notice n
+        select n.id, n.read_at, n.created_at from public.staff_notice n
          where n.booking_id = b.id and n.staff_id = b.assignee_id and n.kind = 'assign'
          order by n.created_at desc limit 1) m on b.assignee_id is not null
       left join lateral (
-        select n.id, n.read_at from public.staff_notice n
+        select n.id, n.read_at, n.created_at from public.staff_notice n
          where n.booking_id = b.id and n.staff_id = b.sub_assignee_id and n.kind = 'assign'
          order by n.created_at desc limit 1) s on b.sub_assignee_id is not null
      -- 알림이 나간 것만. 안 나간 것은 「확인 안 함」이 아니라 「물어본 적 없음」이다
