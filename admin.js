@@ -321,41 +321,32 @@ function confOf(b) { return confMap[b && b.id] || null; }
 
 /* 배정을 작가가 확인했나 (대표 2026-09-08
      «작가들 스케줄 줬는데 작가들이 확인을 햇는지 물어보기전에 알 수가 없네»
-     «그냥 앞으로 배정하는거 작가들이 확인 누르면 내가 알 수 있게해줘»)
+     «확인을 거기 넣지 말고 배정이력에 넣어»)
 
-   지금까지는 홈의 「작가 미확인」에 **안 누른 것만** 떴다. 누르면 목록에서 사라질 뿐이라,
-   없어진 것을 보고 짐작해야 했다. 이제 예약을 열면 그 자리에 적힌다.
+   처음엔 예약 상세의 작가 고르는 칸 옆과 날짜 카드에 붙였는데 대표가 바로 물리셨다.
+   **배정 이력 한 곳**에만 둔다 — 설정 → 배정 이력.
+   배정한 일과 그 확인은 같은 이야기라 한 줄에서 보는 게 맞다.
 
    세 가지다.
-     · 알림이 가고 눌렀다   → 확인함 (언제 눌렀는지까지)
+     · 알림이 가고 눌렀다     → 확인함 (언제 눌렀는지까지)
      · 알림이 갔는데 안 눌렀다 → 확인 전
-     · 알림이 간 적이 없다   → **아무것도 안 적는다**
+     · 알림이 간 적이 없다     → **아무것도 안 적는다**
    ⚠ 마지막을 「확인 안 함」으로 적으면 안 된다. 작가가 안 한 게 아니라 물어본 적이 없는 것이다.
      8/31 이전 배정 92건이 여기 해당한다 (대표가 그건 그냥 두기로 하셨다) */
-function ackMark(b, role) {
-  const a = assignAck[b && b.id];
-  if (!a) return '';
-  const who = role === 'main' ? b.assignee_id : b.sub_assignee_id;
-  if (!who) return '';
-  const sent = role === 'main' ? a.main_sent : a.sub_sent;
-  if (!sent) return '';
-  const ok = role === 'main' ? a.main_ok : a.sub_ok;
-  const at = role === 'main' ? a.main_at : a.sub_at;
-  return ok
-    ? `<span class="ackm ok" title="작가가 확인 눌렀습니다">✓ 확인함<em>${esc(at || '')}</em></span>`
-    : '<span class="ackm no" title="알림은 갔는데 아직 안 눌렀습니다">확인 전</span>';
-}
-
-/* 날짜 카드에는 이름 옆에 표 하나만. 카드가 좁아 글자를 더 넣을 자리가 없다.
-   ⚠ 폰에서는 손가락을 올려두는 동작이 없어 title 이 안 뜬다 —
-     그래서 여기는 «있다/없다» 만 말하고, 자세한 것은 예약을 열면 나온다 */
-function ackTick(b, role) {
-  const a = assignAck[b && b.id];
-  if (!a) return '';
-  const sent = role === 'main' ? a.main_sent : a.sub_sent;
-  const ok = role === 'main' ? a.main_ok : a.sub_ok;
-  if (!sent) return '';
-  return ok ? '<i class="ackt ok">✓</i>' : '<i class="ackt no">…</i>';
+function ackOf(bookingId, field, staffName0) {
+  const a = assignAck[bookingId];
+  if (!a) return null;
+  const main = field === 'assignee_id';
+  const sent = main ? a.main_sent : a.sub_sent;
+  if (!sent) return null;
+  /* ⚠ 확인 여부는 **지금 배정된 사람**의 것이다. 그 뒤에 작가가 또 바뀌었다면
+       옛 줄에 붙이면 안 된다 — 「전 작가가 확인했으니 됐다」 로 읽힌다.
+       이력 줄에 적힌 이름과 지금 배정된 이름이 같을 때만 붙인다 */
+  const b = allBookings.find((x) => x.id === bookingId);
+  if (!b) return null;
+  const nowName = staffName(main ? b.assignee_id : b.sub_assignee_id) || '';
+  if (!nowName || nowName !== (staffName0 || '')) return null;
+  return { ok: main ? a.main_ok : a.sub_ok, at: main ? a.main_at : a.sub_at };
 }
 
 // slot: 'main' | 'sub' — 그 자리를 맡을 수 있는 작가를 위로 올린다.
@@ -945,11 +936,9 @@ function renderView(b, flash) {
     ${flash ? `<p class="save-msg ok" style="text-align:left;margin:0 0 12px">${esc(flash)}</p>` : ''}
 
     <div class="md-assignee">
-      <!-- ⚠ 이 상자는 두 칸짜리 격자다(이름표 · 고르개). 확인 표시를 그냥 더하면
-           다음 줄 이름표 자리로 밀려 들어간다 — 고르개와 한 칸에 묶는다 -->
       <span class="md-asg-label">메인작가</span>
-      <span class="md-asg-pick"><select id="mAssignee" class="md-sel">${assigneeOptions(b.assignee_id, confOf(b), 'main')}</select>${ackMark(b, 'main')}</span>
-      ${b.photographer === '2인 촬영' ? `<span class="md-asg-label">서브작가</span><span class="md-asg-pick"><select id="mSubAssignee" class="md-sel">${assigneeOptions(b.sub_assignee_id, confOf(b), 'sub')}</select>${ackMark(b, 'sub')}</span>` : ''}
+      <select id="mAssignee" class="md-sel">${assigneeOptions(b.assignee_id, confOf(b), 'main')}</select>
+      ${b.photographer === '2인 촬영' ? `<span class="md-asg-label">서브작가</span><select id="mSubAssignee" class="md-sel">${assigneeOptions(b.sub_assignee_id, confOf(b), 'sub')}</select>` : ''}
     </div>
 
     <!-- 세 덩이로 묶는다 (대표 2026-08-30 «다 늘어져잇으니까 눈에 잘 안들어오네»).
@@ -2294,13 +2283,11 @@ function renderDayOv() {
     <div class="day-ov-card">
       <div class="day-ov-head"><strong>${esc(label)}</strong> <span class="muted">${sorted.length}건</span><button class="day-ov-x" aria-label="닫기">&times;</button></div>
       <div class="day-ov-list">${sorted.map((b) => {
-        // 이름 옆에 ✓ 하나 (대표 2026-09-08). 날짜를 훑을 때도 확인 여부가 보이게 —
-        // 자세한 것(누른 때)은 예약을 열면 나온다
         const main = b.assignee_id
-          ? `<span class="dchip ok" style="color:${staffColor(b.assignee_id)}">● ${esc(staffName(b.assignee_id))}${ackTick(b, 'main')}</span>`
+          ? `<span class="dchip ok" style="color:${staffColor(b.assignee_id)}">● ${esc(staffName(b.assignee_id))}</span>`
           : '<span class="dchip warn">메인 미배정</span>';
         const sub = b.photographer === '2인 촬영'
-          ? (b.sub_assignee_id ? `<span class="dchip ok" style="color:${staffColor(b.sub_assignee_id)}">● ${esc(staffName(b.sub_assignee_id))}${ackTick(b, 'sub')}</span>` : '<span class="dchip warn">서브 미배정</span>')
+          ? (b.sub_assignee_id ? `<span class="dchip ok" style="color:${staffColor(b.sub_assignee_id)}">● ${esc(staffName(b.sub_assignee_id))}</span>` : '<span class="dchip warn">서브 미배정</span>')
           : '';
         const balf = !b.balance_paid ? '<span class="dchip bal">잔금 미입금</span>' : '';
         return `<button class="day-ov-item" data-id="${b.id}">
@@ -4528,10 +4515,20 @@ async function renderAudit() {
     const risky = x.action === 'clear' || x.action === 'booking_deleted';
     const who = x.action === 'change' ? esc(x.old_staff_name || '-') + ' → ' + esc(x.new_staff_name || '-')
       : x.action === 'set' ? esc(x.new_staff_name || '-') : esc(x.old_staff_name || '-');
+    /* 작가가 확인 눌렀나 (대표 2026-09-08 «확인을 거기 넣지 말고 배정이력에 넣어»).
+       ⚠ 배정을 준 줄에만 붙인다. 해제·삭제 줄에 「확인함」이 붙으면 무엇을 확인했다는
+         말인지 알 수 없다.
+       ⚠ 지금 배정된 사람 기준이다. 그 뒤에 작가가 또 바뀌었으면 옛 줄에는 안 붙는다 —
+         옛 줄에 붙이면 「전 작가가 확인했으니 됐다」 로 읽힌다 */
+    const ak = (x.action === 'set' || x.action === 'change') ? ackOf(x.booking_id, x.field, x.new_staff_name) : null;
+    const ackHtml = !ak ? ''
+      : ak.ok
+        ? '<span class="ackm ok">✓ 확인함<em>' + esc(ak.at || '') + '</em></span>'
+        : '<span class="ackm no">확인 전</span>';
     return '<div class="au-row' + (risky ? ' risky' : '') + '">'
       + '<span class="au-at">' + esc(dt) + '</span>'
       + '<span class="au-act">' + esc((AUDIT_FIELD[x.field] || '') + ' ' + (AUDIT_ACT[x.action] || x.action)) + '</span>'
-      + '<span class="au-who">' + who + '</span>'
+      + '<span class="au-who">' + who + ackHtml + '</span>'
       + '<span class="au-bk">' + esc(x.contractor_name || '-') + (wd ? ' · ' + esc(wd) : '') + '</span>'
       + '</div>';
   }).join('') : '<p class="empty">최근 30일 안에 배정이 바뀐 적이 없습니다.</p>';
