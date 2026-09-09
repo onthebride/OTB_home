@@ -577,6 +577,14 @@ input.readonly { background: var(--cream); color: var(--ink-soft); cursor: not-a
 .bk-status { text-align: center; font-size: .95rem; margin-top: 16px; min-height: 1.2em; white-space: pre-line; line-height: 1.6; }
 .bk-status.success { color: #2f7d4f; font-weight: 500; }
 .bk-status.error { color: #c0392b; font-weight: 500; }
+/* 이미 들어온 신청이 있을 때 — 빨강(오류)도 초록(성공)도 아니다. 잘못한 게 아니라 알려드리는 것이다 */
+.bk-status.warn { color: #97743f; font-weight: 500; }
+/* 「그래도 새로 신청하기」 — 앞엣것(카카오톡 채팅 열기)이 크고 이건 작고 조용하게.
+   폰에서 손가락으로 눌러야 하니 높이는 44px 아래로 두지 않는다 */
+.btn-anyway { display: block; width: 100%; min-height: 44px; margin-top: 10px;
+  background: none; border: 1px solid var(--line); border-radius: var(--radius);
+  color: var(--ink-soft); font-family: inherit; font-size: .9rem; cursor: pointer; }
+.btn-anyway[hidden] { display: none; }
 
 @media (max-width: 860px) {
   .booking-form { padding: 32px 22px; }

@@ -419,19 +419,23 @@ function buildLineItems() {
 if (bookingForm) {
   const statusEl = document.getElementById('bkStatus');
   const submitBtn = bookingForm.querySelector('.bk-submit');
+  const anywayBtn = document.getElementById('bkAnyway');
   const KAKAO_CHAT = 'http://pf.kakao.com/_pxeNAn/chat';
   let bookingDone = false; // 1차 제출 완료 여부
+  /* 같은 번호·같은 예식일로 이미 들어온 신청이 있다고 알린 상태 (대표 2026-09-10
+       «새벽에 예약신청하고 내가 응답이 없어서 다시 예약신청하는 경우 있는데 이거 막을 수 없나?»).
+     이때 제출 단추는 「카카오톡 채팅 열기」가 되고, 그 아래 「그래도 새로 신청하기」가 나온다
+     — 대표 «빠져나갈길 두자». 진짜 다른 건일 때와 대표가 시험 삼아 넣어보실 때 이 길로 지난다 */
+  let dupPending = false;
 
   const setStatus = (msg, type) => {
     statusEl.textContent = msg;
     statusEl.className = 'bk-status' + (type ? ' ' + type : '');
   };
 
-  bookingForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    // 2차: 이미 접수됐으면 카카오톡 채팅창으로 바로 연결
-    if (bookingDone) {
+  const submitBooking = async (force) => {
+    // 2차: 이미 접수됐거나 이미 들어온 게 있다고 알린 뒤면 카카오톡 채팅창으로 바로 연결
+    if (!force && (bookingDone || dupPending)) {
       window.location.href = KAKAO_CHAT;
       return;
     }
@@ -493,15 +497,35 @@ if (bookingForm) {
       custom_options: extraSel,
     };
 
+    if (force) row.force = true;   // 「그래도 새로 신청하기」 — 서버에서 중복 검사를 건너뛴다
+
     submitBtn.disabled = true;
     setStatus('접수 중입니다...', '');
 
-    const { error } = await sb.rpc('submit_booking', { payload: row });
+    /* ⚠ 옛 submit_booking 이 아니라 _v2 다. 이미 들어온 것이 있으면 줄을 만들지 않고
+       언제 들어왔는지를 돌려준다. 옛 함수도 DB 에 그대로 살아 있다 —
+       손님 브라우저에 이미 받아둔 옛 main.js 가 그걸 부르고 있어서, 지우면 그 신청이 조용히 죽는다 */
+    const { data, error } = await sb.rpc('submit_booking_v2', { payload: row });
 
     submitBtn.disabled = false;
     if (error) {
       console.error(error);
       setStatus('접수 중 오류가 발생했어요. 다시 시도하시거나 onthebride@naver.com 으로 연락 주세요.', 'error');
+      return;
+    }
+
+    /* 이미 들어온 신청이 있다 — 폼은 그대로 두고 알리기만 한다.
+       「그래도 새로 신청하기」를 누르면 채운 그대로 다시 보낸다 (처음부터 다시 채우게 하지 않는다) */
+    if (data && data.ok === false) {
+      dupPending = true;
+      submitBtn.textContent = '카카오톡 채팅 열기 →';
+      if (anywayBtn) anywayBtn.hidden = false;
+      setStatus([
+        '이미 접수된 신청이 있어요.',
+        (data.at_txt ? data.at_txt + '에 ' : '') + '같은 연락처·같은 예식일로 들어와 있습니다.',
+        '순서대로 확인해서 연락드리고 있으니 조금만 기다려 주세요.',
+        '바꾸실 내용이 생기면 새로 신청하지 마시고 카카오톡으로 말씀해 주세요.',
+      ].join('\n'), 'warn');
       return;
     }
 
@@ -571,9 +595,31 @@ if (bookingForm) {
     tpReset();
     document.getElementById('bkTotal').textContent = calcTotal().toLocaleString('ko-KR') + '만원';
     bookingDone = true;
+    dupPending = false;
+    if (anywayBtn) anywayBtn.hidden = true;
     submitBtn.textContent = '카카오톡 채팅 열기 →';
-    setStatus('예약 신청이 접수되었습니다! 🤍\n카카오톡 채팅으로 예식 날짜와 성함을 보내주세요. 확인하셨으면 아래 버튼을 한 번 더 눌러주세요.', 'success');
-  });
+    /* 답이 늦어도 다시 넣지 마시라는 말을 여기서 한다 (대표 2026-09-10).
+       새벽에 넣고 답이 없으면 다시 넣으신다 — 그렇게 두 건이 된다 */
+    setStatus([
+      '예약 신청이 접수되었습니다! 🤍',
+      '카카오톡 채팅으로 예식 날짜와 성함을 보내주세요. 확인하셨으면 아래 버튼을 한 번 더 눌러주세요.',
+      '확인 후 순서대로 연락드립니다. 답이 늦어도 다시 신청하지 마세요 — 두 번 들어오면 확인이 더 늦어집니다.',
+      '바꾸실 내용은 새로 신청하지 마시고 카카오톡으로 말씀해 주세요.',
+    ].join('\n'), 'success');
+  };
+
+  bookingForm.addEventListener('submit', (e) => { e.preventDefault(); submitBooking(false); });
+
+  /* 「그래도 새로 신청하기」 — 채운 그대로 다시 보낸다.
+     단추 글자는 «누르면 벌어질 일»을 말한다 (지금 상태가 아니라) */
+  if (anywayBtn) {
+    anywayBtn.addEventListener('click', () => {
+      dupPending = false;
+      anywayBtn.hidden = true;
+      submitBtn.textContent = '제출하기';
+      submitBooking(true);
+    });
+  }
 }
 
 // Inquiry form — send via Web3Forms (→ email)
