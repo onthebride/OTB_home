@@ -1068,7 +1068,98 @@ async function loadMe() {
     + (s.first ? '<p class="sv-sub me-since">' + ym(s.first) + ' 부터 함께하고 계십니다</p>' : '')
     + '<h3 class="me-h">많이 가신 예식장</h3>' + venues
     + '<h3 class="me-h">후기</h3>' + fbCards
-    + (said ? '<h3 class="me-h">신부님이 남긴 글</h3>' + said : '');
+    + (said ? '<h3 class="me-h">신부님이 남긴 글</h3>' + said : '')
+    + '<div id="meGal"></div>';
+
+  loadMyGallery();
+}
+
+/* ===== 갤러리에 올라간 내 사진 (대표 2026-09-09
+     «갤러리에 나오는것들 작가들은 자기 사진을 작가 캘린더에서 볼 수 있게» / «크게보이게만 해줘»)
+
+   ⚠ 새로 여는 것이 아니다. 이 사진들은 이미 홈 갤러리에 공개돼 있다.
+     여기서는 자기 것만 골라 보여줄 뿐이다.
+   ⚠ **크게 보이게만.** 내려받기 단추를 두지 않는다 — 신부님 사진이라 대표가 그렇게 정하셨다.
+   ⚠ 아직 한 장도 없는 분이 아홉이다. 빈 화면을 그냥 두면 「나는 왜 없지」 로 끝난다 —
+     어떻게 하면 올라가는지 같이 적는다 (예식 카드의 「포스팅 가능」과 같은 말을 쓴다).
+   ⚠ 「내 기록」 을 다시 그릴 때마다 부른다. 자주 바뀌는 것이 아니라 한 번 받아두고 쓴다 */
+let myGal = null;
+async function loadMyGallery() {
+  const box = $('meGal');
+  if (!box) return;
+  if (!myGal) {
+    const { data, error } = await sb.rpc('staff_gallery', { p_staff_id: staffId });
+    if (error || !data) return;                 // 조용히 넘어간다 — 「내 기록」의 곁가지다
+    myGal = data;
+  }
+  const items = Array.isArray(myGal.items) ? myGal.items : [];
+  box.innerHTML = '<h3 class="me-h">갤러리에 올라간 내 사진'
+    + (items.length ? ' <em>' + items.length + '장</em>' : '') + '</h3>'
+    + (items.length
+      ? '<div class="me-gal">' + items.map((x, i) =>
+          `<button type="button" class="me-gth" data-gi="${i}">`
+          + `<img src="${esc(x.image_url)}" alt="${esc(x.venue || '갤러리 사진')}" loading="lazy" />`
+          + '</button>').join('') + '</div>'
+      : '<p class="me-gal-none">아직 올라간 사진이 없어요.<br />'
+        + '예식 카드에 <b>포스팅 가능</b>이라고 적힌 촬영에서 마음에 드는 사진을 골라 '
+        + '대표에게 보내주시면 갤러리에 올려드립니다.</p>');
+
+  box.querySelectorAll('[data-gi]').forEach((b) => b.addEventListener('click', () =>
+    openMyGal(items, Number(b.dataset.gi))));
+}
+
+/* 크게 보기 — 좌우로 넘기고, 배경을 누르면 닫힌다.
+   ⚠ 뒤가 안 움직이게 잠근다. 셈은 config.js 한 곳에 있다 (2026-09-06 에 모았다) */
+function openMyGal(list, start) {
+  if (!list.length) return;
+  let i = Math.max(0, start);
+  const lb = document.createElement('div');
+  lb.className = 'sc-lb';
+  lb.innerHTML = '<img alt="갤러리 사진" />'
+    + (list.length > 1 ? '<button type="button" class="sc-lb-nav prev" aria-label="이전">‹</button>'
+      + '<button type="button" class="sc-lb-nav next" aria-label="다음">›</button>'
+      + '<span class="sc-lb-n"></span>' : '')
+    + '<span class="sc-lb-v"></span>'
+    + '<button type="button" class="sc-lb-x" aria-label="닫기">&times;</button>';
+  const img = lb.querySelector('img');
+  const cnt = lb.querySelector('.sc-lb-n');
+  const ven = lb.querySelector('.sc-lb-v');
+  const draw = () => {
+    img.src = list[i].image_url;
+    ven.textContent = list[i].venue || '';
+    if (cnt) cnt.textContent = `${i + 1} / ${list.length}`;
+  };
+  const go = (s) => { i = (i + s + list.length) % list.length; draw(); };
+  const close = () => { lb.remove(); document.removeEventListener('keydown', onKey); window.otbUnlockScroll(); };
+  const onKey = (e) => {
+    if (e.key === 'Escape') close();
+    else if (e.key === 'ArrowRight') go(1);
+    else if (e.key === 'ArrowLeft') go(-1);
+  };
+  lb.addEventListener('click', (e) => {
+    if (e.target.closest('.sc-lb-x')) return close();
+    if (e.target.closest('.sc-lb-nav.prev')) return go(-1);
+    if (e.target.closest('.sc-lb-nav.next')) return go(1);
+    // ⚠ 사진 자체를 눌러서는 안 닫힌다 — 밀다가 손을 떼면 눌린 것으로 잡힌다
+    if (e.target === lb) close();
+  });
+  // 폰에서 좌우로 밀어 넘긴다. 세로로 긁는 손짓과 헷갈리지 않게 가로가 더 클 때만
+  let x0 = null, y0 = null;
+  lb.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) { x0 = null; return; }
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+  }, { passive: true });
+  lb.addEventListener('touchend', (e) => {
+    if (x0 === null) return;
+    const tc = e.changedTouches[0];
+    const dx = tc.clientX - x0, dy = tc.clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
+  }, { passive: true });
+  document.addEventListener('keydown', onKey);
+  draw();
+  window.otbLockScroll();
+  document.body.appendChild(lb);
 }
 
 function render() {
