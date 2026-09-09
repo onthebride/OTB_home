@@ -3606,31 +3606,74 @@ function selMatch(want, files) {
   return { hit, miss, dup };
 }
 
-// 예식 폴더 안에서 RAW 폴더를 찾고, 그 안 파일 이름을 전부 모은다(이어보기 포함)
-async function dbxRawFiles(folderPath, say) {
-  say('예식 폴더를 여는 중…');
-  let r = await sb.rpc('admin_dbx_ls_req', { p_path: folderPath, p_cursor: null });
-  if (r.error) return { error: r.error.message };
-  if (r.data && r.data.error) return { error: r.data.error };
-  let res = await dbxWait('admin_dbx_ls_res', { p_req: r.data.req });
-  if (res.error || res.missing) return { error: res.error || '폴더를 찾지 못했습니다.' };
+/* 예식 폴더 안에서 RAW 폴더를 찾고, 그 안 파일 이름을 전부 모은다(이어보기 포함)
 
-  const raw = (res.entries || []).find((e) => e.dir && /raw/i.test(e.name));
-  if (!raw) return { error: '이 예식 폴더 안에 RAW 폴더가 없습니다.' };
+   ⚠ 2026-09-09 대표 «드롭박스 셀렉폴더 고르는거 신부 이름 폴더 안에 폴더 있으니까
+     로우파일을 못찾네». 2인 촬영이면 서브 작가 폴더가 **신부 폴더 안에** 들어 있고
+     그 안에 또 jpg·raw 가 있다. 실제로 이렇게 생겼다:
+
+       260829 송미선 이종화/
+         ├ jpg/
+         ├ raw/                                   ← 메인
+         └ 260829-송미선-이종화-jk아트컨벤션-최선종/
+              ├ jpg/
+              └ raw/                              ← 서브 (여기를 못 찾고 있었다)
+
+     첫 겹의 raw 하나만 보고 끝냈으니 서브가 찍은 것은 영영 안 나왔다.
+     이제 **첫 겹의 raw 들 + 한 겹 안쪽의 raw 들**을 다 모은다.
+   ⚠ 마구 파고들지 않는다. 안쪽은 한 겹까지, 들여다볼 폴더는 넷까지.
+     드롭박스에 물을 때마다 왕복이 있어 깊이 파면 하염없이 느려진다. */
+async function dbxRawFiles(folderPath, say) {
+  const listAll = async (path) => {
+    const rr = await sb.rpc('admin_dbx_ls_req', { p_path: path, p_cursor: null });
+    if (rr.error) return { error: rr.error.message };
+    if (rr.data && rr.data.error) return { error: rr.data.error };
+    const rs = await dbxWait('admin_dbx_ls_res', { p_req: rr.data.req });
+    if (rs.error || rs.missing) return { error: rs.error || '폴더를 찾지 못했습니다.' };
+    return rs;
+  };
+
+  say('예식 폴더를 여는 중…');
+  const top = await listAll(folderPath);
+  if (top.error) return { error: top.error };
+
+  const isRaw = (e) => e.dir && /raw/i.test(e.name);
+  const isJpg = (e) => e.dir && /jpe?g/i.test(e.name);
+  const raws = (top.entries || []).filter(isRaw);
+
+  // 안쪽 폴더(서브 작가 폴더)에 든 raw 도 찾는다. jpg·raw 자신은 들어갈 것 없다
+  const inner = (top.entries || []).filter((e) => e.dir && !isRaw(e) && !isJpg(e)).slice(0, 4);
+  for (const d of inner) {
+    say('안쪽 폴더를 여는 중… ' + d.name);
+    const sub = await listAll(d.path);
+    if (sub.error) continue;                     // 못 열면 그냥 건너뛴다
+    (sub.entries || []).filter(isRaw).forEach((e) => raws.push(e));
+  }
+
+  if (!raws.length) return { error: '이 예식 폴더 안에 RAW 폴더가 없습니다.' };
 
   const files = [];
-  let cursor = null;
-  for (let page = 0; page < 12; page++) {
-    say('RAW 목록을 읽는 중… ' + (files.length ? files.length + '장' : ''));
-    r = await sb.rpc('admin_dbx_ls_req', cursor ? { p_path: null, p_cursor: cursor } : { p_path: raw.path, p_cursor: null });
-    if (r.error) return { error: r.error.message };
-    res = await dbxWait('admin_dbx_ls_res', { p_req: r.data.req });
-    if (res.error) return { error: res.error };
-    (res.entries || []).forEach((e) => { if (!e.dir) files.push(e); });
-    if (!res.more) break;
-    cursor = res.cursor;
+  const seen = {};                               // 같은 파일이 두 번 들어가지 않게
+  for (const raw of raws) {
+    let cursor = null;
+    for (let page = 0; page < 12; page++) {
+      say('RAW 목록을 읽는 중… ' + (files.length ? files.length + '장' : ''));
+      const rr = await sb.rpc('admin_dbx_ls_req',
+        cursor ? { p_path: null, p_cursor: cursor } : { p_path: raw.path, p_cursor: null });
+      if (rr.error) return { error: rr.error.message };
+      const rs = await dbxWait('admin_dbx_ls_res', { p_req: rr.data.req });
+      if (rs.error) return { error: rs.error };
+      (rs.entries || []).forEach((e) => {
+        if (e.dir || seen[e.path]) return;
+        seen[e.path] = 1;
+        files.push(e);
+      });
+      if (!rs.more) break;
+      cursor = rs.cursor;
+    }
   }
-  return { rawName: raw.name, files };
+  // 어디서 찾았는지 적어둔다 — 둘 이상이면 그렇게 보여야 대표가 알아보신다
+  return { rawName: raws.map((x) => x.name).join(' + '), rawN: raws.length, files };
 }
 
 /* ── 폴더 이름에서 예식일과 사람 이름 뽑기 ────────────────────────
