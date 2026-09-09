@@ -334,6 +334,22 @@
 .me-h { font-size: .95rem; font-weight: 600; color: var(--ink); margin: 20px 0 8px; }
 .me-h em { font-style: normal; font-weight: 400; font-size: .82rem; color: var(--ink-soft); margin-left: 4px; }
 
+/* 쪽 넘기기 · 더보기 (대표 2026-09-09 «사진 16개씩 / 예식장 5개까지 / 후기 5개씩»).
+   ⚠ 폰에서 손가락으로 누를 자리라 넉넉히 잡는다 */
+.me-pg { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 12px;
+  font-size: .84rem; color: var(--ink-soft); }
+.me-pg-b { width: 34px; height: 34px; border-radius: 50%; cursor: pointer;
+  border: 1px solid var(--line); background: #fff; color: var(--ink); font-size: 1.1rem; line-height: 1; }
+.me-pg-b:hover:not(:disabled) { border-color: var(--gold); }
+/* 끝에 닿으면 눌러도 소용없다는 것이 보여야 한다 */
+.me-pg-b:disabled { opacity: .35; cursor: default; }
+/* 「5곳 더보기 ∨」 — 알약 말고 글자에 밑줄만 (홈 이야기 접기와 같은 모양) */
+.me-more { display: block; margin: 10px auto 0; padding: 8px 6px 5px;
+  font-family: inherit; font-size: .84rem; color: var(--ink-soft);
+  background: none; border: none; border-bottom: 1px solid var(--line); cursor: pointer; }
+.me-more:hover { color: var(--ink); border-bottom-color: var(--gold); }
+.me-more i { font-style: normal; margin-left: 4px; color: var(--gold-deep); }
+
 /* 갤러리에 올라간 내 사진 (대표 2026-09-09 «크게보이게만 해줘»).
    ⚠ 폰이 먼저다 — 좁으면 석 줄, 넓어지면 저절로 늘어난다 */
 .me-gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; }

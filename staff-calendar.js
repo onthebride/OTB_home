@@ -1017,10 +1017,45 @@ async function setSave(patch, btn) {
   renderSet();
 }
 
+/* 「내 기록」 — 길어져서 나눠 본다 (대표 2026-09-09
+     «사진 16개씩 페이지네이션좀... / 많이 간 예식장도 5개까지 보여주고 접어줘 /
+       후기도 5개씩 페이지네이션»)
+
+   ⚠ 받아온 것을 들고 있다가 다시 그린다. 쪽을 넘길 때마다 서버에 다시 물으면
+     느리기도 하고, 그 사이 자료가 바뀌면 보던 자리가 어긋난다.
+   ⚠ 쪽수는 화면을 떠나도 그대로 둔다 — 다른 칸 갔다 오면 1쪽으로 돌아가면 답답하다 */
+const ME_PER_SAID = 5;     // 신부님이 남긴 글
+const ME_PER_GAL = 16;     // 갤러리 사진
+const ME_TOP_VENUE = 5;    // 많이 간 예식장 — 이만큼만 펴두고 접는다
+let meData = null;
+let mePg = { said: 1, gal: 1 };
+let meVenOpen = false;
+
 async function loadMe() {
   const box = $('meBody');
   const { data, error } = await sb.rpc('staff_stats', { p_staff_id: staffId });
   if (error || !data) { box.innerHTML = '<p class="sv-sub">기록을 불러오지 못했어요.</p>'; return; }
+  meData = data;
+  drawMe();
+}
+
+/* 쪽 넘기는 단추. 한 쪽이면 아예 안 그린다 */
+function mePager(kind, page, total, per) {
+  const pages = Math.ceil(total / per);
+  if (pages <= 1) return '';
+  return `<div class="me-pg">
+    <button type="button" class="me-pg-b" data-pg="${kind}" data-to="${page - 1}"${page <= 1 ? ' disabled' : ''} aria-label="이전">‹</button>
+    <span>${page} / ${pages}</span>
+    <button type="button" class="me-pg-b" data-pg="${kind}" data-to="${page + 1}"${page >= pages ? ' disabled' : ''} aria-label="다음">›</button>
+  </div>`;
+}
+// 쪽수가 범위를 벗어나지 않게 (자료가 줄어들 수 있다)
+const meClamp = (page, total, per) => Math.min(Math.max(1, page), Math.max(1, Math.ceil(total / per)));
+
+function drawMe() {
+  const box = $('meBody');
+  if (!box || !meData) return;
+  const data = meData;
   const s = data.shot || {}, f = data.fb || {}, sub = data.sub || {};
   const ym = (v) => (v ? String(v).slice(0, 7).replace('-', '. ') : '');
   // 예식장 이름이 길면 홀 이름까지는 안 보여준다 (좁은 화면에서 줄이 밀린다)
@@ -1029,9 +1064,17 @@ async function loadMe() {
   const card = (k, v, sub2) => '<div class="me-card"><span class="me-k">' + k + '</span>'
     + '<strong>' + v + '</strong>' + (sub2 ? '<span class="me-s">' + sub2 + '</span>' : '') + '</div>';
 
-  const venues = (data.venues || []).length
-    ? '<ol class="me-vn">' + data.venues.map((v) =>
+  /* 많이 간 예식장 — 다섯까지만 펴두고 나머지는 접는다 (대표 2026-09-09).
+     ⚠ 화살표는 «누르면 벌어질 일»을 가리킨다 — 접혀 있으면 ∨, 펴져 있으면 ∧ */
+  const vAll = data.venues || [];
+  const vShow = meVenOpen ? vAll : vAll.slice(0, ME_TOP_VENUE);
+  const venues = vAll.length
+    ? '<ol class="me-vn">' + vShow.map((v) =>
       '<li><span>' + cut(v.venue) + '</span><b>' + v.n + '</b></li>').join('') + '</ol>'
+      + (vAll.length > ME_TOP_VENUE
+        ? `<button type="button" class="me-more" id="meVenMore">${
+          meVenOpen ? '접기 <i>∧</i>' : `${vAll.length - ME_TOP_VENUE}곳 더보기 <i>∨</i>`}</button>`
+        : '')
     : '<p class="sv-sub">아직 기록이 없어요.</p>';
 
   // 후기가 없으면 점수 칸을 아예 안 그린다 — 「-」 만 늘어놓으면 서운하다
@@ -1046,7 +1089,10 @@ async function loadMe() {
       + '</div>'
     : '<p class="sv-sub">아직 받은 후기가 없어요. 예식 다음날 신부님께 설문이 나갑니다.</p>';
 
-  const said = (data.said || []).map((x) => {
+  // 신부님이 남긴 글 — 다섯씩 (대표 2026-09-09 «후기도 5개씩 페이지네이션»)
+  const sAll = data.said || [];
+  mePg.said = meClamp(mePg.said, sAll.length, ME_PER_SAID);
+  const said = sAll.slice((mePg.said - 1) * ME_PER_SAID, mePg.said * ME_PER_SAID).map((x) => {
     const d = x.wedding_date ? String(x.wedding_date).slice(0, 10).replace(/-/g, '. ') : '';
     // 신부님 이름도 보여준다 (대표 요청 2026-08-26). 번호·이메일은 여전히 안 온다
     return '<div class="me-say">'
@@ -1068,10 +1114,28 @@ async function loadMe() {
     + (s.first ? '<p class="sv-sub me-since">' + ym(s.first) + ' 부터 함께하고 계십니다</p>' : '')
     + '<h3 class="me-h">많이 가신 예식장</h3>' + venues
     + '<h3 class="me-h">후기</h3>' + fbCards
-    + (said ? '<h3 class="me-h">신부님이 남긴 글</h3>' + said : '')
+    + (said
+      ? '<h3 class="me-h">신부님이 남긴 글'
+        + (sAll.length > ME_PER_SAID ? ' <em>' + sAll.length + '개</em>' : '') + '</h3>'
+        + said + mePager('said', mePg.said, sAll.length, ME_PER_SAID)
+      : '')
     + '<div id="meGal"></div>';
 
+  const vm = $('meVenMore');
+  if (vm) vm.addEventListener('click', () => { meVenOpen = !meVenOpen; drawMe(); });
+  bindMePager(box);
   loadMyGallery();
+}
+
+/* 쪽 넘기기 손잡이. 갤러리와 남긴 글이 같이 쓴다 */
+function bindMePager(root) {
+  if (!root) return;
+  root.querySelectorAll('[data-pg]').forEach((b) => b.addEventListener('click', () => {
+    const kind = b.dataset.pg;
+    mePg[kind] = Number(b.dataset.to) || 1;
+    if (kind === 'gal') loadMyGallery();     // 갤러리는 제 상자만 다시 그린다
+    else drawMe();
+  }));
 }
 
 /* ===== 갤러리에 올라간 내 사진 (대표 2026-09-09
@@ -1093,19 +1157,27 @@ async function loadMyGallery() {
     myGal = data;
   }
   const items = Array.isArray(myGal.items) ? myGal.items : [];
+  /* 열여섯씩 (대표 2026-09-09 «사진 16개씩 페이지네이션좀»).
+     ⚠ 크게 보기는 **한 쪽 것만** 넘긴다. 쪽을 넘겼는데 크게 보기에서 228장이
+       주르륵 넘어가면 지금 어디를 보고 있는지 알 수 없다.
+     ⚠ 쪽 번호는 그 쪽 안에서 센다 (data-gi 는 잘라낸 목록 기준) */
+  mePg.gal = meClamp(mePg.gal, items.length, ME_PER_GAL);
+  const page = items.slice((mePg.gal - 1) * ME_PER_GAL, mePg.gal * ME_PER_GAL);
   box.innerHTML = '<h3 class="me-h">갤러리에 올라간 내 사진'
     + (items.length ? ' <em>' + items.length + '장</em>' : '') + '</h3>'
     + (items.length
-      ? '<div class="me-gal">' + items.map((x, i) =>
+      ? '<div class="me-gal">' + page.map((x, i) =>
           `<button type="button" class="me-gth" data-gi="${i}">`
           + `<img src="${esc(x.image_url)}" alt="${esc(x.venue || '갤러리 사진')}" loading="lazy" />`
           + '</button>').join('') + '</div>'
+        + mePager('gal', mePg.gal, items.length, ME_PER_GAL)
       : '<p class="me-gal-none">아직 올라간 사진이 없어요.<br />'
         + '예식 카드에 <b>포스팅 가능</b>이라고 적힌 촬영에서 마음에 드는 사진을 골라 '
         + '대표에게 보내주시면 갤러리에 올려드립니다.</p>');
 
   box.querySelectorAll('[data-gi]').forEach((b) => b.addEventListener('click', () =>
-    openMyGal(items, Number(b.dataset.gi))));
+    openMyGal(page, Number(b.dataset.gi))));
+  bindMePager(box);
 }
 
 /* 크게 보기 — 좌우로 넘기고, 배경을 누르면 닫힌다.
