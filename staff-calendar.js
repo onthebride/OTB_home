@@ -1672,14 +1672,27 @@ if (todayBtn) todayBtn.addEventListener('click', goToday);
     y0 = null; axis = null; dist = 0;
   };
 
+  /* 화면을 덮는 것이 떠 있으면 당겨서 새로고침을 아예 쉰다.
+     ⚠ 2026-09-09 대표 «갤러리 보였을때 뒤에 스크롤 안되게 잠금» —
+       사진을 크게 띄운 채로 아래로 당기면 이 손잡이가 **뒷장을 끌어내렸다.**
+       config.js 의 otbLockScroll 이 body 를 고정해도 이건 못 막는다.
+       여기는 transform 으로 직접 밀기 때문이다.
+     ⚠ 그래서 `.sc-lb` 를 하나 더 적지 않고 **no-pull** 을 본다.
+       잠글 때 붙는 표라, 앞으로 어떤 창이 생겨도 저절로 걸린다.
+     (`.sc-modal` 은 그 표를 안 쓰므로 따로 본다) */
+  const covered = () => document.documentElement.classList.contains('no-pull')
+    || !!document.querySelector('.sc-modal:not([hidden])');
+
   document.addEventListener('touchstart', (e) => {
     if (busy || e.touches.length !== 1 || !atTop()) { y0 = null; return; }
-    if (document.querySelector('.sc-modal:not([hidden])')) { y0 = null; return; }
+    if (covered()) { y0 = null; return; }
     y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; axis = null; dist = 0;
   }, { passive: true });
 
   document.addEventListener('touchmove', (e) => {
     if (y0 === null || e.touches.length !== 1) return;
+    // 당기는 도중에 창이 떴을 수도 있다 — 그때는 손을 놓는다
+    if (covered()) { reset(); return; }
     const dy = e.touches[0].clientY - y0;
     const dx = e.touches[0].clientX - x0;
     if (axis === null) {
