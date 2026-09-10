@@ -37,12 +37,24 @@ const show = (el) => { [loadCard, errCard, portalMain].forEach((x) => (x.hidden 
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const won = (n) => (n == null ? '-' : Number(n).toLocaleString('ko-KR') + '만원');
+/* 날짜는 어디서나 한 모양 — 26.09.05 (대표 2026-09-10
+     «우리 날짜를 26.09.05 이런 형식으로 다 바꿔줘»).
+   셀렉 탭과 앨범 발주가 이미 이 모양이었다. 나머지를 거기 맞춘 것이다.
+   ⚠ 「2027-04-17」처럼 시각이 없는 글자를 그냥 넘기면 UTC 로 읽혀 하루가 밀린다.
+     T00:00:00 을 붙여 이 자리(서울) 시각으로 읽는다 */
+const dPad = (n) => String(n).padStart(2, '0');
+const ymdDot = (v) => {
+  if (!v) return '-';
+  const d = v instanceof Date ? v : new Date(String(v).length <= 10 ? String(v) + 'T00:00:00' : String(v));
+  if (isNaN(d)) return String(v);
+  return `${dPad(d.getFullYear() % 100)}.${dPad(d.getMonth() + 1)}.${dPad(d.getDate())}`;
+};
 const fmtDate = (d) => {
   if (!d) return '-';
-  const dt = new Date(d + 'T00:00:00');
+  const dt = new Date(String(d).slice(0, 10) + 'T00:00:00');
   if (isNaN(dt)) return d;
   const wd = ['일', '월', '화', '수', '목', '금', '토'][dt.getDay()];
-  return `${dt.getFullYear()}. ${dt.getMonth() + 1}. ${dt.getDate()}. (${wd})`;
+  return `${ymdDot(dt)}(${wd})`;
 };
 
 let info = null;

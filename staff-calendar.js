@@ -220,6 +220,18 @@ function renderTop(name) {
    ⚠ 보고 있는 달에서 뽑지 않는다. 서버가 «오늘 이후 첫 예식» 을 따로 준다 —
    다음 촬영이 다음 달이면 이번 달만 봐서는 안 나온다 ===== */
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
+/* 날짜는 어디서나 한 모양 — 26.09.05 (대표 2026-09-10
+     «우리 날짜를 26.09.05 이런 형식으로 다 바꿔줘»).
+   셀렉 탭과 앨범 발주가 이미 이 모양이었다. 나머지를 거기 맞춘 것이다.
+   ⚠ 「2027-04-17」처럼 시각이 없는 글자를 그냥 넘기면 UTC 로 읽혀 하루가 밀린다.
+     T00:00:00 을 붙여 이 자리(서울) 시각으로 읽는다 */
+const dPad = (n) => String(n).padStart(2, '0');
+const ymdDot = (v) => {
+  if (!v) return '-';
+  const d = v instanceof Date ? v : new Date(String(v).length <= 10 ? String(v) + 'T00:00:00' : String(v));
+  if (isNaN(d)) return String(v);
+  return `${dPad(d.getFullYear() % 100)}.${dPad(d.getMonth() + 1)}.${dPad(d.getDate())}`;
+};
 
 /* 접어둔 기기는 다음에 와도 접힌 채로 (대표 요청 2026-08-27).
    저장이 막힌 기기(사파리 비공개 모드 등)에서도 화면은 그대로 돌아가야 한다 —
@@ -283,7 +295,7 @@ function nextDay(day, i, shut) {
   return `
     <button type="button" class="sc-next-m${shut ? ' shut' : ''}" data-nx="${i}"
       aria-expanded="${shut ? 'false' : 'true'}" aria-controls="scNextB${i}">
-      <span>${d.getMonth() + 1}월 ${d.getDate()}일(${DOW[d.getDay()]})${
+      <span>${ymdDot(d)}(${DOW[d.getDay()]})${
         items.length > 1 ? ` <em>${items.length}건</em>` : ''}${
         i > 0 ? ` <b class="sc-next-w">${esc(whenWord(day.days))}</b>` : ''}</span><i></i>
     </button>
@@ -1370,7 +1382,7 @@ function renderPanel() {
   p.hidden = false;
   p.innerHTML = `
     <div class="sc-panel">
-      <h3>${y}년 ${m}월 ${d}일</h3>
+      <h3>${ymdDot(openDay)}(${DOW[new Date(openDay + 'T00:00:00').getDay()]})</h3>
       ${bkHtml || ''}
       ${evHtml || ''}
       ${off ? `<div class="sc-item off"><div class="sc-item-h"><b>이 날은 촬영 불가</b><span class="sc-mine">내가 등록</span></div>

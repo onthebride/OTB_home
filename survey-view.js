@@ -16,7 +16,19 @@ const esc = (s) =>
 
 const show = (el) => ['errCard', 'loadCard', 'viewCard'].forEach((id) => ($(id).hidden = $(id) !== el));
 
-const fmtDate = (s) => (s ? String(s).slice(0, 10) : '-');
+/* 날짜는 어디서나 한 모양 — 26.09.05 (대표 2026-09-10
+     «우리 날짜를 26.09.05 이런 형식으로 다 바꿔줘»).
+   셀렉 탭과 앨범 발주가 이미 이 모양이었다. 나머지를 거기 맞춘 것이다.
+   ⚠ 「2027-04-17」처럼 시각이 없는 글자를 그냥 넘기면 UTC 로 읽혀 하루가 밀린다.
+     T00:00:00 을 붙여 이 자리(서울) 시각으로 읽는다 */
+const dPad = (n) => String(n).padStart(2, '0');
+const ymdDot = (v) => {
+  if (!v) return '-';
+  const d = v instanceof Date ? v : new Date(String(v).length <= 10 ? String(v) + 'T00:00:00' : String(v));
+  if (isNaN(d)) return String(v);
+  return `${dPad(d.getFullYear() % 100)}.${dPad(d.getMonth() + 1)}.${dPad(d.getDate())}`;
+};
+const fmtDate = ymdDot;
 const kTime = (t) => {
   if (!t) return '-';
   const [hh, mm] = String(t).split(':').map(Number);
@@ -158,7 +170,7 @@ function openRefLightbox(list, start) {
 const fmtAck = (iso) => {
   const d = new Date(iso);
   if (isNaN(d)) return '';
-  return `${d.getMonth() + 1}월 ${d.getDate()}일 ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return `${ymdDot(d)} ${dPad(d.getHours())}:${dPad(d.getMinutes())}`;
 };
 
 function renderAck(d) {

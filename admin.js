@@ -33,10 +33,25 @@ function hookPhone(root2) {
     el.addEventListener('blur', () => { el.value = fmtPhone(el.value); });
   });
 }
-const fmtDate = (s) => (s ? new Date(s).toLocaleDateString('ko-KR') : '-');
-const fmtDateShort = (s) => { if (!s) return '-'; const d = new Date(s); return `${String(d.getFullYear() % 100).padStart(2, '0')}. ${d.getMonth() + 1}. ${d.getDate()}.`; };
-const fmtDateTime = (s) =>
-  s ? new Date(s).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }) : '-';
+/* 날짜는 어디서나 한 모양 — 26.09.05 (대표 2026-09-10
+     «우리 날짜를 26.09.05 이런 형식으로 다 바꿔줘»).
+   셀렉 탭과 앨범 발주가 이미 이 모양이었다. 나머지를 거기 맞춘 것이다.
+   ⚠ 「2027-04-17」처럼 시각이 없는 글자를 그냥 넘기면 UTC 로 읽혀 하루가 밀린다.
+     T00:00:00 을 붙여 이 자리(서울) 시각으로 읽는다 */
+const dPad = (n) => String(n).padStart(2, '0');
+const ymdDot = (v) => {
+  if (!v) return '-';
+  const d = v instanceof Date ? v : new Date(String(v).length <= 10 ? String(v) + 'T00:00:00' : String(v));
+  if (isNaN(d)) return String(v);
+  return `${dPad(d.getFullYear() % 100)}.${dPad(d.getMonth() + 1)}.${dPad(d.getDate())}`;
+};
+const fmtDate = ymdDot;
+const fmtDateShort = ymdDot;            // 옛 이름 — 부르던 자리가 남아 있다
+/* 시각은 집 안에서 쓰는 모양 그대로 — 오전/오후 h:mm.
+   ⚠ toLocaleTimeString 에 맡기면 돌리는 곳에 따라 «PM 9:28» 이 나온다 (시험을 돌리는 Node 가 그렇다) */
+const hmDisp = (d) => (d.getHours() < 12 ? '오전' : '오후') + ' '
+  + (d.getHours() % 12 === 0 ? 12 : d.getHours() % 12) + ':' + dPad(d.getMinutes());
+const fmtDateTime = (s) => (s ? ymdDot(s) + ' ' + hmDisp(new Date(s)) : '-');
 
 let allBookings = [];
 let eventDiscounts = {}; // {booking_id: 승인된 할인 만원}
@@ -1648,7 +1663,7 @@ function atkManualText(b, tpl) {
 const dateGroupLabel = (dstr) => {
   if (!dstr) return '날짜 미정';
   const d = new Date(dstr);
-  return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}. (${WD[d.getDay()]})`;
+  return `${ymdDot(d)}(${WD[d.getDay()]})`;
 };
 function groupByDate(items, renderItem) {
   let last = null, out = '';
@@ -2409,7 +2424,7 @@ function dcStar(s) {
 }
 function dayCheckHtml(r) {
   const d = new Date(String(r.the_date).slice(0, 10) + 'T00:00:00');
-  const label = `${d.getMonth() + 1}월 ${d.getDate()}일 (${WD[d.getDay()]})`
+  const label = `${ymdDot(d)}(${WD[d.getDay()]})`
     + (r.at_time ? ' ' + (kTimeShort(r.at_time) || r.at_time) : '');
   const can = r.ok_n > 0;
   const head = `<div class="dc-head ${can ? 'can' : 'cant'}">
@@ -2584,7 +2599,7 @@ function dcFromPaste() {
   $('dcDate').value = r.date;
   $('dcTime').value = r.time || '';
   const d = new Date(r.date + 'T00:00:00');
-  read.textContent = `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${WD[d.getDay()]})`
+  read.textContent = `${ymdDot(d)}(${WD[d.getDay()]})`
     + (r.time ? ' ' + kTimeShort(r.time) : ' · 시간 없음') + ' 로 읽었어요';
   read.className = 'dc-read ok';
   dayCheck();
@@ -2907,7 +2922,7 @@ if ($('schedUndo')) {
   });
 }
 function schedShareText(rows) {
-  const fmtDot = (s) => (s ? String(s).slice(0, 10).replace(/-/g, '.') : '-');
+  const fmtDot = ymdDot;   // 작가에게 보내는 글도 같은 모양으로
   const pkg = (b) => ((b.package || '').replace(/\s*\(.*\)\s*/, '') || '베이직');
   return rows.map((b) => {
     // ⚠ 작가에게 나가는 글이다. 앨범·출장·대표지정은 뺀다 (대표 2026-08-31)
@@ -3470,7 +3485,7 @@ function renderHomeReviews(items) {
   const said = items.filter((x) => x.next_req || x.message).slice(0, HOME_REV_N);
   if (!said.length) { box.innerHTML = '<p class="empty sm">아직 남겨주신 글이 없습니다.</p>'; return; }
   box.innerHTML = said.map((x) => {
-    const wd = x.wedding_date ? String(x.wedding_date).slice(0, 10).replace(/-/g, '.') : '';
+    const wd = x.wedding_date ? ymdDot(x.wedding_date) : '';
     const who = x.bride_name || x.contractor_name || '';
     return '<div class="hr-item" data-id="' + esc(x.booking_id) + '">'
       + '<div class="hr-head">'
@@ -4586,11 +4601,11 @@ async function renderAudit() {
   const now = d.now || {};
   const last = d.last_check || {};
   const items = Array.isArray(d.items) ? d.items : [];
-  const when = last.at ? new Date(last.at).toLocaleString('ko-KR') : '아직 없음';
+  const when = last.at ? fmtDateTime(last.at) : '아직 없음';
 
   const rows = items.length ? items.map((x) => {
-    const dt = new Date(x.at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-    const wd = x.wedding_date ? String(x.wedding_date).slice(0, 10).replace(/-/g, '.') : '';
+    const dt = fmtDateTime(x.at);
+    const wd = x.wedding_date ? ymdDot(x.wedding_date) : '';
     const risky = x.action === 'clear' || x.action === 'booking_deleted';
     const who = x.action === 'change' ? esc(x.old_staff_name || '-') + ' → ' + esc(x.new_staff_name || '-')
       : x.action === 'set' ? esc(x.new_staff_name || '-') : esc(x.old_staff_name || '-');
@@ -4677,7 +4692,7 @@ function penaltyCard() {
 
   const list = rows.map((r) => `
     <div class="pen-row${r.waived ? ' waived' : ''}">
-      <span class="pen-d">${esc(String(r.at).slice(0, 10))}</span>
+      <span class="pen-d">${esc(ymdDot(r.at))}</span>
       <span class="pen-s">${esc(r.staff || '')}</span>
       <span class="pen-w">${esc(penName(r.kind, r.grade))}</span>
       <span class="pen-p">-${r.points}</span>
@@ -4777,7 +4792,7 @@ async function renderFeedback() {
   const pendHidden = pendAll.length - pendShown.length;
 
   const pendRows = pendShown.map((x) => {
-    const dd = String(x.wedding_date).slice(0, 10).replace(/-/g, '.');
+    const dd = ymdDot(x.wedding_date);
     return '<div class="fb-prow">'
       + '<span class="fb-pdate">' + esc(dd) + '</span>'
       + '<span class="fb-pname">' + esc(x.contractor_name || '-') + '</span>'
@@ -4864,7 +4879,7 @@ async function renderFeedback() {
     '<span class="fb-chip' + (bad ? ' bad' : '') + '">' + esc(label) + (val == null ? '' : ' <b>' + val + '</b>') + '</span>';
 
   const itemRows = paged.length ? paged.map((x) => {
-    const wd = x.wedding_date ? String(x.wedding_date).slice(0, 10).replace(/-/g, '.') : '';
+    const wd = x.wedding_date ? ymdDot(x.wedding_date) : '';
     const who = x.bride_name || x.contractor_name || '-';
     const low = Number(x.overall) <= FB_LOW;
     return '<div class="fb-item' + (low ? ' low' : '') + '" data-id="' + esc(x.booking_id) + '">'
@@ -5563,7 +5578,7 @@ async function abRenderList() {
   $('abListSum').textContent = data.count + '건 · ' + abWon(data.total);
   const items = data.items || [];
   box.innerHTML = items.length ? items.map((x) => '<div class="ab-row' + (x.paid ? '' : ' unpaid') + '" data-ab="' + esc(x.id) + '">'
-    + '<span class="ab-d">' + esc(String(x.order_date).slice(2).replace(/-/g, '.')) + '</span>'
+    + '<span class="ab-d">' + esc(ymdDot(x.order_date)) + '</span>'
     + '<span class="ab-c">' + esc(x.customer) + '</span>'
     + '<span class="ab-i">' + abLineText(x.lines) + '</span>'
     + '<span class="ab-t">' + abWon(x.total) + '</span>'
