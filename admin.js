@@ -1052,6 +1052,12 @@ function renderView(b, flash) {
     b.assignee_id = main; b.sub_assignee_id = sub;
     const i = allBookings.findIndex((x) => x.id === b.id);
     if (i >= 0) { allBookings[i].assignee_id = main; allBookings[i].sub_assignee_id = sub; }
+    /* ⚠ 겹침표는 서버에서 달 단위로 받아 들고 있다. 배정을 바꾸면 그 표가 옛것이 된다
+       (대표 2026-09-10 «양재훈 작가 했다가 바꾸고 여기 넣으려니까 바로 반영이 안되네?» —
+        비워준 작가가 다른 예식에서 계속 「겹침」 으로 잠겨 있었다).
+       지우고 이 선택칸부터 새 표로 다시 채운다 */
+    invalidateConf();
+    refillAsg(b, { mAssignee: ['assignee_id', 'main'], mSubAssignee: ['sub_assignee_id', 'sub'] });
     renderDashboard();
     toast('작가 배정을 변경했어요.');
   };
@@ -1456,6 +1462,7 @@ async function deleteBooking(id) {
   const { error } = await sb.rpc('admin_delete_booking', { p_id: id });
   if (error) { alert('삭제 실패: ' + error.message); return; }
   allBookings = allBookings.filter((b) => b.id !== id);
+  invalidateConf();                  // 그 자리가 비었다 — 겹침표를 새로 받는다
   closeModal();
   render();
   renderDashboard();
@@ -1488,6 +1495,8 @@ async function cancelBooking(id) {
   if (error) { alert('처리 실패: ' + error.message); return; }
   const i = allBookings.findIndex((x) => x.id === id);
   if (i >= 0 && data) allBookings[i] = data;
+  // 취소된 예식은 겹침에서 빠진다 (해제하면 다시 든다) — 표를 새로 받는다
+  invalidateConf();
   render();
   renderDashboard();
   renderView(data || b);
@@ -1568,6 +1577,8 @@ async function saveDetail(id, recalcEdit) {
   }
   const i = allBookings.findIndex((x) => x.id === id);
   if (i >= 0 && data) allBookings[i] = data;
+  // 배정·예식일·시간이 바뀌면 겹침표가 옛것이 된다 — 지운다 (renderView 가 새로 받아 채운다)
+  invalidateConf();
   render();
   renderDashboard();
   renderView(data || allBookings[i], '저장되었습니다.');
