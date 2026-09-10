@@ -417,18 +417,29 @@ function assigneeOptions(selId, conf, slot) {
   });
   byScore.forEach((s) => {
     if (!s.active) { off.push(one(s, ' (비활성)', false)); return; }
-    if (!fits(s)) { other.push(one(s, scoreTag(s.id), false)); return; }
     const v = conf ? conf[s.id] : null;
-    if (!v) { ok.push(one(s, scoreTag(s.id), false)); return; }
+    /* ⚠ 그날 안 되는 사람은 **자리가 맞든 안 맞든** 여기서 먼저 걸린다 (대표 2026-09-10
+         «이거 홍창완 작가 불가로 했는데 왜 저기에 뜨지?»).
+       전에는 자리부터 봤다. 그래서 「메인 전용」 으로 빠진 사람은 그날 불가·겹침이어도
+       아무 표시 없이, 잠기지도 않은 채 그냥 고를 수 있었다 —
+       실제로 홍창완 작가가 촬영 불가로 찍어둔 날(26.10.31 오세영)에 서브로 들어가 있었다 */
+    if (v && (v.s === 'off' || v.s === 'tight')) {
+      const why = v.s === 'off' ? '불가' : '겹침';
+      const d = v.d ? String(v.d) : '';
+      const shortD = d.length > 16 ? d.slice(0, 16) + '…' : d;
+      // 자리까지 안 맞으면 그것도 함께 적는다 (왜 여기 있는지 알아야 한다)
+      const only = fits(s) ? '' : (slot === 'sub' ? ' · 메인 전용' : ' · 서브 전용');
+      // 지금 배정된 작가는 잠그지 않는다 — 잠그면 되돌릴 수가 없다
+      bad.push(one(s, ` · ${why}${shortD ? ' ' + esc(shortD) : ''}${only}`, s.id !== selId && !allowConf));
+      return;
+    }
     /* 겹치진 않지만 그날 다른 일정이 있다 (대표 «그날 1건 있음 살짝 넣어줘», 2026-08-28).
        ⚠ 막지 않는다 — 시간이 넉넉하면 진짜로 배정할 수 있는 자리다.
           「배정 가능」 에 그대로 두고 글자만 붙인다 */
-    if (v.s === 'same') { ok.push(one(s, scoreTag(s.id) + ` · 그날 ${v.n || 1}건`, false)); return; }
-    const why = v.s === 'off' ? '불가' : '겹침';
-    const d = v.d ? String(v.d) : '';
-    const shortD = d.length > 16 ? d.slice(0, 16) + '…' : d;
-    // 지금 배정된 작가는 잠그지 않는다 — 잠그면 되돌릴 수가 없다
-    bad.push(one(s, ` · ${why}${shortD ? ' ' + esc(shortD) : ''}`, s.id !== selId && !allowConf));
+    const sameTag = v && v.s === 'same' ? ` · 그날 ${v.n || 1}건` : '';
+    // 이 자리를 안 하는 사람 (서브 칸의 메인 전용 · 그 반대). 막지는 않는다 — 대표가 정할 일이다
+    if (!fits(s)) { other.push(one(s, scoreTag(s.id) + sameTag, false)); return; }
+    ok.push(one(s, scoreTag(s.id) + sameTag, false));
   });
   const grp = (label, arr) => (arr.length ? `<optgroup label="${label}">${arr.join('')}</optgroup>` : '');
   return '<option value="">미배정</option>'
