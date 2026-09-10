@@ -4628,7 +4628,17 @@ const AUDIT_FIELD = { assignee_id: '메인', sub_assignee_id: '서브' };
 async function renderAudit() {
   const wrap = $('tab-audit');
   if (!wrap) return;
-  const { data, error } = await sb.rpc('admin_assignment_audit', { p_days: 30 });
+  /* 이력과 「확인했나」 를 **함께** 받는다 (대표 2026-09-10 «이거 확인하는거 사라진거 같은데»).
+     전에는 확인 자료를 예약을 통째로 다시 불러올 때만 받았다. 그래서 방금 한 배정은
+     이력에는 뜨는데 그 줄에 「확인 전」 이 안 붙어, 기능이 사라진 것처럼 보였다.
+     ⚠ 알림이 나간 적 없는 배정에는 여전히 아무것도 안 붙인다 —
+       「확인 안 함」 으로 적으면 작가가 안 한 것처럼 보인다. 물어본 적이 없는 것이다 */
+  const [res, ackRes] = await Promise.all([
+    sb.rpc('admin_assignment_audit', { p_days: 30 }),
+    sb.rpc('admin_assign_ack'),
+  ]);
+  const { data, error } = res;
+  if (ackRes && ackRes.data && typeof ackRes.data === 'object') assignAck = ackRes.data;
   if (error) { wrap.innerHTML = '<p class="empty">불러오지 못했습니다. (' + esc(error.message) + ')</p>'; return; }
   const d = data || {};
   const now = d.now || {};
