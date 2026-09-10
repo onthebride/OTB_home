@@ -370,7 +370,7 @@ const IS_IOS = /iPhone|iPad|iPod/i.test(UA)
 
 /* 알림 상태를 **한 곳**에 둔다 — 캘린더 아래 단추와 「설정」 칸 스위치가 같은 값을 보고 그린다.
    두 군데가 저마다 상태를 들고 있으면 한쪽만 바뀌어 어긋난다 (2026-08-27 대표 요청으로 둘이 됐다) */
-let pushState = 'unknown';        // unknown | unsupported | off | on
+let pushState = 'unknown';        // unknown | unsupported | off | on | blocked
 let pushMsg = '';
 // 이 기기의 등록이 「관리자」 것과 같으면 알림이 관리자 앱으로 뜬다 (아이폰)
 let pushAdminApp = false;
@@ -391,19 +391,22 @@ function syncPush() {
     const on = pushState === 'on';
     sw.classList.toggle('on', on);
     sw.setAttribute('aria-checked', on ? 'true' : 'false');
-    sw.disabled = pushState === 'unsupported' || pushState === 'unknown';
+    sw.disabled = pushState === 'unsupported' || pushState === 'unknown' || pushState === 'blocked';
     // 글자는 스위치 밖으로 뺐다 (대표 2026-08-29 «글자는 꺼내주고 그 옆에 토글 스위치»).
     // 줄 전체가 켜짐/꺼짐을 같이 입는다 — 글자 색도 따라간다
     const row = $('setPushRow');
     if (row) row.classList.toggle('on', on);
     const lab = $('setPushLbl');
-    if (lab) lab.textContent = pushState === 'unsupported' ? '켤 수 없어요' : on ? '받는 중' : '꺼짐';
+    if (lab) lab.textContent = (pushState === 'unsupported' || pushState === 'blocked')
+      ? '켤 수 없어요' : on ? '받는 중' : '꺼짐';
   }
   const hint = $('setPushMsg');
   if (hint) {
-    // 관리자 앱 안에서 켜면 알림이 그쪽 이름으로 뜬다 — 어디서 켜야 하는지 알려준다
-    const wrong = pushAdminApp && pushState === 'on'
-      ? '지금은 알림이 「OTB 관리자」 앱으로 갑니다. 홈 화면의 「내 캘린더」 앱을 열어 거기서 켜주세요.'
+    /* 관리자 앱에서는 아예 못 켜게 한다 (대표 2026-09-10 «내가 보는건 그냥 아예 막아야해»).
+       전에는 켜지게 두고 «관리자 앱으로 갑니다» 라고 알리기만 했는데,
+       그러면 그 작가 알림이 대표 폰으로 가고 작가는 제 폰으로 못 받는다 */
+    const wrong = pushAdminApp
+      ? '이 앱은 「OTB 관리자」 앱이라 여기서는 알림을 켤 수 없어요.\n홈 화면의 「내 캘린더」 앱을 열어 거기서 켜주세요.'
       : '';
     const m = pushMsg || wrong;
     hint.hidden = !m;
@@ -437,8 +440,14 @@ async function pushInit() {
     }
   }
   if (sub && Notification.permission === 'granted') {
-    await pushSave(sub);            // 이미 켜져 있다 — 이 작가 것으로 다시 적어둔다
-    pushState = 'on';
+    /* ⚠⚠ 여기서 **저장하지 않는다** (대표 2026-09-10).
+       전에는 이 자리에서 「이 작가 것」으로 다시 적었다. 그래서 대표가 작가 캘린더를
+       열어보기만 해도 그 폰이 그 작가의 알림 기기가 되고, 서버의 「작가는 한 기기만」 규칙이
+       그 작가가 제 폰에 켜둔 등록을 지웠다 — 8/27~9/10 사이 여섯 분이 그랬다.
+       이제 **물어보기만** 한다. 켜는 것은 단추를 눌렀을 때만 */
+    const { data } = await sb.rpc('push_state', { p_endpoint: sub.endpoint, p_staff_id: staffId });
+    pushAdminApp = !!(data && data.admin_app);
+    pushState = pushAdminApp ? 'blocked' : (data && data.on ? 'on' : 'off');
   } else {
     pushState = 'off';
   }
@@ -471,7 +480,9 @@ async function pushEnable() {
     const sub = await scSw.pushManager.subscribe({
       userVisibleOnly: true, applicationServerKey: b64ToU8(VAPID_PUBLIC),
     });
-    await pushSave(sub);
+    const res = await pushSave(sub);
+    // 관리자 기기다 — 서버가 안 붙이고 돌려보낸다
+    if (res && res.ok === false) { pushState = 'blocked'; pushMsg = ''; syncPush(); return; }
     pushState = 'on';
     pushMsg = '';
   } catch (_) {
@@ -499,11 +510,12 @@ async function pushSave(sub) {
     p_auth: j.keys && j.keys.auth,
     p_staff_id: staffId,          // 이게 있어야 대표 알림과 안 섞인다
   });
-  /* ⚠ 이 등록이 이미 「관리자」 것이면, 여기서 켠 알림은 **관리자 앱 이름과 아이콘**으로 뜬다.
-     대표가 실제로 그랬다 (2026-08-27) — 관리자 앱 안에서 캘린더를 열고 거기서 켰다.
-     아이폰은 홈 화면 앱마다 저장소가 따로라 **켠 앱으로** 알림이 간다.
-     막지는 않는다 — 못 받는 것보다 낫다. 대신 어디서 켜야 하는지 알려준다 */
+  /* ⚠ 관리자 기기면 서버가 붙이지 않고 { ok: false } 를 돌려준다 (2026-09-10).
+     8/27 에는 「막지는 않는다 — 못 받는 것보다 낫다」로 두었는데, 그게 사고였다:
+     그 작가 알림이 대표 폰으로 가고 작가는 제 폰으로 못 받았다.
+     아이폰은 홈 화면 앱마다 저장소가 따로라 「내 캘린더」 앱에서 켜면 제대로 붙는다 */
   pushAdminApp = !!(data && data.admin_app);
+  return data || {};
 }
 
 /* ===== 캘린더 · 내 기록 (대표 요청 2026-08-26 «탭 분리해서 넣을거야») ===== */
