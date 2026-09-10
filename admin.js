@@ -316,21 +316,31 @@ const staffName = (id) => (id && staffMap[id] ? staffMap[id].name : '');
    off   = 작가가 그날을 촬영 불가로 찍음
    tight = 같은 날 다른 일정과 4시간 안에 붙음 */
 let confMap = {};
-const confMonths = new Set();           // 이미 불러온 달
+/* 겹침표는 달 단위로 한 번 받아 들고 있다. 오래 들고 있으면 옛것이 된다 —
+   그 사이 작가가 제 캘린더에서 「촬영 불가」를 찍었을 수 있다
+   (대표 2026-09-10 «작가가 촬영 불가를 새로 찍는 것도 바로 반영되게 할까요?» → «되면 좋겠네»).
+   그래서 받은 시각을 적어두고 2분이 지나면 다시 받는다.
+   ⚠ 배정을 바꿨을 때는 invalidateConf() — 표까지 버린다 (확실히 틀린 것이라)
+   ⚠ 폰을 다시 켰을 때는 expireConf() — 시각만 지운다. 표를 버리면 화면이 한 번 깜빡인다 */
+const confAt = new Map();               // 달 → 언제 받았나
+const CONF_FRESH = 2 * 60e3;            // 이만큼은 그대로 쓴다
 let allowConf = false;                  // '겹쳐도 배정' 스위치
 const monthKey = (y, m) => `${y}-${String(m + 1).padStart(2, '0')}`;
 async function ensureConf(y, m, onLoad) {
   const key = monthKey(y, m);
-  if (confMonths.has(key)) return;
-  confMonths.add(key);                  // 먼저 넣어야 다시 그릴 때 또 부르지 않는다
+  const at = confAt.get(key);
+  if (at && Date.now() - at < CONF_FRESH) return;
+  confAt.set(key, Date.now());          // 먼저 적어야 다시 그릴 때 또 부르지 않는다
   const last = new Date(y, m + 1, 0).getDate();
   const { data, error } = await sb.rpc('admin_assign_conflicts',
     { p_from: `${key}-01`, p_to: `${key}-${String(last).padStart(2, '0')}` });
-  if (error) { confMonths.delete(key); return; }
+  if (error) { confAt.delete(key); return; }
   Object.assign(confMap, data || {});
   if (onLoad) onLoad();
 }
-function invalidateConf() { confMap = {}; confMonths.clear(); }
+function invalidateConf() { confMap = {}; confAt.clear(); }
+// 폰을 다시 켰을 때 — 표는 두고 「오래됐다」 로만 표시한다. 다음에 쓸 때 새로 받는다
+function expireConf() { confAt.clear(); }
 // 예약 하나에 대한 충돌표(없으면 아직 안 불러온 것)
 function confOf(b) { return confMap[b && b.id] || null; }
 
@@ -2856,7 +2866,8 @@ function refillAsg(b, map) {
     sel.innerHTML = assigneeOptions(b[map[id][0]] || '', confOf(b), map[id][1]);
     sel.value = keep;
   });
-  if (confOf(b)) return;            // 이미 있으면 그릴 때 반영됐다
+  /* 표가 있어도 오래됐으면 다시 받는다 — 그 사이 작가가 「촬영 불가」를 찍었을 수 있다.
+     신선하면 ensureConf 가 곧바로 돌아오고 fill 도 안 부른다 (그릴 때 이미 반영됐다) */
   ensureConf(d.getFullYear(), d.getMonth(), fill);
 }
 
@@ -6557,3 +6568,13 @@ async function saveSub(sub) {
     h = 0;
   });
 })();
+
+/* 폰으로 돌아오면 겹침표를 「오래됐다」 로 둔다 (대표 2026-09-10 «되면 좋겠네»).
+   작가가 그 사이 「촬영 불가」를 찍었을 수 있다. 여기서 받아오지는 않는다 —
+   다음에 쓸 때(모달을 열거나 일정표를 그릴 때) ensureConf 가 새로 받는다.
+   ⚠ 거는 곳은 파일 맨 아래다. 함수 옆에 두면 화면 시험이 그 대목을 잘라 돌릴 때
+     document 가 없어 통째로 터진다 (staff-calendar.js 에서 그렇게 터진 적이 있다) */
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') expireConf();
+});
+window.addEventListener('pageshow', (e) => { if (e.persisted) expireConf(); });
