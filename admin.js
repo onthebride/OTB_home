@@ -6336,15 +6336,28 @@ function renderGalleryGrid() {
   const pages = Math.ceil(list.length / GL_PER);
   const pg = $('glPager');
   if (pages <= 1) { pg.innerHTML = ''; return; }
-  // 페이지 번호 10개씩 블록으로 끊어 표시 (화면 넘침 방지)
-  const WIN = 10;
-  const block = Math.floor((glPage - 1) / WIN);
-  const from = block * WIN + 1;
-  const to = Math.min(from + WIN - 1, pages);
+  /* 몇 칸을 보일지 **화면 폭에서 정한다** (대표 2026-09-13 «페이지번호 폭에서 나가버리네»).
+     전에는 열 칸을 늘 늘어놓았다. 740장이면 37쪽이라 폰에서 양옆으로 삐져나가
+     왼쪽 「1」 은 눌리지도 않았다.
+     ⚠ flex-wrap 에 맡기면 아무 데서나 접힌다 — 보일 칸 수를 내가 정한다.
+     늘 「처음 … 지금 언저리 … 끝」 꼴이라 몇 쪽이 되든 한 줄에 들어간다 */
+  const vw = (typeof window !== 'undefined' && window.innerWidth) || 1024;
+  const side = vw < 420 ? 1 : vw < 700 ? 2 : 4;     // 지금 쪽 양옆으로 몇 칸
+  const want = new Set([1, pages, glPage]);          // 처음·끝·지금은 늘 보인다
+  for (let i = 1; i <= side; i++) { want.add(glPage - i); want.add(glPage + i); }
+  const nums = [...want].filter((i) => i >= 1 && i <= pages).sort((a, b) => a - b);
+  const JUMP = 10;                                   // … 를 누르면 열 쪽 건너뛴다
   let html = `<button class="gpg nav" data-p="${glPage - 1}"${glPage === 1 ? ' disabled' : ''}>‹</button>`;
-  if (from > 1) html += `<button class="gpg" data-p="${from - 1}">…</button>`;
-  for (let i = from; i <= to; i++) html += `<button class="gpg${i === glPage ? ' active' : ''}" data-p="${i}">${i}</button>`;
-  if (to < pages) html += `<button class="gpg" data-p="${to + 1}">…</button>`;
+  let prev = 0;
+  for (const i of nums) {
+    // 건너뛴 자리에는 … — 누르면 그쪽으로 열 쪽 간다
+    if (i - prev > 1) {
+      const jump = prev < glPage ? Math.max(1, glPage - JUMP) : Math.min(pages, glPage + JUMP);
+      html += `<button class="gpg dots" data-p="${jump}">…</button>`;
+    }
+    html += `<button class="gpg${i === glPage ? ' active' : ''}" data-p="${i}">${i}</button>`;
+    prev = i;
+  }
   html += `<button class="gpg nav" data-p="${glPage + 1}"${glPage === pages ? ' disabled' : ''}>›</button>`;
   pg.innerHTML = html;
   pg.querySelectorAll('.gpg').forEach((b) =>
