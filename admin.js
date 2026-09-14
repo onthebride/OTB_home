@@ -1342,7 +1342,7 @@ function renderEdit(b) {
     <div class="field" style="margin-bottom:10px">
       <label>상품 <small style="font-weight:400;opacity:.6">· 가격 직접 수정 가능</small></label>
       <div style="display:flex;gap:8px;align-items:center">
-        <select id="e_package" style="flex:1">
+        <select id="e_package" style="flex:1;min-width:0">
           <option value="베이직(데이터형)" data-price="${basicPrice}" ${sl(b.package, '베이직(데이터형)')}>베이직 (데이터형)</option>
           <option value="스페셜" data-price="55" ${sl(b.package, '스페셜')}>스페셜 (구상품)</option>
           <option value="베이직(구)" data-price="50" ${sl(b.package, '베이직(구)')}>베이직(구) (구상품)</option>
@@ -1372,7 +1372,7 @@ function renderEdit(b) {
     <button type="button" class="btn-sm" id="addCustom" style="margin-top:8px">+ 옵션 추가</button>
 
     <h5 class="eg">작가 배정 · 입금</h5>
-    <div class="edit-grid">
+    <div class="edit-grid asg">
       <div class="field"><label>메인작가</label><select id="e_assignee">${assigneeOptions(b.assignee_id, confOf(b), 'main')}</select></div>
       ${b.photographer === '2인 촬영' ? `<div class="field"><label>서브작가</label><select id="e_sub_assignee">${assigneeOptions(b.sub_assignee_id, confOf(b), 'sub')}</select></div>` : ''}
     </div>
