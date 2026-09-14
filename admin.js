@@ -191,10 +191,18 @@ $('logoutBtn').addEventListener('click', () => {
    그래서 누를 때마다 서버의 admin 화면이 가리키는 도장을 견줘 본다.
    ⚠ 자료 받기를 막지 않는다 — 먼저 받고, 새 판이 있으면 그다음에 통째로 다시 연다.
    ⚠ 창이 열려 있으면 다시 열지 않는다. 쓰던 것이 날아간다 */
-/* 지금 돌고 있는 판의 도장. 맨 아래에 적어두면 «옛 화면을 보고 계신지» 를 바로 여쭤볼 수 있다 */
+/* 지금 돌고 있는 판의 도장. 맨 아래에 적어두면 «옛 화면을 보고 계신지» 를 바로 여쭤볼 수 있다.
+   ⚠ **글(js)과 모양(css)을 같이 본다.** 전에는 admin.js 만 봐서,
+     모양만 고친 판을 「그대로네」 로 읽었다 (2026-09-14 c474984 가 그랬다).
+     한 화면에 여러 벌이 실릴 수 있어 **맨 처음 것**으로 잡는다 */
+const stampsOf = (html) => ['admin.js', 'admin.css']
+  .map((f) => ((html.match(new RegExp(f.replace('.', '\\.') + '\\?v=([a-z0-9]+)')) || [])[1] || '').slice(0, 6))
+  .join('·');
 function myBuild() {
-  const here = (document.querySelector('script[src*="admin.js?v="]') || {}).src || '';
-  return (here.match(/admin\.js\?v=([a-z0-9]+)/) || [])[1] || '';
+  const tags = [...document.querySelectorAll('[src*="admin.js?v="], [href*="admin.css?v="]')]
+    .map((el) => el.getAttribute('src') || el.getAttribute('href') || '').join(' ');
+  const v = stampsOf(tags);
+  return v === '·' ? '' : v;
 }
 if ($('buildStamp')) $('buildStamp').textContent = myBuild();
 
@@ -204,8 +212,8 @@ async function newBuildWaiting() {
     if (!mine) return false;
     const res = await fetch('/admin', { cache: 'no-store' });
     if (!res.ok) return false;
-    const theirs = ((await res.text()).match(/admin\.js\?v=([a-z0-9]+)/) || [])[1];
-    return !!theirs && theirs !== mine;
+    const theirs = stampsOf(await res.text());
+    return theirs !== '·' && theirs !== mine;
   } catch (_) { return false; }
 }
 $('refreshBtn').addEventListener('click', () => {
