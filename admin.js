@@ -184,7 +184,30 @@ $('logoutBtn').addEventListener('click', () => {
   try { localStorage.removeItem(SAVED_PW_KEY); } catch (_) {}
   sb.auth.signOut();
 });
-$('refreshBtn').addEventListener('click', () => loadBookings());
+/* 「새로고침」 은 자료만 다시 받는다. 그래서 내가 새 판을 올려도 화면은 옛것 그대로였다 —
+   대표가 고쳤다는 자리를 눌러보고 «똑같은데?» 하시게 된다 (2026-09-14).
+   ⚠ 아이폰 홈 화면 앱은 화면을 통째로 다시 받는 길이 「당겨서 새로고침」 뿐이다.
+     그걸 모르면 고친 것이 며칠씩 안 보인다.
+   그래서 누를 때마다 서버의 admin 화면이 가리키는 도장을 견줘 본다.
+   ⚠ 자료 받기를 막지 않는다 — 먼저 받고, 새 판이 있으면 그다음에 통째로 다시 연다.
+   ⚠ 창이 열려 있으면 다시 열지 않는다. 쓰던 것이 날아간다 */
+async function newBuildWaiting() {
+  try {
+    const here = (document.querySelector('script[src*="admin.js?v="]') || {}).src || '';
+    const mine = (here.match(/admin\.js\?v=([a-z0-9]+)/) || [])[1];
+    if (!mine) return false;
+    const res = await fetch('/admin', { cache: 'no-store' });
+    if (!res.ok) return false;
+    const theirs = ((await res.text()).match(/admin\.js\?v=([a-z0-9]+)/) || [])[1];
+    return !!theirs && theirs !== mine;
+  } catch (_) { return false; }
+}
+$('refreshBtn').addEventListener('click', () => {
+  loadBookings();
+  newBuildWaiting().then((fresh) => {
+    if (fresh && $('modal') && $('modal').hidden) { toast('새 판을 받아옵니다…'); location.reload(); }
+  });
+});
 
 /* ===== Load + render ===== */
 async function loadBookings() {

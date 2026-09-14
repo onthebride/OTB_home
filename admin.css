@@ -204,6 +204,10 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
      수정 폼만 안 되어 있었다 */
 .edit-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
 .edit-grid .field { margin-bottom: 0; min-width: 0; }
+/* 아이폰은 날짜·시간 칸을 **제 크기대로** 그리려 한다 (native picker).
+   칸을 0 까지 줄여놔도 칸 안에서 그것만 삐져나온다 (대표 2026-09-14 «예식 시간 칸도 삐져나가고»).
+   max-width 는 width 보다 늦게 매겨져서 무엇이 와도 이긴다 — 여기서 못 박는다 */
+.edit-grid input, .edit-grid select { min-width: 0; max-width: 100%; }
 .edit-grid .full2 { grid-column: 1 / -1; }
 /* 작가 고르는 칸은 한 줄에 하나. 항목 글이 길다 —
    「양재훈 · 겹침 오후 2:00 신도림 웨딩시티… · 메인 전용」 처럼 서른 자가 넘어
