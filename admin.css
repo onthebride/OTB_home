@@ -42,6 +42,8 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 .dash-user { font-size: .85rem; color: var(--ink-soft); }
 .dash-body { max-width: 1100px; margin: 0 auto; padding: 28px 28px 80px; }
 .dash-foot { text-align: center; color: var(--ink-soft); font-size: .75rem; letter-spacing: .15em; padding: 28px 0 40px; }
+/* 지금 보고 있는 화면이 몇 판인지 (대표 2026-09-14). 눈에 띄면 안 되지만 물어보면 읽을 수 있게 */
+.build-stamp { opacity: .45; font-size: .72rem; letter-spacing: .04em; }
 
 /* Tabs — 헤더에 딱 붙여 고정(위아래 여백 없이). --headh 는 admin.js가 헤더 실측해 넣음 */
 .dash-tabwrap { position: sticky; top: var(--headh, 79px); z-index: 9; background: var(--cream); border-bottom: 1px solid var(--line); }
@@ -208,6 +210,15 @@ input, button, select, textarea { font-family: inherit; font-size: 1rem; }
    칸을 0 까지 줄여놔도 칸 안에서 그것만 삐져나온다 (대표 2026-09-14 «예식 시간 칸도 삐져나가고»).
    max-width 는 width 보다 늦게 매겨져서 무엇이 와도 이긴다 — 여기서 못 박는다 */
 .edit-grid input, .edit-grid select { min-width: 0; max-width: 100%; }
+/* 날짜·시간 칸은 아이폰에서 **제 크기를 고집한다** (native picker).
+   칸을 0 까지 줄이고 max-width 로 못 박아도 그것만 삐져나온다
+   (대표 2026-09-14 «그냥 예식 날짜 예식시간 칸이 나가버리니까 생기는거 같은데»).
+   그래서 폰에서는 **줄을 통째로 준다.** 354px 면 제 크기(≈180px)로도 넉넉히 들어간다 —
+   줄이려 씨름하지 않고 자리를 넓혀주는 쪽이 확실하다.
+   ⚠ PC 는 그대로 두 칸이다. 좁을 때만 편다 */
+@media (max-width: 680px) {
+  .edit-grid.dt { grid-template-columns: minmax(0, 1fr); }
+}
 .edit-grid .full2 { grid-column: 1 / -1; }
 /* 작가 고르는 칸은 한 줄에 하나. 항목 글이 길다 —
    「양재훈 · 겹침 오후 2:00 신도림 웨딩시티… · 메인 전용」 처럼 서른 자가 넘어

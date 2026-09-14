@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="admin.css?v=f888b7c84c" />
+  <link rel="stylesheet" href="admin.css?v=d6c80c57bc" />
 </head>
 <body>
 
@@ -473,7 +473,9 @@
 
       </div>
     </div>
-    <footer class="dash-foot">© ONTHEBRIDE · 관리자</footer>
+    <!-- 판 번호를 적어둔다 (대표 2026-09-14). 고쳐 올려도 옛 화면을 보고 계실 때가 있는데,
+         여기 숫자를 여쭤보면 바로 갈린다. admin.js 가 제 도장을 읽어 채운다 -->
+    <footer class="dash-foot">© ONTHEBRIDE · 관리자 <span id="buildStamp" class="build-stamp"></span></footer>
   </section>
 
   <!-- Detail modal -->
@@ -484,6 +486,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=736416f5d9"></script>
+  <script src="admin.js?v=0581199bb8"></script>
 </body>
 </html>

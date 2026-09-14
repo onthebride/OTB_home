@@ -191,10 +191,16 @@ $('logoutBtn').addEventListener('click', () => {
    그래서 누를 때마다 서버의 admin 화면이 가리키는 도장을 견줘 본다.
    ⚠ 자료 받기를 막지 않는다 — 먼저 받고, 새 판이 있으면 그다음에 통째로 다시 연다.
    ⚠ 창이 열려 있으면 다시 열지 않는다. 쓰던 것이 날아간다 */
+/* 지금 돌고 있는 판의 도장. 맨 아래에 적어두면 «옛 화면을 보고 계신지» 를 바로 여쭤볼 수 있다 */
+function myBuild() {
+  const here = (document.querySelector('script[src*="admin.js?v="]') || {}).src || '';
+  return (here.match(/admin\.js\?v=([a-z0-9]+)/) || [])[1] || '';
+}
+if ($('buildStamp')) $('buildStamp').textContent = myBuild();
+
 async function newBuildWaiting() {
   try {
-    const here = (document.querySelector('script[src*="admin.js?v="]') || {}).src || '';
-    const mine = (here.match(/admin\.js\?v=([a-z0-9]+)/) || [])[1];
+    const mine = myBuild();
     if (!mine) return false;
     const res = await fetch('/admin', { cache: 'no-store' });
     if (!res.ok) return false;
@@ -1347,7 +1353,7 @@ function renderEdit(b) {
     </div>
 
     <h5 class="eg">예식 정보</h5>
-    <div class="edit-grid">
+    <div class="edit-grid dt">
       <div class="field"><label>예식날짜</label><input type="date" id="e_wedding_date" value="${dval(b.wedding_date)}" /></div>
       <div class="field"><label>예식시간</label><input type="time" id="e_wedding_time" value="${v(b.wedding_time)}" /></div>
       <div class="field full2"><label>예식장소</label><input id="e_wedding_venue" value="${v(b.wedding_venue)}" /></div>
