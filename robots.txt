@@ -3,6 +3,8 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /portal
+# 대표께 보여드리는 미리보기 — 아무 데서도 안 링크한다 (2026-09-15)
+Disallow: /pick-sample
 
 User-agent: GPTBot
 Allow: /

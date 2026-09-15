@@ -1,0 +1,75 @@
+/* 작가 우선순위 — 미리보기 (대표 2026-09-15 «혹시 샘플 볼 수 있나?»)
+   ⚠ 대표는 폰으로 보신다. 작가가 열둘이라 **한 줄에 하나씩 쌓이는 목록**이라야 한다.
+   ⚠ 사진은 작가마다 열 장씩만 (대표 «사진을 10개씩만 볼 수 있게»).
+     누구는 239장 누구는 9장이라 그대로 두면 장수가 광고가 된다.
+   styles.css 를 먼저 읽고 그 위에 얹는다 — 손님이 보는 화면과 같은 결이라야 한다 */
+
+.ps-brand { font-family: var(--kserif); font-size: 1.05rem; font-weight: 600; color: var(--ink); }
+.ps-brand em { font-style: normal; font-size: .78rem; color: var(--gold-deep); margin-left: 6px; }
+.ps-back { font-size: .84rem; }
+.ps-wrap { padding: 96px 0 60px; max-width: 720px; }
+
+.ps-note { background: #fbf6ee; border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 13px 16px; font-size: .88rem; color: var(--ink-soft); line-height: 1.7; margin-bottom: 20px; }
+
+.ps-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 18px 20px; margin-bottom: 18px; }
+.ps-opt { display: flex; align-items: center; gap: 10px; }
+.ps-opt .check { display: flex; align-items: center; gap: 9px; cursor: pointer; flex: 1; min-width: 0; }
+.ps-opt input { width: 18px; height: 18px; accent-color: var(--gold-deep); flex: none; }
+.ps-why { margin-top: 12px; }
+
+/* 고른 세 자리 — 늘 맨 위에 보인다. 몇 자리 남았는지가 한눈에 보여야 한다 */
+.ps-picked { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 16px; }
+.ps-slot { background: var(--paper); border: 1px dashed var(--line); border-radius: var(--radius);
+  padding: 12px 10px; text-align: center; min-height: 74px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4px; }
+.ps-slot.on { border-style: solid; border-color: var(--gold); background: #fffaf2; }
+.ps-slot i { font-style: normal; font-size: .72rem; color: var(--gold-deep); letter-spacing: .06em; }
+.ps-slot b { font-size: .96rem; font-weight: 500; color: var(--ink); }
+.ps-slot .ps-x { background: none; border: none; color: var(--ink-soft); font-size: .76rem;
+  cursor: pointer; padding: 2px 6px; text-decoration: underline; }
+.ps-slot span.dim { font-size: .84rem; color: var(--ink-soft); }
+
+/* 작가 한 분 = 한 줄 */
+.ps-list { display: flex; flex-direction: column; gap: 12px; }
+.ps-item { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+.ps-item.chosen { border-color: var(--gold); background: #fffaf2; }
+.ps-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.ps-name { font-family: var(--kserif); font-size: 1.05rem; font-weight: 600; color: var(--ink); }
+.ps-rec { background: var(--gold-deep); color: #fff; border-radius: 999px; padding: 2px 9px; font-size: .72rem; font-weight: 500; }
+.ps-score { font-size: .84rem; color: var(--gold-deep); }
+.ps-score .thin { color: var(--ink-soft); }
+.ps-none { font-size: .84rem; color: var(--ink-soft); }
+.ps-take { margin-left: auto; border: 1px solid var(--ink); background: var(--ink); color: #fff;
+  border-radius: var(--radius); padding: 8px 14px; font-size: .84rem; cursor: pointer; min-height: 38px; }
+.ps-take.off { background: none; color: var(--ink-soft); border-color: var(--line); }
+
+/* 사진 열 장 — 옆으로 넘겨 본다. 세로로 쌓으면 한 분에 화면 하나가 된다 */
+.ps-shots { display: flex; gap: 6px; overflow-x: auto; margin-top: 10px; padding-bottom: 4px; }
+.ps-shots img { width: 92px; height: 122px; object-fit: cover; border-radius: 4px; flex: none; cursor: pointer; background: var(--cream); }
+.ps-noshot { margin-top: 10px; font-size: .84rem; color: var(--ink-soft); background: var(--cream);
+  border: 1px dashed var(--line); border-radius: var(--radius); padding: 14px; text-align: center; }
+
+.ps-total { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 16px 20px; margin-top: 22px; }
+.ps-total-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: .92rem; color: var(--ink-soft); }
+.ps-total-row.sum { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 12px; font-size: 1.05rem; color: var(--ink); }
+.ps-total-row.sum b { font-family: var(--kserif); font-size: 1.15rem; }
+
+.ps-foot { margin-top: 18px; font-size: .84rem; color: var(--ink-soft); line-height: 1.7; }
+.ps-empty { color: var(--ink-soft); font-size: .9rem; padding: 30px 0; text-align: center; }
+
+/* 사진 크게 — config.js 의 잠금과 같이 쓴다 */
+.ps-lb { position: fixed; inset: 0; z-index: 1800; background: rgba(20,17,15,.9);
+  display: flex; align-items: center; justify-content: center; padding: 20px; }
+.ps-lb[hidden] { display: none; }
+.ps-lb img { max-width: 100%; max-height: 100%; border-radius: 6px; }
+
+@media (max-width: 560px) {
+  .ps-wrap { padding: 88px 0 48px; }
+  .ps-shots img { width: 78px; height: 104px; }
+  /* ⚠ 같은 고르개를 두 번 쓰지 않는다 — 시험의 rule() 이 앞엣것만 본다 (CLAUDE.md).
+     좁을 때는 한 칸 더 좁힌 이름으로 덧쓴다 */
+  .ps-head .ps-take { width: 100%; margin-left: 0; }
+}

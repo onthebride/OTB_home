@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>작가 우선순위 — 미리보기</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <!-- ⚠ 이 화면은 대표께 보여드리는 **미리보기**다 (대표 2026-09-15 «혹시 샘플 볼 수 있나?»).
+       아직 예약 폼에 안 붙였다. 아무 데서도 이 주소로 가지 않는다.
+       ⚠ 관리자로 로그인한 기기에서만 자료가 보인다 — 작가 이름·후기 점수는
+         아직 손님에게 열 것이 아니라서 관리자 함수로 받는다. 열 때 손님용 함수를 따로 판다. -->
+  <meta name="robots" content="noindex, nofollow" />
+  <!-- 글꼴 주소는 홈 계열과 **똑같이** 쓴다 — 한 글자만 달라도 글꼴을 두 벌 받는다 -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Noto+Serif+KR:wght@300;400;500;600&family=Noto+Sans+KR:wght@400;500;700&display=swap" />
+  <link rel="stylesheet" href="styles.css?v=703473734b" />
+  <link rel="stylesheet" href="pick-sample.css?v=b411bc3c67" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <span class="ps-brand">작가 우선순위 <em>미리보기</em></span>
+      <a href="/admin" class="btn-ghost ps-back">관리자로</a>
+    </div>
+  </header>
+
+  <main class="container ps-wrap">
+    <p class="ps-note">
+      신부님이 예약할 때 보시게 될 화면입니다. <b>아직 예약 폼에 붙이지 않았습니다.</b>
+      여기서 눌러보셔도 아무것도 저장되지 않습니다.
+    </p>
+
+    <section class="ps-card">
+      <div class="ps-opt">
+        <label class="check"><input type="checkbox" id="psOn" /> <span class="opt-name">작가 우선순위</span></label>
+        <span class="opt-price">+3만원</span>
+      </div>
+      <ul class="opt-notes ps-why">
+        <li>원하시는 작가님을 <b>세 분</b>까지 순서대로 골라주세요. <b>셋 중 한 분</b>이 촬영합니다.</li>
+        <li>세 분 모두 그날 어려우면 <b>3만원은 총액에서 빠집니다.</b></li>
+        <li>한 분을 꼭 정하고 싶으시면 <b>지정</b>을 골라주세요. (준비 중)</li>
+      </ul>
+    </section>
+
+    <section id="psPick" hidden>
+      <div class="ps-picked" id="psPicked"></div>
+      <div class="ps-list" id="psList"><p class="ps-empty">불러오는 중…</p></div>
+    </section>
+
+    <section class="ps-total">
+      <div class="ps-total-row"><span>기본 (베이직)</span><b>550,000원</b></div>
+      <div class="ps-total-row" id="psFeeRow" hidden><span>작가 우선순위</span><b>+30,000원</b></div>
+      <div class="ps-total-row sum"><span>합계</span><b id="psSum">550,000원</b></div>
+    </section>
+
+    <p class="ps-foot" id="psFoot"></p>
+  </main>
+
+  <div class="ps-lb" id="psLb" hidden><img id="psLbImg" alt="" /></div>
+
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="config.js"></script>
+  <script defer src="pick-sample.js?v=fbdca8d7a9"></script>
+</body>
+</html>
