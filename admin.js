@@ -3206,30 +3206,49 @@ function renderStaff() {
     })
   );
 
+  /* 한 줄을 통째로 저장한다. 저장 단추와 **체크 세 개가 같은 길**을 쓴다
+     (대표 2026-09-15 «강사무엘 손대희 활성 해제 했는데» — 체크만 풀고 저장을 안 누르셔서
+      DB 는 그대로였다. 대표 지정은 누르면 바로 저장되는데 활성·메인·서브만 단추를 기다렸다) */
+  const saveStaffRow = async (id, said) => {
+    const pick = (c) => $('staffList').querySelector(`.${c}[data-id="${id}"]`);
+    const name = pick('st-name').value.trim();
+    const phone = pick('st-phone').value.trim();
+    const active = pick('st-act').checked;
+    const rep = pick('st-rep').classList.contains('on');
+    const auto = pick('st-auto').checked;
+    const color = auto ? '' : pick('st-color').value;   // ''=자동, #RRGGBB=지정
+    const canMain = pick('st-main').checked;
+    const canSub = pick('st-sub').checked;
+    if (!name) { alert('이름을 입력하세요.'); return false; }
+    if (!canMain && !canSub) { alert('메인·서브 중 하나는 체크해 주세요.'); renderStaff(); return false; }
+    const { error } = await sb.rpc('admin_staff_update', { p_id: id, p_name: name, p_phone: phone, p_active: active, p_rep: rep, p_color: color, p_can_main: canMain, p_can_sub: canSub });
+    if (error) { alert('저장 실패: ' + error.message); renderStaff(); return false; }
+    await loadStaff();
+    invalidateConf();
+    renderStaff();
+    renderDashboard();
+    toast(said || '저장되었습니다.');
+    return true;
+  };
+
   $('staffList').querySelectorAll('.st-save').forEach((btn) =>
     btn.addEventListener('click', async () => {
-      const id = btn.dataset.id;
-      const name = $('staffList').querySelector(`.st-name[data-id="${id}"]`).value.trim();
-      const phone = $('staffList').querySelector(`.st-phone[data-id="${id}"]`).value.trim();
-      const active = $('staffList').querySelector(`.st-act[data-id="${id}"]`).checked;
-      const rep = $('staffList').querySelector(`.st-rep[data-id="${id}"]`).classList.contains('on');
-      const auto = $('staffList').querySelector(`.st-auto[data-id="${id}"]`).checked;
-      const color = auto ? '' : $('staffList').querySelector(`.st-color[data-id="${id}"]`).value; // ''=자동, #RRGGBB=지정
-      const canMain = $('staffList').querySelector(`.st-main[data-id="${id}"]`).checked;
-      const canSub = $('staffList').querySelector(`.st-sub[data-id="${id}"]`).checked;
-      if (!name) { alert('이름을 입력하세요.'); return; }
-      if (!canMain && !canSub) { alert('메인·서브 중 하나는 체크해 주세요.'); return; }
       btn.disabled = true;
-      const { error } = await sb.rpc('admin_staff_update', { p_id: id, p_name: name, p_phone: phone, p_active: active, p_rep: rep, p_color: color, p_can_main: canMain, p_can_sub: canSub });
+      await saveStaffRow(btn.dataset.id);
       btn.disabled = false;
-      if (error) { alert('저장 실패: ' + error.message); return; }
-      await loadStaff();
-      invalidateConf();
-      renderStaff();
-      renderDashboard();
-      toast('저장되었습니다.');
     })
   );
+
+  /* ★ 체크는 **누르는 즉시** 저장한다 — 저장 단추를 기다리지 않는다.
+     ⚠ 무엇이 어떻게 바뀌었는지 말로 알려준다. 「저장되었습니다」 만으로는
+       내가 무엇을 껐는지 확인이 안 된다 */
+  const FLAG = { 'st-act': '활성', 'st-main': '메인', 'st-sub': '서브' };
+  Object.keys(FLAG).forEach((cls) =>
+    $('staffList').querySelectorAll('.' + cls).forEach((cb) =>
+      cb.addEventListener('change', () => {
+        const who = (staffMap[cb.dataset.id] || {}).name || '';
+        saveStaffRow(cb.dataset.id, who + ' — ' + FLAG[cls] + (cb.checked ? ' 켰습니다' : ' 껐습니다'));
+      })));
   $('staffList').querySelectorAll('.st-del').forEach((btn) =>
     btn.addEventListener('click', async () => {
       if (!confirm('이 담당자를 삭제할까요? (배정된 예식은 미배정으로 바뀝니다)')) return;
