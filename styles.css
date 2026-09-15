@@ -368,6 +368,13 @@ html.no-pull, html.no-pull body { overscroll-behavior: none; }
 .note-block li:last-child { margin-bottom: 0; }
 .note-block li::before { content: "·"; position: absolute; left: 4px; color: var(--gold); font-weight: 700; }
 .note-block strong { color: var(--ink); font-weight: 600; }
+/* 「보정은 이런 것을 합니다」 — 줄을 통째로 쓰고, 넓으면 두 칸으로 흐른다 (대표 2026-09-15).
+   ⚠ @media 를 따로 두지 않는다. auto-fit 이 폭을 보고 알아서 한 칸/두 칸이 된다 —
+     같은 고르개를 두 번 쓰면 시험의 rule() 이 앞엣것만 본다 (CLAUDE.md).
+     폰(칸 폭 354px)에서는 300px 짜리 두 칸이 안 들어가 한 칸이 된다 */
+.note-block.full { grid-column: 1 / -1; }
+.note-block.full ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); column-gap: 40px; }
+.note-sm { font-size: .85em; opacity: .75; }
 .event-highlight { text-align: center; margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--line); font-family: var(--kserif); font-size: 1.1rem; font-weight: 600; font-style: italic; color: var(--gold-deep); }
 
 @media (max-width: 860px) {
