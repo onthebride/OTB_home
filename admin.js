@@ -5036,7 +5036,7 @@ async function renderFeedback() {
     + '</div>'
     + (pendAll.length
       ? '<div class="dash-card fb-pendcard' + (fbPendOpen ? ' open' : '') + '">'
-        + '<div class="dash-card-head"><button type="button" class="fb-pendtoggle" aria-expanded="' + (fbPendOpen ? 'true' : 'false') + '">'
+        + '<div class="dash-card-head"><button type="button" class="fb-pendtoggle" id="pendToggle" aria-expanded="' + (fbPendOpen ? 'true' : 'false') + '">'
           + '📮 설문 안 온 예식 <small>(링크를 복사해 직접 보낼 수 있습니다)</small> '
           + '<span class="dash-count">' + pendAll.length + '</span> <span class="sv-caret">' + (fbPendOpen ? '▴' : '▾') + '</span></button></div>'
         + (fbPendOpen
@@ -5081,7 +5081,13 @@ async function renderFeedback() {
     navigator.clipboard?.writeText(txt);
     toast('복사됐습니다 · 카톡에 붙여넣어 보내세요');
   }));
-  const pt = q('.fb-pendtoggle');
+  /* ⚠⚠ class 로 찾으면 안 된다. 「감점」 카드 단추도 모양을 같이 쓰려고
+     .fb-pendtoggle 을 달고 있어서, q() 가 **먼저 만나는 감점 단추**를 집어 갔다
+     (roots 차례가 [wrap, penBody, fbItemsBody] 인데 설문 카드는 맨 뒤에 있다).
+     그래서 설문 카드에는 아무것도 안 걸렸고, 감점 단추에는 두 개가 걸렸다 —
+     대표 «이거 안펼쳐지는데?» (2026-09-15). 감점 단추처럼 **이름으로** 건다.
+     ⚠ 한 화면에 같은 묶음이 여럿이면 통째로 찾지 않는다 (CLAUDE.md) */
+  const pt = q('#pendToggle');
   if (pt) pt.addEventListener('click', () => { fbPendOpen = !fbPendOpen; renderFeedback(); });
   const more = q('.fb-pendmore');
   if (more) more.addEventListener('click', () => { fbPendAll = !fbPendAll; renderFeedback(); });
