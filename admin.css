@@ -1239,7 +1239,10 @@ td .muted { color: var(--ink-soft); }
 /* 응답률은 건수 바로 옆에 붙인다 (2026-08-25) */
 .fb-sn { font-size: .78rem; color: var(--ink-soft); margin-left: auto; white-space: nowrap; }
 
-.fb-list { display: flex; flex-direction: column; gap: 10px; max-height: 620px; overflow-y: auto; }
+/* 안쪽 스크롤을 없앤다 (대표 2026-09-15 «10개가 다 안보이고 내부 스크롤이 되서 답답하네»).
+   상자 안에 또 스크롤이 생기면 손가락이 어디를 미는지 헷갈리고, 한 쪽에 몇 건인지도 안 보인다.
+   길어지면 화면을 내리면 된다 — 그게 폰에서 자연스럽다 */
+.fb-list { display: flex; flex-direction: column; gap: 10px; }
 .fb-item { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; background: #fff; }
 .fb-item.low { border-color: #d9b3aa; background: #fcf3f1; }
 .fb-ihead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
