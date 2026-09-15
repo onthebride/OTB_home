@@ -1874,7 +1874,17 @@ function renderReminders() {
   if ($('remCount')) $('remCount').textContent = items.length;
   if (!items.length) { $('reminderList').innerHTML = ''; return; }
   $('reminderList').innerHTML = items.map((r) => {
-    const ico = r.kind === 'staff_survey' ? '📋' : r.kind === 'survey_share' ? '📋' : '🗓';
+    /* 폰으로 나간 알림도 여기 남는다 (대표 2026-09-15 «홈에 내용이 공지처럼 바로 보였으면»).
+       제목 앞에 그림이 붙어 오므로(🚨 배정 데이터 이상 …) 그걸 그대로 아이콘으로 쓰고
+       제목에서는 뗀다 — 같은 그림이 두 번 보이면 지저분하다 */
+    /* ⚠ 갈래가 «push:1a2b3c4d» 꼴이다 — 제목+내용 도장을 붙였다.
+       admin_reminders 에 unique(kind, due_date, booking_id) 가 걸려 있어
+       kind 를 'push' 로만 두면 하루에 한 줄밖에 못 들어간다. 그래서 **시작하는지**를 본다 */
+    const isPush = String(r.kind || '').indexOf('push') === 0;
+    const em = isPush ? (String(r.title || '').match(/^(\p{Extended_Pictographic}\uFE0F?)\s*/u) || null) : null;
+    const title = em ? r.title.slice(em[0].length) : r.title;
+    const ico = isPush ? (em ? em[1] : '🔔')
+      : r.kind === 'staff_survey' ? '📋' : r.kind === 'survey_share' ? '📋' : '🗓';
     const openable = !!r.booking_id;
     // 작가에게 가는 톡은 «자동으로 나간다» — 설문은 매일 오전 10시 2분, 스케줄은 월요일 오전 10시.
     // 이 알림은 나가기 전에 미리 보여주는 것이다 (대표 2026-08-29). 그래서 단추가 둘이다.
@@ -1896,7 +1906,7 @@ function renderReminders() {
     <div class="reminder-item${held ? ' rem-held' : ''}" data-id="${r.id}">
       <span class="reminder-ico">${ico}</span>
       <div class="reminder-text${openable ? ' rem-open' : ''}"${openable ? ` data-bid="${r.booking_id}"` : ''}>
-        <b>${esc(r.title)}</b>${r.body ? `<span>${esc(r.body)}</span>` : ''}
+        <b>${esc(title)}</b>${r.body ? `<span>${esc(r.body)}</span>` : ''}
         ${held ? '<span class="rem-held-tag">오늘은 안 나갑니다</span>' : ''}
       </div>${acts}
     </div>`;
