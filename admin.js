@@ -4688,7 +4688,12 @@ if (stRange) {
 /* ===== 배정 이력·점검 =====
    작가 배정은 사라지면 안 되는 데이터라, 바뀔 때마다 이전 값을 남기고(트리거)
    매시간 배정 수를 점검해 줄어들면 대표 폰으로 알림이 간다. 여기서는 그 결과를 본다. */
-const AUDIT_ACT = { set: '배정', change: '작가 변경', clear: '배정 해제', booking_deleted: '예약 삭제' };
+/* ⚠ booking_cancelled·booking_restored 는 배정 칸이 아니라 **예식 상태**가 바뀐 줄이다
+     (대표 2026-09-16 «예식 취소로 배정이 취소된건 배정이력에 반영이 안되네»).
+     예식이 취소되면 배정 칸은 그대로인데 「배정됨」 셈은 하나 줄어, 매시 점검이
+     「배정 1건 줄어듦」 으로 울린다. 그 까닭이 여기 적혀야 보고 바로 안다 */
+const AUDIT_ACT = { set: '배정', change: '작가 변경', clear: '배정 해제', booking_deleted: '예약 삭제',
+  booking_cancelled: '예식 취소', booking_restored: '취소 해제' };
 const AUDIT_FIELD = { assignee_id: '메인', sub_assignee_id: '서브' };
 
 async function renderAudit() {
@@ -4716,8 +4721,11 @@ async function renderAudit() {
     const dt = fmtDateTime(x.at);
     const wd = x.wedding_date ? ymdDot(x.wedding_date) : '';
     const risky = x.action === 'clear' || x.action === 'booking_deleted';
+    /* 들어오는 줄(배정·취소 해제)은 new 칸에, 빠지는 줄(해제·삭제·예식 취소)은 old 칸에 이름이 있다.
+       DB 쪽(private.log_booking_cancel_assignment)이 그 규칙으로 넣는다 */
     const who = x.action === 'change' ? esc(x.old_staff_name || '-') + ' → ' + esc(x.new_staff_name || '-')
-      : x.action === 'set' ? esc(x.new_staff_name || '-') : esc(x.old_staff_name || '-');
+      : (x.action === 'set' || x.action === 'booking_restored') ? esc(x.new_staff_name || '-')
+        : esc(x.old_staff_name || '-');
     /* 작가가 확인 눌렀나 (대표 2026-09-08 «확인을 거기 넣지 말고 배정이력에 넣어»).
        ⚠ 배정을 준 줄에만 붙인다. 해제·삭제 줄에 「확인함」이 붙으면 무엇을 확인했다는
          말인지 알 수 없다.
