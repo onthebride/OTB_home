@@ -879,6 +879,11 @@ function capBox(d) {
   </div>`;
 }
 
+/* 「지정을 받으시려면」 목록.
+   ⚠⚠ 2026-09-16 저녁부터 **자격 문턱이 없다** (대표 «일단 지정은 기본 5만원»).
+     셋이 다 0 이면 「우리 촬영 0회 ✓ 후기 0개 ✓」 같은 빈 줄만 남아 아무 말도 안 한다.
+     그때는 **목록을 아예 안 그린다.** 조건은 이제 사다리(capBox)가 말한다.
+     ⚠ 셈하는 길은 남겨 둔다 — 대표가 문턱을 다시 올리시면 그대로 되살아난다. */
 function reqList(d) {
   const e = d.elig;
   if (!e) return '';
@@ -887,25 +892,31 @@ function reqList(d) {
     ['후기', e.reviews, e.need_reviews, '개'],
     ['갤러리 사진', e.gallery, e.need_gallery, '장'],
   ];
-  const li = rows.map(([nm, now, need, unit]) => {
+  const needAny = rows.some(([, , need]) => (Number(need) || 0) > 0);
+  const li = !needAny ? '' : rows.map(([nm, now, need, unit]) => {
     const done = now >= need;
     const rest = need - now;
     return `<li class="${done ? 'ok' : 'no'}"><i aria-hidden="true">${done ? '✓' : '·'}</i>`
       + `<b>${nm}</b><span>${now}${unit}`
       + (done ? '' : ` <em>${rest}${unit} 더</em>`) + `</span></li>`;
   }).join('');
-  // 셋을 다 채웠는데도 안 되는 경우는 「스케줄 받기」 를 꺼두신 때뿐이다
+  // 지정이 안 열리는 까닭은 이제 둘뿐이다 — 쉬는 중이거나, 서브만 맡고 계시거나
   const shut = e.ok === false && e.accepting === false;
-  /* ⚠ 「갤러리 사진 10장 더」 만 적어두면 작가님이 **어떻게 채우는지를 모른다** —
+  const subOnly = e.can_main === false;
+  /* ⚠ 「사진 5장 더」 만 적어두면 작가님이 **어떻게 채우는지를 모른다** —
        갤러리에 올리는 것은 대표이지 작가가 아니다 (대표 2026-08-31
        «작가들 갤러리 사진은 포스팅 yes인 신부 촬영 후 마음에 드는 사진 골라서 나한테
          주면 갤러리 올려주겠다고 안내해줘»).
-     「포스팅 가능」 은 예식 카드에 그대로 붙는 말이다 — 같은 말을 써야 알아보신다 */
-  const needGal = e.gallery < e.need_gallery;
+     「포스팅 가능」 은 예식 카드에 그대로 붙는 말이다 — 같은 말을 써야 알아보신다.
+     ⚠ 이제 「몇 장 더」는 **사다리 다음 단**이 말한다. 그 단이 사진을 더 바랄 때만 적는다 */
+  const nx = e.next_tier;
+  const needGal = !!(nx && e.gallery < nx.gallery);
+  if (!needAny && !shut && !subOnly && !needGal) return '';
   return `<div class="sc-req${d.can_fee ? ' done' : ''}">
-      <p class="sc-req-t">${d.can_fee ? '지정을 받으실 수 있어요.' : '지정을 받으시려면'}</p>
-      <ul>${li}</ul>
+      ${needAny ? `<p class="sc-req-t">${d.can_fee ? '지정을 받으실 수 있어요.' : '지정을 받으시려면'}</p>
+      <ul>${li}</ul>` : ''}
       ${needGal ? '<p class="sc-req-how"><b>갤러리 사진</b>은 예식 카드에 <b>포스팅 가능</b>이라고 적힌 촬영에서, 마음에 드는 사진을 골라 대표에게 보내주세요. 대표가 갤러리에 올려드립니다.</p>' : ''}
+      ${subOnly ? '<p class="sc-req-shut">지금은 <b>서브 촬영</b>만 맡고 계셔서 지정은 열리지 않아요.</p>' : ''}
       ${shut ? '<p class="sc-req-shut">지금은 <b>스케줄 받기</b>가 꺼져 있어요. 켜시면 지정도 함께 열립니다.</p>' : ''}
     </div>`;
 }
@@ -945,7 +956,9 @@ function feeNow(d) {
        이제 누구 몫인지 갈리지 않으니 적을 것도 없다 */
   const none = `신부님은 <b>${wonFmt(pin)}원</b>에 지정하실 수 있어요.`;
   if (d.pick_fee == null) return `아직 안 정하셨어요. ${none}`;
-  if (d.pick_fee === 0) return `지금은 <b>안 받는 것</b>으로 되어 있어요. ${none}`;
+  /* ⚠ 0 은 「지정을 아예 안 받겠다」다 — 기본값도 안 받으신다.
+     여기에 「신부님은 …원에 지정하실 수 있어요」를 붙이면 앞뒤가 안 맞는다 */
+  if (d.pick_fee === 0) return `지금은 <b>안 받는 것</b>으로 되어 있어요.`;
   const cut = cutOf(d, d.pick_fee);
   return `지금 <b>${wonFmt(d.pick_fee)}원</b> — 신부님이 지정하시면 그만큼 더 내십니다.`
     + `<br />기본 페이 <b>${wonFmt(baseOf(d))}원</b>에 더해 <b>${wonFmt(d.pick_fee - cut)}원</b>을 받으세요.`
@@ -1000,7 +1013,7 @@ function renderSet() {
         <h3>지정 촬영비</h3>
         <p class="sc-set-soon">지정 촬영은 <b>빠른 시일 내에 도입될 예정</b>입니다.<br />
           ${d.can_fee ? '미리 정해두시면 시작하는 날 바로 반영돼요.'
-            : '도입 전까지 아래를 채우시면 그때 정하실 수 있어요.'}</p>
+            : '아래를 보시고 준비해 주세요.'}</p>
         ${reqList(d)}
         ${d.can_fee ? `
         ${capBox(d)}
