@@ -857,18 +857,23 @@ function capBox(d) {
   const cap = Number(e.fee_cap) || 0;
   const nx = e.next_tier;
   const tiers = Array.isArray(e.tiers) ? e.tiers : [];
+  /* ⚠ 2026-09-16 부터 사다리가 **촬영 수도** 본다 (대표 «촬영 1회, 후기 1회, 사진 1개 …»).
+     셋을 다 넘어야 그 단이다. 맨 윗단은 **상한이 없다** (대표 «상한은 없이 하자»).
+     ⚠ 줄이 길어지면 폰에서 접힌다 — 「촬영 20 · 후기 20 · 사진 50」으로 짧게 적는다
+       (대표도 갤러리를 「사진」이라 부르신다) */
+  const top = tiers.length ? tiers[tiers.length - 1] : null;
   const rows = tiers.map((t) => {
-    const got = e.reviews >= t.reviews && e.gallery >= t.gallery;
+    const got = e.shots >= (t.shots || 0) && e.reviews >= t.reviews && e.gallery >= t.gallery;
     return `<li class="${got ? 'ok' : ''}"><i aria-hidden="true">${got ? '✓' : '·'}</i>`
-      + `<span>후기 ${t.reviews}개 · 갤러리 ${t.gallery}장</span>`
-      + `<b>${wonFmt(t.cap)}원</b></li>`;
+      + `<span>촬영 ${t.shots} · 후기 ${t.reviews} · 사진 ${t.gallery}</span>`
+      + `<b>${t === top ? '상한 없음' : wonFmt(t.cap) + '원'}</b></li>`;
   }).join('');
   return `<div class="sc-cap">
-    <p class="sc-cap-t">지금 정하실 수 있는 최대 <b>${wonFmt(cap)}원</b>
+    <p class="sc-cap-t">지금 정하실 수 있는 최대 <b>${e.no_cap ? '상한 없음' : wonFmt(cap) + '원'}</b>
       <em>${e.fee_tier}/${e.tiers_n}단</em></p>
-    ${nx ? `<p class="sc-cap-nx">후기 <b>${nx.reviews}개</b> · 갤러리 <b>${nx.gallery}장</b>이 되면
-      <b>${wonFmt(nx.cap)}원</b>까지 올라가요.
-      <span>지금 후기 ${e.reviews}개 · 갤러리 ${e.gallery}장</span></p>`
+    ${nx ? `<p class="sc-cap-nx">촬영 <b>${nx.shots}회</b> · 후기 <b>${nx.reviews}개</b> ·
+      사진 <b>${nx.gallery}장</b>이 되면 <b>${nx.cap >= 1000000 ? '상한 없이' : wonFmt(nx.cap) + '원까지'}</b> 올라가요.
+      <span>지금 촬영 ${e.shots}회 · 후기 ${e.reviews}개 · 사진 ${e.gallery}장</span></p>`
       : '<p class="sc-cap-nx">맨 윗단이에요. 더 올라갈 곳이 없습니다.</p>'}
     <ul class="sc-cap-l">${rows}</ul>
   </div>`;
@@ -905,14 +910,32 @@ function reqList(d) {
     </div>`;
 }
 
-/* 지금 얼마로 되어 있나 + 3.3% 를 뗀 실수령
-   (대표 2026-08-30 «지정비는 전체페이에대한 비용이야 / 차차 지금 페이도 세금공제 할 예정») */
+/* 회사 수수료 — 적은 값의 50%, 다만 3만원까지 (대표 2026-09-16
+   «지정비는 적은 값에서 50% 최대 3만원 까지 우리 수수료로»).
+   ⚠ 최소가 6만원이라 셈해보면 **회사 몫은 늘 3만원**이다. 그래도 규칙대로 적어 둔다 —
+     대표가 최소를 내리시면 그때 저절로 맞는다.
+   ⚠ 숫자는 서버에서 받아 쓴다(cut_pct·cut_max). 여기 적어두면 서버와 어긋난다 */
+const cutOf = (d, fee) => Math.min(
+  Math.floor((Number(fee) || 0) * (Number(d && d.cut_pct) || 50) / 100),
+  Number(d && d.cut_max) || 30000);
+
+/* 지금 얼마로 되어 있나 + 내가 받는 몫
+   ⚠⚠ 2026-09-16 까지 여기에 「신부님이 지정하시면 280,000원이 나갑니다 · 세금 3.3%를 떼고
+     …원을 받으세요」 라고 적혀 있었다. **지정비를 전액 드린다는 말**이었다.
+     대표가 수수료를 두기로 하셔서 **약속이 어긋나므로 같이 고쳤다.**
+   ⚠ 세금 3.3% 글은 뺐다 (대표 «세금문구는 일단 빼자»). 셈(tax_bp·netPay)은 남겨뒀다 —
+     지우면 되살리실 때 다시 만들어야 한다.
+   ⚠ 0 의 뜻이 바뀌었다 — 「안 팔린다」가 아니라 「팔리지만 내 몫이 없다」다
+     (대표 «금액 없으면 지정값 3만원», 그 3만원은 전액 회사 몫) */
 function feeNow(d) {
-  if (d.pick_fee == null) return '아직 안 정하셨어요.';
-  if (d.pick_fee === 0) return '지금은 <b>안 받는 것</b>으로 되어 있어요.';
-  const total = baseOf(d) + d.pick_fee;
-  return `지금 <b>${wonFmt(d.pick_fee)}원</b> — 신부님이 지정하시면 <b>${wonFmt(total)}원</b>이 나갑니다.`
-    + `<br />세금 3.3%를 떼고 <b>${wonFmt(netPay(d, total))}원</b>을 받으세요.`;
+  const pin = Number(d.pin_default) || 30000;
+  const none = `신부님은 <b>${wonFmt(pin)}원</b>에 지정하실 수 있고, 그건 <b>작가님 몫이 아니에요.</b>`;
+  if (d.pick_fee == null) return `아직 안 정하셨어요. ${none}`;
+  if (d.pick_fee === 0) return `지금은 <b>안 받는 것</b>으로 되어 있어요. ${none}`;
+  const cut = cutOf(d, d.pick_fee);
+  return `지금 <b>${wonFmt(d.pick_fee)}원</b> — 신부님이 지정하시면 그만큼 더 내십니다.`
+    + `<br />기본 페이 <b>${wonFmt(baseOf(d))}원</b>에 더해 <b>${wonFmt(d.pick_fee - cut)}원</b>을 받으세요.`
+    + ` <span class="sc-fee-cut">(회사 몫 ${wonFmt(cut)}원)</span>`;
 }
 
 function renderSet() {
@@ -959,15 +982,20 @@ function renderSet() {
         <p class="sc-set-soon">지정 촬영은 <b>빠른 시일 내에 도입될 예정</b>입니다.<br />
           ${d.can_fee ? '미리 정해두시면 시작하는 날 바로 반영돼요.'
             : '도입 전까지 아래를 채우시면 그때 정하실 수 있어요.'}</p>
-        <p class="sc-set-d">신부님이 <b>작가님을 지정</b>하실 때 더해지는 금액이에요.<br />
-          기본 페이 <b>${wonFmt(baseOf(d))}원</b> + 지정 촬영비 = 신부님이 내시는 총액.
-          안 받으시려면 <b>0</b>.</p>
+        <!-- ⚠ 숫자는 서버가 준 것을 쓴다 (fee_min·cut_max·pin_default).
+             여기 6만·3만을 박아두면 대표가 바꾸실 때 화면과 서버가 어긋난다 -->
+        <p class="sc-set-d">신부님이 <b>작가님을 지정</b>하실 때 예식 금액에 <b>더해지는</b> 금액이에요.<br />
+          <b>${wonFmt(Number(d.fee_min) || 60000)}원부터</b> 정하실 수 있고,
+          그중 <b>${wonFmt(Number(d.cut_max) || 30000)}원</b>은 회사 몫이에요.
+          나머지를 기본 페이 <b>${wonFmt(baseOf(d))}원</b>과 함께 받으세요.<br />
+          안 받으시려면 <b>0</b> — 그래도 신부님은
+          <b>${wonFmt(Number(d.pin_default) || 30000)}원</b>에 지정하실 수 있어요.</p>
         ${reqList(d)}
         ${d.can_fee ? `
         ${capBox(d)}
         <div class="sc-fee">
           <input type="text" id="setFee" inputmode="numeric" autocomplete="off"
-            value="${fee === '' ? '' : wonFmt(fee)}" placeholder="예) 30,000" />
+            value="${fee === '' ? '' : wonFmt(fee)}" placeholder="예) ${wonFmt(Number(d.fee_min) || 60000)}" />
           <span class="sc-fee-w">원</span>
           <button type="button" class="btn-sm primary" id="setFeeSave">저장</button>
         </div>
@@ -991,12 +1019,14 @@ function renderSet() {
      ⚠ 서버도 막지만, 다 적고 저장을 눌러서야 「안 됩니다」 를 보면 답답하다.
      ⚠ 대표는 한도가 없다 — fee_cap 이 넉넉히 와 있어 걸릴 일이 없다 */
   const feeCap = Number(d.elig && d.elig.fee_cap) || 0;
+  // 맨 윗단에 오르셨으면 상한이 없다 (대표 2026-09-16 «상한은 없이 하자») — 도로 내리지 않는다
+  const noCap = !!(d.elig && d.elig.no_cap);
   const feeEl = $('setFee');
   if (feeEl) feeEl.addEventListener('input', () => {
     let n = feeEl.value.replace(/[^0-9]/g, '').slice(0, 7);   // 100만원까지
-    if (n !== '' && feeCap > 0 && Number(n) > feeCap) {
+    if (n !== '' && !noCap && feeCap > 0 && Number(n) > feeCap) {
       n = String(feeCap);
-      toastSet(`지금 한도는 ${wonFmt(feeCap)}원이에요. 후기와 갤러리가 쌓이면 올라갑니다.`);
+      toastSet(`지금 한도는 ${wonFmt(feeCap)}원이에요. 촬영·후기·사진이 쌓이면 올라갑니다.`);
     }
     feeEl.value = n === '' ? '' : wonFmt(n);
   });
@@ -1004,6 +1034,14 @@ function renderSet() {
   if (save) save.addEventListener('click', () => {
     const v = String(($('setFee').value || '')).replace(/[^0-9]/g, '');
     if (v === '') { toastSet('금액을 적어주세요.'); return; }
+    /* 최소 6만원 (대표 2026-09-16). **0 은 그대로 보낸다** — 「안 받겠다」라는 뜻이라 막지 않는다.
+       ⚠ 서버도 막는다. 여기서 먼저 알려드리는 것은, 다 적고 저장을 눌러서야
+         「안 됩니다」를 보면 답답하기 때문이다 */
+    const fmin = Number(d.fee_min) || 60000;
+    if (Number(v) > 0 && Number(v) < fmin) {
+      toastSet(`${wonFmt(fmin)}원부터 정하실 수 있어요. 안 받으시려면 0 을 적어주세요.`);
+      return;
+    }
     setSave({ pick_fee: Number(v) }, save);
   });
 }

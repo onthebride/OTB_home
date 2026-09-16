@@ -444,6 +444,9 @@ html.no-pull, html.no-pull body { overscroll-behavior: none; }
 .sc-fee-w { font-size: .88rem; color: var(--ink-soft); }
 .sc-set-now { margin: 9px 0 0; font-size: .82rem; color: var(--ink-soft); }
 .sc-set-now b { color: var(--gold-deep); font-weight: 600; }
+/* 회사 몫 (대표 2026-09-16 «50% 최대 3만원 까지 수수료»). 받으실 돈보다 흐리게 —
+   작가님이 먼저 보셔야 할 숫자는 「내가 받는 돈」이다 */
+.sc-fee-cut { font-size: .78rem; color: var(--ink-soft); }
 /* 아직 지정 예약을 안 받는다는 안내 (대표 2026-08-29).
    금액만 적어두고 «왜 지정이 안 들어오지» 하고 기다리시지 않게 맨 위에 둔다 */
 .sc-set-soon { margin: 0 0 12px; padding: 11px 13px; font-size: .84rem; line-height: 1.7;
