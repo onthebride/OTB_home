@@ -36,10 +36,19 @@ if (storyToggle && storyMore) {
 }
 
 // Header background on scroll
+/* ⚠⚠ 윗줄은 **시험이 잘라오는 표지**다 (storyfold.test.mjs 가 여기까지 잘라 돌린다).
+     글자를 바꾸면 자를 데를 못 찾아 main.js 를 통째로 돌리다 터진다 — 한 번 그랬다.
+   ⚠ 기본 머리말은 홈의 **어두운 히어로 위에** 얹히라고 흰 글씨·흰 로고다.
+     히어로가 없는 화면(예약 폼)에서는 흰 바탕에 흰 글씨가 되어 **아무것도 안 보인다**
+     (대표 2026-09-16 «예약하기 누르니까 헤더가 안보임»).
+     그런 화면은 <header ... data-solid> 를 달아 **늘 진하게** 둔다.
+   ⚠ HTML 에 class="scrolled" 만 적어두면 소용없다 — 여기서 맨 위(scrollY 0)일 때 도로 뗀다.
+     그래서 표시를 보고 끄지 않는다 */
 const header = document.querySelector('.site-header');
+const solidHeader = !!(header && header.hasAttribute('data-solid'));
 const toTop = document.getElementById('toTop');
 const onScroll = () => {
-  header.classList.toggle('scrolled', window.scrollY > 40);
+  header.classList.toggle('scrolled', solidHeader || window.scrollY > 40);
   if (toTop) toTop.classList.toggle('show', window.scrollY > 500);
 };
 window.addEventListener('scroll', onScroll);

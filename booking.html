@@ -46,8 +46,16 @@
 </head>
 <body>
 
-  <!-- ===== Header / Nav ===== -->
-  <header class="site-header" id="top">
+  <!-- ===== Header / Nav =====
+       ⚠ data-solid — 이 화면은 **머리말을 늘 진하게** 둔다 (대표 2026-09-16
+         «예약하기 누르니까 헤더가 안보임»).
+         기본 머리말은 홈의 어두운 히어로 위에 얹히라고 **흰 글씨·흰 로고**다.
+         여기는 위에 히어로가 없어 배경이 밝다 — 흰 글씨가 흰 바탕에 묻혀 아무것도 안 보였다.
+         40px 만 내리면 나타나긴 했지만, 들어오자마자 보이는 화면에서 사라져 있었다.
+       ⚠ `class="scrolled"` 만 적어두면 안 된다 — main.js 의 onScroll 이 맨 위(scrollY 0)에서
+         그 class 를 **도로 뗀다.** 그래서 JS 가 보는 표시를 따로 단다.
+       (reviews.html 은 main.js 를 안 써서 class 만으로 됐다) -->
+  <header class="site-header scrolled" id="top" data-solid>
     <nav class="nav container">
       <a href="/" class="brand">
         <img src="assets/logo-white.png" alt="온더브라이드" class="brand-logo brand-logo-light" />
@@ -284,7 +292,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="config.js"></script>
-  <script defer src="main.js?v=8fc5217d18"></script>
+  <script defer src="main.js?v=ca0abcc0be"></script>
   <script defer src="/analytics.js?v=abe79d1dba"></script>
 </body>
 </html>
