@@ -27,9 +27,12 @@ const sb = window.supabase && C.SUPABASE_URL ? window.supabase.createClient(C.SU
 const BASE = 550000;       // 베이직 (홈 가격표와 같은 값)
 /* 대표 2026-09-16 «그 작가 우선순위고르는건 무료로 하자 / 지정을 원하면 이제 돈을 내고»
    → 우선순위는 **무료**. 값은 지정에만 붙는다.
-   ⚠ 작가가 제 금액을 안 정했으면(또는 0으로 뒀으면) **확정값 3만원**이고 그래도 팔린다
-     (대표 «금액 없으면 지정값 3만원»). 「안 팔린다」가 아니다 */
-const PIN_DEFAULT = 30000;
+   ⚠ 작가가 제 금액을 안 정했으면(또는 0으로 뒀으면) **기본 5만원**에 팔린다
+     (대표 «일단 지정은 기본 5만원이고 우리가 주기로 하고»). 「안 팔린다」가 아니다.
+   ⚠⚠ 이 숫자는 서버의 `private.pick_rules()->>'pin_default'` 와 **같아야 한다.**
+     미리보기라 관리자 함수만 부르고 있어 규칙을 따로 안 받아온다.
+     어긋나면 pickfee.test.mjs 가 빨개진다 — 값이 하루에 여러 번 바뀌어서 걸어뒀다 */
+const PIN_DEFAULT = 50000;
 const SHOTS = 10;          // 작가마다 보여줄 사진
 const SLOTS = 3;           // 1·2·3순위
 const OPEN = {};           // 후기를 펴 둔 작가 (id → true)
@@ -40,8 +43,19 @@ let pinned = null;         // 지정한 작가 id (한 명)
 
 /* ── 자료 받기 ──
    후기·작가·갤러리 셋은 서로 독립이라 한 번에 부른다 */
+/* 못 불러왔을 때 하는 말.
+   ⚠⚠ **숨는 칸(psPick) 안에 적으면 안 된다.** 그 칸은 체크하기 전까지 hidden 이라
+     아무것도 안 보인다 — 2026-09-16 대표 «작가목록 안보이네» 가 이 자리였다.
+     psErr 은 늘 보이는 자리에 있다 */
+function psErr(msg) {
+  const el = $('psErr');
+  if (!el) return;
+  el.hidden = false;
+  el.innerHTML = msg;
+}
+
 async function load() {
-  if (!sb) { $('psList').innerHTML = '<p class="ps-empty">연결 설정을 못 읽었습니다.</p>'; return; }
+  if (!sb) { psErr('연결 설정을 못 읽었습니다.'); return; }
   const [sr, fr, pr, gr] = await Promise.all([
     sb.rpc('admin_staff_list'),
     sb.rpc('admin_feedback', { p_days: 3650 }),
@@ -49,8 +63,9 @@ async function load() {
     sb.rpc('gallery_list'),
   ]);
   if (sr.error || !sr.data) {
-    $('psList').innerHTML = '<p class="ps-empty">관리자로 로그인한 기기에서 열어주세요.<br />'
-      + '(작가 이름·후기는 아직 손님에게 여는 자료가 아니라 관리자 함수로 받습니다)</p>';
+    psErr('작가 목록을 못 불러왔습니다. <b>관리자로 로그인한 기기</b>에서 열어주세요.<br />'
+      + '<a href="/admin">관리자로 가기</a> → 로그인하신 뒤 이 주소를 다시 열면 보입니다.<br />'
+      + '<small>(작가 이름·후기는 아직 손님에게 여는 자료가 아니라 관리자 함수로 받습니다)</small>');
     return;
   }
   /* 후기는 **이름으로** 온다 (admin_feedback 의 staff 묶음). 한 줄은

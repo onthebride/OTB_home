@@ -18,6 +18,11 @@
 .ps-opt .check { display: flex; align-items: center; gap: 9px; cursor: pointer; flex: 1; min-width: 0; }
 .ps-opt input { width: 18px; height: 18px; accent-color: var(--gold-deep); flex: none; }
 .ps-why { margin-top: 12px; }
+/* 못 불러왔을 때 (2026-09-16 «작가목록 안보이네»). **늘 보이는 자리**다 —
+   고르는 칸은 체크 전까지 숨어 있어서 그 안에 적으면 아무것도 안 보인다 */
+.ps-err { background: #fdf3f0; border: 1px solid #e7cfc6; border-radius: var(--radius);
+  padding: 14px 16px; margin-bottom: 18px; font-size: .88rem; line-height: 1.75; color: #8c3a26; }
+.ps-err a { color: #8c3a26; font-weight: 600; text-decoration: underline; }
 /* 무료는 값이 아니다 — 금액과 다른 색으로 (대표 2026-09-16 «우선순위고르는건 무료로 하자») */
 .ps-opt .opt-price.free { color: #3f7040; }
 /* 둘째 갈래(지정)는 줄로 갈라 놓는다. 같은 상자 안이지만 **다른 선택**이고, 둘은 같이 못 고른다 */
