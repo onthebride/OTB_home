@@ -2435,12 +2435,32 @@ function renderDayOv() {
      손님이 우리에게 넣는 계약금·잔금과 다르다. 그래서 「작가비」로 적는다.
    ⚠ 준 뒤에 배정을 바꾸시면 «받은 적 없는 사람»이 받은 것처럼 보인다.
      그래서 준 사람을 같이 적어두고(pay_to), 어긋나면 말해준다. */
+
 function renderPay() {
+  /* 금액 (대표 2026-09-16 «거기에 얼마를 입금해야하는지 적어달라고 / 메인 25 서브 15
+     출장비 있으면 3만원 더해주고»). 값은 **서버가 준다**(private.staff_pay_rule) —
+     여기서 또 세면 매출 화면과 어긋난다.
+     ⚠ **이 함수 안에 둔다.** payui.test.mjs 가 renderPay 만 잘라와 돌려서,
+       밖에 두면 부를 때 «payWon is not defined» 로 터진다 (CLAUDE.md 에 적힌 그 자리다).
+       같은 까닭으로 won() 을 부르지 않고 만원 셈을 여기 적어 둔다
+     ⚠ 만원으로 안 떨어지는 값이 오면 그대로 원으로 적는다. 25.5만원 같은 글을 만들지 않는다 */
+  const payWon = (n) => {
+    const v = Number(n) || 0;
+    return v % 10000 === 0 ? (v / 10000).toLocaleString('ko-KR') + '만원'
+      : v.toLocaleString('ko-KR') + '원';
+  };
   const box = $('listPay');
   if (!box) return;
   if ($('dcPay')) $('dcPay').textContent = payList.length;
   const card = $('card-pay');
   if (card) card.hidden = payList.length === 0;   // 줄 것이 없으면 통째로 접는다
+  /* 머리말에 **다 합쳐 얼마인지**를 적는다 (대표 2026-09-16 «총금액도 알려주고»).
+     ⚠ 비었을 때도 되돌려 놓는다 — 안 그러면 다 처리하신 뒤에도 옛 합계가 남는다 */
+  const sumEl = $('dcPaySum');
+  if (sumEl) {
+    const tot = payList.reduce((a, p) => a + (Number(p.pay_won) || 0), 0);
+    sumEl.textContent = tot ? `(예식 끝난 것 · 모두 ${payWon(tot)})` : '(예식 끝난 것)';
+  }
   if (!payList.length) { box.innerHTML = ''; return; }
 
   /* ⚠ 단추 이름에 dl-paid 를 쓰면 안 된다. 그 이름은 「#tab-dashboard .dl-paid」 로
@@ -2463,6 +2483,11 @@ function renderPay() {
           >${esc(fmtDate(p.wedding_date))}</span></span>
       </div>
       <div class="dl-actions">
+        <b class="pay-won">${esc(payWon(p.pay_won))}${Number(p.travel_won)
+          /* 출장비가 섞이면 **왜 28만원인지**를 옆에 적는다. 폰에서는 손가락을 올려둘 수
+             없으니 title= 로 숨기지 않는다 (올리기 전 점검 ①) */
+          ? `<em>${esc(payWon(p.pay_won - p.travel_won))} + 출장 ${esc(payWon(p.travel_won))}</em>`
+          : ''}</b>
         <button class="btn-sm pay-ok" data-pay-id="${esc(p.booking_id)}"
           data-pay-role="${esc(p.role)}">입금 확인</button>
       </div>

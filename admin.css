@@ -471,6 +471,12 @@ html.no-pull, html.no-pull body { overscroll-behavior: none; }
 .pay-role.sub { color: #4a6a7a; background: #f1f5f7; border-color: #cddbe2; }
 /* 일주일 넘은 것 — 알림이 나가는 것과 같은 기준이라 눈에도 그렇게 보여야 한다 */
 .pay-late { color: #8c3a26; font-weight: 700; }
+/* 드려야 할 돈 (대표 2026-09-16 «얼마를 입금해야하는지 적어달라고»).
+   단추 왼쪽에 둔다 — 누르기 전에 눈이 먼저 닿는 자리다.
+   ⚠ 출장비가 섞인 줄은 «25만원 + 출장 3만원» 을 밑에 작게 적는다. 폰에서는 title= 이 안 뜬다 */
+.pay-won { display: inline-flex; flex-direction: column; align-items: flex-end; line-height: 1.25;
+  font-size: .92rem; font-weight: 700; color: #3f5d3f; white-space: nowrap; }
+.pay-won em { font-style: normal; font-size: .68rem; font-weight: 500; color: var(--ink-soft); }
 .btn-sm.pay-ok { color: #3f7040; border-color: #cfe0cd; background: #f2f7f1; font-weight: 600; }
 .btn-sm.pay-ok:hover { border-color: #4a8a4c; }
 .btn-sm.pay-ok:disabled { opacity: .55; cursor: default; }
