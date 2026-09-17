@@ -3,8 +3,8 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /portal
-# 대표께 보여드리는 미리보기 — 아무 데서도 안 링크한다 (2026-09-15)
-Disallow: /pick-sample
+# /pick-sample 미리보기는 2026-09-17 에 내렸다 (대표 «미리보기 내려도 됨»).
+# 예약 폼(/booking)이 진짜가 되어 두 벌을 둘 까닭이 없어졌다 — 막을 주소도 없다.
 
 User-agent: GPTBot
 Allow: /
