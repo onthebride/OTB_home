@@ -2877,6 +2877,7 @@ function renderSchedule() {
               <select class="sched-main" data-id="${b.id}" title="메인작가">${assigneeOptions(b.assignee_id, confOf(b), 'main')}</select>
               ${is2 ? `<select class="sched-sub" data-id="${b.id}" title="서브작가">${assigneeOptions(b.sub_assignee_id, confOf(b), 'sub')}</select>` : ''}
             </div>
+            <button type="button" class="sched-asg-ok" data-id="${b.id}" disabled>확인</button>
             <button type="button" class="sched-copy1" data-id="${b.id}" title="이 예식 스케줄 복사">📋</button>
           </div>
         </div>`;
@@ -2918,6 +2919,29 @@ function updateSchedCount() {
   const n = schedChecked().length;
   if ($('schedSelCount')) $('schedSelCount').textContent = n ? `${n}건 선택` : '';
 }
+/* 한 줄에서 지금 「고른 값」을 읽는다 (저장된 값이 아니라 화면에 보이는 값) */
+function schedSelVals(row) {
+  const subEl = row.querySelector('.sched-sub');
+  return {
+    main: (row.querySelector('.sched-main') || {}).value || null,
+    // 서브 선택칸이 없으면(=2인 촬영 아님) 서브는 비움
+    sub: subEl ? (subEl.value || null) : null,
+  };
+}
+/* 「확인」은 고른 것과 저장된 것이 다를 때만 살아난다 (대표 2026-09-17).
+   ⚠ 잠긴 줄(수정금지)은 고르개가 막혀 있으니 단추도 같이 잠근다 —
+     고르개는 잠겼는데 저장 단추만 살아 있으면 헷갈린다 */
+function syncSchedOk(row) {
+  const btn = row.querySelector('.sched-asg-ok');
+  if (!btn) return;
+  const b = allBookings.find((x) => x.id === row.dataset.id);
+  const v = schedSelVals(row);
+  const locked = !!row.querySelector('.sched-main.locked, .sched-sub.locked');
+  const d = !locked && !!b
+    && (v.main !== (b.assignee_id || null) || v.sub !== (b.sub_assignee_id || null));
+  btn.disabled = !d;
+  btn.classList.toggle('on', d);
+}
 // 수정금지: 배정된 드롭다운(메인/서브)만 잠그고, 미배정은 수정 가능하게
 function applySchedLock() {
   document.querySelectorAll('#schedList .sched-main, #schedList .sched-sub').forEach((sel) => {
@@ -2925,6 +2949,7 @@ function applySchedLock() {
     sel.disabled = lock;
     sel.classList.toggle('locked', lock);
   });
+  document.querySelectorAll('#schedList .sched-row').forEach(syncSchedOk);
 }
 function bindSchedule() {
   document.querySelectorAll('#schedList .sched-cb').forEach((c) => c.addEventListener('change', updateSchedCount));
@@ -2945,22 +2970,29 @@ function bindSchedule() {
       copySchedText(schedShareText([b]), `${b.contractor_name || ''} 스케줄 복사됨!`);
     })
   );
-  // 인라인 작가 배정 (메인/서브)
+  /* 인라인 작가 배정 (메인/서브)
+     ⚠ 고르는 즉시 저장하지 않는다 (대표 2026-09-17 «확인 눌러야 저장되게 해줘»).
+       고르는 순간 저장되면 손이 스쳐도 배정이 바뀌고 **작가 폰까지 울린다** —
+       되돌려도 「배정됐다 / 해제됐다」 두 통이 이미 나간 뒤다.
+       일정표는 한 화면에 고르개가 수십 개라 모달보다 더 그렇다.
+     그래서 고르개를 바꾸면 단추만 살아나고, 「확인」을 눌러야 저장된다 */
   document.querySelectorAll('#schedList .sched-main, #schedList .sched-sub').forEach((sel) =>
-    sel.addEventListener('change', async () => {
-      const id = sel.dataset.id;
-      const row = sel.closest('.sched-row');
-      const main = (row.querySelector('.sched-main') || {}).value || null;
-      const subEl = row.querySelector('.sched-sub');
-      // 서브 선택칸이 없으면(=2인 촬영 아님) 서브는 비움
-      const sub = subEl ? (subEl.value || null) : null;
+    sel.addEventListener('change', () => syncSchedOk(sel.closest('.sched-row')))
+  );
+  document.querySelectorAll('#schedList .sched-asg-ok').forEach((btn) =>
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const row = btn.closest('.sched-row');
+      const id = btn.dataset.id;
+      const { main, sub } = schedSelVals(row);
+      btn.disabled = true;                      // 두 번 눌리지 않게
       const { error } = await sb.rpc('admin_set_assignees', { p_id: id, p_main: main, p_sub: sub });
-      if (error) { alert('배정 실패: ' + error.message); return; }
+      if (error) { alert('배정 실패: ' + error.message); syncSchedOk(row); return; }
       const b = allBookings.find((x) => x.id === id);
       if (b) { b.assignee_id = main; b.sub_assignee_id = sub; }
       invalidateConf();
       renderCalendar(); renderDashboard(); renderSchedule();
-      toast('작가 배정 변경됨');
+      toast('작가 배정을 저장했어요. 작가 캘린더에도 알림이 갑니다.');
     })
   );
   applySchedLock();
