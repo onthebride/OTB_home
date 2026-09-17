@@ -405,10 +405,12 @@ function pkRender() {
   const pool = pinOn ? pkStaff.filter((s) => s.can_pin) : pkStaff;
   list.innerHTML = !pool.length
     ? '<p class="pk-empty">' + (pinOn ? '그날 지정하실 수 있는 작가님이 없어요. 우선순위로 골라주시면 최대한 맞춰드릴게요.' : '작가 목록을 불러오지 못했어요.') + '</p>'
-    : pool.map((s, i) => {
+    : pool.map((s) => {
       const at = pkWish.indexOf(s.id);
       const isPin = pkPin === s.id;
-      const rec = (!pinOn && i < 3) ? '<span class="pk-rec">추천 ' + (i + 1) + '위</span>' : '';
+      /* ⚠ 「추천 1·2·3위」 딱지는 뺐다 (대표 2026-09-17 «추천은 빼자 / 그냥 랜덤으로 하자»).
+         차례는 서버가 섞어서 준다 — **누구를 먼저 보여주느냐가 곧 미는 것**이라
+         순서를 안 정하는 편이 공정하다. 점수와 건수는 그대로 보여드린다 */
       /* ⚠ 점수만 적는다. 촬영 후 설문의 「한마디」는 신부님이 우리에게 주신 글이라 안 낸다 */
       const score = s.score == null
         ? '<span class="pk-none">아직 받은 후기가 없어요</span>'
@@ -424,7 +426,7 @@ function pkRender() {
         : '<button type="button" class="pk-take' + (at >= 0 ? ' off' : '') + '" data-pktake="' + _esc(s.id) + '">'
           + (at >= 0 ? (at + 1) + '순위 — 빼기' : pkWish.length >= PK_SLOTS ? '자리 다 참' : '고르기') + '</button>';
       return '<div class="pk-item' + ((pinOn ? isPin : at >= 0) ? ' chosen' : '') + '">'
-        + '<div class="pk-head"><span class="pk-name">' + _esc(s.name) + '</span>' + rec + score + btn + '</div>'
+        + '<div class="pk-head"><span class="pk-name">' + _esc(s.name) + '</span>' + score + btn + '</div>'
         + shots + '</div>';
     }).join('');
 

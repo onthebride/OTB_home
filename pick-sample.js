@@ -56,10 +56,11 @@ function psErr(msg) {
 
 async function load() {
   if (!sb) { psErr('연결 설정을 못 읽었습니다.'); return; }
-  const [sr, fr, pr, gr] = await Promise.all([
+  /* ⚠ 2026-09-17 부터 감점(admin_penalties)은 **안 받아온다.** 차례를 섞으니 쓸 데가 없다
+     (대표 «추천은 빼자 / 그냥 랜덤으로 하자»). 안 쓰는 것을 받아올 까닭이 없다 */
+  const [sr, fr, gr] = await Promise.all([
     sb.rpc('admin_staff_list'),
     sb.rpc('admin_feedback', { p_days: 3650 }),
-    sb.rpc('admin_penalties'),
     sb.rpc('gallery_list'),
   ]);
   if (sr.error || !sr.data) {
@@ -73,7 +74,6 @@ async function load() {
      감점은 작가 번호로 온다. admin.js 의 loadStaffScores 와 같은 방식으로 붙인다 */
   const fb = {};
   ((fr.data && fr.data.staff) || []).forEach((x) => { fb[x.staff_name] = x; });
-  const pen = (pr.data && pr.data.sum) || {};
   /* 신부님이 읽을 후기 글 (대표 2026-09-15 «후기를 볼 수 있나? 접었다 폈다 할 수 있고»).
      ⚠ **손님 이름은 안 낸다.** 예식일과 한마디만 — 관리자의 「작가에게 공유」와 같은 규칙이다.
      ⚠ 아쉬운 점(issue_text)도 안 낸다. 그건 우리가 고치려고 받는 것이지 광고가 아니다.
@@ -99,19 +99,25 @@ async function load() {
     .filter((s) => s.active && s.can_main !== false)
     .map((s) => {
       const f = fb[s.name] || {};
-      const p = Number(pen[s.id] && pen[s.id].total) || 0;
-      // 감점을 뺀 값으로 줄을 세운다 — 관리자 배정 목록과 같은 셈. 감점 자체는 화면에 안 낸다
-      const base = f.avg_score == null ? null : Number(f.avg_score);
-      const score = base == null ? null : Math.round((base - p) * 10) / 10;
+      /* ⚠ 2026-09-17 부터 **감점을 아예 안 본다** (대표 «추천은 빼자 / 그냥 랜덤으로 하자»).
+         차례를 안 정하니 감점으로 줄을 세울 까닭이 없다.
+         ⚠ 전에는 감점을 **뺀 값을 점수로 적고** 있었다 — 감점을 안 낸다면서 값에는 섞여 있던 셈이다.
+           진짜 예약 폼(public.pick_staff_list)은 처음부터 날 평균을 준다. 이제 둘이 같아졌다 */
+      const score = f.avg_score == null ? null : Math.round(Number(f.avg_score) * 10) / 10;
       /* 지정비 — 작가가 제 캘린더에서 정한 값. 안 정했거나 0이면 확정값 3만원
          (대표 2026-09-16 «금액 없으면 지정값 3만원») */
       return { id: s.id, name: s.name, score, n: Number(f.n || 0),
         fee: Number(s.pick_fee) || PIN_DEFAULT,
         shots: (shots[s.id] || []).slice(0, SHOTS), says: says[s.name] || [] };
-    })
-    // 추천 차례: 점수 높은 순. 평가 없는 분은 뒤로 (만점으로 치지 않는다)
-    .sort((a, b) => (b.score == null ? -1 : b.score) - (a.score == null ? -1 : a.score)
-      || a.name.localeCompare(b.name, 'ko'));
+    });
+  /* ★ 차례는 **섞는다** (대표 2026-09-17 «점수순으로 도 놓지 말고 그냥 랜덤으로 하자»).
+     누구를 먼저 보여주느냐가 곧 미는 것이라, 순서를 안 정하는 편이 공정하다.
+     진짜 예약 폼은 서버(pick_staff_list)가 order by random() 으로 섞어준다 —
+     미리보기는 관리자 함수로 받으니 여기서 섞는다 */
+  for (let i = staff.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [staff[i], staff[j]] = [staff[j], staff[i]];
+  }
 
   render();
 }
@@ -149,9 +155,10 @@ function render() {
       + '</div>';
   }).join('');
 
-  $('psList').innerHTML = staff.length ? staff.map((s, i) => {
+  $('psList').innerHTML = staff.length ? staff.map((s) => {
     const at = picked.indexOf(s.id);
-    const rec = i < 3 ? '<span class="ps-rec">추천 ' + (i + 1) + '위</span>' : '';
+    /* ⚠ 「추천 1·2·3위」 딱지는 뺐다 (대표 2026-09-17 «추천은 빼자»).
+       차례도 섞는다 — 누구를 먼저 보여주느냐가 곧 미는 것이다 */
     /* ⚠ 「아직 적어요」 같은 단서는 뺐다 (대표 2026-09-15 «후기 아직 적어요 이런건 빼고»).
        신부님께는 점수와 건수만 담백하게 */
     const score = s.score == null
@@ -180,7 +187,7 @@ function render() {
         + (at >= 0 ? (at + 1) + '순위 — 빼기' : picked.length >= SLOTS ? '자리 다 참' : '고르기')
         + '</button>';
     return '<div class="ps-item' + ((pin ? isPin : at >= 0) ? ' chosen' : '') + '">'
-      + '<div class="ps-head"><span class="ps-name">' + esc(s.name) + '</span>' + rec + score
+      + '<div class="ps-head"><span class="ps-name">' + esc(s.name) + '</span>' + score
       + btn + '</div>'
       + shots + says + '</div>';
   }).join('') : '<p class="ps-empty">작가가 없습니다.</p>';

@@ -42,7 +42,7 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Noto+Serif+KR:wght@300;400;500;600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-  <link rel="stylesheet" href="styles.css?v=16e80ad176" />
+  <link rel="stylesheet" href="styles.css?v=b0c576be58" />
 </head>
 <body>
 
@@ -232,7 +232,10 @@
         <ul class="opt-notes tight">
           <li>선택 안 하셔도 되며, 선택을 안 하시면 대표 포함 모든 작가분들 중 랜덤 배정됩니다.</li>
         </ul>
-        <ul class="opt-list">
+        <!-- 대표 2026-09-17 «기본 1인 촬영 2인 촬영 사이에 분리자는 빼고 2인촬영 아래에 분리자 넣어줘».
+             둘은 한 묶음(몇 명이 가나)이라 사이를 가를 까닭이 없다.
+             갈라야 할 자리는 그 아래 — 여기부터는 「누가 가나」다 -->
+        <ul class="opt-list rule-below">
           <li class="opt"><label class="check"><input type="radio" name="photographer" value="기본" data-price="0" checked /> <span class="opt-name">기본 (1인 촬영)</span></label><span class="opt-price">+0원</span></li>
           <li class="opt"><label class="check"><input type="radio" name="photographer" value="2인 촬영" data-price="25" /> <span class="opt-name">2인 촬영</span></label><span class="opt-price">+25만원</span></li>
         </ul>
@@ -326,7 +329,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="config.js"></script>
-  <script defer src="main.js?v=6eb7694b4c"></script>
+  <script defer src="main.js?v=3e243b14a7"></script>
   <script defer src="/analytics.js?v=abe79d1dba"></script>
 </body>
 </html>
