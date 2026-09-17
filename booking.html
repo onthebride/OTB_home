@@ -42,7 +42,7 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Noto+Serif+KR:wght@300;400;500;600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-  <link rel="stylesheet" href="styles.css?v=b0c576be58" />
+  <link rel="stylesheet" href="styles.css?v=18e0581520" />
 </head>
 <body>
 
@@ -251,14 +251,17 @@
           <li class="opt"><label class="check"><input type="checkbox" id="f_pick_wish" data-price="0" /> <span class="opt-name">작가 우선순위</span></label><span class="opt-price free">무료</span></li>
         </ul>
         <!-- ⚠ 글귀는 대표가 직접 주신 것이다 (2026-09-16). 내 말로 고쳐 쓰지 않는다 -->
-        <ul class="opt-notes tight">
+        <!-- ⚠ 이 두 줄(pkNoteWish·pkNotePin)은 **작가 목록이 붙는 자리**다 (대표 2026-09-17
+             «작가 우선순위 체크 하면 그 바로 아래 작가 목록이 떴음 하는데 작가지정 아래에 펼쳐지네»).
+             main.js 의 pkRender 가 켜진 줄에 맞춰 pkBox 를 옮긴다 — id 를 지우면 목록이 맨 아래로 간다 -->
+        <ul class="opt-notes tight" id="pkNoteWish">
           <li>작가 우선순위 : 원하시는 작가님을 <b>세 분</b>까지 순서대로 골라주세요. <b>가능한 맞춰드립니다.</b> 다만 당일 작가님 지정이 있거나 스케줄 상 어려울 수 있어요.</li>
         </ul>
 
         <ul class="opt-list" style="margin-top:14px">
           <li class="opt"><label class="check"><input type="checkbox" id="f_pick_pin" data-price="0" /> <span class="opt-name">작가 지정</span></label><span class="opt-price" id="pkFrom">+5만원부터</span></li>
         </ul>
-        <ul class="opt-notes tight">
+        <ul class="opt-notes tight" id="pkNotePin">
           <li>작가 지정 : <b>한 분</b>을 정하시면 그 작가님이 촬영합니다. 금액은 작가님마다 다르며, 그날 촬영이 어려운 작가님은 목록에 나오지 않습니다.</li>
         </ul>
 
@@ -266,6 +269,11 @@
           <!-- ⚠ 지정은 **그날 되는 분만** 보여야 한다. 그래서 예식날짜를 먼저 여쭙는다 -->
           <p class="pk-msg" id="pkMsg" hidden></p>
           <div class="pk-slots" id="pkSlots"></div>
+          <!-- 후기가 없는 작가님이 계신 까닭을 적어둔다 (대표 2026-09-17
+               «아직 후기를 받기 시작한지 얼마 안 되서 없다고 설명할데가 없나?»).
+               ⚠ 2026년 8월 18일에 첫 설문이 들어왔다. 지어낸 날이 아니다 —
+                 날을 바꾸려면 public.feedback 의 첫 줄을 다시 보고 바꾼다. -->
+          <p class="pk-note">후기는 2026년 8월부터 모으기 시작했어요. 그래서 아직 후기가 없는 작가님이 계십니다 &mdash; 촬영을 적게 하셔서가 아니라, 저희가 후기를 늦게 받기 시작한 것입니다.</p>
           <div class="pk-list" id="pkList"></div>
           <p class="pk-foot" id="pkFoot"></p>
         </div>
@@ -329,7 +337,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="config.js"></script>
-  <script defer src="main.js?v=3e243b14a7"></script>
+  <script defer src="main.js?v=186ed0167b"></script>
   <script defer src="/analytics.js?v=abe79d1dba"></script>
 </body>
 </html>

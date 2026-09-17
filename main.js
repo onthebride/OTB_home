@@ -372,6 +372,16 @@ function pkRender() {
   const wishOn = checked('f_pick_wish');
   const pinOn = checked('f_pick_pin');
   box.hidden = !(wishOn || pinOn);
+  /* 목록은 **누른 줄 바로 아래**에 펴진다 (대표 2026-09-17
+     «작가 우선순위 체크 하면 그 바로 아래 작가 목록이 떴음 하는데 작가지정 아래에 펼쳐지네»).
+     상자는 하나뿐이라 자리를 옮겨 준다 — 둘로 만들면 그리는 코드도 둘이 된다.
+     ⚠ 둘은 같이 못 켠다(위 손잡이가 서로 끈다). 그래서 갈 곳도 언제나 하나다 */
+  if (!box.hidden) {
+    const anchor = document.getElementById(pinOn ? 'pkNotePin' : 'pkNoteWish');
+    if (anchor && anchor.nextElementSibling !== box) {
+      anchor.parentNode.insertBefore(box, anchor.nextSibling);
+    }
+  }
   const slots = document.getElementById('pkSlots');
   const list = document.getElementById('pkList');
   const foot = document.getElementById('pkFoot');

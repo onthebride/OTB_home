@@ -670,6 +670,9 @@ input.readonly { background: var(--cream); color: var(--ink-soft); cursor: not-a
 .pk-slot b { font-size: .94rem; font-weight: 500; color: var(--ink); }
 .pk-slot span.dim { font-size: .84rem; color: var(--ink-soft); }
 .pk-x { background: none; border: none; color: var(--ink-soft); font-size: .76rem; cursor: pointer; padding: 2px 4px; }
+/* 후기가 없는 작가님이 계신 까닭 (대표 2026-09-17 «후기를 받기 시작한지 얼마 안 되서
+   없다고 설명할데가 없나?»). 목록 바로 위에 조용히 한 줄 — 딱지처럼 튀면 변명으로 읽힌다 */
+.pk-note { margin: 0 0 12px; font-size: .82rem; line-height: 1.7; color: var(--ink-soft); }
 .pk-list { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .pk-item { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 13px 15px; min-width: 0; }
 .pk-item.chosen { border-color: var(--gold); background: #fffaf2; }
