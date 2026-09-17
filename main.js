@@ -412,7 +412,13 @@ function pkRender() {
            : '<span class="dim">아직</span>') + '</div>';
   }).join('');
 
-  const pool = pinOn ? pkStaff.filter((s) => s.can_pin) : pkStaff;
+  let pool = pinOn ? pkStaff.filter((s) => s.can_pin) : pkStaff;
+  /* 지정을 누르면 **그 분만 남긴다** (대표 2026-09-17 «지정 누르면 그 작가만 남고
+     목록은 없어지는걸로 / 지금은 다 표시돠고 스크롤만 쓸데없이 길어짐»).
+     ⚠ 되돌릴 길은 그대로다 — 그 분의 「지정함 — 빼기」를 누르면 목록이 다시 펴진다.
+       아래 pkFoot 에 그렇게 적어 둔다 (올리기 전 점검 ③ — 누르면 어떻게 되는지 보인다).
+     ⚠ 우선순위는 셋까지 고르는 것이라 안 줄인다 */
+  if (pinOn && pkPin && pool.some((s) => s.id === pkPin)) pool = pool.filter((s) => s.id === pkPin);
   list.innerHTML = !pool.length
     ? '<p class="pk-empty">' + (pinOn ? '그날 지정하실 수 있는 작가님이 없어요. 우선순위로 골라주시면 최대한 맞춰드릴게요.' : '작가 목록을 불러오지 못했어요.') + '</p>'
     : pool.map((s) => {
@@ -425,6 +431,13 @@ function pkRender() {
       const score = s.score == null
         ? '<span class="pk-none">아직 받은 후기가 없어요</span>'
         : '<span class="pk-score">후기 ' + s.score + '점 <span class="thin">(' + s.n + '건)</span></span>';
+      /* 우리와 찍은 횟수 (대표 2026-09-17 «촬영횟수 붙여줘»).
+         후기는 8월에야 모으기 시작해 오래 찍으신 분도 「후기 없어요」로만 보였다.
+         ⚠ 작가님이 제 캘린더에서 보시는 숫자와 같은 셈이다 (pick_eligible 과 맞춰뒀다).
+         ⚠ 0 이면 아예 안 적는다 — 「촬영 0회」는 없느니만 못하다 */
+      const took = Number(s.took) || 0;
+      const tookTag = took > 0
+        ? '<span class="pk-took">촬영 ' + took.toLocaleString('ko-KR') + '회</span>' : '';
       const shots = (s.shots || []).length
         ? '<div class="pk-shots">' + s.shots.map((u) =>
           '<img loading="lazy" src="' + _esc(u) + '" alt="' + _esc(s.name) + ' 작가 사진" />').join('') + '</div>'
@@ -436,14 +449,14 @@ function pkRender() {
         : '<button type="button" class="pk-take' + (at >= 0 ? ' off' : '') + '" data-pktake="' + _esc(s.id) + '">'
           + (at >= 0 ? (at + 1) + '순위 — 빼기' : pkWish.length >= PK_SLOTS ? '자리 다 참' : '고르기') + '</button>';
       return '<div class="pk-item' + ((pinOn ? isPin : at >= 0) ? ' chosen' : '') + '">'
-        + '<div class="pk-head"><span class="pk-name">' + _esc(s.name) + '</span>' + score + btn + '</div>'
+        + '<div class="pk-head"><span class="pk-name">' + _esc(s.name) + '</span>' + tookTag + score + btn + '</div>'
         + shots + '</div>';
     }).join('');
 
   if (foot) {
     const pinS = pkPin && pkOne(pkPin);
     foot.textContent = pinOn
-      ? (pinS ? pinS.name + ' 작가님으로 지정하셨어요. 그 작가님이 촬영합니다.' : '한 분을 골라주세요.')
+      ? (pinS ? pinS.name + ' 작가님으로 지정하셨어요. 그 작가님이 촬영합니다. 다른 분을 보시려면 「지정함 — 빼기」를 눌러주세요.' : '한 분을 골라주세요.')
       : pkWish.length === 0 ? '세 분까지 고르실 수 있어요.'
         : pkWish.length < PK_SLOTS ? pkWish.length + '분 고르셨어요. ' + (PK_SLOTS - pkWish.length) + '자리 남았습니다.'
           : '세 분 다 고르셨어요. 가능한 맞춰드릴게요.';
