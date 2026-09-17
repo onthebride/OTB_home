@@ -412,7 +412,10 @@ function pkRender() {
            : '<span class="dim">아직</span>') + '</div>';
   }).join('');
 
-  let pool = pinOn ? pkStaff.filter((s) => s.can_pin) : pkStaff;
+  /* ⚠ 우선순위와 지정은 고를 수 있는 분이 다르다.
+     대표님은 지정으로만 고르실 수 있다 (대표 2026-09-17 «우선순위에사 나는 빼자»).
+     ⚠ can_wish 가 없는 옛 자료여도 안 사라지게 !== false 로 본다 */
+  let pool = pinOn ? pkStaff.filter((s) => s.can_pin) : pkStaff.filter((s) => s.can_wish !== false);
   /* 지정을 누르면 **그 분만 남긴다** (대표 2026-09-17 «지정 누르면 그 작가만 남고
      목록은 없어지는걸로 / 지금은 다 표시돠고 스크롤만 쓸데없이 길어짐»).
      ⚠ 되돌릴 길은 그대로다 — 그 분의 「지정함 — 빼기」를 누르면 목록이 다시 펴진다.
