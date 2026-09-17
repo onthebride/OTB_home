@@ -349,9 +349,10 @@ function seenText(id) {
 }
 const staffName = (id) => (id && staffMap[id] ? staffMap[id].name : '');
 
-/* 배정 충돌 — 예약id별 { 작가id: {s:'off'|'tight'|'same', d:'사유', n:그날 건수} }
+/* 배정 충돌 — 예약id별 { 작가id: {s:'off'|'tight'|'same', d:'사유', n:그날 건수, sd:'그날 뭐가 있나'} }
    off   = 작가가 그날을 촬영 불가로 찍음
-   tight = 같은 날 다른 일정과 4시간 안에 붙음 */
+   tight = 같은 날 다른 일정과 4시간 안에 붙음
+   same  = 겹치진 않지만 그날 뭔가 있다 — 이때만 sd 가 온다 (시간·장소, 이른 것부터) */
 let confMap = {};
 /* 겹침표는 달 단위로 한 번 받아 들고 있다. 오래 들고 있으면 옛것이 된다 —
    그 사이 작가가 제 캘린더에서 「촬영 불가」를 찍었을 수 있다
@@ -435,6 +436,13 @@ function scoreTag(id) {
 }
 
 function assigneeOptions(selId, conf, slot) {
+  /* 사유·그날 일정은 길면 자른다. 한 줄에 이름·점수까지 같이 들어가야 한다
+     ⚠ 이 함수 안에 둔다 — 밖에 두면 소스를 잘라와 돌리는 시험이 부를 때 터진다 */
+  const cutWhy = (raw, max) => {
+    const d = raw ? String(raw) : '';
+    const n = max || 16;
+    return d.length > n ? d.slice(0, n) + '…' : d;
+  };
   const one = (s, extra, dis) =>
     `<option value="${s.id}"${s.id === selId ? ' selected' : ''}${dis ? ' disabled' : ''}>${esc(s.name)}${extra}</option>`;
   if (!conf && !slot) {
@@ -462,8 +470,7 @@ function assigneeOptions(selId, conf, slot) {
        실제로 홍창완 작가가 촬영 불가로 찍어둔 날(26.10.31 오세영)에 서브로 들어가 있었다 */
     if (v && (v.s === 'off' || v.s === 'tight')) {
       const why = v.s === 'off' ? '불가' : '겹침';
-      const d = v.d ? String(v.d) : '';
-      const shortD = d.length > 16 ? d.slice(0, 16) + '…' : d;
+      const shortD = cutWhy(v.d);
       // 자리까지 안 맞으면 그것도 함께 적는다 (왜 여기 있는지 알아야 한다)
       const only = fits(s) ? '' : (slot === 'sub' ? ' · 메인 전용' : ' · 서브 전용');
       // 지금 배정된 작가는 잠그지 않는다 — 잠그면 되돌릴 수가 없다
@@ -472,8 +479,14 @@ function assigneeOptions(selId, conf, slot) {
     }
     /* 겹치진 않지만 그날 다른 일정이 있다 (대표 «그날 1건 있음 살짝 넣어줘», 2026-08-28).
        ⚠ 막지 않는다 — 시간이 넉넉하면 진짜로 배정할 수 있는 자리다.
-          「배정 가능」 에 그대로 두고 글자만 붙인다 */
-    const sameTag = v && v.s === 'same' ? ` · 그날 ${v.n || 1}건` : '';
+          「배정 가능」 에 그대로 두고 글자만 붙인다
+       그리고 시간·장소까지 적는다 (대표 2026-09-17 «장소랑 시간은 알 수 있음 하는데
+       그래야 배정을 할수 있을지 없을지 알거 같아») — 「그날 1건」 넉 자로는 정할 수가 없다 */
+    /* 겹침 사유보다 조금 길게 자른다 — 작가가 적어둔 것은
+       「오후 12:30 타사 스튜디오 다른 촬영 (작가 등록)」 처럼 길다 */
+    const sameD = v && v.s === 'same' ? cutWhy(v.sd, 22) : '';
+    const sameTag = v && v.s === 'same'
+      ? ` · 그날 ${v.n || 1}건${sameD ? ' ' + esc(sameD) : ''}` : '';
     // 이 자리를 안 하는 사람 (서브 칸의 메인 전용 · 그 반대). 막지는 않는다 — 대표가 정할 일이다
     if (!fits(s)) { other.push(one(s, scoreTag(s.id) + sameTag, false)); return; }
     ok.push(one(s, scoreTag(s.id) + sameTag, false));
