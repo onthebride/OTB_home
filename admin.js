@@ -1192,6 +1192,31 @@ function renderView(b, flash) {
   syncAsgOk();
   refillAsg(b, { mAssignee: ['assignee_id', 'main'], mSubAssignee: ['sub_assignee_id', 'sub'] });
 
+  /* 지정 취소 — 그 작가님이 못 하게 되었을 때 (대표 2026-09-17
+       «그 작가가 개인적인 일로 캘린더에 표시를 안해서 안된다고하면 그 옵션을 취소도 할 수 있게 해줘»)
+     ⚠ 돈이 빠지는 일이라 한 번 물어본다.
+     ⚠ **배정은 건드리지 않는다.** 작가를 바꾸는 것은 바로 아래 고르개에서 대표가 하실 일이고,
+       그래야 배정 이력에 «대표가 바꿨다» 로 남는다. 그래서 말로 짚어 드린다 */
+  if ($('mPickCancel')) $('mPickCancel').addEventListener('click', async () => {
+    const nm = pickName(b.pick_pin);
+    const fee = b.pick_fee_won ? won(b.pick_fee_won / 10000) : '지정비';
+    if (!confirm(`${nm} 작가님 지정을 취소합니다.\n${fee}이 총액에서 빠집니다.\n\n`
+      + '배정은 그대로 둡니다 — 작가를 바꾸시려면 아래에서 고르고 확인을 눌러 주세요.')) return;
+    const { data, error } = await sb.rpc('admin_cancel_pick', { p_id: b.id });
+    if (error) { alert('지정 취소 실패: ' + error.message); return; }
+    if (!data || !data.ok) { alert('지정을 취소하지 못했습니다. (' + ((data && data.reason) || '?') + ')'); return; }
+    const nb = data.b || b;
+    const i = allBookings.findIndex((x) => x.id === b.id);
+    if (i >= 0) allBookings[i] = nb;
+    render();
+    renderDashboard();
+    renderCalendar();
+    renderView(nb);
+    toast(data.still_assigned
+      ? `지정을 취소했어요 (${won(data.fee / 10000)} 뺌). 배정은 그대로 두었으니 필요하면 작가를 바꿔 주세요.`
+      : `지정을 취소했어요 (${won(data.fee / 10000)} 뺌).`);
+  });
+
   // 계약금/잔금 입금 토글 (잘못 누르면 다시 눌러 해제)
   $('modalCard').querySelectorAll('.pay-toggle').forEach((btn) =>
     btn.addEventListener('click', async () => {
@@ -4841,9 +4866,15 @@ function pickOk(b, staffId) {
 }
 function pickLine(b) {
   if (b.pick_pin) {
+    /* 접수와 동시에 그 작가로 배정된다 (대표 2026-09-17 «지정은 바로 그 작가로 배정되게 해줘»).
+       그래서 「해 주세요」가 아니라 「해 두었습니다」다.
+       ⚠ 대표가 다른 분으로 옮기셨거나, 이 판 이전에 들어온 예약이면 아직 아니다 — 그때는 그대로 청한다.
+       ⚠ 못 하게 되었을 때 빠져나갈 길을 같이 둔다 (대표 «그 옵션을 취소도 할 수 있게 해줘») */
+    const on = b.assignee_id && b.assignee_id === b.pick_pin;
     return '<p class="md-pick pin">📌 <b>작가 지정</b> — ' + esc(pickName(b.pick_pin))
+      + '<button type="button" class="md-pick-x" id="mPickCancel">지정 취소</button>'
       + '<em>' + (b.pick_fee_won ? won(b.pick_fee_won / 10000) + ' 받았습니다. ' : '')
-      + '이 작가님으로 배정해 주세요</em></p>';
+      + (on ? '이 작가님으로 배정해 두었습니다' : '이 작가님으로 배정해 주세요') + '</em></p>';
   }
   const w = Array.isArray(b.pick_wish) ? b.pick_wish : [];
   if (!w.length) return '';

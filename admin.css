@@ -1816,6 +1816,12 @@ body.gl-lb-on { overflow: hidden; }          /* 뒤 목록이 같이 굴러다�
 .md-pick em { display: block; margin-top: 3px; font-style: normal; font-size: .78rem; opacity: .82; }
 .md-pick.pin { background: #fdf3ec; border: 1px solid #e6cdb8; color: #8a5a2b; }
 .md-pick.wish { background: #f2f6f4; border: 1px solid #cfdfd6; color: #3f6350; }
+/* 지정 취소 — 그 작가님이 못 하게 되었을 때만 쓰는 단추라 조용히 오른쪽 끝에 둔다.
+   ⚠ 돈이 빠지는 일이다. 눈에 띄되 먼저 눌리지는 않게 (테두리만) */
+.md-pick-x { float: right; margin: -2px 0 0 8px; border: 1px solid currentColor; background: transparent;
+  color: inherit; border-radius: 999px; padding: 3px 10px; font-size: .74rem; line-height: 1.3;
+  white-space: nowrap; cursor: pointer; opacity: .72; }
+.md-pick-x:hover { opacity: 1; background: rgba(0, 0, 0, .05); }
 
 /* 배정 「확인」 단추 (대표 2026-09-17 «내가 메인작가 를 선택하고 확인 눌러야 저장되게 해줘»).
    고르는 순간 저장되면 손이 스쳐도 배정이 바뀌고 작가 폰까지 울린다.
