@@ -435,7 +435,10 @@ function scoreTag(id) {
     + (v.n < FB_THIN ? '(응답 ' + v.n + ')' : '');
 }
 
-function assigneeOptions(selId, conf, slot) {
+/* 네 번째 칸 bk 는 「신부님이 누구를 고르셨나」를 보려고 받는다 (대표 2026-09-17
+     «우선순위면 배정에 우선 순위 1,2, 3 보여주면 될거 같은데»)
+   ⚠ 안 넘겨도 된다 — 없으면 예전 그대로 그린다 (한꺼번에 배정하는 칸은 예약이 없다) */
+function assigneeOptions(selId, conf, slot, bk) {
   /* 사유·그날 일정은 길면 자른다. 한 줄에 이름·점수까지 같이 들어가야 한다
      ⚠ 이 함수 안에 둔다 — 밖에 두면 소스를 잘라와 돌리는 시험이 부를 때 터진다 */
   const cutWhy = (raw, max) => {
@@ -443,8 +446,18 @@ function assigneeOptions(selId, conf, slot) {
     const n = max || 16;
     return d.length > n ? d.slice(0, n) + '…' : d;
   };
+  /* 신부님이 고르신 것을 이름 바로 뒤에 적는다 — 고르개를 여는 자리가 곧 정하는 자리다.
+     ⚠ 지정과 우선순위는 함께 올 수 없다 (DB 가 막는다: bookings_pick_one_way).
+     ⚠ 겹침·불가 무리에도 적는다 — 지정받은 분이 그날 안 되는 것이야말로 먼저 보여야 한다 */
+  const pin0 = bk && bk.pick_pin ? bk.pick_pin : null;
+  const wish0 = bk && Array.isArray(bk.pick_wish) ? bk.pick_wish : [];
+  const pickTag = (id) => {
+    if (pin0) return id === pin0 ? ' · 📌 지정' : '';
+    const i = wish0.indexOf(id);
+    return i >= 0 ? ` · 📋 ${i + 1}순위` : '';
+  };
   const one = (s, extra, dis) =>
-    `<option value="${s.id}"${s.id === selId ? ' selected' : ''}${dis ? ' disabled' : ''}>${esc(s.name)}${extra}</option>`;
+    `<option value="${s.id}"${s.id === selId ? ' selected' : ''}${dis ? ' disabled' : ''}>${esc(s.name)}${pickTag(s.id)}${extra}</option>`;
   if (!conf && !slot) {
     return '<option value="">미배정</option>' +
       allStaff.map((s) => one(s, s.active ? '' : ' (비활성)', false)).join('');
@@ -1030,8 +1043,8 @@ function renderView(b, flash) {
          ⚠ 안 바뀌었으면 단추를 잠가 둔다 — 누를 것이 없는데 눌리면 헷갈린다. -->
     <div class="md-assignee">
       <span class="md-asg-label">메인작가</span>
-      <select id="mAssignee" class="md-sel">${assigneeOptions(b.assignee_id, confOf(b), 'main')}</select>
-      ${b.photographer === '2인 촬영' ? `<span class="md-asg-label">서브작가</span><select id="mSubAssignee" class="md-sel">${assigneeOptions(b.sub_assignee_id, confOf(b), 'sub')}</select>` : ''}
+      <select id="mAssignee" class="md-sel">${assigneeOptions(b.assignee_id, confOf(b), 'main', b)}</select>
+      ${b.photographer === '2인 촬영' ? `<span class="md-asg-label">서브작가</span><select id="mSubAssignee" class="md-sel">${assigneeOptions(b.sub_assignee_id, confOf(b), 'sub', b)}</select>` : ''}
       <button type="button" class="btn-sm md-asg-ok" id="mAsgOk" disabled>확인</button>
     </div>
 
@@ -1466,8 +1479,8 @@ function renderEdit(b) {
 
     <h5 class="eg">작가 배정 · 입금</h5>
     <div class="edit-grid asg">
-      <div class="field"><label>메인작가</label><select id="e_assignee">${assigneeOptions(b.assignee_id, confOf(b), 'main')}</select></div>
-      ${b.photographer === '2인 촬영' ? `<div class="field"><label>서브작가</label><select id="e_sub_assignee">${assigneeOptions(b.sub_assignee_id, confOf(b), 'sub')}</select></div>` : ''}
+      <div class="field"><label>메인작가</label><select id="e_assignee">${assigneeOptions(b.assignee_id, confOf(b), 'main', b)}</select></div>
+      ${b.photographer === '2인 촬영' ? `<div class="field"><label>서브작가</label><select id="e_sub_assignee">${assigneeOptions(b.sub_assignee_id, confOf(b), 'sub', b)}</select></div>` : ''}
     </div>
     <label class="eopt"><input type="checkbox" id="e_deposit" ${ck(b.deposit_paid)} /><span>계약금 입금 완료</span><b></b></label>
     <label class="eopt"><input type="checkbox" id="e_balance" ${ck(b.balance_paid)} /><span>잔금 입금 완료</span><b></b></label>
@@ -2887,8 +2900,8 @@ function renderSchedule() {
           <div class="sched-asg-ctrls">
             ${post}
             <div class="sched-sels">
-              <select class="sched-main" data-id="${b.id}" title="메인작가">${assigneeOptions(b.assignee_id, confOf(b), 'main')}</select>
-              ${is2 ? `<select class="sched-sub" data-id="${b.id}" title="서브작가">${assigneeOptions(b.sub_assignee_id, confOf(b), 'sub')}</select>` : ''}
+              <select class="sched-main" data-id="${b.id}" title="메인작가">${assigneeOptions(b.assignee_id, confOf(b), 'main', b)}</select>
+              ${is2 ? `<select class="sched-sub" data-id="${b.id}" title="서브작가">${assigneeOptions(b.sub_assignee_id, confOf(b), 'sub', b)}</select>` : ''}
             </div>
             <button type="button" class="sched-asg-ok" data-id="${b.id}" disabled>확인</button>
             <button type="button" class="sched-copy1" data-id="${b.id}" title="이 예식 스케줄 복사">📋</button>
@@ -3034,7 +3047,7 @@ function refillAsg(b, map) {
     const sel = $(id);
     if (!sel) return;
     const keep = sel.value;
-    sel.innerHTML = assigneeOptions(b[map[id][0]] || '', confOf(b), map[id][1]);
+    sel.innerHTML = assigneeOptions(b[map[id][0]] || '', confOf(b), map[id][1], b);
     sel.value = keep;
   });
   /* 표가 있어도 오래됐으면 다시 받는다 — 그 사이 작가가 「촬영 불가」를 찍었을 수 있다.
