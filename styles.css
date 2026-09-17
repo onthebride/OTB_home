@@ -501,6 +501,9 @@ html.no-pull, html.no-pull body { overscroll-behavior: none; }
 .opt-notes { list-style: none; margin: 16px 0 0; display: grid; gap: 7px; }
 .opt-notes li { position: relative; padding-left: 13px; font-size: .82rem; color: var(--ink-soft); line-height: 1.6; word-break: keep-all; }
 .opt-notes li::before { content: "*"; position: absolute; left: 0; }
+/* 제 줄 바로 밑에 붙는 설명 (대표 2026-09-17 «체크하는 줄 아래에 설명을 넣고»).
+   셋을 맨 아래 몰아두면 무엇이 무엇에 딸린 말인지 안 보인다 — 붙여두면 바로 읽힌다 */
+.opt-notes.tight { margin-top: 8px; }
 
 .person-row { margin-bottom: 22px; }
 .person-row:last-child { margin-bottom: 0; }

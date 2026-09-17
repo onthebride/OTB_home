@@ -41,7 +41,7 @@
   <link rel="preconnect" href="https://cthpxcgesorvtgjdgrtu.supabase.co" crossorigin />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Noto+Serif+KR:wght@300;400;500;600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=5b084aa4fc" />
+  <link rel="stylesheet" href="styles.css?v=16e80ad176" />
 </head>
 <body>
 
@@ -352,15 +352,24 @@
           <li>2부 시간이 길어질 경우 추가 비용이 있을 수 있습니다.</li>
         </ul>
         <p class="opt-sub">Option 2 · 작가 옵션</p>
+        <!-- ⚠⚠ 2026-09-17 에 「대표지정 350,000원」을 내리고 우선순위·지정으로 바꿨다.
+             예약 폼에서 그 옵션을 없앴는데 **홈에는 그대로 남아 있었다** — 손님이 홈에서
+             보고 신청하러 오면 그런 칸이 없다. **홈에 적히면 약속이 된다.**
+             ⚠ 「50,000원」은 서버의 private.pick_rules()->>'pin_default' 와 같아야 한다.
+               어긋나면 pgrun/picksubmit.test.mjs 가 빨개진다 -->
         <ul class="price-opt">
           <li><span>2인 촬영</span><span class="opt-won">250,000원</span></li>
-          <li><span>대표지정</span><span class="opt-won">350,000원</span></li>
+          <li><span>작가 우선순위</span><span class="opt-won">무료</span></li>
+          <li><span>작가 지정</span><span class="opt-won">50,000원부터</span></li>
         </ul>
         <ul class="opt-desc">
-          <li>대표지정 : 오랜 경력에서 오는 안정적인 촬영과 서비스.</li>
+          <!-- ⚠ 글귀는 대표가 주신 것이다 (2026-09-16). 「반드시」·「보장」이라고 쓰지 않는다 -->
+          <li>작가 우선순위 : 원하시는 작가님을 세 분까지 순서대로 골라주세요. 가능한 맞춰드립니다.</li>
+          <li>작가 지정 : 한 분을 정하시면 그 작가님이 촬영합니다. 금액은 작가님마다 다릅니다.</li>
+          <li>대표 작가를 지정하시면 : 오랜 경력에서 오는 안정적인 촬영과 서비스.</li>
           <li>2인 촬영 : 동시간대 다른 장소·방향에서 촬영할 수 있습니다.</li>
           <li>신부대기실과 바깥쪽 혼주분들, 신랑님을 디테일하게 촬영 원하시면 2인 촬영이 좋습니다.</li>
-          <li>옵션은 전부 개별 옵션이며, 대표 포함 2인 촬영은 둘 다 선택하시면 됩니다.</li>
+          <li>옵션은 전부 개별 옵션이며, 작가 지정과 2인 촬영은 둘 다 선택하시면 됩니다.</li>
         </ul>
       </div>
     </div>
