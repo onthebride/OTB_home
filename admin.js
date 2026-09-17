@@ -1008,6 +1008,8 @@ function renderView(b, flash) {
     </div>
     ${flash ? `<p class="save-msg ok" style="text-align:left;margin:0 0 12px">${esc(flash)}</p>` : ''}
 
+    ${pickLine(b)}
+
     <div class="md-assignee">
       <span class="md-asg-label">메인작가</span>
       <select id="mAssignee" class="md-sel">${assigneeOptions(b.assignee_id, confOf(b), 'main')}</select>
@@ -1105,6 +1107,15 @@ function renderView(b, flash) {
     const main = $('mAssignee').value || null;
     // 서브 선택칸이 없으면(=2인 촬영 아님) 서브는 비움
     const sub = $('mSubAssignee') ? ($('mSubAssignee').value || null) : null;
+    /* ⚠ 신부님이 고르신 것과 어긋나면 **한 번 물어본다** (대표 2026-09-17).
+       지정은 돈을 받은 것이라 특히 그렇다. 막지는 않는다 — 대표가 정하실 일이다 */
+    if (main && !pickOk(b, main)
+      && !confirm(b.pick_pin
+        ? `신부님이 ${pickName(b.pick_pin)} 작가님을 지정하셨습니다 (${b.pick_fee_won ? won(b.pick_fee_won / 10000) : '지정비'} 받음).\n다른 작가님으로 배정할까요?`
+        : `신부님이 고르신 우선순위에 없는 작가님입니다.\n(${(b.pick_wish || []).map(pickName).join(' · ')})\n그래도 배정할까요?`)) {
+      refillAsg(b, { mAssignee: ['assignee_id', 'main'], mSubAssignee: ['sub_assignee_id', 'sub'] });
+      return;
+    }
     const { error } = await sb.rpc('admin_set_assignees', { p_id: b.id, p_main: main, p_sub: sub });
     if (error) { alert('배정 실패: ' + error.message); return; }
     b.assignee_id = main; b.sub_assignee_id = sub;
@@ -4721,6 +4732,35 @@ if (stRange) {
 const AUDIT_ACT = { set: '배정', change: '작가 변경', clear: '배정 해제', booking_deleted: '예약 삭제',
   booking_cancelled: '예식 취소', booking_restored: '취소 해제' };
 const AUDIT_FIELD = { assignee_id: '메인', sub_assignee_id: '서브' };
+
+/* ===== 신부님이 고르신 작가 (대표 2026-09-17 «배정때 내가 참고할 수 있게 알려줘야해») =====
+   ⚠ **배정 고르개 바로 위**에 둔다 — 고르고 나서 보면 늦다.
+   ⚠ 둘은 다른 것이다. 글자·색을 갈라 적는다:
+     · 지정  — 돈을 받았다. **그 작가님이 촬영해야 한다**
+     · 우선순위 — 무료이고 **약속이 아니다** («가능한 맞춰드립니다»). 가능하면 맞춘다
+   ⚠ 막지는 않는다. 어긋날 때 한 번 물어볼 뿐이다 — 정하시는 것은 대표다 */
+const pickName = (id) => {
+  const s = (allStaff || []).find((x) => x.id === id);
+  return s ? s.name : '(알 수 없는 작가)';
+};
+// 지금 고른 작가가 신부님 뜻과 맞나
+function pickOk(b, staffId) {
+  if (b.pick_pin) return b.pick_pin === staffId;
+  const w = Array.isArray(b.pick_wish) ? b.pick_wish : [];
+  return !w.length || w.indexOf(staffId) >= 0;
+}
+function pickLine(b) {
+  if (b.pick_pin) {
+    return '<p class="md-pick pin">📌 <b>작가 지정</b> — ' + esc(pickName(b.pick_pin))
+      + '<em>' + (b.pick_fee_won ? won(b.pick_fee_won / 10000) + ' 받았습니다. ' : '')
+      + '이 작가님으로 배정해 주세요</em></p>';
+  }
+  const w = Array.isArray(b.pick_wish) ? b.pick_wish : [];
+  if (!w.length) return '';
+  return '<p class="md-pick wish">📋 <b>작가 우선순위</b> — '
+    + w.map((id, i) => (i + 1) + '. ' + esc(pickName(id))).join(' · ')
+    + '<em>무료이고 약속은 아닙니다. 가능하면 맞춰 주세요</em></p>';
+}
 
 async function renderAudit() {
   const wrap = $('tab-audit');

@@ -1799,3 +1799,12 @@ body.gl-lb-on { overflow: hidden; }          /* 뒤 목록이 같이 굴러다�
   /* ← → 가 없는 화면이라 이 안내는 접는다 */
   .gl-lb-tip { display: none; }
 }
+
+/* 신부님이 고르신 작가 (대표 2026-09-17 «배정때 내가 참고할 수 있게 알려줘야해»).
+   배정 고르개 **바로 위**에 온다 — 고르고 나서 보면 늦다.
+   ⚠ 둘을 색으로 가른다. 지정은 돈을 받은 것(지켜야 한다), 우선순위는 희망이다 */
+.md-pick { margin: 0 0 10px; padding: 10px 13px; border-radius: 8px; font-size: .88rem; line-height: 1.6; }
+.md-pick b { font-weight: 700; }
+.md-pick em { display: block; margin-top: 3px; font-style: normal; font-size: .78rem; opacity: .82; }
+.md-pick.pin { background: #fdf3ec; border: 1px solid #e6cdb8; color: #8a5a2b; }
+.md-pick.wish { background: #f2f6f4; border: 1px solid #cfdfd6; color: #3f6350; }

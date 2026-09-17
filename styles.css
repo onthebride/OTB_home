@@ -644,3 +644,42 @@ input.readonly { background: var(--cream); color: var(--ink-soft); cursor: not-a
 @media (max-width: 640px) {
   input, select, textarea { font-size: 16px; }
 }
+
+/* ===== 예약 폼 — 작가 우선순위 · 작가 지정 (대표 2026-09-17 «예약 폼 넣자») =====
+   미리보기(/pick-sample)와 같은 모양이지만 고르개 이름을 갈라 쓴다 —
+   같은 고르개를 두 군데 쓰면 시험의 rule() 이 앞엣것만 보고, 한쪽을 고치면 다른 쪽이 조용히 따라온다 */
+.opt-price.free { color: #3f7040; }
+.pk-box { margin-top: 14px; }
+.pk-msg { background: #fbf6ee; border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 12px 14px; margin-bottom: 12px; font-size: .88rem; line-height: 1.7; color: var(--ink); }
+.pk-slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
+.pk-slot { background: var(--paper); border: 1px dashed var(--line); border-radius: var(--radius);
+  padding: 10px 8px; text-align: center; display: flex; flex-direction: column; gap: 3px; align-items: center; }
+.pk-slot.on { border-style: solid; border-color: var(--gold); background: #fffaf2; }
+.pk-slot i { font-style: normal; font-size: .72rem; color: var(--gold-deep); letter-spacing: .06em; }
+.pk-slot b { font-size: .94rem; font-weight: 500; color: var(--ink); }
+.pk-slot span.dim { font-size: .84rem; color: var(--ink-soft); }
+.pk-x { background: none; border: none; color: var(--ink-soft); font-size: .76rem; cursor: pointer; padding: 2px 4px; }
+.pk-list { display: flex; flex-direction: column; gap: 10px; }
+.pk-item { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 13px 15px; }
+.pk-item.chosen { border-color: var(--gold); background: #fffaf2; }
+.pk-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.pk-name { font-family: var(--kserif); font-size: 1.02rem; font-weight: 600; color: var(--ink); }
+.pk-rec { background: var(--gold-deep); color: #fff; border-radius: 999px; padding: 2px 9px; font-size: .72rem; font-weight: 500; }
+.pk-score { font-size: .84rem; color: var(--gold-deep); }
+.pk-score .thin { color: var(--ink-soft); }
+.pk-none { font-size: .84rem; color: var(--ink-soft); }
+/* 단추는 오른쪽 끝으로. 지정은 금액을 같이 적는다 — 누르기 전에 합계가 얼마나 오르는지 보여야 한다 */
+.pk-take { margin-left: auto; border: 1px solid var(--ink); background: var(--ink); color: #fff;
+  border-radius: var(--radius); padding: 7px 14px; font-size: .84rem; cursor: pointer; white-space: nowrap; }
+.pk-take.off { background: none; color: var(--ink-soft); border-color: var(--line); }
+.pk-take b { font-weight: 600; margin-left: 3px; }
+.pk-shots { display: flex; gap: 6px; overflow-x: auto; margin-top: 10px; padding-bottom: 4px; }
+.pk-shots img { width: 88px; height: 116px; object-fit: cover; border-radius: 4px; flex: none; background: var(--cream); }
+.pk-noshot, .pk-empty { margin-top: 10px; font-size: .84rem; color: var(--ink-soft); }
+.pk-foot { margin-top: 12px; font-size: .86rem; color: var(--ink-soft); }
+/* 폰에서는 이름줄과 단추가 한 줄에 안 들어간다 — 단추를 아래로 내린다 (올리기 전 점검 ①) */
+@media (max-width: 560px) {
+  .pk-take { margin-left: 0; width: 100%; text-align: center; margin-top: 8px; }
+  .pk-slots { gap: 6px; }
+}

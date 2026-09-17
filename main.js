@@ -159,6 +159,10 @@ if (bookingForm && window.flatpickr) {
     altFormat: 'Y년 m월 d일',
     minDate: 'today',
     disableMobile: true,
+    /* ⚠ flatpickr 는 값을 **코드로** 넣는다 — 그러면 change 이벤트가 안 난다.
+       예식날짜가 바뀌면 지정 목록(그날 되는 분)이 달라지므로 여기서 직접 알려준다
+       (대표 2026-09-16 «그날 안 되는 작가는 빼야지») */
+    onChange: () => { if (typeof pkOnDate === 'function') pkOnDate(); },
   });
 }
 
@@ -294,6 +298,165 @@ const albumQty = () => { const el = document.getElementById('f_album_qty'); retu
 const albumUnit = () => { const el = document.getElementById('f_option_album'); return el ? (Number(el.dataset.price) || 0) : 0; };
 const albumName = () => { const el = document.getElementById('f_option_album'); const li = el && el.closest('li'); const n = li && li.querySelector('.opt-name'); return (n && n.textContent.trim()) || '앨범 추가'; };
 
+/* ===== 작가 우선순위 · 작가 지정 (대표 2026-09-17 «예약 폼 넣자») =====
+
+   우선순위 — 무료. 세 분까지 차례대로. **약속이 아니다**
+     («가능한 맞춰드립니다 다만 당일 작가님 지정이 있거나 스케줄 상 어려울 수 있어요»).
+   지정 — 한 분. 그 작가님 금액이 합계에 붙는다. 안 정하신 분은 기본 5만원.
+
+   ⚠ 둘은 같이 못 고른다. 하나를 켜면 다른 하나가 꺼지고 골라둔 것도 지운다.
+     남겨두면 다시 켰을 때 «내가 언제 이걸 골랐지» 가 된다. 서버 표에도 같은 제약이 있다.
+   ⚠ **지정은 예식날짜를 먼저 받아야 한다** — 그날 안 되는 분을 보여주면 안 된다
+     (대표 2026-09-16 «빼야지»). 날짜가 바뀌면 목록을 다시 받는다.
+   ⚠ 값은 **서버가 다시 셈한다**(submit_booking_v2). 여기 숫자는 신부님께 보여드리는 것이고,
+     접수될 때는 그 작가의 지금 금액으로 다시 붙는다. 그래야 꾸며 보낸 값이 안 먹는다.
+   ⚠ 이 자리는 **머리 위에서 미리 그릴 수 없다** — 작가 목록이 서버에서 온다.
+     그래서 calcTotal 이 부르는 pkFeeManwon 만 앞에 두고(함수 선언은 끌어올려진다),
+     상태는 여기서 먼저 만든다. 안 그러면 첫 합계 셈에서 TDZ 로 터진다 */
+let pkStaff = [];      // 손님이 보는 작가 목록 (public.pick_staff_list 가 준다)
+let pkWish = [];       // 우선순위로 고른 작가 id (차례가 곧 1·2·3순위)
+let pkPin = null;      // 지정한 작가 id (한 명)
+let pkFor = null;      // 어느 날짜로 받아둔 목록인가 (날짜가 바뀌면 다시 받는다)
+let pkBusy = false;
+const PK_SLOTS = 3;
+
+const pkOne = (id) => pkStaff.find((x) => x.id === id) || null;
+// 합계에 더할 지정비 (만원). 고른 분이 없으면 0
+function pkFeeManwon() {
+  if (!pkPin || !checked('f_pick_pin')) return 0;
+  const s = pkOne(pkPin);
+  return s ? Math.round((Number(s.fee) || 0) / 10000) : 0;
+}
+const pkWon = (n) => Number(n || 0).toLocaleString('ko-KR') + '원';
+
+function pkRecalc() {
+  const t = document.getElementById('bkTotal');
+  if (t) t.textContent = calcTotal().toLocaleString('ko-KR') + '만원';
+}
+
+function pkMsg(txt) {
+  const el = document.getElementById('pkMsg');
+  if (!el) return;
+  el.hidden = !txt;
+  el.innerHTML = txt || '';
+}
+
+async function pkLoad() {
+  const pinOn = checked('f_pick_pin');
+  const day = val('f_wedding_date') || null;
+  /* 지정은 그날 되는 분만 보여야 하므로 날짜가 있어야 한다.
+     우선순위는 셋 중 하나라 날짜 없이도 고르실 수 있다 */
+  const key = pinOn ? (day || '') : '-';
+  if (pkFor === key && pkStaff.length) { pkRender(); return; }
+  if (pinOn && !day) { pkStaff = []; pkFor = key; pkRender(); return; }
+  if (typeof sb === 'undefined' || !sb) { pkMsg('작가 목록을 불러오지 못했어요.'); return; }
+  pkBusy = true; pkRender();
+  const { data, error } = await sb.rpc('pick_staff_list', { p_wedding_date: pinOn ? day : null });
+  pkBusy = false;
+  if (error || !Array.isArray(data)) { pkStaff = []; pkMsg('작가 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'); pkRender(); return; }
+  pkStaff = data;
+  pkFor = key;
+  // 목록이 바뀌면 이제 못 고르는 분은 떨어뜨린다 (그날이 찼을 수 있다)
+  pkWish = pkWish.filter((id) => pkOne(id));
+  if (pkPin && !(pkOne(pkPin) || {}).can_pin) pkPin = null;
+  pkRender();
+  pkRecalc();
+}
+
+// 예식날짜가 바뀌면 (flatpickr 가 부른다)
+function pkOnDate() { pkFor = null; if (checked('f_pick_pin')) pkLoad(); }
+
+function pkRender() {
+  const box = document.getElementById('pkBox');
+  if (!box) return;
+  const wishOn = checked('f_pick_wish');
+  const pinOn = checked('f_pick_pin');
+  box.hidden = !(wishOn || pinOn);
+  const slots = document.getElementById('pkSlots');
+  const list = document.getElementById('pkList');
+  const foot = document.getElementById('pkFoot');
+  if (!box.hidden) pkMsg('');
+  if (box.hidden || !slots || !list) return;
+
+  // 「+5만원부터」 — 제일 싼 분 기준
+  const from = document.getElementById('pkFrom');
+  if (from && pkStaff.length) {
+    const low = Math.min.apply(null, pkStaff.filter((s) => s.can_pin).map((s) => Number(s.fee) || 0));
+    if (Number.isFinite(low) && low > 0) from.textContent = '+' + pkWon(low) + '부터';
+  }
+
+  if (pinOn && !val('f_wedding_date')) {
+    slots.innerHTML = ''; list.innerHTML = '';
+    if (foot) foot.textContent = '';
+    pkMsg('먼저 <b>예식날짜</b>를 골라주세요. 그날 촬영이 가능한 작가님만 보여드립니다.');
+    return;
+  }
+  if (pkBusy) { slots.innerHTML = ''; list.innerHTML = '<p class="pk-empty">불러오는 중…</p>'; return; }
+
+  // 우선순위 세 자리 (지정은 한 분이라 자리가 없다)
+  slots.hidden = !wishOn;
+  slots.innerHTML = !wishOn ? '' : Array.from({ length: PK_SLOTS }, (_, i) => {
+    const s = pkOne(pkWish[i]);
+    return '<div class="pk-slot' + (s ? ' on' : '') + '"><i>' + (i + 1) + '순위</i>'
+      + (s ? '<b>' + _esc(s.name) + '</b><button type="button" class="pk-x" data-pkdrop="' + _esc(s.id) + '">빼기</button>'
+           : '<span class="dim">아직</span>') + '</div>';
+  }).join('');
+
+  const pool = pinOn ? pkStaff.filter((s) => s.can_pin) : pkStaff;
+  list.innerHTML = !pool.length
+    ? '<p class="pk-empty">' + (pinOn ? '그날 지정하실 수 있는 작가님이 없어요. 우선순위로 골라주시면 최대한 맞춰드릴게요.' : '작가 목록을 불러오지 못했어요.') + '</p>'
+    : pool.map((s, i) => {
+      const at = pkWish.indexOf(s.id);
+      const isPin = pkPin === s.id;
+      const rec = (!pinOn && i < 3) ? '<span class="pk-rec">추천 ' + (i + 1) + '위</span>' : '';
+      /* ⚠ 점수만 적는다. 촬영 후 설문의 「한마디」는 신부님이 우리에게 주신 글이라 안 낸다 */
+      const score = s.score == null
+        ? '<span class="pk-none">아직 받은 후기가 없어요</span>'
+        : '<span class="pk-score">후기 ' + s.score + '점 <span class="thin">(' + s.n + '건)</span></span>';
+      const shots = (s.shots || []).length
+        ? '<div class="pk-shots">' + s.shots.map((u) =>
+          '<img loading="lazy" src="' + _esc(u) + '" alt="' + _esc(s.name) + ' 작가 사진" />').join('') + '</div>'
+        : '<p class="pk-noshot">아직 올라간 사진이 없어요</p>';
+      /* ⚠ 지정은 **금액을 단추에 적는다** — 누르기 전에 합계가 얼마나 오르는지 보여야 한다 */
+      const btn = pinOn
+        ? '<button type="button" class="pk-take' + (isPin ? ' off' : '') + '" data-pkpin="' + _esc(s.id) + '">'
+          + (isPin ? '지정함 — 빼기' : '지정하기 <b>+' + pkWon(s.fee) + '</b>') + '</button>'
+        : '<button type="button" class="pk-take' + (at >= 0 ? ' off' : '') + '" data-pktake="' + _esc(s.id) + '">'
+          + (at >= 0 ? (at + 1) + '순위 — 빼기' : pkWish.length >= PK_SLOTS ? '자리 다 참' : '고르기') + '</button>';
+      return '<div class="pk-item' + ((pinOn ? isPin : at >= 0) ? ' chosen' : '') + '">'
+        + '<div class="pk-head"><span class="pk-name">' + _esc(s.name) + '</span>' + rec + score + btn + '</div>'
+        + shots + '</div>';
+    }).join('');
+
+  if (foot) {
+    const pinS = pkPin && pkOne(pkPin);
+    foot.textContent = pinOn
+      ? (pinS ? pinS.name + ' 작가님으로 지정하셨어요. 그 작가님이 촬영합니다.' : '한 분을 골라주세요.')
+      : pkWish.length === 0 ? '세 분까지 고르실 수 있어요.'
+        : pkWish.length < PK_SLOTS ? pkWish.length + '분 고르셨어요. ' + (PK_SLOTS - pkWish.length) + '자리 남았습니다.'
+          : '세 분 다 고르셨어요. 가능한 맞춰드릴게요.';
+  }
+
+  box.querySelectorAll('[data-pktake]').forEach((b) => b.addEventListener('click', () => {
+    const id = b.dataset.pktake;
+    const at = pkWish.indexOf(id);
+    if (at >= 0) pkWish.splice(at, 1);
+    else if (pkWish.length < PK_SLOTS) pkWish.push(id);
+    pkRender();
+  }));
+  box.querySelectorAll('[data-pkdrop]').forEach((b) => b.addEventListener('click', () => {
+    const at = pkWish.indexOf(b.dataset.pkdrop);
+    if (at >= 0) pkWish.splice(at, 1);
+    pkRender();
+  }));
+  box.querySelectorAll('[data-pkpin]').forEach((b) => b.addEventListener('click', () => {
+    // 지정은 한 분. 다른 분을 누르면 갈아탄다 (앞의 분을 먼저 빼게 하지 않는다)
+    pkPin = pkPin === b.dataset.pkpin ? null : b.dataset.pkpin;
+    pkRender();
+    pkRecalc();
+  }));
+}
+
 const calcTotal = () => {
   let sum = 0;
   bookingForm
@@ -304,6 +467,8 @@ const calcTotal = () => {
   const tv = bookingForm.querySelector('#f_travel');
   const two = (bookingForm.querySelector('input[name="photographer"]:checked') || {}).value === '2인 촬영';
   if (tv && tv.checked && two) sum += 5;
+  // 작가 지정은 고르신 분마다 값이 달라 data-price 로는 셈이 안 된다. 따로 더한다
+  sum += pkFeeManwon();
   return sum;
 };
 if (bookingForm) {
@@ -313,6 +478,22 @@ if (bookingForm) {
   };
   bookingForm.addEventListener('change', recalc);
   recalc();
+
+  /* 우선순위·지정 두 칸 (대표 2026-09-17).
+     ⚠ 둘은 같이 못 고른다 — 한쪽을 켜면 다른 쪽이 꺼지고, 꺼진 쪽이 고른 것도 지운다.
+       한쪽을 먼저 끄고 다른 쪽을 켜게 하면 두 번 눌러야 한다 */
+  const wishEl = document.getElementById('f_pick_wish');
+  const pinEl = document.getElementById('f_pick_pin');
+  if (wishEl && pinEl) {
+    wishEl.addEventListener('change', () => {
+      if (wishEl.checked) { pinEl.checked = false; pkPin = null; } else pkWish = [];
+      pkLoad(); pkRecalc();
+    });
+    pinEl.addEventListener('change', () => {
+      if (pinEl.checked) { wishEl.checked = false; pkWish = []; } else pkPin = null;
+      pkLoad(); pkRecalc();
+    });
+  }
 }
 
 // 수량 스테퍼(−/＋) 배선 — 값 변경 시 폼 change 이벤트로 합계 재계산
@@ -417,7 +598,15 @@ function buildLineItems() {
   if (checked('f_option_pyebaek')) items.push({ group: '옵션', name: _optName('f_option_pyebaek', '폐백촬영'), price: _price('f_option_pyebaek') });
   if (checked('f_option_part2')) items.push({ group: '옵션', name: _optName('f_option_part2', '2부 촬영'), price: _price('f_option_part2') });
   if (two) { const r = bookingForm.querySelector('input[name="photographer"][value="2인 촬영"]'); items.push({ group: '옵션', name: '2인 촬영', price: r ? (Number(r.dataset.price) || 0) : 25 }); }
+  // ⚠ 대표지정 줄은 2026-09-17 에 화면에서 내렸다. 옛 예약에는 남아 있으니 셈은 남겨둔다
   if (checked('f_rep')) items.push({ group: '옵션', name: _optName('f_rep', '대표지정'), price: _price('f_rep') });
+  /* 작가 지정 — 고르신 분마다 값이 다르다.
+     ⚠ 이 줄은 신부님께 보여드리는 것이고, 접수될 때 **서버가 그 작가의 지금 금액으로 다시 만든다**
+       (submit_booking_v2). 꾸며 보낸 값은 안 먹는다 */
+  if (checked('f_pick_pin') && pkPin) {
+    const s = pkOne(pkPin);
+    if (s) items.push({ group: '옵션', name: '작가 지정 · ' + s.name, price: Math.round((Number(s.fee) || 0) / 10000) });
+  }
   document.querySelectorAll('#extraOptions input.f-extra:checked').forEach((el) => {
     items.push({ group: '옵션', name: el.dataset.name, price: Number(el.dataset.price) || 0 });
   });
@@ -500,6 +689,9 @@ if (bookingForm) {
       option_part2: checked('f_option_part2'),
       photographer: radioVal('photographer') || '기본',
       rep_designation: checked('f_rep'),
+      // 우선순위는 셋까지, 지정은 한 분. 둘은 같이 못 고른다 — 서버도 같은 것을 본다
+      pick_wish: checked('f_pick_wish') ? pkWish.slice(0, PK_SLOTS) : [],
+      pick_pin: checked('f_pick_pin') ? pkPin : null,
       photo_usage_agree: radioVal('usage') === 'yes',
       total_price: calcTotal(),
       line_items: lineItems,
@@ -520,6 +712,21 @@ if (bookingForm) {
     if (error) {
       console.error(error);
       setStatus('접수 중 오류가 발생했어요. 다시 시도하시거나 onthebride@naver.com 으로 연락 주세요.', 'error');
+      return;
+    }
+
+    /* 폼을 채우시는 사이에 지정한 작가님이 그날 차버렸다 (대표 2026-09-17).
+       ⚠ 돈을 받는 자리라 **조용히 넘기지 않는다.** 그대로 접수되면 약속이 어긋난다.
+         폼은 그대로 두고 그 작가님만 떨어뜨린 뒤 다시 고르시게 한다 */
+    if (data && data.ok === false && (data.reason === 'pin_taken' || data.reason === 'pin_gone')) {
+      pkPin = null;
+      pkFor = null;                 // 목록을 다시 받는다 — 그 사이에 또 달라졌을 수 있다
+      await pkLoad();
+      pkRecalc();
+      setStatus(data.reason === 'pin_taken'
+        ? [(data.name ? data.name + ' 작가님이 ' : '') + '그 사이 예식날에 다른 일정이 잡혔어요.',
+          '아래에서 다른 작가님을 골라주시거나, 우선순위로 바꿔주세요.'].join('\n')
+        : '고르신 작가님을 지금은 지정하실 수 없어요. 아래에서 다시 골라주세요.', 'warn');
       return;
     }
 
