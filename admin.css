@@ -1808,3 +1808,11 @@ body.gl-lb-on { overflow: hidden; }          /* 뒤 목록이 같이 굴러다�
 .md-pick em { display: block; margin-top: 3px; font-style: normal; font-size: .78rem; opacity: .82; }
 .md-pick.pin { background: #fdf3ec; border: 1px solid #e6cdb8; color: #8a5a2b; }
 .md-pick.wish { background: #f2f6f4; border: 1px solid #cfdfd6; color: #3f6350; }
+
+/* 배정 「확인」 단추 (대표 2026-09-17 «내가 메인작가 를 선택하고 확인 눌러야 저장되게 해줘»).
+   고르는 순간 저장되면 손이 스쳐도 배정이 바뀌고 작가 폰까지 울린다.
+   ⚠ 줄을 통째로 차지한다 — 고르개 옆에 끼우면 폰에서 셋이 한 줄에 안 들어간다 (올리기 전 점검 ①)
+   ⚠ 바뀐 것이 없으면 잠겨 있다. 바뀌면 진해져서 «누르세요» 가 눈에 보인다 */
+.md-asg-ok { grid-column: 1 / -1; width: 100%; margin-top: 2px; }
+.md-asg-ok:disabled { opacity: .45; cursor: default; }
+.md-asg-ok.on { background: var(--ink); color: #fff; border-color: var(--ink); font-weight: 600; }

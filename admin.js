@@ -1010,10 +1010,16 @@ function renderView(b, flash) {
 
     ${pickLine(b)}
 
+    <!-- ⚠ 고르는 즉시 저장하지 않는다 (대표 2026-09-17
+         «내가 메인작가 를 선택하고 확인 눌러야 저장되게 해줘»).
+         고르는 순간 저장되면 손이 스쳐도 배정이 바뀌고 **작가 폰까지 울린다.**
+         고른 뒤 「확인」을 눌러야 저장되고, 그때 작가 캘린더에도 알림이 남는다.
+         ⚠ 안 바뀌었으면 단추를 잠가 둔다 — 누를 것이 없는데 눌리면 헷갈린다. -->
     <div class="md-assignee">
       <span class="md-asg-label">메인작가</span>
       <select id="mAssignee" class="md-sel">${assigneeOptions(b.assignee_id, confOf(b), 'main')}</select>
       ${b.photographer === '2인 촬영' ? `<span class="md-asg-label">서브작가</span><select id="mSubAssignee" class="md-sel">${assigneeOptions(b.sub_assignee_id, confOf(b), 'sub')}</select>` : ''}
+      <button type="button" class="btn-sm md-asg-ok" id="mAsgOk" disabled>확인</button>
     </div>
 
     <!-- 세 덩이로 묶는다 (대표 2026-08-30 «다 늘어져잇으니까 눈에 잘 안들어오네»).
@@ -1113,7 +1119,15 @@ function renderView(b, flash) {
       && !confirm(b.pick_pin
         ? `신부님이 ${pickName(b.pick_pin)} 작가님을 지정하셨습니다 (${b.pick_fee_won ? won(b.pick_fee_won / 10000) : '지정비'} 받음).\n다른 작가님으로 배정할까요?`
         : `신부님이 고르신 우선순위에 없는 작가님입니다.\n(${(b.pick_wish || []).map(pickName).join(' · ')})\n그래도 배정할까요?`)) {
-      refillAsg(b, { mAssignee: ['assignee_id', 'main'], mSubAssignee: ['sub_assignee_id', 'sub'] });
+      /* 안 하기로 하셨으면 고르개를 **저장된 값으로 되돌린다** (고른 채로 두면 저장된 줄 아신다)
+         ⚠⚠ 여기서 mAssignee 를 **if 로 감싸 쓰지 말 것.** confrefresh.test.mjs 가 그 글자꼴을
+           아래 손잡이 거는 자리까지 **잘라오는 끝 표지**로 쓴다. 앞에 하나 더 생기면
+           잘라올 데가 짧아져 시험이 조용히 터진다. 그래서 back() 으로 돌려 쓴다
+           (이 주석에도 그 글자꼴을 적지 않는다 — 주석이라도 indexOf 는 걸린다) */
+      const back = (id, v) => { const el = $(id); if (el) el.value = v || ''; };
+      back('mAssignee', b.assignee_id);
+      back('mSubAssignee', b.sub_assignee_id);
+      syncAsgOk();
       return;
     }
     const { error } = await sb.rpc('admin_set_assignees', { p_id: b.id, p_main: main, p_sub: sub });
@@ -1127,11 +1141,29 @@ function renderView(b, flash) {
        지우고 이 선택칸부터 새 표로 다시 채운다 */
     invalidateConf();
     refillAsg(b, { mAssignee: ['assignee_id', 'main'], mSubAssignee: ['sub_assignee_id', 'sub'] });
+    syncAsgOk();
     renderDashboard();
-    toast('작가 배정을 변경했어요.');
+    toast('작가 배정을 저장했어요. 작가 캘린더에도 알림이 갑니다.');
   };
-  if ($('mAssignee')) $('mAssignee').addEventListener('change', saveAssignees);
-  if ($('mSubAssignee')) $('mSubAssignee').addEventListener('change', saveAssignees);
+
+  /* ⚠ 고른 것과 저장된 것이 다를 때만 「확인」이 살아난다 (대표 2026-09-17).
+     고르는 순간 저장되면 손이 스쳐도 배정이 바뀌고 작가 폰까지 울린다.
+     ⚠ refillAsg 는 <option> 만 갈아끼운다 — <select> 는 그대로라 손잡이가 안 떨어진다 */
+  const asgVal = (id) => ($(id) ? ($(id).value || null) : null);
+  const asgDirty = () => asgVal('mAssignee') !== (b.assignee_id || null)
+    || ($('mSubAssignee') ? asgVal('mSubAssignee') !== (b.sub_assignee_id || null) : false);
+  function syncAsgOk() {
+    const btn = $('mAsgOk');
+    if (!btn) return;
+    const d = asgDirty();
+    btn.disabled = !d;
+    btn.classList.toggle('on', d);
+    btn.textContent = d ? '확인 — 저장하기' : '확인';
+  }
+  if ($('mAssignee')) $('mAssignee').addEventListener('change', syncAsgOk);
+  if ($('mSubAssignee')) $('mSubAssignee').addEventListener('change', syncAsgOk);
+  if ($('mAsgOk')) $('mAsgOk').addEventListener('click', saveAssignees);
+  syncAsgOk();
   refillAsg(b, { mAssignee: ['assignee_id', 'main'], mSubAssignee: ['sub_assignee_id', 'sub'] });
 
   // 계약금/잔금 입금 토글 (잘못 누르면 다시 눌러 해제)
