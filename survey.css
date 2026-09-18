@@ -95,6 +95,11 @@ img { display: block; max-width: 100%; }
 .sv-notice li::before { content: "✅"; position: absolute; left: 0; top: 1px; font-size: .82rem; }
 .sv-notice-p { font-size: .88rem; color: var(--ink-soft); margin-bottom: 12px; line-height: 1.65; }
 .sv-notice b { color: var(--ink); }
+/* 「요청사항은 모두 설문으로」 (대표 2026-09-18). 안내 줄들과 같은 모양으로 두면 못 보고 지나친다 —
+   놓치면 촬영이 어긋나는 말이라 따로 뺀다. 겁주지는 않게 색은 차분하게 */
+.sv-warn { font-size: .9rem; line-height: 1.65; color: var(--ink); background: #fbf3ef;
+  border: 1px solid #e8d3c8; border-radius: var(--radius); padding: 11px 13px; margin-bottom: 14px; }
+.sv-warn b { color: #8a5a2b; }
 .sv-confirm .sv-check { border-top: 1px solid #ecdcc3; padding-top: 16px; margin-top: 2px; font-weight: 500; }
 
 /* fields */
