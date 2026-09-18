@@ -1876,7 +1876,17 @@ function copySurveyShare(id) {
   toast(surveyIds.has(id) ? '작가 공유용 설문 링크를 복사했어요 📋 (날짜·성함 포함)' : '설문 링크 복사 — 아직 고객이 설문 미작성 상태예요');
 }
 
-const ATK_FAIL_NAME = { A: '계약안내', B: '한달전', C: '일주일전·잔금', D: '전날', E: '촬영본 안내', F: '입금확인', G: '촬영 설문' };
+/* 알림톡 template 글자 → 사람이 읽는 이름.
+   ⚠ 여기 없는 글자는 **코드가 그대로 화면에 나온다** (대표 2026-09-18 «저거 t 붙은거는 뭘 말하는거야?»
+     — 「김서경 T」 라고만 떠 있었다). 새 템플릿을 만들면 여기도 같이 더한다.
+   ⚠ S·T 는 **작가에게** 나가는 것이다. 이 카드에는 손님 것과 작가 것이 섞여 있는데,
+     줄에 적히는 이름은 늘 계약자라 「작가」를 안 붙이면 손님에게 간 줄로 읽힌다.
+   ⚠ 이름은 대표가 보시는 말로 적는다 — 서버(private.atk_name)와 글자가 조금 다르다.
+     C·D·E 가 서버에선 「잔금안내·최종안내·링크안내」다. 뜻은 같고, 화면 쪽이 더 자세하다 */
+const ATK_FAIL_NAME = { A: '계약안내', B: '한달전', C: '일주일전·잔금', D: '전날', E: '촬영본 안내', F: '입금확인', G: '촬영 설문',
+  S: '작가 스케줄확인', T: '작가 설문안내' };
+// 모르는 글자여도 「알림톡 X」로 읽히게 한다 — 글자 하나만 덩그러니 있으면 무엇인지 알 수가 없다
+const atkName = (t) => ATK_FAIL_NAME[t] || ('알림톡 ' + (t || '?'));
 const ATK_FAILCODE = { '3101': '발신프로필 오류', '3102': '카카오채널 친구 아님', '3103': '템플릿 불일치', '3104': '카카오톡 미사용자(번호 오류 등)', '3105': '미등록 템플릿', '3106': '메시지 타입 오류', '3107': '비활성/수신차단', '3108': '발송가능시간 외(08~20시)' };
 const atkFailReason = (code) => (code ? (ATK_FAILCODE[code] || ('전달실패 코드 ' + code)) : '전달 실패');
 const ATK_STATUS = (s) => ({
@@ -1902,7 +1912,7 @@ function renderAtkFail() {
     return `
     <div class="dl-item${failed ? ' overdue' : ''}" data-id="${f.booking_id}">
       <div class="dl-main">
-        <span class="dl-name">${esc(f.name || '-')} <b style="font-weight:600;color:var(--ink-soft)">${esc(ATK_FAIL_NAME[f.template] || f.template)}</b> ${ATK_STATUS(f.status)}</span>
+        <span class="dl-name">${esc(f.name || '-')} <b style="font-weight:600;color:var(--ink-soft)">${esc(atkName(f.template))}</b> ${ATK_STATUS(f.status)}</span>
         <span class="dl-meta">${esc(fmtDate(f.wedding_date))} · ${esc(detail)}</span>
       </div>
       <div class="dl-actions">
@@ -1924,7 +1934,7 @@ function renderAtkFail() {
 
 async function resendFailed(id, tpl) {
   const b = allBookings.find((x) => x.id === id);
-  if (!confirm(`${b ? b.contractor_name + '님께 ' : ''}"${ATK_FAIL_NAME[tpl] || tpl}" 알림톡을 다시 보낼까요?`)) return;
+  if (!confirm(`${b ? b.contractor_name + '님께 ' : ''}"${atkName(tpl)}" 알림톡을 다시 보낼까요?`)) return;
   const { error } = await sb.rpc('admin_send_alimtalk', { p_booking_id: id, p_template: tpl });
   if (error) { alert('재발송 실패: ' + error.message); return; }
   alimtalkFails = alimtalkFails.filter((f) => !(f.booking_id === id && f.template === tpl));
