@@ -128,7 +128,15 @@ function init() {
     if (e.dataTransfer.files.length) addRefFiles(e.dataTransfer.files);
   });
 
-  $('reopenBtn').addEventListener('click', () => { show(form); setStatus(''); });
+  /* 「다시 수정하기」 — 방금 낸 것을 다시 불러온다 (대표 2026-09-18 «수정도 쉽게할 수 있게해줘»).
+     ⚠ 화면만 되돌리면 안내글도 단추 글자도 「처음 내는 것」 그대로 남는다.
+       prefillExisting 을 다시 태워 «언제 낸 것을 고치는 중인지»까지 맞춘다 */
+  $('reopenBtn').addEventListener('click', async () => {
+    show(form);
+    setStatus('');
+    await prefillExisting();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
 
   loadBooking();
 }
@@ -145,15 +153,38 @@ async function loadBooking() {
   if (data.wedding_date) $('s_date').value = String(data.wedding_date).slice(0, 10);
   if (data.wedding_venue) $('s_venue').value = data.wedding_venue;
   if (data.contractor_email) $('s_email').value = data.contractor_email;
-  if (data.already) { $('reNote').hidden = false; await prefillExisting(); }
+  if (data.already) await prefillExisting();
 
   show(form);
+}
+
+// 언제 내신 것인지 (2026-09-18) — 「내가 쓴 그 내용이 맞나」를 바로 아시게
+function whenText(iso) {
+  const d = iso ? new Date(iso) : null;
+  if (!d || isNaN(d)) return '';
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 // 이미 제출한 설문이면 이전 답변을 폼에 채워줌 (수정용)
 async function prefillExisting() {
   const { data: s } = await sb.rpc('survey_view', { p_booking_id: bookingId });
   if (!s || !s.has_survey) return;
+  /* 고치는 자리임을 먼저 알려드린다 (대표 2026-09-18 «수정도 쉽게할 수 있게해줘»).
+     ⚠ 전에는 「새로 제출하면 갱신됩니다」라고만 적혀 있어, 처음부터 다시 써야 하는 줄 아셨을 수 있다.
+       실제로는 아래가 이미 다 채워져 있다 — 그 말을 먼저 한다 */
+  const note = $('reNote');
+  if (note) {
+    const w = whenText(s.updated_at);
+    note.innerHTML = `✏️ <b>전에 보내주신 설문을 그대로 불러왔어요.</b>${w ? ` <span class="sv-when">(${w} 기준)</span>` : ''}`
+      + '<br />고치실 곳만 바꾸시고 맨 아래 <b>설문 수정하기</b>를 눌러주세요. 새로 쓰지 않으셔도 됩니다.';
+    note.hidden = false;
+  }
+  /* ⚠ 「안내사항 확인」도 같이 채운다. 전에는 이것만 안 채워져서, 한 글자만 고치려 해도
+     맨 위로 올라가 다시 체크해야 했다. 이미 확인하고 내신 분이다 */
+  if ($('s_agree')) $('s_agree').checked = !!s.agree_check;
+  // 단추 글자도 「수정」으로 — 지금 하는 일이 무엇인지 단추에 적힌다 (올리기 전 점검 ③)
+  if ($('s_submit')) $('s_submit').textContent = '설문 수정하기';
   // 촬영 우선순위 (단일)
   if (s.priority) {
     const r = document.querySelector(`input[name="priority"][value="${CSS.escape(s.priority)}"]`);

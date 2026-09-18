@@ -55,7 +55,9 @@ img { display: block; max-width: 100%; }
 .sv-title { font-family: var(--kserif); font-weight: 500; font-size: 2rem; margin: 8px 0 10px; }
 .sv-greet { color: var(--ink-soft); font-size: .96rem; }
 .sv-greet b { color: var(--ink); }
-.sv-note { margin-top: 12px; font-size: .85rem; color: var(--gold-deep); background: #faf4ea; border: 1px solid #ecdcc3; border-radius: var(--radius); padding: 9px 12px; }
+.sv-note { margin-top: 12px; font-size: .85rem; color: var(--gold-deep); background: #faf4ea; border: 1px solid #ecdcc3; border-radius: var(--radius); padding: 9px 12px; line-height: 1.7; }
+/* 언제 내신 것인지 (2026-09-18 «수정도 쉽게할 수 있게해줘») — 본문보다 흐리게 */
+.sv-when { font-size: .8rem; opacity: .75; white-space: nowrap; }
 
 /* sections */
 .sv-sec { padding: 26px 0; border-bottom: 1px solid var(--line); }

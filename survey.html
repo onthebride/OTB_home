@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="survey.css?v=19d1119b9b" />
+  <link rel="stylesheet" href="survey.css?v=e4aa732b8a" />
 </head>
 <body>
   <header class="sv-header">
@@ -42,7 +42,10 @@
         <p class="sv-eyebrow">ONTHEBRIDE</p>
         <h1 class="sv-title">예식 전 설문</h1>
         <p class="sv-greet" id="greet"></p>
-        <p class="sv-note" id="reNote" hidden>※ 이미 제출하신 설문이 있어요. 새로 제출하면 내용이 갱신됩니다.</p>
+        <!-- 이미 내신 분께는 「고치는 자리」임을 먼저 알려드린다 (대표 2026-09-18 «수정도 쉽게할 수 있게해줘»).
+             ⚠ 언제 내신 것인지까지 적는다 — 그래야 「내가 쓴 그 내용이 맞나」를 바로 아신다.
+             ⚠ 글은 survey.js 가 채운다 (언제 내셨는지가 들어가야 해서) -->
+        <p class="sv-note" id="reNote" hidden></p>
       </div>
 
       <!-- 안내사항 확인 -->
@@ -213,6 +216,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="survey.js?v=2f0eb7b08c"></script>
+  <script src="survey.js?v=9d97f27990"></script>
 </body>
 </html>
