@@ -691,6 +691,8 @@ input.readonly { background: var(--cream); color: var(--ink-soft); cursor: not-a
 .pk-item.chosen { border-color: var(--gold); background: #fffaf2; }
 .pk-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
 .pk-name { font-family: var(--kserif); font-size: 1.02rem; font-weight: 600; color: var(--ink); }
+/* 대표님 표시 (대표 2026-09-18). 이름에 딸린 말이라 이름 안에 두고 작게 적는다 */
+.pk-rep { font-style: normal; font-size: .8rem; font-weight: 500; color: var(--gold-deep); margin-left: 4px; }
 /* ⚠ 「추천 1·2·3위」 딱지는 2026-09-17 에 뺐다 (대표 «추천은 빼자 / 그냥 랜덤으로 하자»).
    모양은 남겨 둔다 — 되살리실 때 다시 만들지 않게. 지금은 아무도 안 쓴다 */
 .pk-rec { background: var(--gold-deep); color: #fff; border-radius: 999px; padding: 2px 9px; font-size: .72rem; font-weight: 500; }

@@ -452,7 +452,11 @@ function pkRender() {
         : '<button type="button" class="pk-take' + (at >= 0 ? ' off' : '') + '" data-pktake="' + _esc(s.id) + '">'
           + (at >= 0 ? (at + 1) + '순위 — 빼기' : pkWish.length >= PK_SLOTS ? '자리 다 참' : '고르기') + '</button>';
       return '<div class="pk-item' + ((pinOn ? isPin : at >= 0) ? ' chosen' : '') + '">'
-        + '<div class="pk-head"><span class="pk-name">' + _esc(s.name) + '</span>' + tookTag + score + btn + '</div>'
+        /* 대표님 이름 옆에 「(대표)」 (대표 2026-09-18 «작가 지정에만 내이름 옆에 (대표) 라고 적어줘»).
+           ⚠ 우선순위 목록에는 대표님이 안 나오니 이 표시는 지정에서만 보인다 */
+        + '<div class="pk-head"><span class="pk-name">' + _esc(s.name)
+        + (s.is_rep ? '<em class="pk-rep">(대표)</em>' : '') + '</span>'
+        + tookTag + score + btn + '</div>'
         + shots + '</div>';
     }).join('');
 
