@@ -728,6 +728,14 @@ html.no-pull, html.no-pull body { overscroll-behavior: none; }
 
 /* 상품 · 촬영 옵션 (대표 2026-08-31 «옵션은 촬영옵션만 ... 연회장 2부 폐백 2인촬영»).
    ⚠ 폰에서 옵션이 넷까지 붙는다 — 줄을 넘겨야지 옆으로 밀리면 안 된다 */
+/* 「신부님이 지정하신 촬영」 (대표 2026-09-19).
+   ⚠ 옵션 딱지들과 같은 모양이면 묻힌다 — 이건 그날 판이 다른 촬영이라 줄을 통째로 준다.
+   ⚠ 폰에서 한 줄에 안 들어간다. 금액을 아래로 내린다 (올리기 전 점검 ①) */
+.sc-pickme { margin-top: 8px; padding: 8px 11px; border-radius: 8px;
+  background: #fdf3ec; border: 1px solid #e6cdb8; color: #8a5a2b;
+  font-size: .8rem; line-height: 1.6; }
+.sc-pickme b { font-weight: 700; }
+.sc-pickme span { display: block; margin-top: 2px; font-size: .78rem; opacity: .9; }
 .sc-nx-prod { margin-top: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 5px 6px; }
 .sc-nx-prod b { font-size: .8rem; font-weight: 700; color: var(--ink); margin-right: 2px; }
 .sc-opt { font-size: .72rem; font-weight: 500; color: var(--ink-soft);

@@ -256,6 +256,20 @@ function prodRow(x) {
     + '</div>';
 }
 
+/* 「신부님이 지정하신 촬영」 (대표 2026-09-19 «작가 캘린더에 지정된 촬영은 표시가 있어야하는데?»).
+   작가님 입장에서 이 촬영은 다른 것과 다르다 — 신부님이 나를 골라 돈을 더 내신 자리이고
+   그만큼 페이도 더 나간다. 아무 표시가 없으면 여느 촬영과 똑같이 보인다.
+   ⚠ 받으실 돈은 **서버가 셈해서 준다**(pick_pay_won). 여기서 다시 셈하지 않는다 —
+     수수료를 다시 떼기로 하시면 두 군데를 고쳐야 하고 한쪽이 남는다.
+   ⚠ 우선순위는 안 적는다. 그건 약속이 아니라 대표가 참고하시는 것이다. */
+function pickRow(x) {
+  if (!x.pick_mine) return '';
+  const pay = Number(x.pick_pay_won) || 0;
+  return '<div class="sc-pickme">📌 <b>신부님이 지정하신 촬영이에요</b>'
+    + (pay > 0 ? `<span>지정비 <b>${wonFmt(pay)}원</b>이 페이에 더해집니다</span>` : '')
+    + '</div>';
+}
+
 function shootRow(x, extra) {
   // 설문이 아직이면 그렇게 적는다 — 자리를 비워두면 「단추가 왜 없지」가 된다
   const sv = x.has_survey
@@ -281,6 +295,7 @@ function shootRow(x, extra) {
       x.photo_usage_agree
         ? '<i class="sc-post ok">포스팅 가능</i>'
         : '<i class="sc-post no">포스팅 불가</i>'}</div>
+    ${pickRow(x)}
     ${prodRow(x)}
     ${extra || ''}
   </div>`;
