@@ -72,11 +72,11 @@ img { max-width: 100%; height: auto; display: block; }
 .blog-hero h1 { font-family: var(--kserif); font-weight: 600; font-size: clamp(1.7rem, 5vw, 2.4rem); margin: 0 0 14px; }
 .blog-hero-sub { color: var(--ink-soft); margin: 0; font-size: .98rem; }
 .blog-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 26px; }
-.blog-card a { display: grid; grid-template-columns: 168px 1fr; gap: 20px; align-items: stretch; color: inherit; }
+.blog-card a { display: grid; grid-template-columns: 104px 1fr; gap: 16px; align-items: start; color: inherit; }
 .blog-card.no-cover a { grid-template-columns: 1fr; }
 .blog-card a:hover { text-decoration: none; }
 .blog-card a:hover .bc-title { color: var(--gold-deep); }
-.bc-cover { overflow: hidden; border-radius: var(--radius); background: var(--cream); aspect-ratio: 4/3; }
+.bc-cover { overflow: hidden; border-radius: 8px; background: var(--cream); aspect-ratio: 4/3; align-self: start; }
 .bc-cover img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
 .blog-card a:hover .bc-cover img { transform: scale(1.04); }
 .bc-body { display: flex; flex-direction: column; gap: 7px; padding: 4px 0; }
@@ -190,7 +190,7 @@ img { max-width: 100%; height: auto; display: block; }
 
 /* ---- 모바일 ---- */
 @media (max-width: 640px) {
-  .blog-card a { grid-template-columns: 1fr; gap: 12px; }
-  .bc-cover { aspect-ratio: 16/9; }
+  .blog-card a { grid-template-columns: 84px 1fr; gap: 12px; }
+  .bc-title { font-size: 1.04rem; }
   .post-body { font-size: 1.0rem; }
 }
