@@ -394,9 +394,20 @@ function renderIndex(posts) {
       datePublished: p.date, dateModified: p.updated || p.date, description: p.description,
     })),
   };
-  const cards = posts.map((p) => `
-      <li class="blog-card no-cover">
-        <a href="/blog/posts/${p.slug}">
+  /* 목록 썸네일 (대표 2026-09-22 «목록에 썸네일을 좀 넣어야 하지 않을까?»).
+     ⚠ 자리는 처음부터 있었다(.bc-cover). 그리는 코드만 없어 늘 no-cover 로 나갔다.
+     고르는 차례 — thumb(목록에만 쓸 것) → cover(글 맨 위 것) → 영상 표지.
+     ⚠ 없으면 **억지로 아무 사진이나 넣지 않는다.** 그 글만 글자로 남는다 —
+       관계없는 사진을 걸면 들어와서 「이 사진 어디 있지?」가 된다.
+     ⚠ 목록은 첫 화면에 여럿 뜬다. 전부 lazy 로 받는다 */
+  const thumbOf = (p) => p.thumb || p.cover
+    || (p.videoId ? `https://i.ytimg.com/vi/${p.videoId}/hqdefault.jpg` : '');
+  const cards = posts.map((p) => {
+    const th = thumbOf(p);
+    return `
+      <li class="blog-card${th ? '' : ' no-cover'}">
+        <a href="/blog/posts/${p.slug}">${th ? `
+          <span class="bc-cover"><img src="${attr(th)}" alt="${attr(p.title)}" loading="lazy" /></span>` : ''}
           <span class="bc-body">
             ${(p.tags && p.tags[0]) ? `<span class="bc-tag">#${esc(p.tags[0])}</span>` : ''}${
               // 영상 글은 목록에서 바로 알아보게 (대표 2026-09-22). 글인 줄 알고 들어가지 않게
@@ -406,7 +417,8 @@ function renderIndex(posts) {
             <span class="bc-date"><time datetime="${attr(p.date)}">${fmtDateK(p.date)}</time></span>
           </span>
         </a>
-      </li>`).join('');
+      </li>`;
+  }).join('');
 
   return `<!DOCTYPE html>
 <html lang="ko">
