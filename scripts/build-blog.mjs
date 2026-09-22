@@ -73,6 +73,31 @@ function parseFront(raw) {
   return { meta, body: m[2] };
 }
 
+/* ---- 유튜브 아이디 뽑기 (대표 2026-09-22) ----------------------
+   대표가 주소를 통째로 붙여넣으실 수 있게 한다. 주소 모양이 네 가지나 된다 —
+   youtu.be/xxx · watch?v=xxx · shorts/xxx · embed/xxx.
+   「아이디만 적어주세요」라고 해두면 그걸 지키느라 한 번 더 손이 간다.
+   ⚠ 아이디는 영문·숫자·-·_ 만 쓴다. 이상한 게 오면 **아무것도 안 넣는다** —
+     그대로 끼우면 남의 주소를 페이지에 박는 길이 된다 */
+function ytId(s) {
+  const v = String(s || '').trim();
+  if (!v) return '';
+  const m = v.match(/(?:youtu\.be\/|v=|\/shorts\/|\/embed\/)([A-Za-z0-9_-]{6,20})/)
+    || v.match(/^([A-Za-z0-9_-]{6,20})$/);
+  return m ? m[1] : '';
+}
+/* 「2:30」 처럼 적으신 길이를 검색엔진이 읽는 모양(PT2M30S)으로 바꾼다.
+   ⚠ 안 적으셔도 된다 — 없으면 그 칸을 아예 안 넣는다 */
+function isoDur(s) {
+  const v = String(s || '').trim();
+  if (!v) return '';
+  if (/^PT/i.test(v)) return v.toUpperCase();
+  const p = v.split(':').map((x) => parseInt(x, 10));
+  if (p.some((x) => !Number.isFinite(x))) return '';
+  const [h, m, sec] = p.length === 3 ? p : [0, p[0] || 0, p[1] || 0];
+  return 'PT' + (h ? h + 'H' : '') + (m ? m + 'M' : '') + (sec ? sec + 'S' : '');
+}
+
 // ---- 인라인 마크다운 -------------------------------------------
 function inline(t) {
   t = esc(t);
@@ -240,6 +265,24 @@ function renderPost(post, allPosts) {
       { '@type': 'ListItem', position: 3, name: post.title, item: canonical },
     ],
   };
+  /* 영상이 있으면 검색엔진에 「여기 영상이 있다」고 알린다 (대표 2026-09-22).
+     ⚠ 구글·네이버는 영상 **안**을 못 읽는다. 이 딱지와 본문 글이 없으면 그 글은 거의 안 잡힌다.
+       그래서 영상만 올리지 말고 글을 같이 적으시라고 안내한다.
+     ⚠ duration 은 ISO 8601(PT2M30S)이다. video_len: 2:30 으로 적으시면 여기서 바꿔 넣는다.
+     ⚠ 없는 칸은 아예 안 넣는다 — 빈 값을 넣으면 구조화자료가 깨진 것으로 잡힌다 */
+  const jsonldVideo = post.videoId ? {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: post.videoName || post.title,
+    description: post.videoCap || post.description,
+    thumbnailUrl: [`https://i.ytimg.com/vi/${post.videoId}/maxresdefault.jpg`],
+    uploadDate: post.videoDate || post.date,
+    embedUrl: `https://www.youtube-nocookie.com/embed/${post.videoId}`,
+    contentUrl: `https://www.youtube.com/watch?v=${post.videoId}`,
+    publisher: { '@type': 'Organization', name: SITE.brand, logo: { '@type': 'ImageObject', url: abs(SITE.logo) } },
+    inLanguage: 'ko-KR',
+    ...(post.videoDur ? { duration: post.videoDur } : {}),
+  } : null;
   const jsonldFaq = faq.length ? {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -252,6 +295,23 @@ function renderPost(post, allPosts) {
     : '';
   const coverHtml = post.cover
     ? `<figure class="post-cover"><img src="${attr(post.cover)}" alt="${attr(post.title)}" /></figure>` : '';
+  /* 영상 (대표 2026-09-22 «그냥 블로그에 하나씩 올릴까?» → «응 만들어줘»).
+     ⚠⚠ 유튜브를 그냥 끼우면 **보지도 않는 분에게** 1MB 가까이 받아오게 한다.
+       그래서 사진 한 장에 ▶ 만 얹어 두고, 누르셨을 때 그때 부른다(아래 ytScript).
+     ⚠ 표지 사진은 유튜브 것을 쓴다. maxres 가 없는 영상도 있어 hq 로 떨어지게 해둔다.
+       cover: 를 적어두시면 그걸 먼저 쓴다.
+     ⚠ 자동재생은 **누르신 뒤에만**이다. 소리가 먼저 나는 일은 없다. */
+  const videoHtml = post.videoId ? `
+      <figure class="post-video">
+        <button type="button" class="pv-play" data-yt="${attr(post.videoId)}"
+          aria-label="${attr(post.title)} 영상 재생">
+          <img src="https://i.ytimg.com/vi/${attr(post.videoId)}/maxresdefault.jpg"
+            onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/${attr(post.videoId)}/hqdefault.jpg'"
+            alt="${attr(post.title)}" loading="lazy" />
+          <span class="pv-btn" aria-hidden="true">▶</span>
+        </button>
+        ${post.videoCap ? `<figcaption>${inline(post.videoCap)}</figcaption>` : ''}
+      </figure>` : '';
   const relatedHtml = related.length ? `
     <section class="post-related">
       <h2>함께 보면 좋은 글</h2>
@@ -273,7 +333,7 @@ function renderPost(post, allPosts) {
 <head>
 ${headCommon({ title: `${post.title} | ${SITE.blogName}`, description: post.description, canonical, image: post.cover, type: 'article', published: post.date, modified: post.updated || post.date })}
   <script type="application/ld+json">${ld(jsonldPost)}</script>
-  <script type="application/ld+json">${ld(jsonldCrumb)}</script>${jsonldFaq ? `\n  <script type="application/ld+json">${ld(jsonldFaq)}</script>` : ''}
+  <script type="application/ld+json">${ld(jsonldCrumb)}</script>${jsonldFaq ? `\n  <script type="application/ld+json">${ld(jsonldFaq)}</script>` : ''}${jsonldVideo ? `\n  <script type="application/ld+json">${ld(jsonldVideo)}</script>` : ''}
   <script defer src="/config.js"></script>
   <script defer src="/analytics.js?v=20260817c"></script>
 </head>
@@ -292,7 +352,8 @@ ${siteHeader('blog')}
           ${post.updated && post.updated !== post.date ? `<span>·</span><span>${fmtDateK(post.updated)} 업데이트</span>` : ''}
         </p>
       </header>
-      ${coverHtml}
+      ${videoHtml}
+      ${videoHtml ? '' : coverHtml}
       ${summaryBox}
       <div class="post-body">
 ${html}
@@ -306,7 +367,14 @@ ${html}
     </article>
     ${relatedHtml}
   </main>
-${siteFooter()}
+${siteFooter()}${post.videoId ? `
+  <!-- ▶ 를 누르셨을 때 그때 유튜브를 부른다. 안 누르면 아무것도 안 받아온다.
+       ⚠ 이 글에 영상이 있을 때만 실린다 — 없는 글에 죽은 코드를 싣지 않는다.
+       ⚠ nocookie 쪽을 쓴다. autoplay 는 **누르신 뒤**라 소리가 먼저 나는 일이 없다 -->
+  <script>(function(){var b=document.querySelector('.pv-play');if(!b)return;b.addEventListener('click',function(){
+var f=document.createElement('iframe');f.src='https://www.youtube-nocookie.com/embed/'+b.dataset.yt+'?autoplay=1&rel=0';
+f.title=document.title;f.allow='accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture';
+f.allowFullscreen=true;f.loading='lazy';b.replaceWith(f);});})();</script>` : ''}
 </body>
 </html>`;
 }
@@ -330,7 +398,9 @@ function renderIndex(posts) {
       <li class="blog-card no-cover">
         <a href="/blog/posts/${p.slug}">
           <span class="bc-body">
-            ${(p.tags && p.tags[0]) ? `<span class="bc-tag">#${esc(p.tags[0])}</span>` : ''}
+            ${(p.tags && p.tags[0]) ? `<span class="bc-tag">#${esc(p.tags[0])}</span>` : ''}${
+              // 영상 글은 목록에서 바로 알아보게 (대표 2026-09-22). 글인 줄 알고 들어가지 않게
+              p.videoId ? '<span class="bc-vid">▶ 영상</span>' : ''}
             <span class="bc-title">${esc(p.title)}</span>
             <span class="bc-desc">${esc(p.description)}</span>
             <span class="bc-date"><time datetime="${attr(p.date)}">${fmtDateK(p.date)}</time></span>
@@ -414,6 +484,15 @@ function build() {
       venue: meta.venue || '',
       grid: (meta.grid || '').split(',').map((s) => s.trim()).filter(Boolean),
       tags: meta.tags || [],
+      /* 영상 (대표 2026-09-22 «응 만들어줘»).
+         video: 에는 주소를 통째로 붙여넣으셔도 되고 아이디만 적으셔도 된다 —
+         youtu.be/xxx · watch?v=xxx · shorts/xxx · embed/xxx 다 받는다.
+         쓰시는 칸은 사실상 video 하나뿐이고 나머지는 없으면 글 것을 쓴다 */
+      videoId: ytId(meta.video || ''),
+      videoName: meta.video_title || '',
+      videoCap: meta.video_cap || '',
+      videoDate: meta.video_date || '',
+      videoDur: isoDur(meta.video_len || ''),
       rendered,
     });
   }

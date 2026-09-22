@@ -102,6 +102,26 @@ img { max-width: 100%; height: auto; display: block; }
 .post-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; color: var(--sage); font-size: .85rem; margin: 0; }
 .post-cover { margin: 0 0 30px; border-radius: var(--radius); overflow: hidden; }
 .post-cover img { width: 100%; }
+/* 영상 (대표 2026-09-22 «응 만들어줘»).
+   ⚠⚠ 누르기 전에는 **유튜브를 아예 안 부른다.** 사진 한 장에 ▶ 만 얹어 둔 것이다 —
+     보지도 않는 분에게 1MB 를 받게 하지 않으려고 그렇게 했다.
+   ⚠ 16:9 를 aspect-ratio 로 잡는다. 폰에서 세로가 안 무너진다 (올리기 전 점검 ①).
+   ⚠ 누르면 이 자리가 통째로 iframe 으로 바뀐다 — 그래서 같은 비율을 iframe 에도 준다 */
+/* ⚠ 같은 고르개를 두 번 쓰지 않는다 — 시험의 rule() 이 앞엣것만 본다.
+   그래서 ▶ 자리와 iframe 을 묶지 않고 따로 적는다 (같은 비율을 두 번 적는 값은 치른다) */
+.post-video { margin: 0 0 30px; border-radius: var(--radius); overflow: hidden; background: #000; }
+.post-video iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; }
+.post-video .pv-play { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0;
+  position: relative; padding: 0; background: #000; cursor: pointer; }
+.post-video .pv-play img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.post-video .pv-btn { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 64px; height: 64px; border-radius: 50%; background: rgba(0, 0, 0, .62);
+  color: #fff; font-size: 1.5rem; line-height: 64px; text-align: center;
+  padding-left: 5px; transition: background .15s, transform .15s; }
+.post-video .pv-play:hover .pv-btn { background: #c0392b; transform: translate(-50%, -50%) scale(1.06); }
+.post-video figcaption { padding: 10px 14px; font-size: .86rem; color: var(--ink-soft); background: var(--paper); }
+/* 목록에서 「글인 줄 알고」 들어가지 않게 */
+.bc-vid { color: #c0392b; font-size: .76rem; font-weight: 600; margin-left: 6px; }
 
 /* 답변-우선 요약 박스 (AI가 발췌하기 좋게) */
 .post-tldr {
