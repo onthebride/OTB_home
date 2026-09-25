@@ -125,6 +125,19 @@ function opts(w) {
   return o;
 }
 
+/* 시작~종료 (대표 2026-09-25 «시작시간 종료시간도 넣는게 좋겠는데?»).
+   ⚠ 끝 시각은 안 적으셔도 된다 — 없으면 시작만 적는다 (예전 그대로).
+   ⚠⚠ **이 자리를 옮기지 말 것.** calui.test.mjs 가 이 위 opts 부터 아래 add 까지를
+     잘라와 돌린다. 그 밖에 두면 부를 때 터진다 (2026-09-25 에 위에 두었다가 그랬다).
+   ⚠⚠ 그 두 표지의 글자꼴을 **여기 그대로 적지 말 것.** 주석에 적어도 indexOf 는 걸린다 —
+     잘라오는 끝이 이 주석 한가운데가 되어 통째로 터졌다. 오늘만 세 번째다 */
+const timeSpan = (x) => {
+  const a = kTime(x.at_time);
+  if (!a) return '';
+  const b = kTime(x.end_time);
+  return b ? a + '~' + b : a;
+};
+
 /* 「이 작가가 캘린더를 열었다」 를 남긴다 (대표 «접속 기록이 있음 좋을거 같은데», 2026-08-28).
 
    ⚠ 대표가 확인하려고 열어본 것은 세면 안 된다 («내가 들어가는게 카운트가 되네»).
@@ -1533,7 +1546,7 @@ function renderPanel() {
   const evHtml = busy.filter((x) => x.kind === 'busy' || x.kind === 'personal').map((x) => `
     <div class="sc-item ${x.kind === 'personal' ? 'pers' : 'busy'}">
       <div class="sc-item-h">
-        <b>${esc(x.all_day ? '종일' : (kTime(x.at_time) || '시간 미정'))}</b>
+        <b>${esc(x.all_day ? '종일' : (timeSpan(x) || '시간 미정'))}</b>
         ${x.title ? '<span class="sc-title">' + esc(x.title) + '</span>' : ''}
         ${x.place ? '<span class="sc-place">' + esc(x.place) + '</span>' : ''}
         ${spanText(x) ? '<span class="sc-span">' + esc(spanText(x)) + '</span>' : ''}
@@ -1578,7 +1591,7 @@ function renderPanel() {
               + '</p>'
             : ''}
           <label class="sc-f sc-check"><span>종일</span><input type="checkbox" id="bAllDay"${editing && editing.all_day ? ' checked' : ''} /></label>
-          <label class="sc-f" id="bTimeRow"><span>시간</span>
+          <label class="sc-f" id="bTimeRow"><span>시작</span>
             <span class="sc-time">
               <select id="bH">${['<option value="">시</option>']
                 .concat(Array.from({ length: 24 }, (_, i) =>
@@ -1588,6 +1601,17 @@ function renderPanel() {
                 `<option value="${pad(i * 5)}"${editing && String(editing.at_time || '').slice(3, 5) === pad(i * 5) ? ' selected' : ''}>${pad(i * 5)}</option>`).join('')}</select>
             </span>
           </label>
+          <label class="sc-f" id="bEndRow"><span>종료</span>
+            <span class="sc-time">
+              <select id="bEH">${['<option value="">시</option>']
+                .concat(Array.from({ length: 24 }, (_, i) =>
+                  `<option value="${pad(i)}"${editing && String(editing.end_time || '').slice(0, 2) === pad(i) ? ' selected' : ''}>${pad(i)}</option>`)).join('')}</select>
+              <b>:</b>
+              <select id="bEM">${Array.from({ length: 12 }, (_, i) =>
+                `<option value="${pad(i * 5)}"${editing && String(editing.end_time || '').slice(3, 5) === pad(i * 5) ? ' selected' : ''}>${pad(i * 5)}</option>`).join('')}</select>
+            </span>
+          </label>
+          <p class="sc-hint-row">끝나는 시각은 안 적으셔도 됩니다. 적어두시면 그만큼만 비워둡니다</p>
           <label class="sc-f"><span>장소</span><input type="text" id="bPlace" placeholder="예: 아펠가모 광화문"
             value="${editing ? esc(editing.place || '') : ''}" /></label>
           <label class="sc-f"><span>메모</span><textarea id="bNote" rows="2" placeholder="여러 줄로 적으셔도 됩니다">${editing ? esc(editing.note || '') : ''}</textarea></label>
@@ -1658,6 +1682,15 @@ async function add(kind) {
       st.textContent = '시간을 골라 주세요. (하루 종일이면 [종일] 을 켜주세요)'; return;
     }
     body.p_time = (allDay || !h) ? null : h + ':' + m;
+    /* 끝나는 시각 (대표 2026-09-25 «시작시간 종료시간도 넣는게 좋겠는데?»).
+       ⚠ 안 적으셔도 된다 — 그때는 예전처럼 시작에서 앞뒤 4시간으로 잰다.
+       ⚠ 적어두시면 [시작−4h, 종료+4h] 로 잰다. 그만큼만 비워두면 되니 배정이 늘어난다 */
+    const eh = $('bEH') ? $('bEH').value : '';
+    const em = $('bEM') ? $('bEM').value : '00';
+    body.p_end = (allDay || !h || !eh) ? null : eh + ':' + em;
+    if (body.p_end && body.p_end <= body.p_time) {
+      st.textContent = '끝나는 시각은 시작보다 늦어야 해요.'; return;
+    }
     body.p_place = $('bPlace') ? $('bPlace').value.trim() : '';
     body.p_note = $('bNote') ? $('bNote').value.trim() : '';
     body.p_title = $('bTitle') ? $('bTitle').value.trim() : '';
@@ -1672,12 +1705,13 @@ async function add(kind) {
     res = await sb.rpc('staff_busy_upd_group', {
       p_staff_id: staffId, p_group: cur.group_id,
       p_title: body.p_title, p_note: body.p_note,
-      p_time: body.p_time, p_place: body.p_place, p_all_day: body.p_all_day });
+      p_time: body.p_time, p_place: body.p_place, p_all_day: body.p_all_day,
+      p_end: body.p_end });
   } else if (editId) {
     res = await sb.rpc('staff_busy_upd', {
       p_staff_id: staffId, p_id: Number(editId),
       p_time: body.p_time, p_place: body.p_place, p_note: body.p_note,
-      p_title: body.p_title, p_all_day: body.p_all_day });
+      p_title: body.p_title, p_all_day: body.p_all_day, p_end: body.p_end });
   } else if ((kind === 'personal' || kind === 'busy') && until && until > openDay) {
     /* 여러 날 한 번에 (대표 2026-09-25 «다른촬영등록에서 설정할 수 있게해줘»).
        ⚠ 시간·장소는 날마다 같게 들어간다. 날마다 다르면 하루씩 넣으셔야 한다 —
@@ -1687,7 +1721,7 @@ async function add(kind) {
       p_staff_id: staffId, p_from: openDay, p_to: until,
       p_title: body.p_title, p_note: body.p_note,
       p_time: body.p_time, p_place: body.p_place, p_all_day: body.p_all_day,
-      p_kind: kind });
+      p_kind: kind, p_end: body.p_end });
   } else {
     res = await sb.rpc('staff_busy_add', body);
   }
