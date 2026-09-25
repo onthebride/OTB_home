@@ -1570,10 +1570,12 @@ function renderPanel() {
           <label class="sc-f"><span>할 일</span><input type="text" id="bTitle"
             placeholder="${formKind === 'personal' ? '예: 병원 / 가족모임 / 휴가' : '예: OO웨딩홀 본식'}"
             value="${editing ? esc(editing.title || '') : ''}" /></label>
-          ${formKind === 'personal' && !editing
+          ${!editing
             ? '<label class="sc-f"><span>언제까지</span>'
               + '<input type="date" id="bUntil" value="' + openDay + '" min="' + openDay + '" /></label>'
-              + '<p class="sc-hint-row">하루면 그대로 두세요</p>'
+              + '<p class="sc-hint-row">하루면 그대로 두세요'
+              + (formKind === 'busy' ? ' · 여러 날이면 <b>시간·장소가 날마다 같게</b> 들어갑니다' : '')
+              + '</p>'
             : ''}
           <label class="sc-f sc-check"><span>종일</span><input type="checkbox" id="bAllDay"${editing && editing.all_day ? ' checked' : ''} /></label>
           <label class="sc-f" id="bTimeRow"><span>시간</span>
@@ -1676,11 +1678,16 @@ async function add(kind) {
       p_staff_id: staffId, p_id: Number(editId),
       p_time: body.p_time, p_place: body.p_place, p_note: body.p_note,
       p_title: body.p_title, p_all_day: body.p_all_day });
-  } else if (kind === 'personal' && until && until > openDay) {
+  } else if ((kind === 'personal' || kind === 'busy') && until && until > openDay) {
+    /* 여러 날 한 번에 (대표 2026-09-25 «다른촬영등록에서 설정할 수 있게해줘»).
+       ⚠ 시간·장소는 날마다 같게 들어간다. 날마다 다르면 하루씩 넣으셔야 한다 —
+         그 말을 폼에 적어뒀다.
+       ⚠ p_kind 는 **맨 뒤 칸**이다. 앞에 끼우면 지금 부르는 자리가 조용히 어긋난다 */
     res = await sb.rpc('staff_busy_add_range', {
       p_staff_id: staffId, p_from: openDay, p_to: until,
       p_title: body.p_title, p_note: body.p_note,
-      p_time: body.p_time, p_place: body.p_place, p_all_day: body.p_all_day });
+      p_time: body.p_time, p_place: body.p_place, p_all_day: body.p_all_day,
+      p_kind: kind });
   } else {
     res = await sb.rpc('staff_busy_add', body);
   }
