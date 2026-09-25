@@ -602,11 +602,14 @@ html.no-pull, html.no-pull body { overscroll-behavior: none; }
 .sc-set-msg { margin: 9px 0 0; font-size: .8rem; line-height: 1.7; color: #b5462f; }
 /* 미리 알림 (대표 2026-09-25). 켠 것과 안 켠 것이 한눈에 갈려야 한다 —
    ⚠ 폰에서 셋이 한 줄에 들어가야 누르기 쉽다. 손가락이 닿는 크기(44px)를 지킨다 */
-.sc-rm { display: flex; gap: 8px; margin: 0 0 12px; }
-.sc-rm-d { flex: 1 1 0; min-width: 0; min-height: 44px; cursor: pointer;
+/* ⚠ 넷이 한 줄에 안 들어가는 폭이면 두 줄로 접힌다 — 글자를 줄여 뭉개지 않는다 */
+.sc-rm { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 12px; }
+.sc-rm-d { flex: 1 1 22%; min-width: 74px; min-height: 44px; cursor: pointer;
   border: 1px solid var(--line); background: #fff; border-radius: 10px;
-  font-size: .88rem; color: var(--ink-soft); white-space: nowrap; }
-.sc-rm-d.on { border-color: var(--gold); background: #fdf8f0; color: var(--gold-deep); font-weight: 600; }
+  font-size: .86rem; color: var(--ink-soft); white-space: nowrap; }
+/* ⚠ 고른 것이 **한눈에** 보여야 한다 (대표 2026-09-25 «선택하면 검정색으로 확실히 선택한거 보이게»).
+   옅은 금색이면 껐는지 켰는지 헷갈린다 — 까맣게 채운다 */
+.sc-rm-d.on { border-color: var(--ink); background: var(--ink); color: #fff; font-weight: 600; }
 .sc-rm-at { display: flex; align-items: center; gap: 10px; font-size: .88rem; color: var(--ink); }
 .sc-rm-at select { flex: 1; min-width: 0; min-height: 44px; padding: 0 10px;
   border: 1px solid var(--line); border-radius: 10px; background: #fff;
