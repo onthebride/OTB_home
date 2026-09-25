@@ -987,6 +987,20 @@ function feeNow(d) {
      기다리시지 않게 먼저 알린다.
    ⚠⚠ 사람에게 남길 말은 **여기(JS 주석)에** 적는다. template literal 안에 <!-- --> 로 적으면
      innerHTML 에 그대로 실려 나간다 — 2026-09-16 에 그렇게 적었다가 옛말이 페이지에 남아 있었다 */
+/* 미리 알림 (대표 2026-09-25 «본인 스케줄이나 개인 일정이 있으면 사전에 알림을 좀 받고 싶은거지
+   / 3일전 하루 전 당일 오전 6시 이렇게 / 설정 알림에 알림받을 시간을 추가해서»).
+   ⚠ 서버가 주는 값만 본다. 여기 기본값을 적어두면 서버와 어긋난다 */
+const rmList = (d) => (Array.isArray(d && d.remind_ahead) ? d.remind_ahead : []);
+const rmHas = (d, v) => rmList(d).indexOf(v) >= 0;
+const rmHour = (d) => {
+  const m = /^(\d{1,2})/.exec((d && d.remind_at) || '');
+  return m ? Number(m[1]) : 7;
+};
+/* ⚠ 시 단위만 고르게 한다 — 크론이 정시에 돈다. 분까지 고르게 해두면 못 지킬 약속이 된다.
+   24시간 표기는 헷갈리시니 「오전 6시」로 적는다 */
+const hourWord = (h) => (h === 0 ? '밤 12시' : h < 12 ? `오전 ${h}시`
+  : h === 12 ? '낮 12시' : `오후 ${h - 12}시`);
+
 function renderSet() {
   const box = $('setBody');
   if (!box) return;
@@ -1008,6 +1022,26 @@ function renderSet() {
         <p class="sc-set-d">예식이 <b>바뀌거나 취소</b>되면 폰으로 알려드려요.<br />
           <b>한 기기에서만</b> 받아요 — 다른 기기에서 켜면 이전 기기는 꺼집니다.</p>
         <p class="sc-set-msg" id="setPushMsg" hidden></p>
+      </section>
+
+      <section class="sc-set-row">
+        <h3>미리 알림</h3>
+        <p class="sc-set-d">다가오는 일정을 <b>미리 폰으로</b> 알려드려요.
+          우리 예식과 <b>직접 적어두신 일정</b> 둘 다요.<br />
+          원하시는 것만 켜두세요. 아무것도 안 켜시면 안 보내드립니다.</p>
+        <div class="sc-rm" id="setRmDays">
+          ${[[3, '3일 전'], [1, '하루 전'], [0, '당일']].map(([v, t]) => `
+          <button type="button" class="sc-rm-d${rmHas(d, v) ? ' on' : ''}" data-rm="${v}"
+            role="switch" aria-checked="${rmHas(d, v) ? 'true' : 'false'}">${t}</button>`).join('')}
+        </div>
+        <label class="sc-rm-at">받을 시각
+          <select id="setRmAt">
+            ${Array.from({ length: 24 }, (_, h) => `<option value="${h}"${
+              rmHour(d) === h ? ' selected' : ''}>${hourWord(h)}</option>`).join('')}
+          </select>
+        </label>
+        <p class="sc-set-msg" id="setRmMsg" hidden></p>
+        <p class="sc-set-d sc-rm-note">⚠ 위 <b>알림</b>이 꺼져 있으면 이것도 안 갑니다.</p>
       </section>
 
       <section class="sc-set-row">
@@ -1051,6 +1085,41 @@ function renderSet() {
 
   const sw = $('setAccept');
   if (sw) sw.addEventListener('click', () => setSave({ accepting: !setData.accepting }, sw));
+
+  /* 미리 알림 — 누르면 바로 저장한다 (저장 단추를 따로 두면 안 누르고 나가신다).
+     ⚠ 화면을 통째로 다시 그리지 않는다. 고르개가 닫히고 자리가 튄다 —
+       눌린 것만 바꾸고, 서버가 돌려준 값으로 setData 를 맞춘다 */
+  const rmMsg = (t) => {
+    const el = $('setRmMsg');
+    if (!el) return;
+    el.textContent = t;
+    el.hidden = !t;
+  };
+  const rmSave = async (next, btn) => {
+    const r = await setSave({ remind_ahead: next }, btn, true);
+    if (!r) return;
+    document.querySelectorAll('#setRmDays .sc-rm-d').forEach((b) => {
+      const on = rmHas(setData, Number(b.dataset.rm));
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+    rmMsg(rmList(setData).length
+      ? `${rmList(setData).map((v) => (v === 0 ? '당일' : v === 1 ? '하루 전' : `${v}일 전`)).join(' · ')} · ${hourWord(rmHour(setData))}에 알려드려요.`
+      : '미리 알림을 받지 않습니다.');
+  };
+  document.querySelectorAll('#setRmDays .sc-rm-d').forEach((b) =>
+    b.addEventListener('click', () => {
+      const v = Number(b.dataset.rm);
+      const cur = rmList(setData);
+      rmSave(cur.indexOf(v) >= 0 ? cur.filter((x) => x !== v) : cur.concat(v), b);
+    }));
+  const rmAt = $('setRmAt');
+  if (rmAt) rmAt.addEventListener('change', async () => {
+    const r = await setSave({ remind_at: rmAt.value }, rmAt, true);
+    if (r) rmMsg(rmList(setData).length
+      ? `${hourWord(rmHour(setData))}에 알려드려요.`
+      : `${hourWord(rmHour(setData))}로 맞췄어요. 위에서 언제 받을지도 골라주세요.`);
+  });
   /* 금액에 쉼표를 찍어준다 (대표 «숫자표기로 해줘 쉼표넣어서»).
      ⚠ <input type="number"> 는 쉼표를 못 담는다 — text 로 두고 우리가 찍는다.
      보낼 때는 쉼표를 떼고 숫자만 보낸다 */
@@ -1090,7 +1159,10 @@ function toastSet(msg) {
   if (el) el.innerHTML = esc(msg);
 }
 
-async function setSave(patch, btn) {
+/* ⚠ quiet 를 주면 화면을 다시 안 그린다 (2026-09-25 미리 알림).
+     고르개를 눌렀는데 통째로 다시 그려지면 자리가 튀고 select 가 닫힌다.
+     돌려받은 값으로 setData 만 맞추고, 부른 쪽이 눌린 것만 고친다 */
+async function setSave(patch, btn, quiet) {
   if (btn) btn.disabled = true;
   const { data, error } = await sb.rpc('staff_settings_set', { p_staff_id: staffId, p_patch: patch });
   if (btn) btn.disabled = false;
@@ -1115,7 +1187,8 @@ async function setSave(patch, btn) {
     return;
   }
   setData = data;
-  renderSet();
+  if (!quiet) renderSet();
+  return data;
 }
 
 /* 「내 기록」 — 길어져서 나눠 본다 (대표 2026-09-09
