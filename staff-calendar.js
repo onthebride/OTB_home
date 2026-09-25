@@ -1611,7 +1611,7 @@ function renderPanel() {
                 `<option value="${pad(i * 5)}"${editing && String(editing.end_time || '').slice(3, 5) === pad(i * 5) ? ' selected' : ''}>${pad(i * 5)}</option>`).join('')}</select>
             </span>
           </label>
-          <p class="sc-hint-row">끝나는 시각은 안 적으셔도 됩니다. 적어두시면 그만큼만 비워둡니다</p>
+          <p class="sc-hint-row">끝나는 시각은 안 적으셔도 됩니다</p>
           <label class="sc-f"><span>장소</span><input type="text" id="bPlace" placeholder="예: 아펠가모 광화문"
             value="${editing ? esc(editing.place || '') : ''}" /></label>
           <label class="sc-f"><span>메모</span><textarea id="bNote" rows="2" placeholder="여러 줄로 적으셔도 됩니다">${editing ? esc(editing.note || '') : ''}</textarea></label>
