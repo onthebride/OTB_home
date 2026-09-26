@@ -101,9 +101,19 @@ let editId = null;                   // 수정 중인 일정 (없으면 새로 �
 
 const KIND_NAME = { busy: '다른 촬영', personal: '개인 일정' };
 
-// 여러 날짜리 개인 일정이면 "8/25~8/28 (4일)" 처럼 보여준다
+/* 여러 날짜리 개인 일정이면 "8/25~8/28 (4일)" 처럼 보여준다.
+   ⚠⚠ 밤을 넘기는 일정은 「일」 이 아니라 「밤」 으로 센다 (대표 2026-09-26).
+     「20:00~다음날 2:00」 옆에 「10/27~10/28 (2일)」 이 나란히 붙으니
+     한 행사가 이틀에 걸친 것으로 읽혔다. 실제로는 두 밤이 따로 들어간 것이었다.
+   ⚠⚠ 아래 두 줄은 **한 문장씩**으로 끝낼 것. calui.test.mjs 가 두 줄의 머리글자를 표지 삼아
+     잘라와 돌린다 — 중간에 세미콜론+줄바꿈이 생기면 거기서 잘려 통째로 터진다.
+   ⚠⚠ 그 표지 글자꼴을 **주석에 적지 말 것.** indexOf 는 주석도 걸린다 —
+     방금 이 주석에 적었다가 잘라오는 자리가 여기가 되어 PASS 0 / rc 1 로 죽었다 */
 const mdy = (s) => { const [, m, d] = String(s).slice(0, 10).split('-'); return Number(m) + '/' + Number(d); };
-const spanText = (x) => (x.group_id && x.g_n > 1 ? mdy(x.g_from) + '~' + mdy(x.g_to) + ' (' + x.g_n + '일)' : '');
+const spanText = (x) => (x.group_id && x.g_n > 1
+  ? mdy(x.g_from) + '~' + mdy(x.g_to) + ' (' + x.g_n
+    + (x.at_time && x.end_time && String(x.end_time) < String(x.at_time) ? '밤' : '일') + ')'
+  : '');
 
 // 달력 한 칸에 들어갈 짧은 이름. 좁으니 제목이 있으면 제목만.
 // 달력 칸에 넣을 짧은 글. 제목이 길면 다섯 자에서 자른다 (대표 요청) —
@@ -1590,6 +1600,11 @@ function renderPanel() {
               + '<input type="date" id="bUntil" value="' + openDay + '" min="' + openDay + '" /></label>'
               + '<p class="sc-hint-row">하루면 그대로 두세요'
               + (formKind === 'busy' ? ' · 여러 날이면 <b>시간·장소가 날마다 같게</b> 들어갑니다' : '')
+              /* 대표가 27일 밤 8시~28일 새벽 2시를 여기 28일로 두셨더니 두 밤이 들어갔다
+                 (2026-09-26). 이제 밤을 넘기면 「끝나는 새벽의 날짜」로 읽는다 */
+              + (formKind === 'busy'
+                ? '<br />밤을 넘기는 일정은 <b>새벽에 끝나는 날</b>을 고르시면 됩니다 — 하룻밤으로 들어갑니다'
+                : '')
               + '</p>'
             : ''}
           <label class="sc-f sc-check"><span>종일</span><input type="checkbox" id="bAllDay"${editing && editing.all_day ? ' checked' : ''} /></label>
