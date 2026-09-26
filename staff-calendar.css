@@ -276,6 +276,30 @@
 .sc-busy-form input[type="date"] { border: 1px solid var(--line, #e7ded3); border-radius: 8px;
   padding: 7px 9px; font-family: inherit; font-size: .88rem; }
 
+/* ===== 폰에서 양식 두 가지 (대표 2026-09-26) =====
+   ⚠ 여기는 위의 .sc-busy-form 규칙들보다 **뒤에** 있어야 한다.
+     @media 는 셈(specificity)을 안 올려서, 앞에 두면 아래 규칙에 그대로 진다 */
+@media (max-width: 600px) {
+  /* ① 「언제까지」 날짜 칸이 상자를 벗어난다 (대표 «언제까지 날짜 칸 벗어나버림»).
+     ⚠⚠ 아이폰은 native picker 로 그리는 동안 box-sizing: border-box 를 안 본다 —
+       width:100% 를 «안쪽» 으로 재고 좌우 여백 28px 을 그 위에 얹는다. max-width 로도 안 잡힌다.
+       appearance 를 지우면 보통 글자칸처럼 굴어 여백까지 넣어 잰다. 눌러서 고르는 건 그대로다.
+       admin.css 의 .edit-grid 와 같은 처방이다 (2026-09-14 에 네 번 짚어 세 번 틀린 자리).
+     ⚠ 좁은 화면에서만 지운다 — PC 에서는 달력 아이콘이 사라진다 */
+  .sc-busy-form input[type="date"] {
+    -webkit-appearance: none; appearance: none;
+    box-sizing: border-box; width: 100%; background: #fff;
+  }
+  /* ② 메모를 적으려고 누르면 화면이 확대된다 (대표 «메모 적을때 화면 확대 안되게»).
+     ⚠⚠ 아이폰은 글자가 16px 보다 작은 칸에 손을 대면 화면을 키운다. 손으로 오므리기 전엔
+       안 돌아와서, 한 줄 적고 나면 달력이 커진 채로 남는다.
+       막는 길은 **글자를 16px 로 키우는 것뿐**이다 —
+       viewport 에 maximum-scale 을 거는 길도 있지만 아이폰이 무시하는 데다
+       손가락으로 키우는 것까지 막아버린다 (잘 안 보이는 분께 필요한 동작이다).
+     ⚠ 칸 하나라도 16px 보다 작으면 **그 칸에서 또 확대된다.** 양식 안 전부에 건다 */
+  .sc-busy-form input, .sc-busy-form textarea, .sc-busy-form select { font-size: 16px; }
+}
+
 /* 사용안내 — 처음엔 펼쳐두고, 접으면 그 기기에서 계속 접혀 있다 */
 /* 사용안내 팝업 (대표 요청) — 인사말 옆 ? 아이콘으로 열고 닫는다.
  * 전에는 달력 아래 접었다 펴는 칸이었다 */
