@@ -135,7 +135,9 @@ const timeSpan = (x) => {
   const a = kTime(x.at_time);
   if (!a) return '';
   const b = kTime(x.end_time);
-  return b ? a + '~' + b : a;
+  if (!b) return a;
+  // 끝이 시작보다 이르면 밤을 넘긴 것이다 (대표 2026-09-26 «밤 10시부터 다음날 새벽2시»)
+  return a + '~' + (String(x.end_time) < String(x.at_time) ? '다음날 ' : '') + b;
 };
 
 /* 「이 작가가 캘린더를 열었다」 를 남긴다 (대표 «접속 기록이 있음 좋을거 같은데», 2026-08-28).
@@ -1612,7 +1614,8 @@ function renderPanel() {
             </span>
           </label>
           <p class="sc-hint-row">끝나는 시각을 적어두시면 <b>그 앞뒤 2시간만</b> 비워둡니다.
-            안 적으시면 시작 앞뒤 4시간을 비워둬요 — 일찍 끝나는 촬영이면 적어두시는 편이 좋습니다</p>
+            안 적으시면 시작 앞뒤 4시간을 비워둬요 — 일찍 끝나는 촬영이면 적어두시는 편이 좋습니다<br />
+            밤을 넘기는 일정은 <b>시작보다 이른 시각</b>을 고르시면 됩니다 — 22:00 ~ 02:00 이면 다음날 새벽으로 봅니다</p>
           <label class="sc-f"><span>장소</span><input type="text" id="bPlace" placeholder="예: 아펠가모 광화문"
             value="${editing ? esc(editing.place || '') : ''}" /></label>
           <label class="sc-f"><span>메모</span><textarea id="bNote" rows="2" placeholder="여러 줄로 적으셔도 됩니다">${editing ? esc(editing.note || '') : ''}</textarea></label>
@@ -1685,12 +1688,14 @@ async function add(kind) {
     body.p_time = (allDay || !h) ? null : h + ':' + m;
     /* 끝나는 시각 (대표 2026-09-25 «시작시간 종료시간도 넣는게 좋겠는데?»).
        ⚠ 안 적으셔도 된다 — 그때는 예전처럼 시작에서 앞뒤 4시간으로 잰다.
-       ⚠ 적어두시면 [시작−4h, 종료+4h] 로 잰다. 그만큼만 비워두면 되니 배정이 늘어난다 */
+       ⚠ 적어두시면 [시작−2h, 종료+2h] 만 잰다. 그만큼만 비워두면 되니 배정이 늘어난다.
+       ⚠ 끝이 시작보다 이르면 **밤을 넘긴 것**이다 (대표 2026-09-26). 막지 않는다 —
+         같은 시각만 막는다. 뜻이 없어서다 */
     const eh = $('bEH') ? $('bEH').value : '';
     const em = $('bEM') ? $('bEM').value : '00';
     body.p_end = (allDay || !h || !eh) ? null : eh + ':' + em;
-    if (body.p_end && body.p_end <= body.p_time) {
-      st.textContent = '끝나는 시각은 시작보다 늦어야 해요.'; return;
+    if (body.p_end && body.p_end === body.p_time) {
+      st.textContent = '끝나는 시각을 시작과 다르게 골라 주세요. (밤을 넘기면 다음날로 봅니다)'; return;
     }
     body.p_place = $('bPlace') ? $('bPlace').value.trim() : '';
     body.p_note = $('bNote') ? $('bNote').value.trim() : '';
