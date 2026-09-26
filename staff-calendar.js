@@ -110,10 +110,12 @@ const KIND_NAME = { busy: '다른 촬영', personal: '개인 일정' };
    ⚠⚠ 그 표지 글자꼴을 **주석에 적지 말 것.** indexOf 는 주석도 걸린다 —
      방금 이 주석에 적었다가 잘라오는 자리가 여기가 되어 PASS 0 / rc 1 로 죽었다 */
 const mdy = (s) => { const [, m, d] = String(s).slice(0, 10).split('-'); return Number(m) + '/' + Number(d); };
-const spanText = (x) => (x.group_id && x.g_n > 1
-  ? mdy(x.g_from) + '~' + mdy(x.g_to) + ' (' + x.g_n
-    + (x.at_time && x.end_time && String(x.end_time) < String(x.at_time) ? '밤' : '일') + ')'
-  : '');
+// 「11:00」 처럼. kTime 과 같은 일을 하지만 이 조각은 따로 떼어져 돌아서 여기 하나 더 둔다
+const hm = (t) => (t ? Number(String(t).slice(0, 2)) + ':' + String(t).slice(3, 5) : '');
+const spanText = (x) => (!x.group_id || !(x.g_n > 1) ? ''
+  : x.span ? mdy(x.g_from) + ' ' + hm(x.g_at) + ' ~ ' + mdy(x.g_to) + ' ' + hm(x.g_end)
+  : mdy(x.g_from) + '~' + mdy(x.g_to) + ' (' + x.g_n
+    + (x.at_time && x.end_time && String(x.end_time) < String(x.at_time) ? '밤' : '일') + ')');
 
 // 달력 한 칸에 들어갈 짧은 이름. 좁으니 제목이 있으면 제목만.
 // 달력 칸에 넣을 짧은 글. 제목이 길면 다섯 자에서 자른다 (대표 요청) —
@@ -1558,7 +1560,10 @@ function renderPanel() {
   const evHtml = busy.filter((x) => x.kind === 'busy' || x.kind === 'personal').map((x) => `
     <div class="sc-item ${x.kind === 'personal' ? 'pers' : 'busy'}">
       <div class="sc-item-h">
-        <b>${esc(x.all_day ? '종일' : (timeSpan(x) || '시간 미정'))}</b>
+        <b>${esc(x.span
+          /* 쭉 이어지는 일정은 그날이 「어디쯤인지」 를 적는다 — 첫날은 시작만, 마지막 날은 끝만 */
+          ? (x.at_time ? kTime(x.at_time) + '부터' : x.end_time ? kTime(x.end_time) + '까지' : '종일')
+          : (x.all_day ? '종일' : (timeSpan(x) || '시간 미정')))}</b>
         ${x.title ? '<span class="sc-title">' + esc(x.title) + '</span>' : ''}
         ${x.place ? '<span class="sc-place">' + esc(x.place) + '</span>' : ''}
         ${spanText(x) ? '<span class="sc-span">' + esc(spanText(x)) + '</span>' : ''}
@@ -1572,6 +1577,13 @@ function renderPanel() {
       </div>
     </div>`).join('');
   const editing = editId ? busy.find((x) => String(x.id) === String(editId)) : null;
+  /* 쭉 이어지는 묶음을 고칠 때는 **묶음 전체의 시작·끝**을 보여준다 (대표 2026-09-26).
+     그 줄 한 칸만 보면 첫날은 시작만, 마지막 날은 끝만 들고 있어서
+     고치기 창을 열자마자 반쪽이 빈 채로 뜬다. 종일도 꺼서 보여준다 —
+     이어지는 일정은 안에서만 종일이지, 대표가 고르신 것은 시각 둘이다 */
+  const edAt = editing ? (editing.span ? editing.g_at : editing.at_time) : null;
+  const edEnd = editing ? (editing.span ? editing.g_end : editing.end_time) : null;
+  const edAll = editing ? (editing.span ? false : editing.all_day) : false;
 
   p.hidden = false;
   p.innerHTML = `
@@ -1606,26 +1618,33 @@ function renderPanel() {
                 ? '<br />밤을 넘기는 일정은 <b>새벽에 끝나는 날</b>을 고르시면 됩니다 — 하룻밤으로 들어갑니다'
                 : '')
               + '</p>'
+              /* 대표 2026-09-26 «내가 27일 11시부터 28일 오후 5시까지로 설정했단말이지» —
+                 여러 날 + 시각이면 「쭉 이어지는 하나」 가 먼저다. 켜둔 채로 둔다 */
+              + '<label class="sc-f sc-check"><span>이어짐</span>'
+              + '<input type="checkbox" id="bSpan" checked /></label>'
+              + '<p class="sc-hint-row">여러 날이면 <b>첫날 시작 → 마지막 날 종료</b>로'
+              + ' 쭉 이어지는 하나의 일정입니다 · 끄면 날마다 같은 시간으로 따로 들어가요'
+              + '<br />하루짜리거나 종일이면 켜두셔도 그대로입니다</p>'
             : ''}
-          <label class="sc-f sc-check"><span>종일</span><input type="checkbox" id="bAllDay"${editing && editing.all_day ? ' checked' : ''} /></label>
+          <label class="sc-f sc-check"><span>종일</span><input type="checkbox" id="bAllDay"${edAll ? ' checked' : ''} /></label>
           <label class="sc-f" id="bTimeRow"><span>시작</span>
             <span class="sc-time">
               <select id="bH">${['<option value="">시</option>']
                 .concat(Array.from({ length: 24 }, (_, i) =>
-                  `<option value="${pad(i)}"${editing && String(editing.at_time || '').slice(0, 2) === pad(i) ? ' selected' : ''}>${pad(i)}</option>`)).join('')}</select>
+                  `<option value="${pad(i)}"${editing && String(edAt || '').slice(0, 2) === pad(i) ? ' selected' : ''}>${pad(i)}</option>`)).join('')}</select>
               <b>:</b>
               <select id="bM">${Array.from({ length: 12 }, (_, i) =>
-                `<option value="${pad(i * 5)}"${editing && String(editing.at_time || '').slice(3, 5) === pad(i * 5) ? ' selected' : ''}>${pad(i * 5)}</option>`).join('')}</select>
+                `<option value="${pad(i * 5)}"${editing && String(edAt || '').slice(3, 5) === pad(i * 5) ? ' selected' : ''}>${pad(i * 5)}</option>`).join('')}</select>
             </span>
           </label>
           <label class="sc-f" id="bEndRow"><span>종료</span>
             <span class="sc-time">
               <select id="bEH">${['<option value="">시</option>']
                 .concat(Array.from({ length: 24 }, (_, i) =>
-                  `<option value="${pad(i)}"${editing && String(editing.end_time || '').slice(0, 2) === pad(i) ? ' selected' : ''}>${pad(i)}</option>`)).join('')}</select>
+                  `<option value="${pad(i)}"${editing && String(edEnd || '').slice(0, 2) === pad(i) ? ' selected' : ''}>${pad(i)}</option>`)).join('')}</select>
               <b>:</b>
               <select id="bEM">${Array.from({ length: 12 }, (_, i) =>
-                `<option value="${pad(i * 5)}"${editing && String(editing.end_time || '').slice(3, 5) === pad(i * 5) ? ' selected' : ''}>${pad(i * 5)}</option>`).join('')}</select>
+                `<option value="${pad(i * 5)}"${editing && String(edEnd || '').slice(3, 5) === pad(i * 5) ? ' selected' : ''}>${pad(i * 5)}</option>`).join('')}</select>
             </span>
           </label>
           <p class="sc-hint-row">끝나는 시각을 적어두시면 <b>그 앞뒤 2시간만</b> 비워둡니다.
@@ -1735,14 +1754,17 @@ async function add(kind) {
       p_title: body.p_title, p_all_day: body.p_all_day, p_end: body.p_end });
   } else if ((kind === 'personal' || kind === 'busy') && until && until > openDay) {
     /* 여러 날 한 번에 (대표 2026-09-25 «다른촬영등록에서 설정할 수 있게해줘»).
-       ⚠ 시간·장소는 날마다 같게 들어간다. 날마다 다르면 하루씩 넣으셔야 한다 —
-         그 말을 폼에 적어뒀다.
-       ⚠ p_kind 는 **맨 뒤 칸**이다. 앞에 끼우면 지금 부르는 자리가 조용히 어긋난다 */
+       ⚠ 날마다 반복이면 시간·장소가 날마다 같게 들어간다. 날마다 다르면 하루씩 넣으셔야 한다.
+       ⚠ p_kind·p_end·p_span 은 **맨 뒤 칸들**이다. 앞에 끼우면 지금 부르는 자리가 조용히 어긋난다.
+       ⚠⚠ p_span 은 **받아줄 수 있을 때만** 켠다 (대표 2026-09-26).
+         종일이거나 시작·끝 중 하나가 없으면 서버가 거절한다 — 종일 휴가를
+         여러 날 넣으시는데 켜져 있다고 튕기면 안 된다 */
     res = await sb.rpc('staff_busy_add_range', {
       p_staff_id: staffId, p_from: openDay, p_to: until,
       p_title: body.p_title, p_note: body.p_note,
       p_time: body.p_time, p_place: body.p_place, p_all_day: body.p_all_day,
-      p_kind: kind, p_end: body.p_end });
+      p_kind: kind, p_end: body.p_end,
+      p_span: !!($('bSpan') && $('bSpan').checked && body.p_time && body.p_end && !body.p_all_day) });
   } else {
     res = await sb.rpc('staff_busy_add', body);
   }
