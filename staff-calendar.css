@@ -787,7 +787,7 @@ html.no-pull, html.no-pull body { overscroll-behavior: none; }
 /* 2인 촬영은 그날 판이 제일 크게 달라진다 — 눈에 먼저 들어오게 */
 .sc-opt.two { color: var(--gold-deep); border-color: var(--gold); background: #fdf8f0; font-weight: 600; }
 
-/* »샘플보기 (대표 2026-09-29 «포스팅가능 아래에 넣어줘 / 상품에 줄 맞춰서»).
+/* 예식장 샘플보기 (대표 2026-09-29 «포스팅가능 아래에 넣어줘 / 상품에 줄 맞춰서»).
    상품 줄과 한 줄로 묶고, 샘플보기는 **오른쪽 끝** — 위의 설문 보기·포스팅 가능과 같은 세로줄이다.
    ⚠ 상품 줄의 첫 줄과 글자 밑선을 맞춘다 (baseline). 폰에서 옵션이 넷이면 상품 줄이 두 줄이 되는데,
      그때도 샘플보기는 첫 줄 옆에 남는다
@@ -799,7 +799,7 @@ html.no-pull, html.no-pull body { overscroll-behavior: none; }
 .sc-nx-foot { margin-top: 8px; display: flex; align-items: baseline; gap: 6px 10px; }
 .sc-nx-foot .sc-nx-prod { margin-top: 0; flex: 1 1 auto; min-width: 0; }
 /* ⚠ 단추라서 브라우저가 붙이는 테두리·바탕·글꼴을 지운다 (안 지우면 회색 네모가 뜬다)
-   ⚠ 「»샘플」 과 「보기」 가 갈라지면 안 된다 (nowrap). 설문 보기와 같은 크기·색 */
+   ⚠ 「예식장 샘플」 과 「보기」 가 갈라지면 안 된다 (nowrap). 설문 보기와 같은 크기·색 */
 .sc-gal { margin-left: auto; flex: 0 0 auto; padding: 0; border: none; background: none;
   -webkit-appearance: none; appearance: none; font: inherit; font-size: .76rem; font-weight: 400;
   line-height: 1.6; color: var(--gold-deep); white-space: nowrap; cursor: pointer; }
