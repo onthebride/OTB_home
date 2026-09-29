@@ -741,16 +741,6 @@ html.no-pull, html.no-pull body { overscroll-behavior: none; }
 .sc-map { display: inline-block; margin-left: 8px; padding: 0; font-size: .76rem; font-weight: 400;
   color: var(--gold-deep); background: none; border: none; white-space: nowrap; }
 .sc-map:hover { text-decoration: underline; }
-/* 예식장 샘플보기 (대표 2026-09-29) — 길찾기 옆에, 같은 결로 글자만.
-   ⚠ 단추라서 브라우저가 붙이는 테두리·바탕·글꼴을 지운다 (안 지우면 회색 네모가 뜬다)
-   ⚠ 줄이 넘치면 **통째로** 다음 줄로 간다 — 「예식장 샘플」 과 「보기」 가 갈라지면 안 된다 (nowrap) */
-.sc-gal { display: inline-block; margin-left: 8px; padding: 0; border: none; background: none;
-  -webkit-appearance: none; appearance: none; font: inherit; font-size: .76rem; font-weight: 400;
-  line-height: inherit; color: var(--gold-deep); white-space: nowrap; cursor: pointer; }
-.sc-gal:hover { text-decoration: underline; }
-.sc-gal em { font-style: normal; margin-left: 4px; color: var(--ink-soft); }
-/* 받는 동안 — 눌렸다는 것이 보여야 두 번 안 누른다 */
-.sc-gal:disabled { opacity: .55; cursor: default; text-decoration: none; }
 
 @media (max-width: 480px) {
   .sc-nx-who { flex-direction: column; gap: 4px; }
@@ -796,6 +786,26 @@ html.no-pull, html.no-pull body { overscroll-behavior: none; }
   border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
 /* 2인 촬영은 그날 판이 제일 크게 달라진다 — 눈에 먼저 들어오게 */
 .sc-opt.two { color: var(--gold-deep); border-color: var(--gold); background: #fdf8f0; font-weight: 600; }
+
+/* »샘플보기 (대표 2026-09-29 «포스팅가능 아래에 넣어줘 / 상품에 줄 맞춰서»).
+   상품 줄과 한 줄로 묶고, 샘플보기는 **오른쪽 끝** — 위의 설문 보기·포스팅 가능과 같은 세로줄이다.
+   ⚠ 상품 줄의 첫 줄과 글자 밑선을 맞춘다 (baseline). 폰에서 옵션이 넷이면 상품 줄이 두 줄이 되는데,
+     그때도 샘플보기는 첫 줄 옆에 남는다
+   ⚠ 상품 쪽은 줄어들 수 있어야 한다 (min-width: 0) — 안 그러면 샘플보기를 밀어낸다
+   ⚠ 상품 줄이 없는 날짜 칸에서는 샘플보기만 오른쪽에 선다 (margin-left: auto)
+   ⚠⚠ 이 묶음은 위의 상품 줄 규칙보다 **뒤에** 둔다. 아래 둘째 줄의 고르개 글자 안에 상품 줄 고르개
+     글자가 통째로 들어 있어, 앞에 두면 시험의 rule() 이 이것을 먼저 집는다.
+     ⚠ 이 주석에도 고르개 글자를 그대로 적지 않는다 — indexOf 는 주석도 집는다 (2026-09-29 에 한 번 그랬다) */
+.sc-nx-foot { margin-top: 8px; display: flex; align-items: baseline; gap: 6px 10px; }
+.sc-nx-foot .sc-nx-prod { margin-top: 0; flex: 1 1 auto; min-width: 0; }
+/* ⚠ 단추라서 브라우저가 붙이는 테두리·바탕·글꼴을 지운다 (안 지우면 회색 네모가 뜬다)
+   ⚠ 「»샘플」 과 「보기」 가 갈라지면 안 된다 (nowrap). 설문 보기와 같은 크기·색 */
+.sc-gal { margin-left: auto; flex: 0 0 auto; padding: 0; border: none; background: none;
+  -webkit-appearance: none; appearance: none; font: inherit; font-size: .76rem; font-weight: 400;
+  line-height: 1.6; color: var(--gold-deep); white-space: nowrap; cursor: pointer; }
+.sc-gal:hover { text-decoration: underline; }
+/* 받는 동안 — 눌렸다는 것이 보여야 두 번 안 누른다 */
+.sc-gal:disabled { opacity: .55; cursor: default; text-decoration: none; }
 
 /* 날짜를 눌러 여는 칸도 같은 결로 — 바깥 상자만 두고 안쪽은 위와 같다 */
 .sc-item.bk { padding: 13px 16px 12px; }

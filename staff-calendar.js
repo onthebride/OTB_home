@@ -324,12 +324,15 @@ function pickRow(x) {
 
 function shootRow(x, extra) {
   /* 예식장 샘플 (대표 2026-09-29 «예식장 샘플보기 누르면 팝업으로 사진 볼 수 있게»).
-     갤러리에 그 예식장 사진이 있을 때만 길찾기 옆에 단다. 누르면 크게 보기로 넘겨 본다.
+     갤러리에 그 예식장 사진이 있을 때만 단다. 누르면 크게 보기로 넘겨 본다.
+     자리는 **포스팅 가능 바로 아래, 상품 줄 오른쪽 끝** (대표 «»샘플보기 하고 / 포스팅가능 아래에 넣어줘 /
+     상품에 줄 맞춰서»). 처음엔 길찾기 옆이었다.
+     ⚠ 몇 장인지는 글자로 안 적는다 — 대표가 부르신 글자 그대로. 크게 보기 위에 「1 / 7」 로 뜬다
      ⚠ 장수는 load() 가 줄마다 달아 준다(x.gal_n). 여기서 예식장 이름을 견주지 않는다 —
        어느 곳이 같은 곳인지는 서버 한 곳에서만 정한다
-     ⚠ 이모지를 안 쓴다 — 길찾기처럼 글자만 (tel.test 가 이 둘레의 이모지를 막는다) */
+     ⚠ 이모지를 안 쓴다 — 글자만 (tel.test 가 이 둘레의 이모지를 막는다. » 는 글자다) */
   const gal = x.gal_n > 0
-    ? ` <button type="button" class="sc-gal" data-galbk="${esc(x.booking_id)}">예식장 샘플보기<em>${Number(x.gal_n)}장</em></button>`
+    ? `<button type="button" class="sc-gal" data-galbk="${esc(x.booking_id)}" aria-label="예식장 샘플 사진 ${Number(x.gal_n)}장 보기">»샘플보기</button>`
     : '';
   // 설문이 아직이면 그렇게 적는다 — 자리를 비워두면 「단추가 왜 없지」가 된다
   const sv = x.has_survey
@@ -349,14 +352,18 @@ function shootRow(x, extra) {
   ].filter(Boolean).join('');
   return `
   <div class="sc-nx-row">
-    <p class="sc-nx-t"><span>${esc(kTime(x.wedding_time) || '시간 미정')} · ${esc(x.wedding_venue || '-')}${mapLink(x.wedding_venue)}${gal}${
+    <p class="sc-nx-t"><span>${esc(kTime(x.wedding_time) || '시간 미정')} · ${esc(x.wedding_venue || '-')}${mapLink(x.wedding_venue)}${
       x.role === '서브' ? '<span class="sc-role sub">서브</span>' : ''}</span>${sv}</p>
     <div class="sc-nx-b">${who ? `<div class="sc-nx-who">${who}</div>` : ''}${
       x.photo_usage_agree
         ? '<i class="sc-post ok">포스팅 가능</i>'
         : '<i class="sc-post no">포스팅 불가</i>'}</div>
     ${pickRow(x)}
-    ${prodRow(x)}
+    ${gal
+      /* 샘플이 있으면 상품 줄과 한 줄로 묶어 오른쪽 끝에 단다. 상품 줄이 없는 날짜 칸에서는 샘플보기만 오른쪽에.
+         샘플이 없으면 상품 줄은 예전 그대로다 */
+      ? `<div class="sc-nx-foot">${prodRow(x)}${gal}</div>`
+      : prodRow(x)}
     ${extra || ''}
   </div>`;
 }
