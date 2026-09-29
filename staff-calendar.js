@@ -169,15 +169,40 @@ async function seenMark() {
   } catch (e) { /* 못 남겨도 화면은 그대로 */ }
 }
 
+/* ===== 예식장 샘플 장수 (대표 2026-09-29 «예식장 샘플보기 누르면 팝업으로 사진 볼 수 있게»)
+   ⚠ 달력과 **따로** 받는다. 갤러리 쪽이 틀어져도 달력은 그대로 뜨고 단추만 안 달린다.
+   ⚠ 달력과 **같이** 부른다 — 차례로 부르면 여는 시간이 그만큼 는다.
+   ⚠ 처음엔 대표 캘린더에만 뜬다. 다른 분께는 서버가 빈 값을 준다 (private.gal_sample_on)
+   ⚠ 늦으면 기다리지 않는다 (1.5초) — 달력이 먼저다. 이번엔 단추 없이 뜨고, 다음에 열 때 붙는다 */
+async function galCounts() {
+  const ask = (async () => {
+    try {
+      const { data, error } = await sb.rpc('staff_gal_counts', { p_staff_id: staffId });
+      return !error && data && typeof data === 'object' ? data : {};
+    } catch (_) { return {}; }
+  })();
+  return Promise.race([ask, new Promise((ok) => setTimeout(() => ok({}), 1500))]);
+}
+// 받은 장수를 예식 줄마다 달아 둔다 — 「다음 촬영」과 「날짜 칸」이 같은 줄(shootRow)을 쓰니 둘 다 따라온다
+let galCache = {};             // 예약ID → 받아 둔 사진 목록 (한 번 누르면 다시 안 받는다)
+function galMark(res, gal) {
+  galCache = {};               // 새로 받았으니 전에 받아 둔 목록은 버린다 (그 사이 갤러리가 바뀌었을 수 있다)
+  const put = (x) => { const n = Number(gal && gal[x.booking_id]) || 0; if (n > 0) x.gal_n = n; };
+  (res.bookings || []).forEach(put);
+  if (res.next) [res.next].concat(res.next.more || []).forEach((d) => (d.items || []).forEach(put));
+}
+
 async function load() {
   if (!sb || !staffId || !uuidRe.test(staffId)) { show($('errCard')); return; }
   const first = new Date(view.getFullYear(), view.getMonth(), 1);
   const last = new Date(view.getFullYear(), view.getMonth() + 1, 0);
+  const galP = galCounts();    // 예식장 샘플 장수 — 달력과 같이 받는다 (못 받으면 {})
   const { data: res, error } = await sb.rpc('staff_calendar', {
     p_staff_id: staffId, p_from: ymd(first), p_to: ymd(last),
   });
   if (error || !res) { show($('errCard')); return; }
   data = { bookings: res.bookings || [], busy: res.busy || [] };
+  galMark(res, await galP);
   renderNext(res.next);        // 보고 있는 달과 무관하게 «다음 촬영» 한 줄
   renderTop(res.staff_name);
   helpInit();
@@ -298,6 +323,14 @@ function pickRow(x) {
 }
 
 function shootRow(x, extra) {
+  /* 예식장 샘플 (대표 2026-09-29 «예식장 샘플보기 누르면 팝업으로 사진 볼 수 있게»).
+     갤러리에 그 예식장 사진이 있을 때만 길찾기 옆에 단다. 누르면 크게 보기로 넘겨 본다.
+     ⚠ 장수는 load() 가 줄마다 달아 준다(x.gal_n). 여기서 예식장 이름을 견주지 않는다 —
+       어느 곳이 같은 곳인지는 서버 한 곳에서만 정한다
+     ⚠ 이모지를 안 쓴다 — 길찾기처럼 글자만 (tel.test 가 이 둘레의 이모지를 막는다) */
+  const gal = x.gal_n > 0
+    ? ` <button type="button" class="sc-gal" data-galbk="${esc(x.booking_id)}">예식장 샘플보기<em>${Number(x.gal_n)}장</em></button>`
+    : '';
   // 설문이 아직이면 그렇게 적는다 — 자리를 비워두면 「단추가 왜 없지」가 된다
   const sv = x.has_survey
     ? `<a class="sc-nx-sv" href="survey-view?b=${esc(x.booking_id)}&s=${esc(staffId)}" target="_blank" rel="noopener">설문 보기</a>`
@@ -316,7 +349,7 @@ function shootRow(x, extra) {
   ].filter(Boolean).join('');
   return `
   <div class="sc-nx-row">
-    <p class="sc-nx-t"><span>${esc(kTime(x.wedding_time) || '시간 미정')} · ${esc(x.wedding_venue || '-')}${mapLink(x.wedding_venue)}${
+    <p class="sc-nx-t"><span>${esc(kTime(x.wedding_time) || '시간 미정')} · ${esc(x.wedding_venue || '-')}${mapLink(x.wedding_venue)}${gal}${
       x.role === '서브' ? '<span class="sc-role sub">서브</span>' : ''}</span>${sv}</p>
     <div class="sc-nx-b">${who ? `<div class="sc-nx-who">${who}</div>` : ''}${
       x.photo_usage_agree
@@ -1408,6 +1441,8 @@ function openMyGal(list, start) {
     img.src = list[i].image_url;
     ven.textContent = list[i].venue || '';
     if (cnt) cnt.textContent = `${i + 1} / ${list.length}`;
+    // 다음 장을 미리 받아 둔다 — 폰에서 넘길 때 빈 틈이 덜 보인다 (예식장 샘플은 수십 장이다)
+    if (list.length > 1) { const nx = new Image(); nx.src = list[(i + 1) % list.length].image_url; }
   };
   const go = (s) => { i = (i + s + list.length) % list.length; draw(); };
   const close = () => { lb.remove(); document.removeEventListener('keydown', onKey); window.otbUnlockScroll(); };
@@ -1440,6 +1475,31 @@ function openMyGal(list, start) {
   draw();
   window.otbLockScroll();
   document.body.appendChild(lb);
+}
+
+/* 예식장 샘플보기를 눌렀을 때 (대표 2026-09-29 «누르면 팝업으로 … 하나씩 넘겨볼 수 있게»).
+   위의 크게 보기를 그대로 쓴다 — 「내 사진」 과 같은 손놀림이라 따로 배울 것이 없다.
+   사진마다 **갤러리 이름표**가 아래에 뜬다. 혹시 다른 곳이 이어져도 작가님이 보고 안다.
+   ⚠ 누를 때 받는다 — 캘린더를 열 때마다 사진 목록까지 받으면 폰이 무겁다. 한 번 받으면 다시 안 받는다
+   ⚠ 받는 동안에는 단추를 잠그고 그렇다고 적는다. 폰에서 두 번 눌리면 창이 두 개 뜬다 */
+async function openVenueSamples(btn) {
+  const id = btn && btn.dataset ? btn.dataset.galbk : '';
+  if (!id || btn.disabled) return;
+  let list = galCache[id];
+  if (!list) {
+    const was = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = '불러오는 중…';
+    try {
+      const { data, error } = await sb.rpc('staff_gal_samples', { p_staff_id: staffId, p_booking_id: id });
+      list = !error && data && data.ok && Array.isArray(data.items) ? data.items : [];
+    } catch (_) { list = []; }
+    btn.disabled = false;
+    btn.innerHTML = was;
+    if (list.length) galCache[id] = list;
+  }
+  if (!list.length) { alert('사진을 불러오지 못했어요.\n잠시 뒤 다시 눌러 주세요.'); return; }
+  openMyGal(list, 0);
 }
 
 function render() {
@@ -2001,6 +2061,13 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') refreshIfStale();
 });
 window.addEventListener('pageshow', (e) => { if (e.persisted) refreshIfStale(); });
+
+/* 예식장 샘플보기 — 「다음 촬영」 과 「날짜 칸」 두 곳에 같은 단추가 있다. 한 번에 받는다.
+   (날짜 칸은 누를 때마다 새로 그려져 단추마다 걸면 놓친다.) 거는 곳이 여기인 까닭은 위와 같다 */
+document.addEventListener('click', (e) => {
+  const b = e.target && e.target.closest ? e.target.closest('[data-galbk]') : null;
+  if (b) openVenueSamples(b);
+});
 
 /* 사용안내 (대표 2026-08-31 «사용안내를 상단메뉴에 넣고 내용을 채우자»)
    전에는 팝업이었다 — 처음 한 번 뜨고 닫으면 끝이라, 나중에 「그거 어디서 봤더라」가 됐다.

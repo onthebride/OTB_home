@@ -741,6 +741,16 @@ html.no-pull, html.no-pull body { overscroll-behavior: none; }
 .sc-map { display: inline-block; margin-left: 8px; padding: 0; font-size: .76rem; font-weight: 400;
   color: var(--gold-deep); background: none; border: none; white-space: nowrap; }
 .sc-map:hover { text-decoration: underline; }
+/* 예식장 샘플보기 (대표 2026-09-29) — 길찾기 옆에, 같은 결로 글자만.
+   ⚠ 단추라서 브라우저가 붙이는 테두리·바탕·글꼴을 지운다 (안 지우면 회색 네모가 뜬다)
+   ⚠ 줄이 넘치면 **통째로** 다음 줄로 간다 — 「예식장 샘플」 과 「보기」 가 갈라지면 안 된다 (nowrap) */
+.sc-gal { display: inline-block; margin-left: 8px; padding: 0; border: none; background: none;
+  -webkit-appearance: none; appearance: none; font: inherit; font-size: .76rem; font-weight: 400;
+  line-height: inherit; color: var(--gold-deep); white-space: nowrap; cursor: pointer; }
+.sc-gal:hover { text-decoration: underline; }
+.sc-gal em { font-style: normal; margin-left: 4px; color: var(--ink-soft); }
+/* 받는 동안 — 눌렸다는 것이 보여야 두 번 안 누른다 */
+.sc-gal:disabled { opacity: .55; cursor: default; text-decoration: none; }
 
 @media (max-width: 480px) {
   .sc-nx-who { flex-direction: column; gap: 4px; }
