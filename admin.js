@@ -3690,7 +3690,9 @@ function refLabel(r) {
   for (const [re, nm] of REF_NAMES) if (re.test(r)) return nm + ' (' + r + ')';
   return r;
 }
-const HOME_SECTIONS = { about: '소개 · 이야기', gallery: '갤러리', pricing: '상품 가격', event: '이벤트', contact: '문의하기', booking: '예약신청', 'booking-start': '예약신청 시작 버튼 ⭐' };
+const HOME_SECTIONS = { about: '소개 · 이야기', gallery: '갤러리', pricing: '상품 가격', event: '이벤트', contact: '문의하기', booking: '예약신청', 'booking-start': '예약신청 시작 버튼 ⭐',
+  // 2026-10-05 부터 센다 — 카톡 단추를 키운 뒤 손님이 어느 쪽으로 가는지 (대표 «다 메일로 보내네...»)
+  'kakao-chat': '카톡 상담 누름 💬', 'inquiry-sent': '메일 문의 보냄 ✉️' };
 function pathLabel(p) {
   if (p === '/' || p === '') return '홈 (첫 화면)';
   if (p.startsWith('/#')) { const k = p.slice(2); return '홈 · ' + (HOME_SECTIONS[k] || k); }

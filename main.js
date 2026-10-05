@@ -913,6 +913,8 @@ if (inquiryForm) {
       if (data.success) {
         inquiryForm.reset();
         setStatus('문의가 정상적으로 전송되었습니다! 빠르게 답변드리겠습니다. 감사합니다 🤍', 'success');
+        // 메일 문의를 하나 센다 — 카톡 상담과 견주려고 (analytics.js · 대표 기기면 이 함수가 없다)
+        if (window.OTB_MARK) window.OTB_MARK('inquiry-sent');
       } else {
         setStatus('전송에 실패했어요. 잠시 후 다시 시도하시거나 onthebride@naver.com 으로 연락 주세요.', 'error');
       }

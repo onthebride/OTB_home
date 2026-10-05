@@ -41,7 +41,7 @@
   <link rel="preconnect" href="https://cthpxcgesorvtgjdgrtu.supabase.co" crossorigin />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Noto+Serif+KR:wght@300;400;500;600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=dd2c131410" />
+  <link rel="stylesheet" href="styles.css?v=58a670f1cb" />
 </head>
 <body>
 
@@ -470,17 +470,23 @@
     <div class="container contact-grid">
       <div class="contact-info">
         <p class="contact-lead">한 번뿐인 두 분의 결혼식, 진심을 담아 기록하겠습니다. 편하게 연락 주세요.</p>
+        <!-- 카톡 상담을 맨 앞에 크게 (대표 2026-10-05 «카톡 상담연결이 눈에 잘 안띄어 다 메일로 보내네...»).
+             전에는 아래 목록의 글자 한 줄이라 옆의 큰 메일 양식에 묻혔다. 폰에서는 양식이 화면을 다 차지했다.
+             목록의 카카오톡 줄은 이 단추와 겹쳐서 뺐다. 가격 칸 「카톡 문의」 와 같은 채널이다 -->
+        <a href="http://pf.kakao.com/_SeRsK/chat" target="_blank" rel="noopener" class="btn btn-kakao full contact-kakao">카카오톡으로 상담하기</a>
+        <p class="contact-kakao-sub">예식 날짜 · 장소 · 시간을 함께 보내주세요</p>
         <ul class="contact-list">
           <li><span>이메일</span><a href="mailto:onthebride@naver.com">onthebride@naver.com</a></li>
-          <li><span>카카오톡</span><a href="http://pf.kakao.com/_SeRsK/chat" target="_blank" rel="noopener">카카오톡 상담 연결</a></li>
           <li><span>인스타그램</span><a href="https://www.instagram.com/onthebride/" target="_blank" rel="noopener">@onthebride</a></li>
         </ul>
       </div>
       <form class="contact-form" id="inquiryForm" onsubmit="return false;" data-clarity-mask="true">
+        <!-- 메일 양식은 보조로 — 카톡 단추와 힘이 겨루지 않게 단추를 테두리만 남긴다 -->
+        <p class="contact-form-h">메일로 문의하기</p>
         <div class="field"><label>성함 <em>*</em></label><input type="text" id="f_inq_name" placeholder="성함을 입력해 주세요" /></div>
         <div class="field"><label>E-mail <em>*</em></label><input type="email" id="f_inq_email" placeholder="이메일로 답변을 보내드립니다" /></div>
         <div class="field"><label>문의내용 <em>*</em></label><textarea id="f_inq_message" rows="5" placeholder="예약가능여부는 예식날짜 / 장소 / 시간을 꼭 적어주세요~"></textarea></div>
-        <button type="submit" class="btn btn-primary full" id="inqBtn">보내기</button>
+        <button type="submit" class="btn btn-outline full" id="inqBtn">메일로 보내기</button>
         <p class="bk-status" id="inqStatus" role="status"></p>
       </form>
     </div>
@@ -520,7 +526,7 @@
 
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="config.js"></script>
-  <script defer src="main.js?v=7f31592e0f"></script>
-  <script defer src="/analytics.js?v=abe79d1dba"></script>
+  <script defer src="main.js?v=d19654d92a"></script>
+  <script defer src="/analytics.js?v=6ba56fe107"></script>
 </body>
 </html>

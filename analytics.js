@@ -125,6 +125,26 @@ window.OTB_ADMIN_DEVICE = (function () {
 
   send(location.pathname);
 
+  /* 반응 하나 — 한 방문에 한 번만 센다 (아래 예약신청 시작 버튼과 같은 셈).
+     카톡 상담·메일 문의 (대표 2026-10-05 «카톡 상담연결이 눈에 잘 안띄어 다 메일로 보내네...»).
+     둘을 같이 세야 카톡 단추를 키운 뒤 손님이 어느 쪽으로 가는지 보인다. 2026-10-05 부터 센다 —
+     그 앞은 «안 센 것» 이지 «0» 이 아니다.
+     ⚠ 대표 기기는 위에서 이미 돌아갔다 — 여기까지 오지 않으니 따로 거를 것이 없다.
+     ⚠ 메일 문의는 main.js 가 보내기에 성공한 뒤 부른다 (누르기만 하고 실패한 것은 안 센다) */
+  var marked = {};
+  window.OTB_MARK = function (tag) {
+    if (!tag || marked[tag]) return;
+    marked[tag] = 1;
+    send(location.pathname + '#' + tag);
+  };
+  // 카톡 채널로 가는 단추·글씨는 어디에 있든 한 번에 받는다 (가격 칸 「카톡 문의」 · 문의하기 큰 단추)
+  if (document.addEventListener) {
+    document.addEventListener('click', function (e) {
+      var a = e.target && e.target.closest ? e.target.closest('a[href*="pf.kakao.com/"]') : null;
+      if (a) window.OTB_MARK('kakao-chat');
+    });
+  }
+
   /* 홈은 한 페이지에 소개·갤러리·가격·이벤트·문의·예약이 모두 들어 있어
      경로만 보면 전부 '/' 로만 잡힌다. 그래서 화면에 실제로 머문 구역을 따로 기록한다.
      - 구역이 절반 이상 보이는 상태가 1.5초 이상 이어질 때만 (스크롤로 스쳐 지나간 건 제외)

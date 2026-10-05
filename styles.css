@@ -430,6 +430,12 @@ html.no-pull, html.no-pull body { overscroll-behavior: none; }
 .contact-list li a { font-size: 1.02rem; }
 .contact-list li a:hover { color: var(--gold); }
 .contact-form { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 40px; }
+/* 카톡 상담을 맨 앞에 크게 (대표 2026-10-05 «카톡 상담연결이 눈에 잘 안띄어 다 메일로 보내네...»)
+   ⚠ 노란 단추의 위 틈(10px)은 가격 칸 두 단추 사이 틈이다 — 여기서는 0. 이 규칙이 뒤에 있어 이긴다 */
+.contact-kakao { margin-top: 0; padding: 17px 20px; font-size: 1.02rem; font-weight: 600; }
+.contact-kakao-sub { margin: 10px 0 26px; font-size: .86rem; color: var(--ink-soft); text-align: center; }
+/* 메일 양식은 보조 — 무엇으로 보내는지 맨 위에 적는다 */
+.contact-form-h { margin: 0 0 20px; font-size: .95rem; font-weight: 600; color: var(--ink); }
 .field { margin-bottom: 20px; }
 .field label { display: block; font-size: .85rem; font-weight: 500; margin-bottom: 8px; color: var(--ink-soft); }
 .field input, .field textarea, .field select {
