@@ -437,7 +437,9 @@ html.no-pull, html.no-pull body { overscroll-behavior: none; }
 /* 카톡 상담 단추 (대표 2026-10-05 «카톡 상담연결이 눈에 잘 안띄어 다 메일로 보내네...»)
    ⚠ 노란 단추의 위 틈(10px)은 가격 칸 두 단추 사이 틈이다 — 여기서는 0. 이 규칙이 뒤에 있어 이긴다 */
 .contact-kakao { margin-top: 0; padding: 17px 20px; font-size: 1.02rem; font-weight: 600; }
-.contact-kakao-sub { margin: 10px 0 26px; font-size: .86rem; color: var(--ink-soft); text-align: center; }
+/* 아래 「메일로 문의하기」 와의 틈 — 26px 에서 44px 로 (대표 2026-10-05 «간격이 좀 더 있었음 해»).
+   카톡과 메일이 한 덩어리로 붙어 보이면 둘이 같은 무게로 읽힌다 */
+.contact-kakao-sub { margin: 10px 0 44px; font-size: .86rem; color: var(--ink-soft); text-align: center; }
 /* 메일로 문의하기 — 접어 둔다. 누르면 펴진다 (main.js).
    ⚠ 화살표는 «누르면 벌어질 일» — 접혀 있으면 ∨(누르면 펴진다), 펴져 있으면 ∧(누르면 접힌다).
      글자(∨ ∧)는 글꼴마다 모양이 달라 선 두 개를 돌려 그린다. aria-expanded 를 보고 돈다 */
