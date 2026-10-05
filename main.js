@@ -925,6 +925,23 @@ if (inquiryForm) {
   });
 }
 
+/* 메일로 문의하기는 접어 둔다 — 카톡 상담이 주 상담 창구다 (대표 2026-10-05
+   «카톡 상담을 주 상담창구로 보이게 하고 메일로 문의하기는 누르면 접혀진게 펼쳐지면서 입력되게 해줘»).
+   누르면 펴지고 **성함 칸에 바로** 쓸 수 있게 한다 (폰은 자판이 같이 올라온다). 다시 누르면 접힌다.
+   ⚠ 화살표는 «누르면 벌어질 일» — CSS 가 aria-expanded 를 보고 ∨ / ∧ 로 돌린다 */
+const mailToggle = document.getElementById('mailToggle');
+if (mailToggle && inquiryForm) {
+  mailToggle.addEventListener('click', () => {
+    const open = inquiryForm.hidden;            // 지금 접혀 있으면 편다
+    inquiryForm.hidden = !open;
+    mailToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) {
+      const first = document.getElementById('f_inq_name');
+      if (first) first.focus();
+    }
+  });
+}
+
 // 화면에 가까워질 때까지 기다린다. 안 내려가는 손님은 아예 안 받는다.
 // 다만 갤러리를 곧장 보러 온 손님(?g=예식장, #gallery)은 기다리지 않는다.
 function whenNear(el, margin) {
