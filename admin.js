@@ -88,9 +88,20 @@ let allStaff = [];
 let staffMap = {};
 const ATK_TPLS = [['A', '계약안내'], ['B', '한달 전'], ['C', '잔금안내'], ['D', '최종안내'], ['E', '링크안내'], ['F', '입금확인'], ['G', '촬영설문']];
 const notCancelled = (b) => b.status !== '취소';
-const phBadge = (b) =>
-  (b.rep_designation ? ' <span class="ph-badge rep">대표지정</span>' : '')
-  + (b.photographer === '2인 촬영' ? ' <span class="ph-badge two">2인촬영</span>' : '');
+/* 이름 옆 딱지 — 예약 목록 · 홈 카드 · 날짜 카드가 다 이것을 쓴다.
+   「지정」 (대표 2026-10-06 «이거 지정인데 지정이면 카드에 표시를 해줘»):
+   옛 「대표지정」(rep_designation)은 예약 폼에서 내렸고 이제 지정은 pick_pin 으로 온다.
+   이 딱지가 옛것만 알아서 새 지정에는 아무 표시가 없었다.
+   ⚠ 지정한 작가와 배정된 작가가 다르면 이름을 붙여 다른 색으로 — 돈을 받은 약속이라 어긋나면 보여야 한다 */
+function phBadge(b) {
+  return (b.rep_designation ? ' <span class="ph-badge rep">대표지정</span>' : '')
+    + (b.pick_pin
+      ? (b.assignee_id === b.pick_pin
+        ? ' <span class="ph-badge rep">지정</span>'
+        : ' <span class="ph-badge pinx">지정 ' + esc(pickName(b.pick_pin)) + '</span>')
+      : '')
+    + (b.photographer === '2인 촬영' ? ' <span class="ph-badge two">2인촬영</span>' : '');
+}
 // 색상환을 고르게 돌며 서로 멀리 떨어진 색들 — 앞쪽일수록 대비가 크다(작가 수가 적을 때 최대 구분).
 // 작가 수가 이 색 개수를 넘으면 색이 한 바퀴 돌아 겹칠 수 있음 → 그때는 작가별 색 직접지정 권장.
 const STAFF_COLORS = ['#2f6fae', '#cf4d4d', '#3f9d5a', '#8a52c0', '#d98a2b', '#2fa3a3', '#c04d95', '#7a6a55', '#a9a832', '#5b5bbf', '#1f7a6b', '#b5462f'];
@@ -2871,6 +2882,8 @@ function bookingOpts(b) {
   if (b.travel_fee) o.push('출장');
   if (b.photographer === '2인 촬영') o.push('2인');
   if (b.rep_designation) o.push('대표지정');
+  // 새 지정도 (대표 2026-10-06) — 배정과 어긋나면 누구를 지정했는지 적는다
+  if (b.pick_pin) o.push(b.assignee_id === b.pick_pin ? '지정' : '지정 ' + pickName(b.pick_pin));
   (Array.isArray(b.custom_options) ? b.custom_options : []).forEach((c) => { if (c && c.name) o.push(c.name); });
   return o;
 }
