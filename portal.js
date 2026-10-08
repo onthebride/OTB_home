@@ -75,6 +75,8 @@ const DEMO_INFO = {
   status: '확정', survey_done: true,
   photographer: { reveal: true, main_name: '김병훈', main_phone: '010-1234-5678', sub_name: '양재훈', sub_phone: '010-8765-4321' },
   buddy: { state: 'approved', partner_name: '김철수', reward: '할인', my_role: 'requester', id: 'demo' },
+  buddies: [{ state: 'approved', partner_name: '김철수', reward: '할인', my_role: 'requester', id: 'demo' }],
+  buddy_max: 2,
   review: { link: 'https://blog.naver.com/example', reward: '앨범', status: 'approved' },
 };
 
@@ -140,10 +142,15 @@ function render() {
     return `<div class="pt-opt-row"><div class="pt-opt-info"><span class="nm">${esc(o.name)}</span>${ds}</div><span class="pt-opt-price">${won(o.price)}</span></div>`;
   }).join('');
   // 승인된 이벤트 혜택을 옵션처럼 표시 (할인=−n만원, 앨범=무료)
+  // 짝꿍은 두 분까지라 같은 이벤트가 두 줄 나올 수 있다 — 그때는 순번을 붙인다 (같은 줄 둘이면 잘못 들어간 것처럼 보인다)
   const rewards = Array.isArray(info.event_rewards) ? info.event_rewards : [];
+  const typeN = {}, typeSeen = {};
+  rewards.forEach((r) => { typeN[r.type] = (typeN[r.type] || 0) + 1; });
   const rewardRows = rewards.map((r) => {
     const isDc = r.reward === '할인';
-    const nm = `${esc(r.type)} 이벤트 ${isDc ? '할인' : '앨범 1권'}`;
+    typeSeen[r.type] = (typeSeen[r.type] || 0) + 1;
+    const no = typeN[r.type] > 1 ? ' ' + typeSeen[r.type] : '';
+    const nm = `${esc(r.type)} 이벤트${no} ${isDc ? '할인' : '앨범 1권'}`;
     const price = isDc ? '−1만원' : '무료';
     return `<div class="pt-opt-row"><div class="pt-opt-info"><span class="nm">🎉 ${nm}</span></div><span class="pt-opt-price ${isDc ? 'minus' : 'free'}">${price}</span></div>`;
   }).join('');
@@ -246,34 +253,44 @@ function renderDownload() {
 }
 
 /* ===== 짝꿍 ===== */
-function renderBuddy() {
-  const b = info.buddy || { state: 'none' };
-  const box = $('buddyBody');
+/* 짝꿍은 두 분까지 (대표 2026-10-08 «짝궁 2번까지해서 전반적으로 고쳐줘»).
+   맺은 짝꿍마다 한 칸 — 칸마다 혜택 고르개가 따로 있다. 두 분이 안 찼으면 아래에 등록 칸을 하나 더 둔다.
+   ⚠ 칸이 둘이라 고르개·단추 id 에 순번을 붙이고, 혜택을 바꿀 때 그 짝꿍 id 를 같이 보낸다
+     (id 없이 보내면 서버가 최근 짝꿍을 바꾼다 — 앞 칸을 고쳤는데 뒷 칸이 바뀐다) */
+const BUDDY_MAX = 2;
+
+function buddyList() {
+  if (Array.isArray(info.buddies)) return info.buddies;
+  const b = info.buddy; // 옛 서버 답 — 최근 1건
+  return b && b.state && b.state !== 'none' ? [b] : [];
+}
+
+function buddyItemHtml(b, i) {
+  const who = esc(b.partner_name || '상대');
   // 내 혜택 선택 줄 (승인 후에도 변경 가능)
-  const rewardRow = `<div class="pt-reward-row"><span class="pt-reward-lbl">내 혜택</span>${rewardSelect('bd_reward_sel', b.reward)}</div>`;
+  const rewardRow = `<div class="pt-reward-row"><span class="pt-reward-lbl">내 혜택</span>${rewardSelect('bd_reward_sel_' + i, b.reward)}</div>`;
   if (b.state === 'sent_waiting') {
-    box.innerHTML = `<div class="pt-state wait"><b>${esc(b.partner_name || '상대')}</b>님께 짝꿍 신청을 보냈어요.<br>상대가 확인하면 매칭됩니다.</div>${rewardRow}`;
-    bindBuddyReward();
-  } else if (b.state === 'incoming_confirm') {
-    box.innerHTML = `
-      <div class="pt-state"><b>${esc(b.partner_name || '상대')}</b>님이 회원님을 짝꿍으로 등록했어요!<br>맞으면 받을 혜택을 고르고 확인해 주세요.</div>
-      <div class="pt-reward-row"><span class="pt-reward-lbl">받을 혜택</span>${rewardSelect('bd_confirm_reward', b.reward)}</div>
+    return `<div class="pt-state wait"><b>${who}</b>님께 짝꿍 신청을 보냈어요.<br>상대가 확인하면 매칭됩니다.</div>${rewardRow}`;
+  }
+  if (b.state === 'incoming_confirm') {
+    return `
+      <div class="pt-state"><b>${who}</b>님이 회원님을 짝꿍으로 등록했어요!<br>맞으면 받을 혜택을 고르고 확인해 주세요.</div>
+      <div class="pt-reward-row"><span class="pt-reward-lbl">받을 혜택</span>${rewardSelect('bd_confirm_reward_' + i, b.reward)}</div>
       <div class="pt-confirm-actions">
-        <button type="button" class="pt-btn" id="buddyYes">맞아요, 확인</button>
-        <button type="button" class="pt-btn ghost" id="buddyNo">아니에요</button>
+        <button type="button" class="pt-btn" id="buddyYes_${i}">맞아요, 확인</button>
+        <button type="button" class="pt-btn ghost" id="buddyNo_${i}">아니에요</button>
       </div>
-      <p class="pt-status" id="buddyConfirmStatus"></p>`;
-    $('buddyYes').addEventListener('click', () => confirmBuddy(b.id, true, $('bd_confirm_reward').value));
-    $('buddyNo').addEventListener('click', () => confirmBuddy(b.id, false));
-  } else if (b.state === 'matched') {
-    box.innerHTML = `<div class="pt-state wait">짝꿍 매칭 완료! <b>관리자 승인</b>을 기다리고 있어요.</div>${rewardRow}`;
-    bindBuddyReward();
-  } else if (b.state === 'approved') {
-    box.innerHTML = `<div class="pt-state good">🎉 짝꿍 이벤트 참여 완료!</div>${rewardRow}`;
-    bindBuddyReward();
-  } else {
-    // none → 등록 폼
-    box.innerHTML = `
+      <p class="pt-status" id="buddyConfirmStatus_${i}"></p>`;
+  }
+  if (b.state === 'matched') {
+    return `<div class="pt-state wait"><b>${who}</b>님과 짝꿍 매칭 완료! <b>관리자 승인</b>을 기다리고 있어요.</div>${rewardRow}`;
+  }
+  // approved — 관리자가 직접 넣은 짝꿍은 상대 이름이 없다
+  return `<div class="pt-state good">🎉 ${b.partner_name ? `<b>${who}</b>님과 ` : ''}짝꿍 이벤트 참여 완료!</div>${rewardRow}`;
+}
+
+function buddyFormHtml() {
+  return `
       <div class="pt-form">
         <div class="pt-row2">
           <div class="pt-field"><label>상대 예식일</label><input type="date" id="bd_date" /></div>
@@ -285,8 +302,34 @@ function renderBuddy() {
         <button type="button" class="pt-btn full" id="bd_submit">짝꿍 등록하기</button>
         <p class="pt-status" id="bd_status"></p>
       </div>`;
-    $('bd_submit').addEventListener('click', registerBuddy);
-  }
+}
+
+function renderBuddy() {
+  const list = buddyList();
+  const max = Number(info.buddy_max) || BUDDY_MAX;
+  const box = $('buddyBody');
+  // 짝꿍이 하나라도 있으면 칸마다 순번을 단다 — 다음 칸이 그 뒤에 붙는다
+  const numbered = list.length > 0;
+  const room = list.length < max;
+  box.innerHTML = list.map((b, i) => `
+    <div class="pt-buddy-item">
+      ${numbered ? `<p class="pt-buddy-no">짝꿍 ${i + 1}</p>` : ''}
+      ${buddyItemHtml(b, i)}
+    </div>`).join('') + (room ? `
+    <div class="pt-buddy-item">
+      ${numbered ? `<p class="pt-buddy-no">짝꿍 ${list.length + 1}<span> · 한 분 더 맺으실 수 있어요</span></p>` : ''}
+      ${buddyFormHtml()}
+    </div>` : '');
+  list.forEach((b, i) => {
+    if (b.state === 'incoming_confirm') {
+      $('buddyYes_' + i).addEventListener('click', () => confirmBuddy(b.id, true, $('bd_confirm_reward_' + i).value, i));
+      $('buddyNo_' + i).addEventListener('click', () => confirmBuddy(b.id, false, null, i));
+      return;
+    }
+    const sel = $('bd_reward_sel_' + i);
+    if (sel) sel.addEventListener('change', () => setBuddyReward(b.id, sel.value));
+  });
+  if (room) $('bd_submit').addEventListener('click', registerBuddy);
 }
 
 async function registerBuddy() {
@@ -302,19 +345,14 @@ async function registerBuddy() {
   await reload();
 }
 
-function bindBuddyReward() {
-  const sel = $('bd_reward_sel');
-  if (sel) sel.addEventListener('change', () => setBuddyReward(sel.value));
-}
-
-async function setBuddyReward(reward) {
-  const { error } = await sb.rpc('buddy_set_reward', { p_booking: bookingId, p_reward: reward });
+async function setBuddyReward(id, reward) {
+  const { error } = await sb.rpc('buddy_set_reward', { p_booking: bookingId, p_reward: reward, p_buddy_id: id });
   if (error) { alert('혜택 변경 실패: ' + error.message); return; }
   await reload();
 }
 
-async function confirmBuddy(id, accept, reward) {
-  const st = $('buddyConfirmStatus');
+async function confirmBuddy(id, accept, reward, i) {
+  const st = $('buddyConfirmStatus_' + i);
   st.className = 'pt-status'; st.textContent = '처리 중…';
   const { error } = await sb.rpc('buddy_confirm', { p_buddy_id: id, p_booking: bookingId, p_accept: accept, p_reward: reward || null });
   if (error) { st.className = 'pt-status err'; st.textContent = error.message.replace(/^.*?:\s*/, ''); return; }

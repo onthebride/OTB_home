@@ -172,6 +172,10 @@ body {
 .pt-status.err { color: #b5462f; }
 .pt-confirm-actions { display: flex; gap: 8px; margin-top: 10px; }
 .pt-confirm-actions .pt-btn { flex: 1; }
+/* 짝꿍은 두 분까지 (대표 2026-10-08) — 칸마다 순번, 칸 사이는 점선 */
+.pt-buddy-item + .pt-buddy-item { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); }
+.pt-buddy-no { margin: 0 0 8px; font-size: .8rem; font-weight: 700; color: var(--gold-deep); }
+.pt-buddy-no span { font-weight: 400; color: var(--ink-soft); }
 
 /* 다운로드 링크가 올라오면 박스를 최상단으로 (인사 바로 아래) */
 #portalMain { display: flex; flex-direction: column; }

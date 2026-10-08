@@ -1378,26 +1378,41 @@ function openRefLightbox(list, start) {
 }
 
 // 이벤트 참여 박스 HTML (data=null이면 기본 골격 — 즉시 표시용)
+// 짝꿍은 두 줄 (대표 2026-10-08 «짝궁 2번까지») — 줄마다 그 짝꿍 하나를 켜고 끈다.
+// 앞 줄이 비었으면 뒷줄은 못 켠다 — 켜면 새 짝꿍이 앞 줄로 들어가 헷갈린다
+function evBuddyRows(data) {
+  if (data && Array.isArray(data.buddies)) return data.buddies;
+  const bd = data && data.buddy; // 옛 서버 답 — 최근 1건
+  return bd && bd.state && bd.state !== 'none' ? [bd] : [];
+}
+const evBuddyMax = (data) => (data && Number(data.buddy_max)) || 2;
+
 function eventSlotHtml(data) {
-  const bd = (data && data.buddy) || { state: 'none' };
+  const list = evBuddyRows(data);
   const rv = data && data.review;
-  const buddyApproved = bd.state === 'approved';
   const reviewApproved = !!(rv && rv.status === 'approved');
-  const rewardSel = (id, val) =>
-    `<select class="evd-reward" id="${id}"><option value="할인"${val === '할인' ? ' selected' : ''}>1만원 할인</option><option value="앨범"${val === '앨범' ? ' selected' : ''}>앨범 1권</option></select>`;
+  const rewardSel = (id, val, off) =>
+    `<select class="evd-reward" id="${id}"${off ? ' disabled' : ''}><option value="할인"${val === '할인' ? ' selected' : ''}>1만원 할인</option><option value="앨범"${val === '앨범' ? ' selected' : ''}>앨범 1권</option></select>`;
   const stateTxt = { sent_waiting: '상대 확인 대기', incoming_confirm: '고객 확인 대기', matched: '고객 확인됨 · 승인 대기' };
-  const buddyCtx = (bd.state && bd.state !== 'none' && !buddyApproved)
-    ? `<span class="evd-ctx">${bd.partner_name ? esc(bd.partner_name) + '님 · ' : ''}${stateTxt[bd.state] || ''}</span>` : '';
+  let buddyRows = '';
+  for (let i = 0; i < evBuddyMax(data); i++) {
+    const bd = list[i];
+    const on = !!(bd && bd.state === 'approved');
+    const off = !bd && i > list.length;
+    // 승인된 줄도 누구와 맺었는지는 보인다 — 줄이 둘이라 이름이 있어야 가른다
+    const ctx = bd ? [bd.partner_name ? esc(bd.partner_name) + '님' : '', on ? '' : (stateTxt[bd.state] || '')].filter(Boolean).join(' · ') : '';
+    buddyRows += `
+      <div class="evd-ctrl">
+        <label class="evd-chk${off ? ' off' : ''}"><input type="checkbox" id="evBuddyOn${i}"${on ? ' checked' : ''}${off ? ' disabled' : ''}/> 짝꿍 ${i + 1}</label>
+        ${rewardSel('evBuddyReward' + i, bd && bd.reward, off)}
+        ${ctx ? `<span class="evd-ctx">${ctx}</span>` : ''}
+      </div>`;
+  }
   const reviewCtx = (rv && rv.status !== 'approved' && rv.link && rv.link !== '(관리자 처리)')
     ? `<span class="evd-ctx"><a href="${esc(rv.link)}" target="_blank" rel="noopener" class="evd-link">후기 링크</a></span>` : '';
   return `
     <div class="ev-detail">
-      <p class="dl">🎉 이벤트 참여 <small>(관리자 직접 체크 — 할인은 잔금에 반영)</small></p>
-      <div class="evd-ctrl">
-        <label class="evd-chk"><input type="checkbox" id="evBuddyOn" ${buddyApproved ? 'checked' : ''}/> 짝꿍 참여</label>
-        ${rewardSel('evBuddyReward', bd.reward)}
-        ${buddyCtx}
-      </div>
+      <p class="dl">🎉 이벤트 참여 <small>(관리자 직접 체크 — 할인은 잔금에 반영)</small></p>${buddyRows}
       <div class="evd-ctrl">
         <label class="evd-chk"><input type="checkbox" id="evReviewOn" ${reviewApproved ? 'checked' : ''}/> 후기 참여</label>
         ${rewardSel('evReviewReward', rv && rv.reward)}
@@ -1413,11 +1428,11 @@ async function loadEventSlot(b) {
   const { data } = await sb.rpc('portal_booking_info', { p_booking_id: b.id });
   if (slot.dataset.bid !== b.id) return; // 그 사이 다른 예약 열면 무시
   slot.innerHTML = eventSlotHtml(data);
-  bindEventSlot(b);
+  bindEventSlot(b, data);
 }
 
-function bindEventSlot(b) {
-  if (!document.getElementById('evBuddyOn')) return;
+function bindEventSlot(b, data) {
+  if (!document.getElementById('evBuddyOn0')) return;
   const afterEv = async (res) => {
     if (res && res.error) { alert('처리 실패: ' + res.error.message); return; }
     const dres = await sb.rpc('admin_event_discounts');
@@ -1426,10 +1441,17 @@ function bindEventSlot(b) {
     renderDashboard();
     renderView(b);
   };
-  const applyBuddy = () => sb.rpc('admin_set_buddy', { p_booking: b.id, p_on: $('evBuddyOn').checked, p_reward: $('evBuddyReward').value }).then(afterEv);
+  // 짝꿍 줄마다 그 짝꿍 id 로 — 빈 줄을 켜면 관리자가 직접 넣는 짝꿍이 하나 생긴다
+  const list = evBuddyRows(data);
+  for (let i = 0; i < evBuddyMax(data); i++) {
+    const on = $('evBuddyOn' + i), sel = $('evBuddyReward' + i);
+    if (!on || !sel) continue;
+    const bd = list[i];
+    const apply = () => sb.rpc('admin_buddy_slot', { p_booking: b.id, p_buddy_id: bd ? bd.id : null, p_on: on.checked, p_reward: sel.value }).then(afterEv);
+    on.addEventListener('change', apply);
+    sel.addEventListener('change', () => { if (on.checked) apply(); });
+  }
   const applyReview = () => sb.rpc('admin_set_review', { p_booking: b.id, p_on: $('evReviewOn').checked, p_reward: $('evReviewReward').value }).then(afterEv);
-  $('evBuddyOn').addEventListener('change', applyBuddy);
-  $('evBuddyReward').addEventListener('change', () => { if ($('evBuddyOn').checked) applyBuddy(); });
   $('evReviewOn').addEventListener('change', applyReview);
   $('evReviewReward').addEventListener('change', () => { if ($('evReviewOn').checked) applyReview(); });
 }
