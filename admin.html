@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="admin.css?v=4125f62ab1" />
+  <link rel="stylesheet" href="admin.css?v=f75905458d" />
 </head>
 <body>
 
@@ -315,14 +315,18 @@
 
         <div id="peManage" hidden>
         <div id="tab-staff">
+          <!-- 작가 등록은 접어 둔다 (대표 2026-10-09 «작가등록은 접어놔주고») — 새 작가는 가끔이다.
+               머리를 누르면 펴진다. 화살표는 누르면 벌어질 일을 가리킨다 — 접혀 있으면 ∨ -->
           <div class="staff-add">
-            <h3>작가 등록</h3>
-            <div class="staff-add-row">
-              <input type="text" id="stName" placeholder="이름" />
-              <input type="text" id="stPhone" class="phone" placeholder="연락처" />
-              <button class="btn-primary" id="stAddBtn">추가</button>
+            <button type="button" class="staff-add-h" id="stAddToggle" aria-expanded="false" aria-controls="stAddBody">작가 등록<i aria-hidden="true"></i></button>
+            <div class="staff-add-b" id="stAddBody" hidden>
+              <div class="staff-add-row">
+                <input type="text" id="stName" placeholder="이름" />
+                <input type="text" id="stPhone" class="phone" placeholder="연락처" />
+                <button class="btn-primary" id="stAddBtn">추가</button>
+              </div>
+              <p class="staff-msg" id="stMsg"></p>
             </div>
-            <p class="staff-msg" id="stMsg"></p>
           </div>
           <div class="staff-list" id="staffList"></div>
           <p class="empty" id="staffEmpty" hidden>등록된 작가가 없습니다.</p>
@@ -500,6 +504,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=263d5af585"></script>
+  <script src="admin.js?v=34e1632bc4"></script>
 </body>
 </html>

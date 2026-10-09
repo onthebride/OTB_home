@@ -388,17 +388,7 @@ html.no-pull, html.no-pull body { overscroll-behavior: none; }
   .cal-cell { padding: 3px; }
   .cal-d { font-size: .7rem; }
 
-  /* 작가관리 — 폰에서는 세 줄로 (대표 «모바일이 영 정리정돈이 안되네», 2026-08-28).
-     ① 접속·이름·연락처  ② 색·자동색·메인·서브·대표·활성  ③ 📅·📋 … 저장·삭제 */
-  .staff-item { flex-direction: column; align-items: stretch; gap: 8px; }
-  .staff-item .st-r1, .staff-item .st-r2, .staff-item .st-r3 {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
-  .staff-item input.st-name { flex: 1 1 34%; width: auto; }
-  .staff-item input.st-phone { flex: 1 1 46%; width: auto; }
-  /* 넓은 화면에서 오른쪽으로 밀던 것을 푼다 — 폰에서는 제 줄의 맨 앞이다 */
-  .staff-item .st-color-wrap { margin-left: 0; }
-  /* 저장·삭제는 오른쪽 끝으로. 그림 단추는 왼쪽에 남는다 */
-  .staff-item .st-r3 .st-save { margin-left: auto; }
+  /* 작가관리 폰 모양은 여기 두지 않는다 — 파일 뒤쪽 「작가 관리 — 좁은 화면」 에 있다 (2026-10-09 옮김) */
 }
 
 /* ===== Dashboard ===== */
@@ -721,8 +711,17 @@ td .muted { color: var(--ink-soft); }
 }
 
 /* 담당자 관리 */
-.staff-add { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 18px; margin-bottom: 16px; }
-.staff-add h3 { font-size: 1rem; margin-bottom: 12px; }
+.staff-add { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; margin-bottom: 16px; }
+/* 「작가 등록」 머리 = 접기 단추 (대표 2026-10-09 «작가등록은 접어놔주고»). 단추 바탕·테두리·글꼴을 벗긴다 */
+.staff-add-h { width: 100%; display: flex; align-items: center; gap: 8px; margin: 0; padding: 2px 0;
+  background: none; border: none; border-radius: 0; cursor: pointer; text-align: left;
+  font: inherit; font-size: 1rem; font-weight: 700; color: var(--ink); -webkit-appearance: none; appearance: none; }
+/* 접기 화살표 — 선 두 개로 그린다. 「누르면 벌어질 일」: 접혀 있으면 ∨(펴진다) · 펴 있으면 ∧(접힌다) */
+.staff-add-h > i { flex: 0 0 auto; margin-left: auto; width: 8px; height: 8px;
+  border-right: 1.5px solid var(--ink-soft); border-bottom: 1.5px solid var(--ink-soft);
+  transform: translateY(-2px) rotate(45deg); transition: transform .18s ease; }
+.staff-add-h[aria-expanded="true"] > i { transform: translateY(2px) rotate(-135deg); }
+.staff-add-b { margin-top: 12px; }
 .staff-add-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .staff-add-row input { border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font-size: .9rem; background: var(--cream); }
 .staff-add-row input:focus { outline: none; border-color: var(--gold); background: #fff; }
@@ -1784,6 +1783,30 @@ td .muted { color: var(--ink-soft); }
   width: 30px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: 6px;
   background: #fff; font-size: .95rem; line-height: 1; cursor: pointer; text-decoration: none; }
 .btn-ic:hover { border-color: var(--gold); background: #faf5ec; }
+
+/* ── 작가 관리 — 좁은 화면 (대표 2026-10-09 «아래 작가 목록들 모바일에서 보면 … 영보기가 애매하네»,
+   앞서 2026-08-28 «모바일이 영 정리정돈이 안되네»). 작가 한 분을 세 줄로:
+     ① 접속·이름·연락처 — 칸이 줄을 꽉 채운다
+     ② 메인·서브·대표·활성 … 색은 오른쪽 끝
+     ③ 📅·📋 … 저장·삭제는 오른쪽 끝
+   ⚠⚠ 이 묶음은 **넓은 화면 규칙들보다 뒤에** 있어야 한다. 8/28 에는 파일 앞쪽 600px 공용 묶음에 두었더니
+     뒤에 오는 넓은 화면 규칙(줄 가운데 맞춤 · 이름·번호 고정 너비)이 같은 무게라 **통째로 이겼다** —
+     폰에서 줄마다 가운데로 몰리고 칸이 안 찼다. 한 번도 안 먹은 채로 6주를 갔다 (시험은 글자만 보고 있었다).
+   ⚠ 900px 까지 — 한 줄로 늘어선 넓은 모양은 900px 쯤 아래에서 아무 데서나 접힌다 (올리기 전 점검 ①) */
+@media (max-width: 900px) {
+  .staff-item { flex-direction: column; align-items: stretch; gap: 8px; }
+  .staff-item .st-r1, .staff-item .st-r2, .staff-item .st-r3 {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+  .staff-item input.st-name { flex: 1 1 0; width: auto; max-width: 220px; }
+  .staff-item input.st-phone { flex: 1.35 1 0; width: auto; max-width: 260px; }
+  /* 색은 둘째 줄 오른쪽 끝으로 — 메인·서브·대표·활성이 줄 앞에 가지런히 선다 */
+  .staff-item .st-r2 .st-color-wrap { order: 9; margin-left: auto; }
+  /* 저장·삭제는 오른쪽 끝으로. 그림 단추는 왼쪽에 남는다 */
+  .staff-item .st-r3 .st-save { margin-left: auto; }
+  /* 작가 등록 — 이름·연락처가 한 줄을 나눠 쓰고 추가는 끝에 */
+  .staff-add-row input { flex: 1 1 0; min-width: 0; max-width: 240px; }
+  .staff-add-row .btn-primary { flex: 0 0 auto; padding: 9px 16px; }
+}
 
 /* ── 작가 감점 (대표 요청 2026-08-28) ── */
 .pen-nows { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 2px; }

@@ -3560,6 +3560,19 @@ function renderStaff() {
     })
   );
 }
+/* ===== 작가 등록 접기 (대표 2026-10-09 «작가등록은 접어놔주고») =====
+   새 작가는 가끔이다 — 평소엔 머리 한 줄만 보이고 누르면 펴진다. 펴면 이름 칸에 바로 쓴다.
+   화살표는 누르면 벌어질 일: 접혀 있으면 ∨ · 펴 있으면 ∧ (aria-expanded 를 보고 CSS 가 돌린다) */
+function toggleStaffAdd() {
+  const btn = $('stAddToggle');
+  const body = $('stAddBody');
+  if (!btn || !body) return;
+  const open = body.hidden;            // 지금 접혀 있으면 → 편다
+  body.hidden = !open;
+  btn.setAttribute('aria-expanded', String(open));
+  if (open && $('stName')) $('stName').focus();
+}
+if ($('stAddToggle')) $('stAddToggle').addEventListener('click', toggleStaffAdd);
 if ($('stAddBtn')) {
   $('stAddBtn').addEventListener('click', async () => {
     const name = $('stName').value.trim();
