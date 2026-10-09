@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="admin.css?v=26b5bee7bf" />
+  <link rel="stylesheet" href="admin.css?v=4125f62ab1" />
 </head>
 <body>
 
@@ -68,6 +68,18 @@
       </div>
 
       <div id="tab-dashboard">
+        <!-- 📸 오늘 예식 (대표 2026-10-09 «관리자 홈에 오늘 예식 정보를 띄워줬음 좋겠엉»).
+             맨 위에 둔다 — 예식 날 아침에 「오늘 누가 어디로 가나」 를 먼저 본다.
+             예식이 없는 날은 통째로 접는다 (renderToday 에서 hidden).
+             머리 전체가 접기 단추다. 화살표는 누르면 벌어질 일을 가리킨다 — 펴 있으면 ∧ -->
+        <div class="dash-card" id="card-today" hidden>
+          <button type="button" class="tdy-head" id="todayToggle" aria-expanded="true" aria-controls="listToday">
+            <span class="tdy-h">📸 오늘 예식 <small id="todayDate"></small></span>
+            <span class="dash-count" id="dcToday">0</span><i aria-hidden="true"></i>
+          </button>
+          <div class="tdy-list" id="listToday"></div>
+        </div>
+
         <!-- 이벤트는 탭을 없애고 홈으로 옮겼다 (대표 요청 2026-08-24).
              챙길 게 없으면 통째로 접어 둔다 — 홈이 지저분해지지 않게 -->
         <div class="dash-card" id="card-events" hidden>
@@ -488,6 +500,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=a612c9fa21"></script>
+  <script src="admin.js?v=263d5af585"></script>
 </body>
 </html>

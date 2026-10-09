@@ -2136,10 +2136,105 @@ async function dismissAllReminders() {
 }
 if ($('remDismissAll')) $('remDismissAll').addEventListener('click', dismissAllReminders);
 
+/* ===== 📸 오늘 예식 (대표 2026-10-09 «관리자 홈에 오늘 예식 정보를 띄워줬음 좋겠엉») =====
+   예식 날 아침에 「오늘 누가 어디로 가나」 를 홈 맨 위에서 본다.
+   「다가오는 예식」 에도 오늘 것이 있지만, 폰에서는 왼쪽 칸(신규·미입금·작가비·미확인) 밑으로
+   밀려 한참 내려가야 보였다.
+   · 고르는 기준은 캘린더·날짜 카드와 같다 (dayItems — 취소 아님 + 계약금 확인).
+     기준이 둘이면 캘린더의 「4건」 과 여기 숫자가 어긋난다
+   · 번호는 눌러서 바로 건다. 이름 옆에 번호 — 작가 캘린더 예식 줄과 같은 모양
+     (대표 «신랑 박종석 연락처 / 이름옆에 연락처오게»). 작가 번호도 적는다 —
+     「작가님이 안 보여요」 전화를 받으면 제일 먼저 거는 번호다
+   · 예식이 없는 날은 카드를 통째로 접는다 (이벤트·작가비 카드와 같다)
+   · 머리를 누르면 접힌다. 접은 것은 **그날만** 기억한다 — 다음 예식 날 아침엔 펴져 있어야 한다
+   ⚠ 폰에 켜 둔 채 날이 바뀌면 어제 것이 「오늘」 로 남는다. 머리에 날짜를 적고,
+     돌아왔을 때 날이 바뀌었으면 새로 받는다 (파일 맨 아래) */
+const TODAY_SHUT_KEY = 'otb_today_shut';
+let todayDrawn = '';      // 마지막으로 그린 날 YYYY-MM-DD
+let todayShutDay = (() => { try { return localStorage.getItem(TODAY_SHUT_KEY) || ''; } catch (_) { return ''; } })();
+const dayKeyOf = (d) => `${d.getFullYear()}-${dPad(d.getMonth() + 1)}-${dPad(d.getDate())}`;
+const todayStale = () => !!todayDrawn && todayDrawn !== dayKeyOf(startOfToday());
+
+function renderToday() {
+  const card = $('card-today');
+  const box = $('listToday');
+  if (!card || !box) return;
+  const t = startOfToday();
+  todayDrawn = dayKeyOf(t);
+  const items = dayItems(t.getFullYear(), t.getMonth(), t.getDate());
+  card.hidden = items.length === 0;
+  if ($('dcToday')) $('dcToday').textContent = items.length;
+  if ($('todayDate')) $('todayDate').textContent = `${ymdDot(t)}(${WD[t.getDay()]})`;
+  const shut = todayShutDay === todayDrawn;
+  if ($('todayToggle')) $('todayToggle').setAttribute('aria-expanded', String(!shut));
+  box.hidden = shut;
+  if (!items.length) { box.innerHTML = ''; return; }
+
+  /* 거는 쪽은 숫자만, 보이는 쪽은 하이픈을 넣어. 번호가 없으면 아무것도 안 붙인다.
+     ⚠ 앞의 띄어쓰기 하나가 「여기서는 줄을 바꿔도 된다」 는 자리다. 이름(tdy-n)은 통째로 붙여 두고,
+       폰에서 모자라면 번호만 아랫줄로 내려간다 — 이름이 가운데서 잘리면 못 읽는다 */
+  const tel = (p) => {
+    const dial = String(p || '').replace(/[^0-9+]/g, '');
+    return dial ? ` <a class="tdy-tel" href="tel:${esc(dial)}">${esc(fmtPhone(p))}</a>` : '';
+  };
+  const guest = (role, name, phone) => (name && String(name).trim()
+    ? `<span class="tdy-p"><span class="tdy-n"><i>${role}</i>${esc(name)}</span>${tel(phone)}</span>` : '');
+  // 작가는 딱지 색을 달리한다 — 손님 번호와 작가 번호를 헷갈려 걸면 안 된다
+  const crewOf = (role, id) => {
+    if (!id) return `<span class="tdy-p staff"><span class="tdy-n"><i>${role}</i><span class="dchip warn">미배정</span></span></span>`;
+    const s = staffMap[id];
+    return `<span class="tdy-p staff"><span class="tdy-n"><i>${role}</i><b style="color:${staffColor(id)}">● ${
+      esc(s ? s.name : '(알 수 없는 작가)')}</b></span>${tel(s && s.phone)}</span>`;
+  };
+  // 옵션 딱지 — 2인은 그날 판이 제일 크게 달라지고, 지정은 돈을 받은 약속이다
+  // ⚠ 직접 넣은 옵션 이름이 글자가 아닐 수도 있다 (jsonb) — String 으로 감싸 본다
+  const optCls = (o) => (o === '2인' ? ' two'
+    : (o === '지정' || o === '대표지정') ? ' pin'
+    : String(o).indexOf('지정 ') === 0 ? ' pinx' : '');
+
+  box.innerHTML = items.map((b) => {
+    // 서브는 2인 촬영일 때만. 옵션을 되돌린 자국으로 서브가 남아 있어도 안 보인다 (다가오는 예식과 같다)
+    const crew = crewOf('메인', b.assignee_id)
+      + (b.photographer === '2인 촬영' ? crewOf('서브', b.sub_assignee_id) : '');
+    // 신랑·신부가 비어 있는 옛 예약은 계약자로 (날짜 카드와 같은 규칙)
+    const couple = guest('신랑', b.groom_name, b.groom_phone) + guest('신부', b.bride_name, b.bride_phone)
+      || guest('계약자', b.contractor_name || '-', b.contractor_phone);
+    const pkg = b.package ? String(b.package).replace('(데이터형)', '') : '';
+    const opts = bookingOpts(b);
+    const venue = String(b.wedding_venue || '').trim();
+    const foot = (pkg ? `<b>${esc(pkg)}</b>` : '')
+      + opts.map((o) => `<span class="tdy-opt${optCls(o)}">${esc(o)}</span>`).join('')
+      + (b.balance_paid ? '' : '<span class="dchip bal">잔금 미입금</span>');
+    return `<div class="tdy-row" data-id="${esc(b.id)}">
+      <p class="tdy-v"><b class="tdy-time">${esc(kTimeShort(b.wedding_time) || '시간 미정')}</b>${esc(venue || '-')}${venue
+        ? `<a class="tdy-map" href="https://map.naver.com/p/search/${esc(encodeURIComponent(venue))}" target="_blank" rel="noopener">길찾기</a>`
+        : ''}</p>
+      <div class="tdy-ppl"><div class="tdy-grp">${crew}</div><div class="tdy-grp">${couple}</div></div>
+      ${foot ? `<div class="tdy-foot">${foot}</div>` : ''}
+    </div>`;
+  }).join('');
+  box.querySelectorAll('.tdy-row').forEach((row) => row.addEventListener('click', (e) => {
+    if (e.target.closest('a')) return;       // 번호·길찾기는 제 일만 한다 — 상세를 같이 열지 않는다
+    openDetail(row.dataset.id);
+  }));
+}
+function toggleToday() {
+  const shut = todayShutDay !== todayDrawn;  // 지금 펴 있으면 → 접는다
+  todayShutDay = shut ? todayDrawn : '';
+  try {
+    if (shut) localStorage.setItem(TODAY_SHUT_KEY, todayDrawn);
+    else localStorage.removeItem(TODAY_SHUT_KEY);
+  } catch (_) { /* 저장이 막힌 기기도 이번 화면에서는 접힌다 */ }
+  renderToday();
+}
+if ($('todayToggle')) $('todayToggle').addEventListener('click', toggleToday);
+
 function renderDashboard() {
   if (!$('tab-dashboard')) return;
   renderAtkFail();
   renderHomeStats();          // 홈의 「한눈에」 — 늦게 와도 되니 기다리지 않는다
+  // 맨 위 「📸 오늘 예식」. ⚠ 여기서 터져도 아래 카드(신규·미입금·작가비…)는 그려져야 한다
+  try { renderToday(); } catch (e) { console.error('오늘 예식', e); }
   const today = startOfToday();
 
   // 🔔 신규 예약 (계약안내 보내기 전)
@@ -6926,3 +7021,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') expireConf();
 });
 window.addEventListener('pageshow', (e) => { if (e.persisted) expireConf(); });
+/* 📸 오늘 예식 — 켜 둔 채 날이 바뀌었으면 새로 받는다 (어제 예식이 「오늘」 로 남지 않게) */
+const todayWake = () => { if (todayStale()) loadBookings(); };
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') todayWake(); });
+window.addEventListener('pageshow', (e) => { if (e.persisted) todayWake(); });

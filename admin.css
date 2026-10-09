@@ -431,6 +431,57 @@ html.no-pull, html.no-pull body { overscroll-behavior: none; }
 .sched-tabs .stab .dash-count { margin-left: 2px; }
 .dash-empty { color: var(--ink-soft); font-size: .86rem; padding: 14px 4px; }
 
+/* 📸 오늘 예식 — 홈 맨 위 (대표 2026-10-09 «관리자 홈에 오늘 예식 정보를 띄워줬음 좋겠엉»).
+   작가 캘린더 예식 줄과 같은 결이다 — 이름 옆에 번호, 신랑·신부 딱지는 작고 얇게.
+   ⚠ 사람 넷(메인·서브·신랑·신부)을 한 flex 에 두면 폰에서 아무 데서나 접힌다.
+     작가 묶음 · 손님 묶음 둘로 나누고 한 줄에 한 사람씩. 넓은 화면만 두 묶음을 나란히 (올리기 전 점검 ①) */
+.tdy-head { width: 100%; display: flex; align-items: center; gap: 8px; margin: 0; padding: 0;
+  background: none; border: none; border-radius: 0; cursor: pointer; text-align: left;
+  color: var(--ink); font: inherit; -webkit-appearance: none; appearance: none; }
+.tdy-h { margin-right: auto; min-width: 0; font-size: 1rem; font-weight: 700; }
+.tdy-h small { margin-left: 4px; font-weight: 400; font-size: .76rem; color: var(--ink-soft); }
+/* 접기 화살표 — 선 두 개로 그린다 (글자 ∨∧ 는 글꼴마다 모양이 다르다).
+   「지금 상태」 가 아니라 「누르면 벌어질 일」: 펴 있으면 ∧(접힌다) · 접혀 있으면 ∨(펴진다) */
+.tdy-head > i { flex: 0 0 auto; width: 8px; height: 8px; margin: 0 4px 0 6px;
+  border-right: 1.5px solid var(--ink-soft); border-bottom: 1.5px solid var(--ink-soft);
+  transform: translateY(2px) rotate(-135deg); transition: transform .18s ease; }
+.tdy-head[aria-expanded="false"] > i { transform: translateY(-2px) rotate(45deg); }
+.tdy-list { margin-top: 10px; }
+.tdy-row { padding: 12px 4px; border-top: 1px solid var(--line); cursor: pointer; }
+.tdy-row:first-child { border-top: none; padding-top: 4px; }
+.tdy-row:hover { background: #faf7f2; }
+.tdy-v { font-size: .92rem; font-weight: 600; line-height: 1.6; overflow-wrap: anywhere; }
+.tdy-time { margin-right: 8px; font-weight: 700; color: var(--gold-deep); white-space: nowrap; }
+.tdy-map { margin-left: 8px; font-size: .76rem; font-weight: 400; color: var(--gold-deep);
+  text-decoration: none; white-space: nowrap; }
+.tdy-map:hover { text-decoration: underline; }
+/* 넓은 화면 — 작가 | 신랑·신부. 칸을 반씩 나누면 손님 칸이 카드 한가운데로 멀리 떨어진다.
+   작가 칸은 너비를 박아 둔다 — 글자만큼 잡으면 예식마다 손님 칸 자리가 달라 줄이 안 맞는다.
+   모자라면 줄어든다 (minmax(0, …)) — 그때는 번호만 아랫줄로 */
+.tdy-ppl { margin-top: 6px; display: grid; grid-template-columns: minmax(0, 260px) minmax(0, max-content);
+  justify-content: start; gap: 3px 32px; }
+.tdy-grp { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.tdy-p { font-size: .84rem; line-height: 1.6; color: var(--ink); }
+.tdy-n { white-space: nowrap; }
+.tdy-p i { font-style: normal; margin-right: 6px; font-size: .74rem; color: var(--ink-soft); }
+/* 작가 딱지는 금색 — 신랑·신부 번호와 갈라 보여야 한다 (작가 캘린더의 동료 줄과 같다) */
+.tdy-p.staff i { color: var(--gold-deep); font-weight: 600; }
+.tdy-p b { font-weight: 600; }
+.tdy-tel { margin-left: 4px; padding: 2px 0; color: inherit; font-weight: 500; white-space: nowrap;
+  text-decoration: underline; text-underline-offset: 2px; }
+.tdy-foot { margin-top: 7px; display: flex; flex-wrap: wrap; align-items: center; gap: 5px 6px; }
+.tdy-foot > b { margin-right: 2px; font-size: .8rem; font-weight: 700; }
+.tdy-opt { font-size: .72rem; font-weight: 500; color: var(--ink-soft); background: var(--cream);
+  border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+.tdy-opt.two { color: var(--gold-deep); border-color: var(--gold); background: #fdf8f0; font-weight: 600; }
+.tdy-opt.pin { color: #97743f; border-color: #ead3bb; background: #f3e3d2; font-weight: 600; }
+.tdy-opt.pinx { color: #b4372f; border-color: #f0c4c0; background: #fbe1df; font-weight: 600; }
+/* 잔금 미입금은 줄 오른쪽 끝 — 예식 날 받아야 할 돈이다 */
+.tdy-foot .dchip { margin-left: auto; }
+@media (max-width: 600px) {
+  .tdy-ppl { grid-template-columns: minmax(0, 1fr); }
+}
+
 .dl-item { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: #fff; }
 .dl-item.soon { border-color: var(--gold); background: #fdf8f0; }
 .dl-item.overdue { border-color: #d9b3aa; background: #fcf3f1; }
