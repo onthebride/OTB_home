@@ -8,6 +8,7 @@ updated: 2026-09-22
 tags: 온더브라이드, 영상, 본식스냅
 video: https://youtu.be/fFVWnVIX1CE
 video_cap: 온더브라이드 대표 인사 영상입니다.
+video_date: 2026-09-18T08:40:27+09:00
 summary: 온더브라이드 대표가 영상으로 처음 인사드립니다. 앞으로 영상도 하나씩 올리겠습니다.
 ---
 

@@ -97,6 +97,21 @@ function isoDur(s) {
   const [h, m, sec] = p.length === 3 ? p : [0, p[0] || 0, p[1] || 0];
   return 'PT' + (h ? h + 'H' : '') + (m ? m + 'M' : '') + (sec ? sec + 'S' : '');
 }
+/* 영상 올린 때(uploadDate) — 구글은 「날짜 + 시각 + 시간대」 를 원한다 (2026-10-10).
+   서치 콘솔이 대표께 「datetime 속성(uploadDate)에 시간대가 누락됨 · datetime 값이 잘못됨」 메일을 보냈다.
+   날짜만(2026-10-06) 적어 내보내서다.
+   · 2026-10-06T20:36:30+09:00 처럼 다 적었으면 그대로
+   · 시간대가 없으면(2026-10-06T20:36:30) 서울(+09:00)을 붙인다
+   · 날짜만 있으면 그날 0시 서울로 — 모르는 시각을 지어내지 않는다
+   · 그 밖의 모양이면 **짓기를 멈춘다.** 깨진 값을 내보내면 또 경고가 온다
+   ⚠ 진짜 올린 때는 유튜브 watch 페이지의 uploadDate 에 있다. video_date 에 서울 시각으로 옮겨 적는다 */
+function isoDateTime(s, what) {
+  const v = String(s || '').trim();
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(Z|[+-]\d{2}:\d{2})$/.test(v)) return v;
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(v)) return v + '+09:00';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v + 'T00:00:00+09:00';
+  throw new Error(`${what}: 날짜 모양이 이상합니다 — 「${v}」 (예: 2026-10-06 또는 2026-10-06T20:36:30+09:00)`);
+}
 
 // ---- 인라인 마크다운 -------------------------------------------
 function inline(t) {
@@ -276,7 +291,7 @@ function renderPost(post, allPosts) {
     name: post.videoName || post.title,
     description: post.videoCap || post.description,
     thumbnailUrl: [`https://i.ytimg.com/vi/${post.videoId}/maxresdefault.jpg`],
-    uploadDate: post.videoDate || post.date,
+    uploadDate: isoDateTime(post.videoDate || post.date, post.slug + ' 의 video_date'),
     embedUrl: `https://www.youtube-nocookie.com/embed/${post.videoId}`,
     contentUrl: `https://www.youtube.com/watch?v=${post.videoId}`,
     publisher: { '@type': 'Organization', name: SITE.brand, logo: { '@type': 'ImageObject', url: abs(SITE.logo) } },
