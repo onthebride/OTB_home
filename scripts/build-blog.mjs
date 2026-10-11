@@ -25,7 +25,12 @@ const SITE = {
   blogName: '온더브라이드 블로그',
   tagline: '본식스냅 정보와 웨딩 준비 가이드',
   logo: '/assets/logo-black.png',
-  ogDefault: '/assets/logo-black.png',
+  /* 링크 미리보기 그림 (대표 2026-10-11 «쓰레드 … 링크 걸면 사진이 안나오고 로고가 잘려서 나오는데»).
+     로고는 가로로 너무 길어(1010×219) 쓰레드·카톡이 칸에 맞춰 잘랐다. 자기 cover 가 없는 글은 이 사진을 쓴다.
+     ⚠ 그림을 바꾸면 파일 이름도 바꾼다 — 쓰레드·페이스북·카톡은 그림 주소로 기억한다 */
+  ogDefault: '/assets/og/onthebride-202610.jpg',
+  ogDefaultSize: [1200, 630],
+  ogDefaultAlt: '스테인드글라스 창 아래의 신랑·신부 — 온더브라이드 본식스냅',
   locale: 'ko_KR',
   instagram: 'https://www.instagram.com/onthebride/',
   email: 'onthebride@naver.com',
@@ -227,6 +232,10 @@ function siteFooter() {
 }
 function headCommon({ title, description, canonical, image, type = 'website', published, modified }) {
   const img = abs(image || SITE.ogDefault);
+  // 기본 그림은 크기를 안다 — 적어 두면 처음 거는 사람에게도 그림이 바로 뜬다 (메타 안내). cover 는 크기를 몰라 안 적는다
+  const imgMeta = image ? '' : `\n  <meta property="og:image:width" content="${SITE.ogDefaultSize[0]}" />` +
+    `\n  <meta property="og:image:height" content="${SITE.ogDefaultSize[1]}" />` +
+    `\n  <meta property="og:image:alt" content="${attr(SITE.ogDefaultAlt)}" />`;
   return `  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${esc(title)}</title>
@@ -240,7 +249,7 @@ function headCommon({ title, description, canonical, image, type = 'website', pu
   <meta property="og:title" content="${attr(title)}" />
   <meta property="og:description" content="${attr(description)}" />
   <meta property="og:url" content="${attr(canonical)}" />
-  <meta property="og:image" content="${attr(img)}" />${published ? `\n  <meta property="article:published_time" content="${attr(published)}" />` : ''}${modified ? `\n  <meta property="article:modified_time" content="${attr(modified)}" />` : ''}
+  <meta property="og:image" content="${attr(img)}" />${imgMeta}${published ? `\n  <meta property="article:published_time" content="${attr(published)}" />` : ''}${modified ? `\n  <meta property="article:modified_time" content="${attr(modified)}" />` : ''}
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${attr(title)}" />
   <meta name="twitter:description" content="${attr(description)}" />
