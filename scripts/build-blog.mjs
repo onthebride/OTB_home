@@ -27,8 +27,9 @@ const SITE = {
   logo: '/assets/logo-black.png',
   /* 링크 미리보기 그림 (대표 2026-10-11 «쓰레드 … 링크 걸면 사진이 안나오고 로고가 잘려서 나오는데»).
      로고는 가로로 너무 길어(1010×219) 쓰레드·카톡이 칸에 맞춰 잘랐다. 자기 cover 가 없는 글은 이 사진을 쓴다.
+     카톡은 가로 2.31:1 로 가운데만 보여 위아래 55px 씩 잘린다(10/12 대표 «로고가 쪼끔 짤리네») — 로고는 그 안쪽.
      ⚠ 그림을 바꾸면 파일 이름도 바꾼다 — 쓰레드·페이스북·카톡은 그림 주소로 기억한다 */
-  ogDefault: '/assets/og/onthebride-202610.jpg',
+  ogDefault: '/assets/og/onthebride-20261012.jpg',
   ogDefaultSize: [1200, 630],
   ogDefaultAlt: '스테인드글라스 창 아래의 신랑·신부 — 온더브라이드 본식스냅',
   locale: 'ko_KR',
