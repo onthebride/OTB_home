@@ -108,6 +108,10 @@
 
             <div class="dash-card" id="card-unpaid">
               <div class="dash-card-head"><h3>💳 미입금</h3><span class="dash-count" id="dcUnpaid">0</span></div>
+              <!-- 계약금·잔금 단추는 목록 바깥에 둔다 — 늘 보인다 (대표 2026-10-12 «계약금 잔금은 고정되게 해줘
+                   스크롤내리면 카드들이 잔금인지 계약금인지 알기가 어렵네»). 목록 칸은 360px 를 넘으면 그 안에서
+                   굴러간다. 단추가 목록 안 맨 위에 있을 때는 내리면 같이 올라가 사라졌다 -->
+              <div class="unpaid-tabs" id="unpaidTabs"></div>
               <div class="dash-list" id="listUnpaid"></div>
             </div>
 
@@ -504,6 +508,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="admin.js?v=34e1632bc4"></script>
+  <script src="admin.js?v=b164e8e723"></script>
 </body>
 </html>

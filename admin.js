@@ -2342,14 +2342,14 @@ function renderDashboard() {
   if (activeTab === 'deposit' && depUnpaid.length === 0 && balUnpaid.length > 0) activeTab = 'balance';
   else if (activeTab === 'balance' && balUnpaid.length === 0 && depUnpaid.length > 0) activeTab = 'deposit';
   const activeUnpaid = activeTab === 'balance' ? balUnpaid : depUnpaid;
-  $('listUnpaid').innerHTML =
-    `<div class="unpaid-tabs">
-      <button class="upt${activeTab === 'deposit' ? ' active' : ''}" data-upt="deposit">계약금 ${depUnpaid.length}</button>
-      <button class="upt${activeTab === 'balance' ? ' active' : ''}" data-upt="balance">잔금 ${balUnpaid.length}</button>
-    </div>` +
-    (activeUnpaid.length
-      ? activeUnpaid.slice(0, 40).map((b) => unpaidItem(b, activeTab)).join('')
-      : '<p class="dash-empty sm">없음</p>');
+  // 단추는 목록 바깥 칸에 그린다 — 목록이 그 안에서 굴러가도 늘 보인다
+  // (대표 2026-10-12 «계약금 잔금은 고정되게 해줘 스크롤내리면 카드들이 잔금인지 계약금인지 알기가 어렵네»)
+  $('unpaidTabs').innerHTML =
+    `<button class="upt${activeTab === 'deposit' ? ' active' : ''}" data-upt="deposit">계약금 ${depUnpaid.length}</button>
+    <button class="upt${activeTab === 'balance' ? ' active' : ''}" data-upt="balance">잔금 ${balUnpaid.length}</button>`;
+  $('listUnpaid').innerHTML = activeUnpaid.length
+    ? activeUnpaid.slice(0, 40).map((b) => unpaidItem(b, activeTab)).join('')
+    : '<p class="dash-empty sm">없음</p>';
 
   // ⬇️ 다운로드 링크 필요 (예식 당일·이후 + E 미발송)
   const endToday = new Date(today); endToday.setHours(23, 59, 59, 999);
@@ -2473,8 +2473,9 @@ function renderDashboard() {
 
 function bindDashEvents() {
   // 미입금 탭(계약금/잔금)
-  document.querySelectorAll('#listUnpaid .upt').forEach((btn) =>
-    btn.addEventListener('click', () => { unpaidTab = btn.dataset.upt; renderDashboard(); })
+  // 단추는 목록 바깥 칸에 있다. 바꾸면 새 목록을 맨 위부터 보인다 — 내려 둔 자리가 남으면 첫 줄을 못 본다
+  document.querySelectorAll('#unpaidTabs .upt').forEach((btn) =>
+    btn.addEventListener('click', () => { unpaidTab = btn.dataset.upt; renderDashboard(); $('listUnpaid').scrollTop = 0; })
   );
   /* 「메인 체크」·「서브 체크」 단추는 뺐다 (대표 2026-08-31
      «다가오는 예식 체크 버튼은 필요없는거 같고 공유만 하나 넣어줘»).
