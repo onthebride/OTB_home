@@ -256,21 +256,12 @@ a { color: inherit; text-decoration: none; }
 
 /* ===== Gallery ===== */
 .gallery { background: var(--cream); }
-.ig-handle {
-  display: inline-block; margin-top: 16px; font-family: var(--serif);
-  font-size: 1.3rem; font-weight: 600; letter-spacing: .05em; color: var(--gold-deep);
-  border-bottom: 1px solid var(--gold); padding-bottom: 2px;
-}
 .gallery-grid {
   display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 56px;
 }
 .g-item { position: relative; overflow: hidden; border-radius: var(--radius); aspect-ratio: 3/4; background: #e3d9cc; }
 .g-item img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s ease; }
 .g-item:hover img { transform: scale(1.07); }
-
-/* Gallery — Instagram embed (SnapWidget) */
-.gallery-embed { margin-bottom: 48px; }
-.gallery-embed iframe { display: block; width: 100%; }
 
 /* Gallery — custom (tags + 4-col square + lightbox) */
 .gallery-tags { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-content: flex-start; max-height: 88px; overflow: hidden; margin-bottom: 30px; }
@@ -299,16 +290,6 @@ a { color: inherit; text-decoration: none; }
 .gpg:hover:not(:disabled) { border-color: var(--gold); color: var(--gold-deep); }
 .gpg.active { background: var(--ink); color: #fff; border-color: var(--ink); }
 .gpg:disabled { opacity: .35; cursor: default; }
-
-/* Instagram one-row strip */
-.ig-strip { text-align: center; margin-top: 56px; padding-top: 36px; border-top: 1px solid var(--line); }
-.ig-strip .ig-handle { margin-top: 0; margin-bottom: 18px; }
-.ig-strip-frame { border-radius: var(--radius); overflow: hidden; max-width: 1120px; margin: 0 auto; }
-.ig-mobile-btn { display: none; }
-@media (max-width: 860px) {
-  .ig-strip-frame { display: none; }
-  .ig-mobile-btn { display: block; width: fit-content; margin: 6px auto 0; }
-}
 
 /* Lightbox */
 .lightbox { position: fixed; inset: 0; z-index: 120; display: flex; align-items: center; justify-content: center; }

@@ -1148,21 +1148,3 @@ function whenNear(el, margin) {
     else if (e.key === 'ArrowRight') show(curIdx + 1, 1);
   });
 })();
-
-
-// 인스타 위젯(snapwidget)은 22KB 에 468ms 나 걸린다. 갤러리 맨 아래에 있으니
-// 거기까지 내려왔을 때 부른다. 첫 화면에는 아무 영향도 주지 않는다.
-(async function initIgStrip() {
-  const strip = document.querySelector('.ig-strip');
-  if (!strip) return;
-  await whenNear(strip, '600px');
-  const f = strip.querySelector('iframe');
-  if (f && f.dataset.src && !f.src) f.src = f.dataset.src;
-  if (!document.querySelector('script[data-snapwidget]')) {
-    const s = document.createElement('script');
-    s.src = 'https://snapwidget.com/js/snapwidget.js';
-    s.async = true;
-    s.dataset.snapwidget = '1';
-    document.body.appendChild(s);
-  }
-})();
