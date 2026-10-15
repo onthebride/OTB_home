@@ -242,7 +242,7 @@ async function loadBookings() {
     sb.rpc('admin_survey_ids'),       // 설문 제출 여부
     sb.rpc('admin_unconfirmed'),      // 작가 미확인
     sb.rpc('admin_event_discounts'),  // 이벤트 할인
-    sb.rpc('admin_alimtalk_log'),     // 알림톡 발송 내역
+    sb.rpc('admin_alimtalk_log'),     // 알림톡 발송 실패 (성공은 안 온다)
     sb.rpc('admin_reminders_list'),   // 할 일 리마인더
     sb.rpc('admin_pricing_list'),     // 상품·옵션 카탈로그
     sb.rpc('admin_send_hold_state'),  // 작가 톡을 오늘 막아뒀나
@@ -1922,10 +1922,13 @@ const ATK_FAIL_NAME = { A: '계약안내', B: '한달전', C: '일주일전·잔
 const atkName = (t) => ATK_FAIL_NAME[t] || ('알림톡 ' + (t || '?'));
 const ATK_FAILCODE = { '3101': '발신프로필 오류', '3102': '카카오채널 친구 아님', '3103': '템플릿 불일치', '3104': '카카오톡 미사용자(번호 오류 등)', '3105': '미등록 템플릿', '3106': '메시지 타입 오류', '3107': '비활성/수신차단', '3108': '발송가능시간 외(08~20시)' };
 const atkFailReason = (code) => (code ? (ATK_FAILCODE[code] || ('전달실패 코드 ' + code)) : '전달 실패');
+/* 이 칸에는 **실패만** 온다 (대표 2026-10-15 «알림톡 발송 성공여부는 내부적으로 판단하고 실패 하는것만 알려줘»).
+   성공(completed)은 서버가 거른다 — admin_alimtalk_log (20261015a).
+   sent·delivered 가 오면 「보낸 지 1시간이 넘도록 결과가 안 온 것」 이다. 평소엔 3분 안에 갈린다.
+   ⚠ 그건 실제로 갔을 수도 있다 — 「다시 보내기」 를 달지 않는다 (두 번 받으시게 된다) */
 const ATK_STATUS = (s) => ({
-  completed: '<span style="color:#2f7d4f;font-weight:600">✅ 성공</span>',
-  delivered: '<span style="color:#8a7a52;font-weight:600">📨 확인중</span>',
-  sent: '<span style="color:#8a7a52;font-weight:600">📨 발송중</span>',
+  delivered: '<span style="color:#b9770e;font-weight:600">⏳ 결과 모름</span>',
+  sent: '<span style="color:#b9770e;font-weight:600">⏳ 결과 모름</span>',
   failed: '<span style="color:#c0392b;font-weight:600">❌ 실패</span>',
   gaveup: '<span style="color:#c0392b;font-weight:600">❌ 실패</span>',
 }[s] || esc(s || ''));
@@ -1940,10 +1943,9 @@ function renderAtkFail() {
     const failed = f.status === 'failed' || f.status === 'gaveup';
     const detail = f.status === 'failed' ? '❌ ' + atkFailReason(f.fail_code)
       : f.status === 'gaveup' ? '발송 실패 (접수 안 됨)'
-      : f.status === 'completed' ? '정상 전달됨'
-      : '발송됨 · 결과 확인 중';
+      : '보낸 지 1시간이 넘었는데 결과가 안 왔어요';
     return `
-    <div class="dl-item${failed ? ' overdue' : ''}" data-id="${f.booking_id}">
+    <div class="dl-item overdue" data-id="${f.booking_id}">
       <div class="dl-main">
         <span class="dl-name">${esc(f.name || '-')} <b style="font-weight:600;color:var(--ink-soft)">${esc(atkName(f.template))}</b> ${ATK_STATUS(f.status)}</span>
         <span class="dl-meta">${esc(fmtDate(f.wedding_date))} · ${esc(detail)}</span>
@@ -1984,16 +1986,16 @@ function copyFailText(id, tpl) {
   copySchedText(text, '메시지 내용을 복사했어요 — 고객에게 직접 보내세요 📋');
 }
 
-// 발송 내역 '확인'(숨김) — 개별 (확인 즉시 숨김, 별도 확인창 없음)
+// 실패 내역 '확인'(숨김) — 개별 (확인 즉시 숨김, 별도 확인창 없음)
 async function dismissFail(id, tpl) {
   const { error } = await sb.rpc('admin_dismiss_alimtalk_fail', { p_booking_id: id, p_template: tpl });
   if (error) { alert('처리 실패: ' + error.message); return; }
   alimtalkFails = (alimtalkFails || []).filter((x) => !(x.booking_id === id && x.template === tpl));
   renderAtkFail();
 }
-// 발송 내역 전체 '확인'(숨김)
+// 실패 내역 전체 '확인'(숨김)
 async function dismissAllAtk() {
-  if (!confirm('발송 내역을 전부 확인 처리할까요? (목록에서 사라집니다)')) return;
+  if (!confirm('실패 내역을 전부 확인 처리할까요? (목록에서 사라집니다)')) return;
   const { error } = await sb.rpc('admin_dismiss_alimtalk_all');
   if (error) { alert('처리 실패: ' + error.message); return; }
   alimtalkFails = [];
