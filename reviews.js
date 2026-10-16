@@ -149,19 +149,101 @@ function pager(key, total) {
   </div>`;
 }
 
-function section(key, title, desc, rows, card, cls) {
-  if (!rows.length) return '';
+// 카드 열 개 + 쪽 단추. 예식장을 고르면 이 부분만 다시 그린다
+function listHtml(key, rows, card) {
+  if (!rows.length) return '<p class="rv-empty rv-none">찾으시는 예식장의 후기가 아직 없습니다.</p>';
   const pg = Math.max(1, Math.ceil(rows.length / PER));
   // 쪽 번호가 범위를 벗어나면 바로잡는다 — 안 그러면 빈 자리가 나온다
   if (pages[key] > pg) pages[key] = pg;
   const from = (pages[key] - 1) * PER;
+  return `<div class="rv-grid">${rows.slice(from, from + PER).map(card).join('')}</div>
+    ${pager(key, rows.length)}`;
+}
+
+// tools = 제목 아래 고르개 (설문 후기만) · shown = 고른 것만 추린 글 (안 골랐으면 전부)
+function section(key, title, desc, rows, card, cls, tools = '', shown = rows) {
+  if (!rows.length) return '';
   return `
   <section class="rv-sec ${cls}">
-    <h3 class="rv-sec-t">${title} <span class="rv-sec-n">${rows.length}</span></h3>
+    <h3 class="rv-sec-t">${title} <span class="rv-sec-n">${shown.length}</span></h3>
     <p class="rv-sec-d">${desc}</p>
-    <div class="rv-grid">${rows.slice(from, from + PER).map(card).join('')}</div>
-    ${pager(key, rows.length)}
+    ${tools}
+    <div class="rv-list">${listHtml(key, shown, card)}</div>
   </section>`;
+}
+
+/* ===== 촬영 후 설문 후기 — 예식장별로 골라 보기 (대표 2026-10-17
+   «우리 작가후기받은것도 예식장별로 골라볼 수 있게 해줘» → 「2번」 홈페이지 후기 페이지)
+
+   홈 갤러리 고르개와 같은 모양이다: 「전체」 · 🔍 예식장 검색 · 예식장 이름(글 많은 순).
+   이름은 서버가 준 place 를 쓴다 — 갤러리에 같은 예식장 이름표가 있으면 그 이름이라 홈 갤러리와 같다.
+   손님이 손으로 적은 venue 를 그대로 쓰면 한 곳이 「아펠가모 공덕(공덕)」 · 「공덕 아펠가모 마리에홀」
+   처럼 여러 개로 갈린다. place 가 없으면(서버가 옛 판이면) venue 로 버틴다.
+
+   ⚠ 폰에서 이름이 열댓 개면 고르개가 후기보다 길어진다 — 두 줄만 보이고 「예식장 더보기 ∨」 로 편다.
+     ∨ 는 「누르면 펴진다」, 편 뒤에는 「접기 ∧」 (누르면 일어날 일을 가리킨다)
+   ⚠ 검색칸에 한 글자 칠 때마다 통째로 다시 그리면 칸이 새로 생겨 자판이 내려간다 — 목록만 바꾼다
+   ⚠ 일반 후기는 그대로 다 보인다. 고르는 것은 설문 후기뿐이다 */
+const sv = { place: '', q: '', open: false };
+const placeOf = (r) => String(r.place || r.venue || '').trim();
+// 띄어쓰기·기호·대소문자를 빼고 견준다 — 「dmc 타워」 로 쳐도 「DMC타워웨딩」 이 걸리게
+const flat = (s) => String(s || '').toLowerCase().replace(/[^0-9a-z가-힣]/g, '');
+
+function surveyShown(rows) {
+  if (sv.q) {
+    const k = flat(sv.q);
+    return k ? rows.filter((r) => flat(placeOf(r)).includes(k) || flat(r.venue).includes(k)) : rows;
+  }
+  return sv.place ? rows.filter((r) => placeOf(r) === sv.place) : rows;
+}
+
+function placeTags(rows) {
+  const cnt = {};
+  rows.forEach((r) => { const p = placeOf(r); if (p) cnt[p] = (cnt[p] || 0) + 1; });
+  const names = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a] || a.localeCompare(b, 'ko'));
+  if (names.length < 2) return '';             // 한 곳뿐이면 고를 것이 없다
+  const on = (p) => (!sv.q && sv.place === p ? ' active' : '');
+  return `
+    <div class="rv-tags${sv.open ? ' open' : ''}">
+      <button type="button" class="gtag${on('')}" data-rvplace="">전체</button>
+      <span class="gtag gtag-search"><input class="rv-tags-q" type="text" enterkeyhint="search" placeholder="예식장 검색" autocomplete="off" aria-label="예식장 검색" /></span>
+      ${names.map((p) => `<button type="button" class="gtag${on(p)}" data-rvplace="${esc(p)}">${esc(p)}</button>`).join('')}
+    </div>
+    <button type="button" class="rv-tags-more" hidden>${sv.open ? '접기 ∧' : '예식장 더보기 ∨'}</button>`;
+}
+
+// 두 줄에 다 들어가면 「더보기」 를 숨긴다. 폰을 눕히면 줄 수가 바뀌니 그때도 다시 잰다
+function measureTags() {
+  const body = $('rvBody');
+  const box = body && body.querySelector('.rv-tags');
+  const more = body && body.querySelector('.rv-tags-more');
+  if (!box || !more) return;
+  more.hidden = !(sv.open || box.scrollHeight > box.clientHeight + 1);
+}
+
+function surveyCtl(body, surveys) {
+  body.querySelectorAll('[data-rvplace]').forEach((b) => b.addEventListener('click', () => {
+    sv.place = b.dataset.rvplace;
+    sv.q = '';
+    pages.survey = 1;
+    renderReviews();
+  }));
+  const more = body.querySelector('.rv-tags-more');
+  if (more) more.addEventListener('click', () => { sv.open = !sv.open; renderReviews(); });
+  const qi = body.querySelector('.rv-tags-q');
+  if (!qi) return;
+  qi.value = sv.q;
+  qi.addEventListener('input', () => {
+    sv.q = qi.value.trim();
+    sv.place = '';
+    pages.survey = 1;
+    const sec = body.querySelector('.rv-sec-survey');
+    const shown = surveyShown(surveys);
+    sec.querySelectorAll('[data-rvplace]').forEach((b) => b.classList.toggle('active', !sv.q && b.dataset.rvplace === ''));
+    sec.querySelector('.rv-sec-n').textContent = shown.length;
+    sec.querySelector('.rv-list').innerHTML = listHtml('survey', shown, surveyCard);
+    pagerCtl(sec);
+  });
 }
 
 /* 들어올 때마다 차례를 섞는다 (대표 2026-08-30 «나오는거 랜덤으로 나오게 해줄 수 있어?»).
@@ -190,9 +272,16 @@ function renderReviews() {
     section('link', '일반 후기', '블로그와 웨딩카페에 직접 올려주신 글입니다. 누르시면 그 글로 이동합니다.',
       links, linkCard, 'rv-sec-link')
     + section('survey', '촬영 후 설문 후기', '촬영이 끝난 뒤 보내드린 설문에 남겨주신 글입니다. 받은 그대로 싣습니다.',
-      surveys, surveyCard, 'rv-sec-survey');
+      surveys, surveyCard, 'rv-sec-survey', placeTags(surveys), surveyShown(surveys));
 
-  body.querySelectorAll('[data-rvp]').forEach((b) => b.addEventListener('click', () => {
+  pagerCtl(body);
+  surveyCtl(body, surveys);
+  measureTags();
+}
+
+function pagerCtl(root) {
+  const body = $('rvBody');
+  root.querySelectorAll('[data-rvp]').forEach((b) => b.addEventListener('click', () => {
     if (b.disabled) return;
     const [key, n] = b.dataset.rvp.split(':');
     pages[key] = Number(n);
@@ -201,6 +290,11 @@ function renderReviews() {
     const sec = body.querySelector('.rv-sec-' + key);
     if (sec && sec.scrollIntoView) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }));
+}
+
+if (typeof window.addEventListener === 'function') {
+  let rt = null;
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(measureTags, 150); });
 }
 
 (async function load() {

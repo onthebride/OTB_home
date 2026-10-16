@@ -53,6 +53,25 @@
 
 .rv-empty { text-align: center; color: var(--ink-soft); padding: 40px 0; }
 
+/* ── 설문 후기 예식장 고르개 (대표 2026-10-17 «작가후기받은것도 예식장별로 골라볼 수 있게»).
+      알약 모양은 홈 갤러리 고르개(.gtag, styles.css)를 그대로 빌린다.
+      ⚠ 키를 박아 둔다(36px) — 검색칸(글자 16px)만 키가 달라 줄 높이가 흔들리면
+        접힌 상태에서 다음 줄 윗부분이 삐져나온다. 두 줄 = 36 + 8 + 36 = 80 (폰은 세 줄 = 124, 아래 @media).
+        폰 첫 줄은 「전체」·「검색」 이 차지해서, 두 줄이면 예식장이 둘만 보였다 ── */
+.rv-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+.rv-tags:not(.open) { max-height: 80px; overflow: hidden; }
+.rv-tags .gtag { height: 36px; box-sizing: border-box; display: inline-flex; align-items: center;
+  padding: 0 16px; font-size: .86rem; white-space: nowrap; }
+.rv-tags .gtag-search { padding: 0 12px; }
+.rv-tags .gtag-search input { width: 96px; padding: 0; height: 34px; }
+/* 「예식장 더보기 ∨」 / 「접기 ∧」 — 글자 단추. 고르개와 카드 사이에 */
+.rv-tags-more { background: none; border: none; padding: 4px 2px; margin: 0 0 14px; cursor: pointer;
+  font-family: var(--sans); font-size: .84rem; color: var(--gold-deep); }
+.rv-tags-more:hover { text-decoration: underline; }
+.rv-tags-more[hidden] { display: none; }
+/* 더보기가 숨으면 고르개 아래 틈을 그만큼 메운다 */
+.rv-tags + .rv-tags-more[hidden] + .rv-list { margin-top: 14px; }
+
 /* 안내 문구를 뺐으므로(대표 지시) 위 간격을 더 준다 */
 .rv-cta { margin-top: 46px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
 
@@ -71,6 +90,8 @@
   .rv-sec + .rv-sec { margin-top: 36px; padding-top: 30px; }
   .rv-head { margin-bottom: 32px; }
   .rv-cta .btn { width: 100%; }
+  /* 설문 후기 예식장 고르개 — 폰은 세 줄까지 (36·3 + 8·2). 넓은 규칙보다 뒤에 있어야 이긴다 */
+  .rv-tags:not(.open) { max-height: 124px; }
 }
 
 /* ── 후기 글을 이 자리에서 보여주는 창 (대표 «새창 말고 팝업형식으로») ── */
