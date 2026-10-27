@@ -1027,10 +1027,15 @@ function whenNear(el, margin) {
     html += `<button class="gpg nav" data-p="${page + 1}"${page === pages ? ' disabled' : ''}>›</button>`;
     pagerEl.innerHTML = html;
   };
-  // 썸네일: Supabase 이미지 변환으로 폭 지정 리사이즈 (원본 1400px)
+  // 썸네일: Supabase 이미지 변환으로 줄여 받는다 (원본은 긴 쪽 1400px)
+  // ⚠ 폭만 주면 줄이지 않고 가운데를 그 폭만큼 **잘라** 준다 (1400×933 → 300×933). 2026-10-27 에 알았다 —
+  //   PC 썸네일이 사진 가운데 20% 를 크게 확대해 보여서 대표 눈에 「자기 맘대로」 였다.
+  //   가로·세로를 같이 주고 contain(사진 전체를 그 네모 안에)으로 받는다. 긴 쪽 = w × 1.5 라
+  //   네모 칸을 채우는 짧은 쪽이 w 가 된다(3:2 사진). 아래 srcset 의 300w·600w·900w 는 그 짧은 쪽이다
   const thumb = (url, w) =>
     url && url.includes('/object/public/')
-      ? url.replace('/object/public/', '/render/image/public/') + `?width=${w}&quality=82`
+      ? url.replace('/object/public/', '/render/image/public/') +
+        `?width=${Math.round(w * 1.5)}&height=${Math.round(w * 1.5)}&resize=contain&quality=82`
       : url;
   // 그리드 한 칸은 PC 285px, 폰 45vw(=약 175px). 폭 1000 을 받고 있었는데 3배 이상 과했다.
   // 몇 가지 크기를 알려주고 화면 해상도에 맞는 것을 브라우저가 고르게 한다.

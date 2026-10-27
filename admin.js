@@ -6481,6 +6481,25 @@ function resizeImage(file, maxDim, quality) {
   });
 }
 
+/* 올릴 사진의 얼굴을 찾아 네모로 자를 자리를 정한다 (대표 2026-10-27 «1번이 나을거 같은뎅» — 올릴 때 바로).
+   규칙과 얼굴 찾기는 face-focus.js 한 곳 (옛 사진을 채운 것과 같은 규칙).
+   ⚠ 무엇이든 실패하면 null — 사진은 그대로 올라가고 홈에서 예전처럼 가운데로 잘린다. 올리기를 막지 않는다 */
+let glFaceReady = false;
+async function glFocusOf(blob) {
+  if (!window.OTBFace || typeof createImageBitmap !== 'function') return null;
+  let bm = null;
+  try {
+    bm = await createImageBitmap(blob);
+    const f = await window.OTBFace.focusForImage(bm);
+    if (f) glFaceReady = true;
+    return f;
+  } catch (e) {
+    return null;
+  } finally {
+    if (bm && bm.close) bm.close();
+  }
+}
+
 async function uploadGallery() {
   const files = glQueue.map((it) => it.file);
   const venue = $('glVenue').value.trim();
@@ -6491,13 +6510,17 @@ async function uploadGallery() {
   btn.disabled = true;
   try {
     for (let i = 0; i < files.length; i++) {
-      setGlStatus('업로드 중... (' + (i + 1) + '/' + files.length + ')');
+      // 처음 한 장은 얼굴 찾는 엔진을 받느라 조금 걸린다 (한 번 받으면 브라우저가 기억한다)
+      setGlStatus(i === 0 && !glFaceReady ? '얼굴 찾기 준비 중... (처음 한 번만 조금 걸려요)' : '업로드 중... (' + (i + 1) + '/' + files.length + ')');
       const blob = await resizeImage(files[i], 1400, 0.82);
+      const focus = await glFocusOf(blob);
+      setGlStatus('업로드 중... (' + (i + 1) + '/' + files.length + ')');
       const path = Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.jpg';
       const up = await sb.storage.from('gallery').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
       if (up.error) throw up.error;
       const pub = sb.storage.from('gallery').getPublicUrl(path);
-      const add = await sb.rpc('admin_gallery_add', { payload: { image_path: path, image_url: pub.data.publicUrl, venue, staff_id: upStaff } });
+      const add = await sb.rpc('admin_gallery_add', { payload: { image_path: path, image_url: pub.data.publicUrl, venue, staff_id: upStaff,
+        focus_x: focus ? focus.x : null, focus_y: focus ? focus.y : null } });
       if (add.error) throw add.error;
     }
     const n = files.length;
@@ -6696,10 +6719,20 @@ function renderGalleryTags() {
   );
 }
 
+// ⚠ 수파베이스 변환은 폭만 주면 줄이지 않고 가운데를 그 폭만큼 **잘라** 준다 (1400×933 → 400×933).
+//   가로·세로를 같이 주고 contain 으로 받는다 — 홈 갤러리(main.js thumb)와 같은 까닭 (2026-10-27).
+//   긴 쪽 = w × 1.5 → 네모 칸을 채우는 짧은 쪽이 w. 원본보다 크게 달라고 하면 원본 그대로 온다
 const imgThumb = (url, w) =>
   url && url.includes('/object/public/')
-    ? url.replace('/object/public/', '/render/image/public/') + `?width=${w}&quality=82`
+    ? url.replace('/object/public/', '/render/image/public/') +
+      `?width=${Math.round(w * 1.5)}&height=${Math.round(w * 1.5)}&resize=contain&quality=82`
     : url;
+// 네모로 자를 자리 — 홈 갤러리와 같은 값·같은 규칙 (gallery.focus_x·focus_y, %). 비었거나 50·50 이면 가운데
+const glPos = (g) => {
+  const x = Number(g.focus_x), y = Number(g.focus_y);
+  if (g.focus_x == null || g.focus_y == null || !(x >= 0 && x <= 100 && y >= 0 && y <= 100)) return '';
+  return x === 50 && y === 50 ? '' : ` style="object-position:${x}% ${y}%"`;
+};
 
 function renderGalleryGrid() {
   // 그리드 (페이지네이션 20장)
@@ -6708,7 +6741,7 @@ function renderGalleryGrid() {
   const grid = $('glGrid');
   grid.innerHTML = list
     .slice(start, start + GL_PER)
-    .map((g) => `<div class="gl-item${glPicked.has(g.id) ? ' picked' : ''}"><label class="gl-pick"><input type="checkbox" class="gl-pick-cb" data-id="${esc(g.id)}"${glPicked.has(g.id) ? ' checked' : ''} /></label><img src="${esc(imgThumb(g.image_url, 400))}" alt="" loading="lazy" decoding="async" /><div class="gl-meta"><input class="gl-venue-edit" data-id="${esc(g.id)}" value="${esc(g.venue || '')}" placeholder="장소 태그" /><button class="gl-del" data-id="${esc(g.id)}" data-path="${esc(g.image_path)}">삭제</button></div><select class="gl-staff${g.staff_id ? '' : ' none'}" data-id="${esc(g.id)}">${glStaffOptions(g.staff_id)}</select></div>`)
+    .map((g) => `<div class="gl-item${glPicked.has(g.id) ? ' picked' : ''}"><label class="gl-pick"><input type="checkbox" class="gl-pick-cb" data-id="${esc(g.id)}"${glPicked.has(g.id) ? ' checked' : ''} /></label><img src="${esc(imgThumb(g.image_url, 400))}" alt=""${glPos(g)} loading="lazy" decoding="async" /><div class="gl-meta"><input class="gl-venue-edit" data-id="${esc(g.id)}" value="${esc(g.venue || '')}" placeholder="장소 태그" /><button class="gl-del" data-id="${esc(g.id)}" data-path="${esc(g.image_path)}">삭제</button></div><select class="gl-staff${g.staff_id ? '' : ' none'}" data-id="${esc(g.id)}">${glStaffOptions(g.staff_id)}</select></div>`)
     .join('');
   // 사진을 누르면 크게 본다 (대표 요청 2026-08-30 «썸네일로만 보이고 전체를 볼 수 없어서»).
   // 체크칸·작가고르개·장소칸·삭제는 제 일을 해야 하므로 사진에만 건다
