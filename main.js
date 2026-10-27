@@ -1037,12 +1037,19 @@ function whenNear(el, margin) {
   const TW = [300, 600, 900];
   const srcset = (url) => TW.map((w) => `${thumb(url, w)} ${w}w`).join(', ');
   const SIZES = '(max-width: 860px) 45vw, 285px';
+  // 네모로 자를 자리 (대표 2026-10-27 «얼굴 위주로»). 세로 사진은 한가운데를 자르면 머리가 잘려서,
+  // 얼굴이 잘리는 사진만 DB 에 자리를 적어 뒀다(focus_x·focus_y, %). 없거나 50·50 이면 예전처럼 한가운데
+  const pos = (p) => {
+    const x = Number(p.focus_x), y = Number(p.focus_y);
+    if (p.focus_x == null || p.focus_y == null || !(x >= 0 && x <= 100 && y >= 0 && y <= 100)) return '';
+    return x === 50 && y === 50 ? '' : ` style="object-position:${x}% ${y}%"`;
+  };
   const renderGrid = () => {
     const list = visible();
     const start = (page - 1) * PER;
     grid.innerHTML = list
       .slice(start, start + PER)
-      .map((p, i) => `<button class="gthumb" data-i="${start + i}"><img src="${esc(thumb(p.image_url, 600))}" srcset="${esc(srcset(p.image_url))}" sizes="${SIZES}" alt="${esc(p.venue || '')}" loading="lazy" decoding="async" /></button>`)
+      .map((p, i) => `<button class="gthumb" data-i="${start + i}"><img src="${esc(thumb(p.image_url, 600))}" srcset="${esc(srcset(p.image_url))}" sizes="${SIZES}" alt="${esc(p.venue || '')}"${pos(p)} loading="lazy" decoding="async" /></button>`)
       .join('');
     renderPager(list.length);
   };
