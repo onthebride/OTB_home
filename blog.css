@@ -156,14 +156,22 @@ img { max-width: 100%; height: auto; display: block; }
 .post-cta {
   margin: 48px 0 0; padding: 30px 26px; text-align: center;
   background: var(--ink); color: #fff; border-radius: var(--radius);
+  word-break: keep-all; /* 폰에서 「함께하 / 세요」 처럼 낱말 가운데서 안 끊게 */
 }
 .post-cta .cta-lead { font-family: var(--kserif); font-size: 1.25rem; font-weight: 600; margin: 0 0 8px; }
 .post-cta .cta-sub { color: #d7cfc5; font-size: .92rem; margin: 0 0 18px; }
+/* 단추 둘을 위아래로 — 폰 글 칸(약 300px)에 나란히는 안 들어간다. 넓은 화면도 같은 꼴로 둔다 */
+.post-cta .cta-btns { max-width: 320px; margin: 0 auto; }
 .post-cta .cta-btn {
-  display: inline-block; background: #fff; color: var(--ink);
-  padding: 11px 30px; border-radius: var(--radius); font-weight: 600; font-size: .92rem;
+  display: block; padding: 13px 20px; border-radius: var(--radius);
+  font-weight: 600; font-size: .95rem; text-decoration: none;
 }
-.post-cta .cta-btn:hover { background: var(--gold); color: #fff; text-decoration: none; }
+/* 카톡 노랑 — 홈 .btn-kakao 와 같은 색 */
+.post-cta .cta-kakao { background: #fae100; color: #3a1d1d; border: 1px solid #fae100; } /* 테두리 — 예약하기와 높이를 맞춘다 */
+.post-cta .cta-kakao:hover { background: #f5d800; color: #3a1d1d; }
+.post-cta .cta-note { color: #d7cfc5; font-size: .8rem; margin: 8px 0 16px; }
+.post-cta .cta-book { background: transparent; color: #fff; border: 1px solid rgba(255, 255, 255, .55); }
+.post-cta .cta-book:hover { background: var(--gold); border-color: var(--gold); color: #fff; }
 
 /* 관련 글 */
 .post-related { margin: 56px 0 0; padding-top: 34px; border-top: 1px solid var(--line); }

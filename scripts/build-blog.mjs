@@ -35,6 +35,8 @@ const SITE = {
   locale: 'ko_KR',
   instagram: 'https://www.instagram.com/onthebride/',
   email: 'onthebride@naver.com',
+  // 홈 문의하기 큰 단추·가격 칸 「카톡 문의」 와 같은 채널. 카톡이 주 상담 창구다 (대표 2026-10-05)
+  kakao: 'https://pf.kakao.com/_SeRsK/chat',
 };
 
 const CONTENT_DIR = path.join(ROOT, 'blog', 'content');
@@ -213,7 +215,7 @@ function siteHeader() {
         <li><a href="/#event">이벤트</a></li>
         <li><a href="/blog" aria-current="page">블로그</a></li>
         <li><a href="/#contact">문의</a></li>
-        <li><a href="/#booking" class="nav-cta">예약하기</a></li>
+        <li><a href="/booking" class="nav-cta">예약하기</a></li>
       </ul>
     </nav>
   </header>`;
@@ -224,7 +226,7 @@ function siteFooter() {
       <p class="bf-brand">${esc(SITE.brand)} · ${esc(SITE.brandEn)}</p>
       <p class="bf-links">
         <a href="/">홈</a> · <a href="/blog">블로그</a> · <a href="/reviews">후기</a> · <a href="/#pricing">가격</a> ·
-        <a href="/#booking">예약</a> · <a href="${SITE.instagram}" target="_blank" rel="noopener">인스타그램</a>
+        <a href="/booking">예약</a> · <a href="${SITE.instagram}" target="_blank" rel="noopener">인스타그램</a>
       </p>
       <p class="bf-copy">© 2013 ${esc(SITE.brandEn)}. All rights reserved.</p>
     </div>
@@ -353,6 +355,12 @@ function renderPost(post, allPosts) {
         <a class="photos-more" href="${attr(galleryLink)}">${esc(post.venue || '')} 사진 더 보기 →</a>
       </section>` : '';
 
+  /* 글 끝 단추(.post-cta)는 둘이다 (대표 2026-10-27 «응 해줘»).
+     전에는 단추 하나가 홈 중간 예약 칸으로 보내서 거기서 한 번 더 눌러야 했다 —
+     검색으로 글에 들어온 89명(30일) 중 예약 페이지까지 간 분은 1명.
+     카톡이 주 상담 창구라 앞에 크게(노랑), 예약은 바로 /booking 으로.
+     카톡 누름은 접속 기록 스크립트가 「pf.kakao.com/」 링크를 통째로 받아 '/blog/posts/글#kakao-chat' 으로 센다.
+     ⚠ 이 설명을 HTML 주석으로 옮기지 않는다, 스크립트 파일 이름도 적지 않는다 — 시험이 주석 속 낱말을 집는다 */
   return `<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -387,7 +395,11 @@ ${html}
       <aside class="post-cta">
         <p class="cta-lead">본식스냅, 온더브라이드와 함께하세요</p>
         <p class="cta-sub">거품 뺀 합리적인 견적, 검증된 작가의 본식스냅.</p>
-        <a class="cta-btn" href="/#booking">예약 문의하기</a>
+        <div class="cta-btns">
+          <a class="cta-btn cta-kakao" href="${SITE.kakao}" target="_blank" rel="noopener">카카오톡으로 상담하기</a>
+          <p class="cta-note">예식 날짜 · 장소 · 시간을 함께 보내주세요</p>
+          <a class="cta-btn cta-book" href="/booking">예약하기</a>
+        </div>
       </aside>
     </article>
     ${relatedHtml}
@@ -483,7 +495,8 @@ ${SITE.brand}는 결혼식 본식 사진을 촬영하는 본식스냅 스튜디�
 ## 주요 페이지
 - [홈](${SITE.origin}/): 스튜디오 소개·갤러리·가격·이벤트·예약 안내
 - [${SITE.blogName}](${SITE.origin}/blog): ${SITE.tagline}
-- [예약 문의](${SITE.origin}/#booking): 본식스냅 예약·상담
+- [예약 신청](${SITE.origin}/booking): 본식스냅 예약 신청
+- [카카오톡 상담](${SITE.kakao}): 예약 가능 여부·상담
 
 ## 블로그 글
 ${postLines}
