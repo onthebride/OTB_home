@@ -903,7 +903,7 @@ td .muted { color: var(--ink-soft); }
 
 .dl-toprow { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .dl-asg { flex: none; font-size: .8rem; font-weight: 700; white-space: nowrap; }
-.dl-asg.none { color: var(--ink-soft); font-weight: 500; }
+.dl-asg.none { color: #b5462f; font-weight: 700; }
 /* 2인 촬영이면 메인 아래에 서브를 한 줄 더. 좁으면 줄이 바뀌게 둔다 */
 .dl-asgs { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
 .dl-asg.sub { font-weight: 600; opacity: .85; }
@@ -951,6 +951,25 @@ td .muted { color: var(--ink-soft); }
 .reminder-text.rem-open { cursor: pointer; }
 .reminder-text.rem-open:hover b { color: var(--gold-deep); text-decoration: underline; }
 .reminder-item .rem-dismiss { flex-shrink: 0; }
+
+/* 작가 미배정 — 일주일 안 예식 (2026-10-31). 할 일 배너보다 위, 더 진하게 — 지나치지 않게.
+   줄은 네 칸 격자로 줄을 정해 둔다 (남은 날 · 날짜와 예식장 · 무엇이 비었나 · 누르면 열림).
+   폰에서는 가운데 칸만 줄이 바뀌고 나머지는 제자리에 있다 */
+.unasg-bar { background: #fcf3f1; border: 2px solid #b5462f; border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; }
+.unasg-h { margin: 0 0 8px; font-size: 1rem; font-weight: 700; color: #b5462f; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.unasg-h small { font-size: .8rem; font-weight: 500; color: #7a6a52; }
+.unasg-n { background: #b5462f; color: #fff; border-radius: 999px; min-width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: .78rem; padding: 0 7px; }
+.unasg-list { display: flex; flex-direction: column; gap: 6px; }
+.unasg-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 10px; width: 100%; text-align: left; background: #fff; border: 1px solid #d9b3aa; border-radius: 8px; padding: 9px 10px 9px 12px; font: inherit; color: var(--ink); cursor: pointer; }
+.unasg-row:hover { border-color: #b5462f; }
+.unasg-d { font-weight: 700; color: #fff; background: #b5462f; border: 1px solid #b5462f; border-radius: 5px; padding: 1px 6px; font-size: .78rem; white-space: nowrap; }
+.unasg-d.far { color: #b5462f; background: #fff; }
+.unasg-w { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.unasg-w b { font-size: .9rem; font-weight: 600; word-break: keep-all; }
+.unasg-w span { font-size: .8rem; color: var(--ink-soft); word-break: keep-all; overflow-wrap: anywhere; }
+.unasg-need { font-size: .8rem; font-weight: 700; color: #b5462f; white-space: nowrap; }
+.unasg-row i { font-style: normal; color: #b5462f; font-size: 1.15rem; line-height: 1; }
+.unasg-note { margin: 8px 0 0; font-size: .76rem; color: #7a6a52; word-break: keep-all; }
 
 /* 상품·가격 관리 탭 */
 .pricing-admin { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 22px; }

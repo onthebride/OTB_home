@@ -2138,6 +2138,43 @@ async function dismissAllReminders() {
 }
 if ($('remDismissAll')) $('remDismissAll').addEventListener('click', dismissAllReminders);
 
+/* ===== 🚨 작가 미배정 — 한 달 안 예식 (대표 2026-10-31 «일주일전 미배정 알림 강하게 줘라» → «한달 전부터 알려줘») =====
+   모든 탭 맨 위 빨간 칸. 「할 일」 배너와 달리 확인 단추가 없다 — 지울 수 있으면 지나친다.
+   배정하면 저절로 빠지고, 다 차면 칸이 통째로 사라진다.
+   · 일주일 안 것은 남은 날 딱지를 빨갛게 채우고, 그 밖은 테두리만 — 가까울수록 세게 (폰 알림도 일주일 안은 저녁에 한 번 더)
+   · 고르는 기준은 캘린더·날짜 카드와 같다 (취소 아님 + 계약금 확인). 폰 알림(DB unassigned_soon)도 같다
+   · 2인 촬영은 서브가 비어도 잡는다 — 다가오는 예식에서 아무 표시가 안 나던 자리다
+   · 줄을 누르면 예약이 열린다. 거기서 작가를 고르고 「확인」 */
+function renderUnasg() {
+  const bar = $('unasgBar');
+  if (!bar) return;
+  const t = startOfToday();
+  const end = new Date(t); end.setDate(end.getDate() + 30);
+  const items = allBookings.filter((b) => {
+    const d = wDate(b);
+    return d && d >= t && d <= end && notCancelled(b) && b.deposit_paid
+      && (!b.assignee_id || (b.photographer === '2인 촬영' && !b.sub_assignee_id));
+  }).sort((a, b) => (wDate(a) - wDate(b)) || String(a.wedding_time || '').localeCompare(String(b.wedding_time || '')));
+  bar.hidden = items.length === 0;
+  if ($('unasgCount')) $('unasgCount').textContent = items.length;
+  if (!items.length) { $('unasgList').innerHTML = ''; return; }
+  $('unasgList').innerHTML = items.map((b) => {
+    const d = wDate(b);
+    const left = Math.round((d - t) / 86400000);
+    const need = !b.assignee_id
+      ? (b.photographer === '2인 촬영' && !b.sub_assignee_id ? '메인·서브 없음' : '메인 없음')
+      : '서브 없음';
+    return `<button type="button" class="unasg-row" data-id="${esc(b.id)}">
+      <span class="unasg-d${left > 7 ? ' far' : ''}">${left === 0 ? '오늘' : 'D-' + left}</span>
+      <span class="unasg-w"><b>${d.getMonth() + 1}/${d.getDate()}(${WD[d.getDay()]}) ${esc(kTimeShort(b.wedding_time))}</b>
+        <span>${esc(String(b.wedding_venue || '').trim() || '예식장 미정')}${b.contractor_name ? ' · ' + esc(b.contractor_name) : ''}</span></span>
+      <span class="unasg-need">${need}</span><i aria-hidden="true">›</i>
+    </button>`;
+  }).join('');
+  $('unasgList').querySelectorAll('.unasg-row').forEach((row) =>
+    row.addEventListener('click', () => openDetail(row.dataset.id)));
+}
+
 /* ===== 📸 오늘 예식 (대표 2026-10-09 «관리자 홈에 오늘 예식 정보를 띄워줬음 좋겠엉») =====
    예식 날 아침에 「오늘 누가 어디로 가나」 를 홈 맨 위에서 본다.
    「다가오는 예식」 에도 오늘 것이 있지만, 폰에서는 왼쪽 칸(신규·미입금·작가비·미확인) 밑으로
@@ -2233,6 +2270,7 @@ if ($('todayToggle')) $('todayToggle').addEventListener('click', toggleToday);
 
 function renderDashboard() {
   if (!$('tab-dashboard')) return;
+  try { renderUnasg(); } catch (e) { console.error('미배정', e); }
   renderAtkFail();
   renderHomeStats();          // 홈의 「한눈에」 — 늦게 와도 되니 기다리지 않는다
   // 맨 위 「📸 오늘 예식」. ⚠ 여기서 터져도 아래 카드(신규·미입금·작가비…)는 그려져야 한다
@@ -2277,6 +2315,7 @@ function renderDashboard() {
         ? `<span class="dl-asgs">
              <span class="dl-asg" style="color:${staffColor(b.assignee_id)}">● ${esc(staffName(b.assignee_id))}</span>
              ${needsSub ? `<span class="dl-asg sub" style="color:${staffColor(b.sub_assignee_id)}">＋ ${esc(staffName(b.sub_assignee_id))}</span>` : ''}
+             ${b.photographer === '2인 촬영' && !b.sub_assignee_id ? '<span class="dl-asg none">서브 미배정</span>' : ''}
            </span>`
         : '<span class="dl-asg none">미배정</span>';
       const conf = confMap[b.id];

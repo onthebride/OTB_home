@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="admin.css?v=f75905458d" />
+  <link rel="stylesheet" href="admin.css?v=00c7b136c1" />
 </head>
 <body>
 
@@ -58,6 +58,14 @@
     </div>
 
     <div class="dash-body">
+      <!-- 한 달 안 예식에 작가가 비었으면 모든 탭 맨 위에 빨갛게 (대표 2026-10-31 «일주일전 미배정 알림 강하게 줘라» → «한달 전부터 알려줘»).
+           확인 단추가 없다 — 배정하면 저절로 빠지고, 다 차면 통째로 사라진다 -->
+      <div class="unasg-bar" id="unasgBar" hidden>
+        <p class="unasg-h">🚨 작가 미배정 <b class="unasg-n" id="unasgCount">0</b> <small>한 달 안 예식</small></p>
+        <div class="unasg-list" id="unasgList"></div>
+        <p class="unasg-note">누르면 예약이 열려요. 작가를 고르고 「확인」 하면 여기서 빠집니다.</p>
+      </div>
+
       <!-- 상단 '오늘 할 일' 리마인더 배너 (미확인 건만, 모든 탭에서 노출) -->
       <div class="reminder-bar" id="reminderBar" hidden>
         <div class="reminder-head">
@@ -509,6 +517,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="face-focus.js?v=56f10a2bcf"></script>
-  <script src="admin.js?v=bf5782e411"></script>
+  <script src="admin.js?v=a1b100691d"></script>
 </body>
 </html>
