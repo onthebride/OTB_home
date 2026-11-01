@@ -227,8 +227,14 @@ if (tpDisplay) {
   const tpConfirm = document.getElementById('tpConfirm');
   const ampmBtns = Array.from(tpPanel.querySelectorAll('.tp-ampm-btn'));
   const state = { ampm: null, hour: null, min: null };
+  /* 예식 시간은 오전 9시 ~ 오후 8시(정각)만 (대표 2026-10-31 «시간등록을 아예 제한을 하자 오전 9시부터 저녁 8시까지로»).
+     오전을 고르면 9·10·11시만, 오후를 고르면 12·1~8시만 남긴다. 오후 8시는 00분만.
+     시는 오전·오후 둘 중 한쪽에서만 되므로, 시를 먼저 누르면 오전·오후를 저절로 맞춘다 */
+  const T_FROM = 9 * 60, T_TO = 20 * 60;
+  const minsAt = (ampm, h, m) => ((h % 12) + (ampm === 'PM' ? 12 : 0)) * 60 + Number(m || 0);
+  const okAt = (ampm, h, m) => { const t = minsAt(ampm, h, m); return t >= T_FROM && t <= T_TO; };
 
-  for (let h = 1; h <= 12; h++) {
+  for (const h of [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]) {
     const o = document.createElement('div');
     o.className = 'tp-opt';
     o.dataset.hour = h;
@@ -251,26 +257,47 @@ if (tpDisplay) {
       let h24 = state.hour % 12;
       if (state.ampm === 'PM') h24 += 12;
       tpInput.value = String(h24).padStart(2, '0') + ':' + state.min;
+    } else if (tpInput.value) {
+      // 고른 시·분이 범위 밖이 되어 지워졌다 — 옛 값을 남기지 않는다
+      tpInput.value = '';
+      tpDisplay.textContent = '시간을 선택하세요';
+      tpDisplay.classList.remove('has-value');
     }
+    // 고를 수 없는 시·분은 감춘다
+    tpHours.querySelectorAll('.tp-opt').forEach((o) =>
+      o.classList.toggle('off', !!state.ampm && !okAt(state.ampm, Number(o.dataset.hour), 0)));
+    tpMins.querySelectorAll('.tp-opt').forEach((o) =>
+      o.classList.toggle('off', !!state.ampm && state.hour != null && !okAt(state.ampm, state.hour, o.dataset.min)));
+  };
+  const setAmpm = (v) => {
+    state.ampm = v;
+    ampmBtns.forEach((x) => x.classList.toggle('active', x.dataset.ampm === v));
+  };
+  const unpick = (col, key) => {
+    state[key] = null;
+    col.querySelectorAll('.tp-opt.active').forEach((x) => x.classList.remove('active'));
   };
 
   ampmBtns.forEach((btn) =>
     btn.addEventListener('click', () => {
-      state.ampm = btn.dataset.ampm;
-      ampmBtns.forEach((x) => x.classList.toggle('active', x === btn));
+      setAmpm(btn.dataset.ampm);
+      if (state.hour != null && !okAt(state.ampm, state.hour, 0)) unpick(tpHours, 'hour');
+      if (state.hour != null && state.min != null && !okAt(state.ampm, state.hour, state.min)) unpick(tpMins, 'min');
       updateDisplay();
     })
   );
   tpHours.addEventListener('click', (e) => {
     const o = e.target.closest('.tp-opt');
-    if (!o) return;
+    if (!o || o.classList.contains('off')) return;
     state.hour = Number(o.dataset.hour);
+    if (!state.ampm) setAmpm(okAt('AM', state.hour, 0) ? 'AM' : 'PM');
     tpHours.querySelectorAll('.tp-opt').forEach((x) => x.classList.toggle('active', x === o));
+    if (state.min != null && !okAt(state.ampm, state.hour, state.min)) unpick(tpMins, 'min');
     updateDisplay();
   });
   tpMins.addEventListener('click', (e) => {
     const o = e.target.closest('.tp-opt');
-    if (!o) return;
+    if (!o || o.classList.contains('off')) return;
     state.min = o.dataset.min;
     tpMins.querySelectorAll('.tp-opt').forEach((x) => x.classList.toggle('active', x === o));
     updateDisplay();
@@ -290,6 +317,7 @@ if (tpDisplay) {
     tpDisplay.classList.remove('has-value');
     ampmBtns.forEach((x) => x.classList.remove('active'));
     tpPanel.querySelectorAll('.tp-opt.active').forEach((x) => x.classList.remove('active'));
+    tpPanel.querySelectorAll('.tp-opt.off').forEach((x) => x.classList.remove('off'));
   };
 }
 
@@ -688,6 +716,12 @@ if (bookingForm) {
       setStatus('필수 항목을 입력해 주세요: ' + missing.join(', '), 'error');
       return;
     }
+    // 예식 시간은 오전 9시 ~ 오후 8시만 — 예전 화면을 받아둔 폰에서 범위 밖이 올 수 있다 (DB 도 막는다)
+    const wtm = /^(\d{1,2}):(\d{2})/.exec(val('f_wedding_time'));
+    if (wtm && (wtm[1] * 60 + Number(wtm[2]) < 9 * 60 || wtm[1] * 60 + Number(wtm[2]) > 20 * 60)) {
+      setStatus('예식시간은 오전 9시부터 오후 8시 사이로 골라 주세요.', 'error');
+      return;
+    }
     if (!checked('f_agree_available') || !checked('f_agree_terms') || !checked('f_agree_privacy')) {
       setStatus('확인사항 3개 항목(예약 가능 확인 · 규정 동의 · 개인정보 수집·이용 동의)에 모두 체크해 주세요.', 'error');
       return;
@@ -743,7 +777,9 @@ if (bookingForm) {
     submitBtn.disabled = false;
     if (error) {
       console.error(error);
-      setStatus('접수 중 오류가 발생했어요. 다시 시도하시거나 onthebride@naver.com 으로 연락 주세요.', 'error');
+      setStatus(/예식 시간/.test(error.message || '')
+        ? '예식시간은 오전 9시부터 오후 8시 사이로 골라 주세요.'
+        : '접수 중 오류가 발생했어요. 다시 시도하시거나 onthebride@naver.com 으로 연락 주세요.', 'error');
       return;
     }
 

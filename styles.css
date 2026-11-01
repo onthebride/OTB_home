@@ -472,6 +472,8 @@ html.no-pull, html.no-pull body { overscroll-behavior: none; }
 .tp-opt { padding: 9px 0; text-align: center; cursor: pointer; font-size: .94rem; color: var(--ink); transition: background .12s; }
 .tp-opt:hover { background: var(--cream); }
 .tp-opt.active { background: var(--gold-deep); color: #fff; }
+.tp-opt.off { display: none; }
+.tp-note { margin: 10px 0 0; font-size: .82rem; color: var(--ink-soft); text-align: center; word-break: keep-all; }
 .tp-confirm { width: 100%; margin-top: 12px; padding: 11px; background: var(--ink); color: #fff; border: none; border-radius: var(--radius); cursor: pointer; font-family: var(--sans); font-weight: 500; transition: background .2s; }
 .tp-confirm:hover { background: var(--gold-deep); }
 

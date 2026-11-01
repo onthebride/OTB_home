@@ -1490,7 +1490,7 @@ function renderEdit(b) {
     <h5 class="eg">예식 정보</h5>
     <div class="edit-grid dt">
       <div class="field"><label>예식날짜</label><input type="date" id="e_wedding_date" value="${dval(b.wedding_date)}" /></div>
-      <div class="field"><label>예식시간</label><input type="time" id="e_wedding_time" value="${v(b.wedding_time)}" /></div>
+      <div class="field"><label>예식시간</label><input type="time" id="e_wedding_time" min="09:00" max="20:00" value="${v(b.wedding_time)}" /></div>
       <div class="field full2"><label>예식장소</label><input id="e_wedding_venue" value="${v(b.wedding_venue)}" /></div>
     </div>
 
@@ -1753,6 +1753,14 @@ async function saveDetail(id, recalcEdit) {
     .map((r) => ({ name: r.querySelector('.co-name').value.trim(), price: Number(r.querySelector('.co-price').value) || 0 }))
     .filter((o) => o.name);
   payload.line_items = buildEditLineItems(); // 수정 내용으로 단가 스냅샷 갱신
+  // 예식 시간은 09:00 ~ 20:00 만 (대표 2026-10-31). 폰의 시각 바퀴는 min·max 를 안 지켜서 여기서 한 번 더 본다
+  const wtm = /^(\d{1,2}):(\d{2})/.exec(payload.wedding_time);
+  if (wtm && (wtm[1] * 60 + Number(wtm[2]) < 9 * 60 || wtm[1] * 60 + Number(wtm[2]) > 20 * 60)) {
+    btn.disabled = false;
+    msg.className = 'save-msg err';
+    msg.textContent = '예식시간은 오전 9시(09:00)부터 오후 8시(20:00) 사이로 넣어 주세요.';
+    return;
+  }
   const { data, error } = await sb.rpc('admin_save_booking', { p_id: id, payload });
   btn.disabled = false;
   if (error) {
