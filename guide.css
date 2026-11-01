@@ -15,6 +15,31 @@
 .g-summary li::before { content: "✓"; position: absolute; left: 0; top: 0; color: var(--gold-deep); font-weight: 700; }
 .g-summary b { color: var(--gold-deep); }
 
+/* 사진 이름 바꾸지 말기 — 맨 위에 빨갛게 (대표 2026-11-01 «좀 강조를 해줘»)
+   보기는 폰에서 한 줄에 다 안 들어가 「무엇을 하면」 을 위, 이름을 아래 두 줄로 쌓는다 */
+.g-stop {
+  background: #fdf1ee;
+  border: 2px solid #d9634a;
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin-bottom: 14px;
+}
+.g-stop h2 { font-size: 1.12rem; font-weight: 700; color: #b5462f; line-height: 1.45; margin-bottom: 10px; word-break: keep-all; }
+.g-stop p { font-size: .92rem; line-height: 1.65; margin-bottom: 12px; word-break: keep-all; }
+.g-stop b { color: #b5462f; }
+.g-ex { list-style: none; display: grid; gap: 10px; margin-bottom: 14px; padding: 12px 14px; background: #fff; border: 1px solid #f0cfc6; border-radius: 8px; }
+.g-ex li { display: grid; grid-template-columns: 22px 1fr; gap: 6px; align-items: start; }
+.g-ex i { font-style: normal; font-size: .9rem; line-height: 1.5; }
+.g-ex em { display: block; font-style: normal; font-size: .8rem; color: var(--ink-soft); line-height: 1.5; }
+.g-ex code { display: block; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .92rem; color: var(--ink); word-break: break-all; }
+.g-ex mark { background: #f8d3c9; color: #b5462f; font-weight: 700; border-radius: 3px; padding: 0 2px; }
+.g-ex .ok code { color: #2f7d4f; font-weight: 700; }
+.g-stop-list { list-style: none; display: grid; gap: 8px; }
+.g-stop-list li { position: relative; padding-left: 16px; font-size: .9rem; line-height: 1.6; word-break: keep-all; }
+.g-stop-list li::before { content: "•"; position: absolute; left: 3px; top: 0; color: #b5462f; font-weight: 700; }
+.g-jump { color: var(--gold-deep); text-underline-offset: 2px; white-space: nowrap; }
+#fname { scroll-margin-top: 16px; }
+
 /* 목차 */
 .toc { display: flex; flex-wrap: wrap; gap: 8px; padding: 18px 0 4px; }
 .toc a {
