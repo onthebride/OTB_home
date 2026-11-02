@@ -840,3 +840,21 @@ body.sc-pull-ease .sv-wrap { transition: transform .22s ease; }
 /* 놓은 뒤엔 제자리에서 돌기만 한다 */
 .sc-pull.go i { animation: sc-spin .7s linear infinite; }
 @keyframes sc-spin { to { transform: rotate(360deg); } }
+
+/* 내 폰 캘린더에 넣기 (2026-10-28) — 홈 화면 추가·알림 단추 밑에 한 줄로 따로 둔다.
+   같은 줄에 셋이 서면 좁은 폰에서 아무 데서나 접힌다 */
+.sc-calsub { display: block; margin: 10px auto 0; }
+.sc-calsub[hidden] { display: none; }
+.sc-calsub-box { max-width: 360px; max-height: calc(100vh - 40px); max-height: calc(100dvh - 40px); overflow-y: auto;
+  word-break: keep-all; }
+.cs-lead { font-size: .85rem; line-height: 1.6; color: var(--ink); margin-bottom: 8px; }
+.cs-s { border-top: 1px solid var(--line); padding: 12px 0 6px; }
+.cs-s h4 { font-family: var(--sans); font-size: .9rem; font-weight: 700; color: var(--ink); margin: 0 0 8px; }
+.cs-s h4 em { font-style: normal; font-weight: 400; font-size: .75rem; color: var(--ink-soft); margin-left: 4px; }
+.cs-s p { font-size: .8rem; line-height: 1.6; color: var(--ink); margin: 6px 0 0; }
+.cs-btn { display: block; text-align: center; text-decoration: none; padding: 10px 14px; font-size: .85rem; }
+.cs-s p.cs-warn { color: var(--gold-deep); }
+.cs-url { display: flex; gap: 6px; margin-top: 12px; }
+.cs-url input { flex: 1; min-width: 0; font-size: .72rem; padding: 8px; border: 1px solid var(--line); border-radius: 6px;
+  color: var(--ink-soft); background: #faf8f5; font-family: var(--sans); }
+.cs-url .btn-sm { white-space: nowrap; }

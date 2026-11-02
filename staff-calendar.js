@@ -210,7 +210,7 @@ async function load() {
   render();
   tabsInit();
   pushInit();          // 늦게 와도 된다 — 단추만 늦게 뜬다
-  settingsInit();      // 「설정」 칸을 띄울지 정한다 (지금은 대표만)
+  settingsInit().then(calSubGate);   // 「설정」 칸을 띄울지 정한다 · 받은 작가 정보로 캘린더 구독 단추도
   loadNotices();       // 확인할 것 — 폰 알림이 못 갔어도 여기서 본다
   loadTodo();          // 확인할 것 — 숫자 뱃지와 맨 위 안내 박스를 만든다
   clearBadge();        // 화면을 열었으니 아이콘 숫자를 지운다
@@ -2104,3 +2104,84 @@ function helpInit() {
     openTab('help');
   }
 }
+
+/* ===== 내 폰 캘린더에 넣기 (대표 2026-10-28 «1번 해볼까?») =====
+   배정된 예식이 작가님이 쓰는 캘린더(아이폰·구글·네이버)에 저절로 들어가게 구독 주소를 드린다.
+   · 주소는 단추를 누를 때 서버에서 받아 온다(staff_cal_link). 그 열쇠는 작가 번호와 다른 것이다 —
+     구독 주소는 구글·네이버·애플 서버에 맡겨지니, 새어도 이 화면은 안 열리게
+   · 한 방향이다. 작가님 캘린더에서 지우거나 옮겨도 우리 배정은 그대로다 (안내에 그렇게 적는다)
+   · 구글은 바뀐 것을 하루쯤 늦게 받아 간다(구글이 정한 것) — 급한 변경은 폰 알림이 맡는다
+   ⚠ 폰마다 보여줄 순서가 다르다: 아이폰은 아이폰 캘린더부터, 안드로이드는 아이폰 칸을 아예 뺀다 */
+let calFeedUrl = '';
+
+async function calFeedGet() {
+  if (calFeedUrl) return calFeedUrl;
+  const { data, error } = await sb.rpc('staff_cal_link', { p_staff_id: staffId });
+  if (error || typeof data !== 'string' || !/^[0-9a-f]{32}$/.test(data)) return '';
+  calFeedUrl = `${location.origin}/cal/${data}.ics`;
+  return calFeedUrl;
+}
+
+function calSubHtml(url) {
+  const web = url.replace(/^https?:/, 'webcal:');
+  const gUrl = 'https://calendar.google.com/calendar/r?cid=' + encodeURIComponent(web);
+  const android = /Android/i.test(UA);
+  const ios = `<section class="cs-s"><h4>${IS_IOS ? '아이폰 캘린더' : '아이폰·맥 캘린더'}</h4>
+      <a class="btn-sm primary cs-btn" id="csIos" href="${esc(web)}">아이폰 캘린더에 넣기</a>
+      <p>「구독」 → 오른쪽 위 「추가」를 누르세요.</p></section>`;
+  const google = `<section class="cs-s"><h4>구글 캘린더 <em>삼성 캘린더도 여기로</em></h4>
+      <a class="btn-sm primary cs-btn" id="csGoogle" href="${esc(gUrl)}" target="_blank" rel="noopener">구글 캘린더에 넣기</a>
+      <p>폰에서 안 되면 <b>PC</b>에서 이 화면을 열고 눌러주세요.</p>
+      <p>넣은 뒤 폰의 구글 캘린더 앱 → 설정 → 「온더브라이드 촬영」 → <b>동기화</b>를 켜주세요.</p>
+      <p class="cs-warn">구글은 바뀐 것이 <b>하루쯤 늦게</b> 들어옵니다.<br />급한 변경은 지금처럼 알림으로 알려드려요.</p></section>`;
+  const naver = `<section class="cs-s"><h4>네이버 캘린더</h4>
+      <p>아래 <b>[주소 복사]</b> → <b>PC</b> 네이버 캘린더 → 왼쪽 「내 캘린더」 옆 <b>+</b> → 「URL로 구독하기」 → 붙여넣기</p></section>`;
+  const inApp = IN_APP
+    ? `<p class="a2-warn">지금은 <b>카카오톡 안</b>에서 보고 계십니다. 단추가 안 되면 오른쪽 위 메뉴에서 ${IS_IOS ? 'Safari' : 'Chrome'}로 열어주세요.</p>`
+    : '';
+  const order = IS_IOS ? [ios, google, naver] : android ? [google, naver] : [google, naver, ios];
+  return inApp + order.join('')
+    + `<div class="cs-url"><input id="csUrl" readonly value="${esc(url)}" aria-label="내 캘린더 주소" />`
+    + '<button type="button" class="btn-sm" id="csCopy">주소 복사</button></div>'
+    + '<p class="a2-note">이 주소는 작가님 전용입니다. 다른 분께 보내지 마세요.<br />'
+    + '작가님 캘린더에서 지우거나 옮겨도 저희 배정은 바뀌지 않습니다.</p>';
+}
+
+async function calCopy(url, btn) {
+  let ok = false;
+  try { await navigator.clipboard.writeText(url); ok = true; } catch (_) { /* 막힌 브라우저 — 아래로 */ }
+  if (!ok) {
+    const i = $('csUrl');
+    try { if (i) { i.focus(); i.select(); ok = document.execCommand('copy'); } } catch (_) {}
+  }
+  btn.textContent = ok ? '복사했어요 ✓' : '길게 눌러 복사';
+}
+
+/* 처음엔 대표만 써 보신다 (대표 2026-11-02 «내 캘린더에만 일단 적용해줘 써보게»).
+   단추와 안내 줄은 html 에서 숨겨 두고, 작가 정보(setData)가 대표일 때만 연다.
+   다 같이 열 때는 아래 rep 조건을 빼면 된다 */
+function calSubGate() {
+  const rep = !!(setData && setData.is_rep) && uuidRe.test(String(staffId || ''));
+  ['calSub', 'calSubHelp'].forEach((id) => { const el = $(id); if (el) el.hidden = !rep; });
+}
+
+(function calSubInit() {
+  const btn = $('calSub'), modal = $('calSubModal'), body = $('calSubSteps');
+  if (!btn || !modal || !body) return;
+  if (!sb || !staffId || !uuidRe.test(staffId)) { btn.hidden = true; return; }
+  const close = () => { modal.hidden = true; };
+  btn.addEventListener('click', async () => {
+    body.innerHTML = '<p class="sv-sub">주소를 만드는 중…</p>';
+    modal.hidden = false;
+    const url = await calFeedGet().catch(() => '');
+    if (!url) {
+      body.innerHTML = '<p class="a2-warn">주소를 만들지 못했어요. 잠시 뒤 다시 눌러주세요.</p>';
+      return;
+    }
+    body.innerHTML = calSubHtml(url);
+    const cp = $('csCopy');
+    if (cp) cp.addEventListener('click', () => calCopy(url, cp));
+  });
+  $('calSubClose').addEventListener('click', close);
+  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+})();

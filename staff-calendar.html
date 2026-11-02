@@ -19,7 +19,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="survey.css?v=f3b40cf93f" />
   <link rel="stylesheet" href="guide.css?v=7fc45140a6" />
-  <link rel="stylesheet" href="staff-calendar.css?v=2acaa8862c" />
+  <link rel="stylesheet" href="staff-calendar.css?v=888cd00d6d" />
 </head>
 <body>
   <!-- 왼쪽 로고 · 오른쪽 사진과 이름 (대표 요청 2026-08-27
@@ -109,6 +109,7 @@
           <section class="sc-help-s">
             <h3>그 밖에</h3>
             <p>신랑신부 <b>연락처는 예식 2주 전부터</b><br />예식 뒤 한 달까지 보입니다.</p>
+            <p id="calSubHelp" hidden><b>[📅 내 폰 캘린더에 넣기]</b>로 한 번 넣어 두시면<br />아이폰·구글·네이버 캘린더에서도 예식이 보입니다.</p>
             <p><b>[내 기록]</b>에서 지금까지 하신 촬영과<br />받으신 후기를 보실 수 있습니다.</p>
             <p>궁금한 것은 대표에게 편하게 연락 주세요.</p>
           </section>
@@ -154,6 +155,9 @@
         <!-- 예식 날짜·시간·장소가 바뀌거나 취소되면 폰으로 알린다 (대표 요청 2026-08-27) -->
         <button type="button" class="sc-a2hs" id="scPush" hidden>🔔 알림 받기</button>
         <p class="sc-push-note" id="scPushNote" hidden></p>
+        <!-- 배정된 예식이 작가님이 쓰는 캘린더(아이폰·구글·네이버)에도 들어가게 (대표 2026-10-28 «1번 해볼까?»).
+             한 방향이다 — 그쪽에서 지우거나 옮겨도 우리 배정은 그대로 -->
+        <button type="button" class="sc-a2hs sc-calsub" id="calSub" hidden>📅 내 폰 캘린더에 넣기</button>
       </div>
     </section>
 
@@ -164,10 +168,19 @@
         <button type="button" class="btn-sm sc-modal-close" id="a2hsClose">닫기</button>
       </div>
     </div>
+
+    <div class="sc-modal" id="calSubModal" hidden>
+      <div class="sc-modal-box sc-calsub-box">
+        <h3>내 폰 캘린더에 넣기</h3>
+        <p class="cs-lead">배정된 예식이 쓰시는 캘린더에 저절로 들어갑니다.<br />바뀌거나 취소되면 거기서도 바뀝니다.</p>
+        <div id="calSubSteps"></div>
+        <button type="button" class="btn-sm sc-modal-close" id="calSubClose">닫기</button>
+      </div>
+    </div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="staff-calendar.js?v=5f8b6577e2"></script>
+  <script src="staff-calendar.js?v=9fb436e35c"></script>
 </body>
 </html>

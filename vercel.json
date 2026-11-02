@@ -1,6 +1,12 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/cal/:f",
+      "destination": "/api/cal?f=:f"
+    }
+  ],
   "headers": [
     {
       "source": "/config.js",
