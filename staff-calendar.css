@@ -53,6 +53,7 @@
 .sc-cell.today { border-color: #e2d3ba; }
 .sc-cell.today .sc-d { color: var(--gold-deep); font-weight: 700; }
 .sc-cell.past { background: #f4f1ec; border-color: #eae2d7; color: #bdb7af; cursor: default; }
+.sc-cell.past:not(:disabled) { cursor: pointer; }
 .sc-cell.off { background: #fbeceb; border-color: #eccdc6; }
 .sc-cell.sel { background: #f4e7cb; border-color: var(--gold); box-shadow: 0 1px 6px rgba(176,141,87,.2); }
 .sc-d { font-size: .8rem; font-weight: 400; letter-spacing: -.01em; }

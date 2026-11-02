@@ -1,6 +1,6 @@
 /* ===== 작가 개인 캘린더 =====
    링크: /staff-calendar?s=<작가ID>
-   · 배정된 예식이 날짜에 표시된다(예식일·시간·장소·신랑신부·옵션. 연락처는 예식 2주 전부터)
+   · 배정된 예식이 날짜에 표시된다(예식일·시간·장소·신랑신부·옵션. 연락처는 예식 2주 전부터 예식 뒤 한 달까지)
    · 촬영이 안 되는 날은 날짜를 눌러 '불가'로 표시
    · 다른 촬영이 있는 날은 시간·장소를 적어두면, 우리 예식과 4시간 이상 벌어질 때만 배정된다 */
 const sb = window.supabase && window.OTB_CONFIG
@@ -1533,6 +1533,10 @@ function render() {
     const past = key < todayStr;
     // 고르는 중에는 '이미 불가'거나 '배정된 예식이 있는' 날은 고를 수 없다(서버도 거부한다)
     const lockedForPick = multi && (blocked || it.bk.length > 0);
+    /* 지난 날도 일정이 있으면 눌러서 본다 (작가 문의 → 대표 2026-11-02 «작가 캘린더 이렇게 수정해줘»).
+       보기만 한다 — 고치고 지우는 단추는 지난 날에는 안 단다.
+       빈 지난 날은 열어도 볼 게 없어 그대로 막아 둔다. 여러 날 고르는 중에는 지난 날을 못 고른다 */
+    const noTap = lockedForPick || (past && (multi || !(it.bk.length || it.busy.length)));
     const cls = ['sc-cell'];
     if (past) cls.push('past');
     if (blocked) cls.push('off');
@@ -1540,7 +1544,7 @@ function render() {
     if (!multi && key === openDay) cls.push('sel');
     if (multi && picked.has(key)) cls.push('picked');
     if (lockedForPick) cls.push('nopick');
-    html += `<button type="button" class="${cls.join(' ')}" data-d="${key}"${past || lockedForPick ? ' disabled' : ''}>
+    html += `<button type="button" class="${cls.join(' ')}" data-d="${key}"${noTap ? ' disabled' : ''}>
       <span class="sc-d">${d}</span>
       ${it.bk.map((b) => `<span class="sc-tag bk">${esc(kTime(b.wedding_time) || '예식')}</span>`).join('')}
       ${it.busy.filter((x) => x.kind === 'busy').map((x) => `<span class="sc-tag busy">${esc(cellTag(x))}</span>`).join('')}
@@ -1614,6 +1618,8 @@ function renderPanel() {
   const busy = data.busy.filter((x) => dayKey(x.the_date) === openDay);
   const off = busy.find((x) => x.kind === 'off');
   const [y, m, d] = openDay.split('-').map(Number);
+  // 지난 날은 보기만 — 등록·수정·지우기 단추를 안 단다
+  const gone = openDay < todayStr;
 
   // 날짜 칸도 「다음 촬영」과 같은 줄 모양을 쓴다 (대표 요청 2026-08-27).
   // 옵션 딱지만 이 화면에서 더 붙인다
@@ -1639,11 +1645,11 @@ function renderPanel() {
         <span class="sc-kind ${x.kind}">${KIND_NAME[x.kind]}</span>
       </div>
       ${x.note ? '<div class="sc-item-b sc-memo">' + esc(x.note) + '</div>' : ''}
-      <div class="sc-item-btns">
+      ${gone ? '' : `<div class="sc-item-btns">
         <button type="button" class="btn-sm sc-edit" data-id="${x.id}">수정</button>
         <button type="button" class="btn-sm sc-del" data-id="${x.id}"
           data-group="${x.group_id && x.g_n > 1 ? x.group_id : ''}">${x.group_id && x.g_n > 1 ? '전부 지우기' : '지우기'}</button>
-      </div>
+      </div>`}
     </div>`).join('');
   const editing = editId ? busy.find((x) => String(x.id) === String(editId)) : null;
   /* 쭉 이어지는 묶음을 고칠 때는 **묶음 전체의 시작·끝**을 보여준다 (대표 2026-09-26).
@@ -1661,9 +1667,9 @@ function renderPanel() {
       ${bkHtml || ''}
       ${evHtml || ''}
       ${off ? `<div class="sc-item off"><div class="sc-item-h"><b>이 날은 촬영 불가</b><span class="sc-mine">내가 등록</span></div>
-                 <button type="button" class="btn-sm sc-del" data-id="${off.id}">해제</button></div>` : ''}
-      ${bk.length ? '<p class="sc-hint">배정된 예식이 있는 날입니다.<br />촬영이 어려우시면 <b>대표에게 연락</b>해 주세요.</p>' : ''}
-      <div class="sc-add">
+                 ${gone ? '' : `<button type="button" class="btn-sm sc-del" data-id="${off.id}">해제</button>`}</div>` : ''}
+      ${bk.length && !gone ? '<p class="sc-hint">배정된 예식이 있는 날입니다.<br />촬영이 어려우시면 <b>대표에게 연락</b>해 주세요.</p>' : ''}
+      ${gone ? '<p class="sc-hint">지난 날짜라 보기만 할 수 있어요.</p>' : `<div class="sc-add">
         <div class="sc-add-btns">
           ${off || bk.length ? '' : '<button type="button" class="btn-sm sc-off">촬영불가</button>'}
           ${off || formKind ? '' : '<button type="button" class="btn-sm sc-openbusy">다른촬영등록</button>'}
@@ -1730,7 +1736,7 @@ function renderPanel() {
             ? '대표님께는 <b>«개인 일정»</b> 이라고만 보입니다. 무슨 일인지·몇 시인지는 안 보입니다.<br />그날은 <b>촬영 불가</b>로 처리됩니다.'
             : '대표님께는 <b>시간과 장소</b>만 보입니다. 메모는 안 보입니다.<br />우리 예식과 <b>4시간 이상</b> 벌어지면 그날도 배정될 수 있습니다.'}</p>
         </div>` : ''}
-      </div>
+      </div>`}
       <p class="sc-status" id="scStatus"></p>
     </div>`;
 
