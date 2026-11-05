@@ -5,7 +5,8 @@
 
    ⚠ DB 를 못 읽었을 때 빈 캘린더를 내면 안 된다. 받아 간 쪽이 「일정이 다 없어졌다」로 알고
      작가 폰에서 예식을 통째로 지운다. 그럴 땐 503 — 그쪽은 갖고 있던 것을 그대로 둔다.
-   ⚠ 신랑신부 이름·연락처는 싣지 않는다. DB(staff_cal_feed)가 애초에 안 준다.
+   ⚠ 신랑신부 연락처는 싣지 않는다. DB(staff_cal_feed)가 애초에 안 준다.
+     이름은 싣는다 (대표 2026-11-02 «신랑신부 이름 넣어» — 써 보신 뒤 정하셨다).
    ⚠ 일정 번호(UID)는 예약 번호가 아니다 — 예약 번호는 신부님 포털 열쇠라 DB 가 md5 로 바꿔서 준다.
    ⚠ 「자세히 보기」 주소에 작가 번호(?s=)를 붙이지 않는다. 구독 주소가 새도 작가 캘린더는 안 열리게 */
 'use strict';
@@ -76,8 +77,13 @@ function eventLines(e, stamp) {
   const timed = /^([01]\d|2[0-3]):[0-5]\d$/.test(t);
   const venue = String(e.venue || '').trim() || '예식장 미정';
   const role = e.role === '서브' ? '서브' : '메인';
+  // 이름 — 제목에는 짧게(신랑♥신부), 설명 첫 줄에는 누가 누군지. 하나만 있으면 그것만
+  const nm = (s) => String(s || '').trim().slice(0, 30);
+  const groom = nm(e.groom), bride = nm(e.bride);
+  const couple = groom && bride ? `${groom}♥${bride}` : groom ? `신랑 ${groom}` : bride ? `신부 ${bride}` : '';
 
   const desc = [];
+  if (groom || bride) desc.push([groom && `신랑 ${groom}`, bride && `신부 ${bride}`].filter(Boolean).join(' · '));
   if (timed) desc.push(`예식 ${t} · 도착 ${hm(kst(e.date, t, -ARRIVE_MIN))} (예식 1시간 30분 전)`);
   desc.push(e.peer_name ? `${role} · 함께 가는 작가: ${e.peer_name} (${e.peer_role || ''})` : role);
   const o = optNames(e);
@@ -100,7 +106,7 @@ function eventLines(e, stamp) {
     L.push(`DTSTART;VALUE=DATE:${dateOnly(e.date, 0)}`);
     L.push(`DTEND;VALUE=DATE:${dateOnly(e.date, 1)}`);
   }
-  L.push(`SUMMARY:${icsText(`[${role}] ${venue}` + (timed ? ` · 예식 ${t}` : ''))}`);
+  L.push(`SUMMARY:${icsText(`[${role}] ${venue}` + (timed ? ` · 예식 ${t}` : '') + (couple ? ` · ${couple}` : ''))}`);
   L.push(`LOCATION:${icsText(venue)}`);
   L.push(`DESCRIPTION:${icsText(desc.join('\n'))}`);
   L.push(`URL:${SITE}/staff-calendar`);

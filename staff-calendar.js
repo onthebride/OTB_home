@@ -210,7 +210,7 @@ async function load() {
   render();
   tabsInit();
   pushInit();          // 늦게 와도 된다 — 단추만 늦게 뜬다
-  settingsInit().then(calSubGate);   // 「설정」 칸을 띄울지 정한다 · 받은 작가 정보로 캘린더 구독 단추도
+  settingsInit();      // 「설정」 칸을 띄울지 정한다
   loadNotices();       // 확인할 것 — 폰 알림이 못 갔어도 여기서 본다
   loadTodo();          // 확인할 것 — 숫자 뱃지와 맨 위 안내 박스를 만든다
   clearBadge();        // 화면을 열었으니 아이콘 숫자를 지운다
@@ -2157,14 +2157,8 @@ async function calCopy(url, btn) {
   btn.textContent = ok ? '복사했어요 ✓' : '길게 눌러 복사';
 }
 
-/* 처음엔 대표만 써 보신다 (대표 2026-11-02 «내 캘린더에만 일단 적용해줘 써보게»).
-   단추와 안내 줄은 html 에서 숨겨 두고, 작가 정보(setData)가 대표일 때만 연다.
-   다 같이 열 때는 아래 rep 조건을 빼면 된다 */
-function calSubGate() {
-  const rep = !!(setData && setData.is_rep) && uuidRe.test(String(staffId || ''));
-  ['calSub', 'calSubHelp'].forEach((id) => { const el = $(id); if (el) el.hidden = !rep; });
-}
-
+/* 처음엔 대표만 써 보셨다(11/2 «내 캘린더에만 일단 적용해줘 써보게») → 아이폰에 잘 들어가는 것을 보시고
+   «다른작가도 일단 공개 하자». 이제 누구에게나 보인다 */
 (function calSubInit() {
   const btn = $('calSub'), modal = $('calSubModal'), body = $('calSubSteps');
   if (!btn || !modal || !body) return;
