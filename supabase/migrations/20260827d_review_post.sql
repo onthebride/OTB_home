@@ -7,7 +7,7 @@
 -- 여기는 «무엇을 밖에 내보일지» 만 담는다. 담는 것도 **내보일 것만** 담는다 —
 -- 공개 화면이 feedback·bookings 를 아예 안 건드리게 해서, 실수로 고객 정보가 새는 길을 없앤다.
 --
--- 이름은 **넣을 때 이미 가려서** 담는다 (김지은 → 김○○). 원본 이름은 여기 안 들어온다.
+-- 이름은 **넣을 때 이미 가려서** 담는다 (○○○ → 김○○). 원본 이름은 여기 안 들어온다.
 
 create table if not exists public.review_post (
   id            uuid primary key default gen_random_uuid(),
@@ -35,7 +35,7 @@ create index if not exists review_post_show on public.review_post(published, sor
 alter table public.review_post enable row level security;
 revoke all on table public.review_post from anon, authenticated;
 
--- 이름 가리기: 김지은 → 김○○ / 김민 → 김○ / 한 글자면 그대로.
+-- 이름 가리기: ○○○ → 김○○ / 김민 → 김○ / 한 글자면 그대로.
 -- 성이 두 글자인 분(남궁·황보…)까지 맞추려 들지 않는다 — 더 가려지는 쪽이라 틀려도 안전하다
 create or replace function private.mask_name(p text)
 returns text language sql immutable set search_path=public, pg_temp as $$

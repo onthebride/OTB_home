@@ -95,7 +95,7 @@ function buildNps() {
 
 async function load() {
   if (demo) {                       // 예약을 찾지 않고 보기용 값으로 채운다
-    $('fbName').textContent = '김소연';
+    $('fbName').textContent = '홍길동';
     $('fbStaff').textContent = '황지성';
     $('fbMeta').textContent = '2026. 08. 23 · 스텐포드 호텔 서울';
     subSetup('황지성', '최선종(서브)');

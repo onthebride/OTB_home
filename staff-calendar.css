@@ -729,7 +729,7 @@ html.no-pull, html.no-pull body { overscroll-behavior: none; }
   font-size: .88rem; font-weight: 400; line-height: 1.6; color: #3d3833; }
 /* 이름은 접어둔다 — 펴 놓으면 카드가 길어져 달력이 안 보인다 (대표 지적) */
 .sc-nx-who { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 4px 18px; }
-/* 이름 옆에 바로 번호 (대표 «신랑 박종석 연락처 / 이름옆에 연락처오게») */
+/* 이름 옆에 바로 번호 (대표 «신랑 ○○○ 연락처 / 이름옆에 연락처오게») */
 .sc-nx-p { font-size: .84rem; font-weight: 400; color: var(--ink); white-space: nowrap; }
 .sc-nx-p i { font-style: normal; margin-right: 6px; font-size: .74rem; color: var(--ink-soft); }
 .sc-nx-p .sc-tel { margin-left: 7px; }

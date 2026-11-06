@@ -491,7 +491,7 @@ function assigneeOptions(selId, conf, slot, bk) {
          «이거 홍창완 작가 불가로 했는데 왜 저기에 뜨지?»).
        전에는 자리부터 봤다. 그래서 「메인 전용」 으로 빠진 사람은 그날 불가·겹침이어도
        아무 표시 없이, 잠기지도 않은 채 그냥 고를 수 있었다 —
-       실제로 홍창완 작가가 촬영 불가로 찍어둔 날(26.10.31 오세영)에 서브로 들어가 있었다 */
+       실제로 홍창완 작가가 촬영 불가로 찍어둔 날(26.10.31 ○○○)에 서브로 들어가 있었다 */
     if (v && (v.s === 'off' || v.s === 'tight')) {
       const why = v.s === 'off' ? '불가' : '겹침';
       const shortD = cutWhy(v.d);
@@ -1919,7 +1919,7 @@ function copySurveyShare(id) {
 
 /* 알림톡 template 글자 → 사람이 읽는 이름.
    ⚠ 여기 없는 글자는 **코드가 그대로 화면에 나온다** (대표 2026-09-18 «저거 t 붙은거는 뭘 말하는거야?»
-     — 「김서경 T」 라고만 떠 있었다). 새 템플릿을 만들면 여기도 같이 더한다.
+     — 「○○○ T」 라고만 떠 있었다). 새 템플릿을 만들면 여기도 같이 더한다.
    ⚠ S·T 는 **작가에게** 나가는 것이다. 이 카드에는 손님 것과 작가 것이 섞여 있는데,
      줄에 적히는 이름은 늘 계약자라 「작가」를 안 붙이면 손님에게 간 줄로 읽힌다.
    ⚠ 이름은 대표가 보시는 말로 적는다 — 서버(private.atk_name)와 글자가 조금 다르다.
@@ -2190,7 +2190,7 @@ function renderUnasg() {
    · 고르는 기준은 캘린더·날짜 카드와 같다 (dayItems — 취소 아님 + 계약금 확인).
      기준이 둘이면 캘린더의 「4건」 과 여기 숫자가 어긋난다
    · 번호는 눌러서 바로 건다. 이름 옆에 번호 — 작가 캘린더 예식 줄과 같은 모양
-     (대표 «신랑 박종석 연락처 / 이름옆에 연락처오게»). 작가 번호도 적는다 —
+     (대표 «신랑 ○○○ 연락처 / 이름옆에 연락처오게»). 작가 번호도 적는다 —
      「작가님이 안 보여요」 전화를 받으면 제일 먼저 거는 번호다
    · 예식이 없는 날은 카드를 통째로 접는다 (이벤트·작가비 카드와 같다)
    · 머리를 누르면 접힌다. 접은 것은 **그날만** 기억한다 — 다음 예식 날 아침엔 펴져 있어야 한다
@@ -2489,7 +2489,7 @@ function renderDashboard() {
     }
   }
 
-  /* ⚠ **보낸 것만 센다.** 2026-08-31 대표 «저거 한효림이 왜 월요일체크에 들어가 있나?» —
+  /* ⚠ **보낸 것만 센다.** 2026-08-31 대표 «저거 ○○○이 왜 월요일체크에 들어가 있나?» —
        배정만 하고 월요일 체크는 안 나간 예식이 여기 떴다. 작가님이 안 한 게 아니라
        받은 적이 없는 것이다.
      전에는 바깥 울타리(admin_unconfirmed 의 where)가 대신 막아주고 있었는데,
@@ -2873,7 +2873,7 @@ function dayCheckHtml(r) {
 function dcParse(text, today) {
   const now = today || new Date();
   let s = String(text || '');
-  // 전화번호·금액·장수를 먼저 걷어낸다 — 010-3931-1365 를 날짜로 읽으면 안 된다
+  // 전화번호·금액·장수를 먼저 걷어낸다 — 010-0000-0000 를 날짜로 읽으면 안 된다
   s = s.replace(/01[016-9][-. ]?\d{3,4}[-. ]?\d{4}/g, ' ')
        .replace(/\d+\s*만\s*원|\d+\s*원|\d+\s*장|\d+\s*명|\d+\s*인/g, ' ');
 
@@ -4082,10 +4082,10 @@ function selMatch(want, files) {
      로우파일을 못찾네». 2인 촬영이면 서브 작가 폴더가 **신부 폴더 안에** 들어 있고
      그 안에 또 jpg·raw 가 있다. 실제로 이렇게 생겼다:
 
-       260829 송미선 이종화/
+       260829 ○○○ ○○○/
          ├ jpg/
          ├ raw/                                   ← 메인
-         └ 260829-송미선-이종화-jk아트컨벤션-최선종/
+         └ 260829-○○○-○○○-jk아트컨벤션-최선종/
               ├ jpg/
               └ raw/                              ← 서브 (여기를 못 찾고 있었다)
 
@@ -4162,8 +4162,8 @@ async function dbxRawFiles(folderPath, say) {
 
 /* ── 폴더 이름에서 예식일과 사람 이름 뽑기 ────────────────────────
    신부가 보내는 폴더 이름은 제각각이다. 실제로 쌓여 있는 것들:
-     "2025.01.11 김창수&김란희"  "24년3월17일 일요일 (…) 신부 정혜진"
-     "25.08.30 최아름"  "20251228_오선녀"  "최혜지 이관성 본식 셀렉_40장"
+     "2025.01.11 ○○○&○○○"  "24년3월17일 일요일 (…) 신부 ○○○"
+     "25.08.30 ○○○"  "20251228_○○○"  "○○○ ○○○ 본식 셀렉_40장"
    날짜가 있으면 날짜로, 없으면 이름으로 찾는다. */
 const SEL_STOP = ['셀렉', '원본', '사진', '파일', '최종', '보정', '완료', '신부', '신랑', '본식',
   '예식', '앨범', '다운', '폴더', '선택', '선별', '확정', '스냅', '결혼식', '웨딩', '호텔', '컨벤션',
@@ -4321,7 +4321,7 @@ function renderSelect() {
     + '</span></div>'
     + '<details class="sel-manual"><summary>이름 목록만 왔을 때 (메일로 목록만 온 경우)</summary>'
     + '<textarea id="selText" rows="4" class="sel-text" placeholder="M4200526.JPG&#10;M4200529.JPG"></textarea>'
-    + '<input type="text" id="selWho" class="sel-dest" placeholder="예식 찾기 — 이름이나 날짜 (예: 이솔 / 260822)" />'
+    + '<input type="text" id="selWho" class="sel-dest" placeholder="예식 찾기 — 이름이나 날짜 (예: 홍길동 / 260822)" />'
     + '<button type="button" class="btn-sm primary" id="selTextGo">이 목록으로 찾기</button>'
     + '</details>'
     + '<div id="selWork"></div>'
@@ -4434,8 +4434,8 @@ function selStart(folder, items) {
   }
   box.innerHTML = head
     + '<div class="sel-panel"><p class="dbx-msg err">폴더 이름에서 예식을 못 찾았습니다.</p>'
-    + '<p class="dbx-msg">예식 날짜나 이름을 넣어주세요 — 예: <b>260822</b> 또는 <b>이솔</b></p>'
-    + '<input type="text" class="sel-dest sel-find" placeholder="260822 이솔" />'
+    + '<p class="dbx-msg">예식 날짜나 이름을 넣어주세요 — 예: <b>260822</b> 또는 <b>홍길동</b></p>'
+    + '<input type="text" class="sel-dest sel-find" placeholder="260822 홍길동" />'
     + '<button type="button" class="btn-sm primary sel-find-go">찾기</button></div>';
   const go = () => selStart(box.querySelector('.sel-find').value.trim(), keep);
   box.querySelector('.sel-find-go').addEventListener('click', go);
@@ -4481,7 +4481,7 @@ async function selOpen(ctx, items) {
 
   // 어느 폴더를 볼지 고른다. 하나가 아니라 여럿일 수 있다 —
   // 2인 촬영이면 신부가 고른 사진이 메인·서브 폴더에 나뉘어 있다.
-  // (정소민 예식: 40장 중 홍창완 31장 / 최선종 9장)
+  // (○○○ 예식: 40장 중 홍창완 31장 / 최선종 9장)
   const chunks = nfc(ctx.folder)
     .split(/[^0-9A-Za-z가-힣]+/)
     .filter((x) => x.length >= 2 && !/^\d+$/.test(x));   // 날짜 같은 숫자 토막은 뺀다
@@ -4840,7 +4840,7 @@ async function selRecent() {
   el.innerHTML = '<div class="sel-log"><h3>최근에 복사한 것</h3>'
     + rows.map((x) => {
         // 셀렉은 기본 40장이라 JPG 와 RAW 수가 같아야 한다 (대표 2026-08-24).
-        // 어긋난 줄은 붉게 짚어준다 — 251129 백다은 건이 JPG 38 · RAW 40 으로
+        // 어긋난 줄은 붉게 짚어준다 — 251129 ○○○ 건이 JPG 38 · RAW 40 으로
         // 조용히 지나갔다. 목록에서 눈에 띄었으면 바로 알았을 것이다
         const odd = x.up && x.n && Number(x.up) !== Number(x.n);
         return '<div class="sel-log-row' + (odd ? ' odd' : '') + '"><span class="sel-log-n">'
@@ -5889,7 +5889,7 @@ function rvPostsHtml(p) {
       <p class="rv-add-h">한 줄에 하나씩. <b>주소만 있어도 됩니다.</b>
         뒤에 이름·예식장·날짜를 적으시면 같이 들어갑니다 (탭·쉼표로 나눠서).</p>
       <textarea id="rvAddText" rows="7" placeholder="https://blog.naver.com/xxx/123
-https://blog.naver.com/yyy/456, 김지은, 상록아트홀, 2026-05-10
+https://blog.naver.com/yyy/456, 홍길동, 상록아트홀, 2026-05-10
 https://cafe.naver.com/zzz/789	이서연	아펠가모 잠실	2026.06.14"></textarea>
       <div class="rv-add-acts">
         <span class="rv-add-msg" id="rvAddMsg"></span>
