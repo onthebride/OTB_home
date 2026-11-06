@@ -4092,8 +4092,20 @@ function selMatch(want, files) {
      첫 겹의 raw 하나만 보고 끝냈으니 서브가 찍은 것은 영영 안 나왔다.
      이제 **첫 겹의 raw 들 + 한 겹 안쪽의 raw 들**을 다 모은다.
    ⚠ 마구 파고들지 않는다. 안쪽은 한 겹까지, 들여다볼 폴더는 넷까지.
-     드롭박스에 물을 때마다 왕복이 있어 깊이 파면 하염없이 느려진다. */
+     드롭박스에 물을 때마다 왕복이 있어 깊이 파면 하염없이 느려진다.
+
+   ⚠ 2026-11-06 대표 «이거 안에 로우파일 있는데 검색이 안되는거여».
+     니콘으로 찍은 작가 폴더는 이름이 raw 가 아니라 nef 였다 (jpg/ + nef/).
+     이름에 raw 가 든 폴더만 찾으니 「RAW 폴더가 없습니다」 가 떴다. 이제 둘로 본다:
+     ① 이름 — raw 말고 원본 형식 이름(nef·cr3·arw…)이 낱말로 들었으면 RAW 폴더다
+        (benefit·draft·darwin 은 아니다)
+     ② 안에 든 파일 — 이름으로 안 잡히는 폴더(원본·로우·메인…)는 어차피 열어 보므로,
+        그 안에 RAW 파일이 있으면 그 폴더의 **RAW 파일만** 쓴다 (JPG 가 섞여 있어도 안 가져간다).
+     백업 802개를 훑어 보니 못 찾던 것은 셋, 모두 이름이 nef 였다 (_dbx_raw_scan.mjs). */
 async function dbxRawFiles(folderPath, say) {
+  const RAW_FMT = 'arw|cr[23]|nef|raf|dng|orf|rw2|srw|pef';
+  const RAW_NAME = new RegExp('raw|(^|[^a-z])(' + RAW_FMT + ')(?![a-z])', 'i');
+  const RAW_FILE = new RegExp('\\.(' + RAW_FMT + ')$', 'i');
   const listAll = async (path) => {
     const rr = await sb.rpc('admin_dbx_ls_req', { p_path: path, p_cursor: null });
     if (rr.error) return { error: rr.error.message };
@@ -4107,7 +4119,7 @@ async function dbxRawFiles(folderPath, say) {
   const top = await listAll(folderPath);
   if (top.error) return { error: top.error };
 
-  const isRaw = (e) => e.dir && /raw/i.test(e.name);
+  const isRaw = (e) => e.dir && RAW_NAME.test(e.name);
   const isJpg = (e) => e.dir && /jpe?g/i.test(e.name);
   const raws = (top.entries || []).filter(isRaw);
 
@@ -4118,6 +4130,7 @@ async function dbxRawFiles(folderPath, say) {
     const sub = await listAll(d.path);
     if (sub.error) continue;                     // 못 열면 그냥 건너뛴다
     (sub.entries || []).filter(isRaw).forEach((e) => raws.push(e));
+    if ((sub.entries || []).some((e) => !e.dir && RAW_FILE.test(e.name))) raws.push({ name: d.name, path: d.path, onlyRaw: true });
   }
 
   if (!raws.length) return { error: '이 예식 폴더 안에 RAW 폴더가 없습니다.' };
@@ -4135,6 +4148,7 @@ async function dbxRawFiles(folderPath, say) {
       if (rs.error) return { error: rs.error };
       (rs.entries || []).forEach((e) => {
         if (e.dir || seen[e.path]) return;
+        if (raw.onlyRaw && !RAW_FILE.test(e.name)) return;
         seen[e.path] = 1;
         files.push(e);
       });
