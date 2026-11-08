@@ -488,10 +488,10 @@ function assigneeOptions(selId, conf, slot, bk) {
     if (!s.active) { off.push(one(s, ' (비활성)', false)); return; }
     const v = conf ? conf[s.id] : null;
     /* ⚠ 그날 안 되는 사람은 **자리가 맞든 안 맞든** 여기서 먼저 걸린다 (대표 2026-09-10
-         «이거 홍창완 작가 불가로 했는데 왜 저기에 뜨지?»).
+         «이거 ○○○ 작가 불가로 했는데 왜 저기에 뜨지?»).
        전에는 자리부터 봤다. 그래서 「메인 전용」 으로 빠진 사람은 그날 불가·겹침이어도
        아무 표시 없이, 잠기지도 않은 채 그냥 고를 수 있었다 —
-       실제로 홍창완 작가가 촬영 불가로 찍어둔 날(26.10.31 ○○○)에 서브로 들어가 있었다 */
+       실제로 ○○○ 작가가 촬영 불가로 찍어둔 날(26.10.31 ○○○)에 서브로 들어가 있었다 */
     if (v && (v.s === 'off' || v.s === 'tight')) {
       const why = v.s === 'off' ? '불가' : '겹침';
       const shortD = cutWhy(v.d);
@@ -1173,7 +1173,7 @@ function renderView(b, flash) {
     const i = allBookings.findIndex((x) => x.id === b.id);
     if (i >= 0) { allBookings[i].assignee_id = main; allBookings[i].sub_assignee_id = sub; }
     /* ⚠ 겹침표는 서버에서 달 단위로 받아 들고 있다. 배정을 바꾸면 그 표가 옛것이 된다
-       (대표 2026-09-10 «양재훈 작가 했다가 바꾸고 여기 넣으려니까 바로 반영이 안되네?» —
+       (대표 2026-09-10 «○○○ 작가 했다가 바꾸고 여기 넣으려니까 바로 반영이 안되네?» —
         비워준 작가가 다른 예식에서 계속 「겹침」 으로 잠겨 있었다).
        지우고 이 선택칸부터 새 표로 다시 채운다 */
     invalidateConf();
@@ -3558,7 +3558,7 @@ function renderStaff() {
   );
 
   /* 한 줄을 통째로 저장한다. 저장 단추와 **체크 세 개가 같은 길**을 쓴다
-     (대표 2026-09-15 «강사무엘 손대희 활성 해제 했는데» — 체크만 풀고 저장을 안 누르셔서
+     (대표 2026-09-15 «○○○ 손대희 활성 해제 했는데» — 체크만 풀고 저장을 안 누르셔서
       DB 는 그대로였다. 대표 지정은 누르면 바로 저장되는데 활성·메인·서브만 단추를 기다렸다) */
   const saveStaffRow = async (id, said) => {
     const pick = (c) => $('staffList').querySelector(`.${c}[data-id="${id}"]`);
@@ -4085,7 +4085,7 @@ function selMatch(want, files) {
        260829 ○○○ ○○○/
          ├ jpg/
          ├ raw/                                   ← 메인
-         └ 260829-○○○-○○○-jk아트컨벤션-최선종/
+         └ 260829-○○○-○○○-jk아트컨벤션-○○○/
               ├ jpg/
               └ raw/                              ← 서브 (여기를 못 찾고 있었다)
 
@@ -4481,7 +4481,7 @@ async function selOpen(ctx, items) {
 
   // 어느 폴더를 볼지 고른다. 하나가 아니라 여럿일 수 있다 —
   // 2인 촬영이면 신부가 고른 사진이 메인·서브 폴더에 나뉘어 있다.
-  // (○○○ 예식: 40장 중 홍창완 31장 / 최선종 9장)
+  // (○○○ 예식: 40장 중 ○○○ 31장 / ○○○ 9장)
   const chunks = nfc(ctx.folder)
     .split(/[^0-9A-Za-z가-힣]+/)
     .filter((x) => x.length >= 2 && !/^\d+$/.test(x));   // 날짜 같은 숫자 토막은 뺀다

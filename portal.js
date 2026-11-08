@@ -73,7 +73,7 @@ const DEMO_INFO = {
   deposit: 10, balance: 79, deposit_paid: true, balance_paid: true,
   download_ready: true, download_link: 'https://example.com/download',
   status: '확정', survey_done: true,
-  photographer: { reveal: true, main_name: '김병훈', main_phone: '010-1234-5678', sub_name: '양재훈', sub_phone: '010-8765-4321' },
+  photographer: { reveal: true, main_name: '이몽룡', main_phone: '010-1234-5678', sub_name: '성춘향', sub_phone: '010-8765-4321' },
   buddy: { state: 'approved', partner_name: '김철수', reward: '할인', my_role: 'requester', id: 'demo' },
   buddies: [{ state: 'approved', partner_name: '김철수', reward: '할인', my_role: 'requester', id: 'demo' }],
   buddy_max: 2,

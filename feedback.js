@@ -96,9 +96,9 @@ function buildNps() {
 async function load() {
   if (demo) {                       // 예약을 찾지 않고 보기용 값으로 채운다
     $('fbName').textContent = '홍길동';
-    $('fbStaff').textContent = '황지성';
+    $('fbStaff').textContent = '이몽룡';
     $('fbMeta').textContent = '2026. 08. 23 · 스텐포드 호텔 서울';
-    subSetup('황지성', '최선종(서브)');
+    subSetup('이몽룡', '성춘향(서브)');
     const note = document.querySelector('.sv-note');
     if (note) note.insertAdjacentHTML('afterend',
       '<p class="sv-note" style="background:#f4f1ec;border-color:#e0d8cc;color:#6b635c">'

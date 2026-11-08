@@ -5,10 +5,10 @@
 -- 여기 3,256건을 섞으면 숫자가 통째로 틀어진다. 이 표는 «어디에 가봤나» 만 본다.
 --
 -- 캘린더 한 줄 생김새:
---   SUMMARY:ㅇ-[양재훈] 홍길동 : 스페셜/11시/보타닉파크웨딩
---   LOCATION:ㅇ-이병호                     ← 서브 작가
+--   SUMMARY:ㅇ-[○○○] 홍길동 : 스페셜/11시/보타닉파크웨딩
+--   LOCATION:ㅇ-○○○                     ← 서브 작가
 --   DESCRIPTION: … * 예식장소 : 상암 월드컵컨벤션 …
--- 대괄호 안이 메인 작가다. 「대표」로 적힌 것은 김병훈이다 (대표 확인).
+-- 대괄호 안이 메인 작가다. 「대표」로 적힌 것은 대표이다 (대표 확인).
 -- 「@ 고객명」 은 작가 미정이라 뺀다 (대표 지시 «작가에 이름 없는 사람은 패스»).
 --
 -- 고객 이름·연락처는 **넣지 않는다.** 날짜·예식장·작가만 넣는다. 이 표에는 개인정보가 없다.
@@ -76,7 +76,7 @@ begin
   )
   insert into public.staff_history (shot_on, venue, venue_key, staff_name, staff_id, as_sub)
   select g.shot_on, g.venue, g.vkey, g.staff_name,
-         -- 지금 명단에 있으면 이어 둔다. 「최선종(서브)」 처럼 꼬리가 붙어 있어도 맞춘다
+         -- 지금 명단에 있으면 이어 둔다. 「○○○(서브)」 처럼 꼬리가 붙어 있어도 맞춘다
          (select s.id from public.staff s
            where regexp_replace(s.name, '\s*[(（][^)）]*[)）]', '', 'g') = g.staff_name limit 1),
          g.as_sub
