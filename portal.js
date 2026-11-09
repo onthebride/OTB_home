@@ -256,7 +256,9 @@ function renderDownload() {
 /* 짝꿍은 두 분까지 (대표 2026-10-08 «짝궁 2번까지해서 전반적으로 고쳐줘»).
    맺은 짝꿍마다 한 칸 — 칸마다 혜택 고르개가 따로 있다. 두 분이 안 찼으면 아래에 등록 칸을 하나 더 둔다.
    ⚠ 칸이 둘이라 고르개·단추 id 에 순번을 붙이고, 혜택을 바꿀 때 그 짝꿍 id 를 같이 보낸다
-     (id 없이 보내면 서버가 최근 짝꿍을 바꾼다 — 앞 칸을 고쳤는데 뒷 칸이 바뀐다) */
+     (id 없이 보내면 서버가 최근 짝꿍을 바꾼다 — 앞 칸을 고쳤는데 뒷 칸이 바뀐다)
+   두 번째 짝꿍은 예약 일주일 안의 새 예약 고객만 (대표 2026-11-09) — 막는 것은 DB 의 buddy_register 가 하고,
+   여기는 두 번째 등록 칸 위에 안내 한 줄만 단다. */
 const BUDDY_MAX = 2;
 
 function buddyList() {
@@ -317,7 +319,8 @@ function renderBuddy() {
       ${buddyItemHtml(b, i)}
     </div>`).join('') + (room ? `
     <div class="pt-buddy-item">
-      ${numbered ? `<p class="pt-buddy-no">짝꿍 ${list.length + 1}<span> · 한 분 더 맺으실 수 있어요</span></p>` : ''}
+      ${numbered ? `<p class="pt-buddy-no">짝꿍 ${list.length + 1}<span> · 한 분 더 맺으실 수 있어요</span></p>
+      <p class="pt-buddy-cond">두 번째 짝꿍은 <b>예약하신 지 일주일 이내</b>인 신규 예약 고객만 가능해요.</p>` : ''}
       ${buddyFormHtml()}
     </div>` : '');
   list.forEach((b, i) => {
