@@ -4902,31 +4902,52 @@ async function dbxShare(b, btn, box, input) {
   const names = [b.contractor_name, b.bride_name].filter(Boolean);
   const hit = folders.findIndex((f) => names.some((n) => String(f.name).includes(n)));
   const sel = hit >= 0 ? hit : 0;
+
+  /* 2인 촬영인데 이름이 든 폴더가 따로 둘 이상이면 «합치기» 를 권한다 (2026-11-18)
+     한 예약에는 링크가 하나뿐이라, 메인·서브 폴더가 떨어져 있으면 한쪽만 신부에게 간다.
+     대표 «그 해당날짜에 폴더를 만들어서 메인 서브 촬영 폴더를 거기로 옮긴뒤 링크를 만들어 보내는건» → «로직으로».
+     ⚠ 폴더를 옮기기만 한다 — 지우는 것은 없다. 서버가 그 예식 날짜 폴더 바로 밑만 허락한다. */
+  const nfcS = (s) => { try { return String(s == null ? '' : s).normalize('NFC'); } catch (e) { return String(s == null ? '' : s); } };
+  const who3 = [b.contractor_name, b.bride_name, b.groom_name].filter(Boolean).map(nfcS);
+  const matches = folders.filter((f) => who3.some((n) => nfcS(f.name).includes(n)));
+  const canMerge = b.photographer === '2인 촬영' && matches.length >= 2 && matches.length <= 4;
+  const ymd = String(b.wedding_date || '').slice(2, 10).replace(/-/g, '');
+  const whoNew = [b.bride_name, b.groom_name].filter(Boolean);
+  if (!whoNew.length && b.contractor_name) whoNew.push(b.contractor_name);
+  const newName = nfcS((ymd + ' ' + whoNew.join(' ')).replace(/[\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim());
+  // 새 폴더 이름과 같은 폴더가 이미 있으면(앞서 만들다 끊긴 경우·메인 폴더 이름이 같은 경우) 그 안으로 옮긴다
+  const mergeInto = matches.find((f) => nfcS(f.name) === newName) || null;
+
   say('<p class="dbx-msg">어느 폴더를 보낼까요?</p>'
     + '<div class="dbx-list">' + folders.map((f, i) =>
         '<label class="dbx-item"><input type="radio" name="dbxPick" value="' + i + '"' + (i === sel ? ' checked' : '') + ' />'
         + '<span>' + esc(f.name) + '</span></label>').join('') + '</div>'
+    + (canMerge
+        ? '<div class="dbx-merge-box"><p class="dbx-msg err">⚠ 2인 촬영인데 이름이 든 폴더가 <b>' + matches.length
+          + '개</b> 따로 있습니다. 하나만 보내면 나머지 작가의 사진이 빠집니다.</p>'
+          + '<button type="button" class="btn-sm primary dbx-merge">📁 한 폴더로 합쳐서 링크 만들기</button></div>'
+        : '')
     + '<button type="button" class="btn-sm primary dbx-go">이 폴더로 공유 링크 만들기</button>'
     + '<p class="dbx-msg dbx-stat"></p>');
 
   const go = pick('.dbx-go');
   if (!go) return;
-  go.addEventListener('click', async () => {
-    const idx = Number((pick('input[name="dbxPick"]:checked') || {}).value || 0);
-    const f = folders[idx];
+
+  // 고른 폴더로 공유 링크를 만들어 예약에 저장하고, 카톡 보내기 단추를 보여 준다
+  const makeLink = async (f, goBtn) => {
     dbxPicked[b.id] = f;
-    go.disabled = true;
+    if (goBtn) goBtn.disabled = true;
     pick('.dbx-stat').textContent = '공유 링크를 만드는 중…';
     const s = await sb.rpc('admin_dbx_share_req', { p_booking_id: b.id, p_path: f.path });
     if (s.error || (s.data && s.data.error)) {
-      pick('.dbx-stat').textContent = (s.error && s.error.message) || s.data.error; go.disabled = false; return;
+      pick('.dbx-stat').textContent = (s.error && s.error.message) || s.data.error; if (goBtn) goBtn.disabled = false; return;
     }
     let res = await dbxWait('admin_dbx_share_res', { p_req: s.data.req, p_booking_id: b.id, p_path: f.path });
     // 이미 공유 링크가 있는 폴더면 서버가 기존 링크를 물어본다 — 그 답을 이어서 기다린다
     if (res.relist) {
       res = await dbxWait('admin_dbx_share_res', { p_req: res.relist, p_booking_id: b.id, p_path: f.path });
     }
-    go.disabled = false;
+    if (goBtn) goBtn.disabled = false;
     if (res.error) { pick('.dbx-stat').textContent = res.error; return; }
     b.download_link = res.url;
     const i = allBookings.findIndex((x) => x.id === b.id);
@@ -4959,6 +4980,73 @@ async function dbxShare(b, btn, box, input) {
       toast(esc(b.contractor_name || '') + '님께 보냈습니다');
       // 보내고 나면 '다운로드 링크' 목록에서 빠져야 한다
       renderDashboard();
+    });
+  };
+
+  go.addEventListener('click', async () => {
+    const idx = Number((pick('input[name="dbxPick"]:checked') || {}).value || 0);
+    await makeLink(folders[idx], go);
+  });
+
+  // 합치기 — ① 새 폴더 ② 옮기기 ③ 그 폴더로 링크. 누르기 전에 무엇을 옮기는지 먼저 보여 준다
+  const mergeBtn = pick('.dbx-merge');
+  if (mergeBtn) mergeBtn.addEventListener('click', () => {
+    const moving = mergeInto ? matches.filter((f) => f !== mergeInto) : matches;
+    say('<p class="dbx-msg">' + (mergeInto
+        ? '<b>' + esc(mergeInto.name) + '</b> 폴더 안으로'
+        : '그날 폴더에 새 폴더 <b>' + esc(newName) + '</b> 를 만들고 그 안으로')
+      + ' 아래 폴더를 옮긴 뒤, 그 폴더로 공유 링크를 만듭니다.</p>'
+      + '<div class="dbx-list">' + moving.map((f) => '<div class="dbx-item static"><span>' + esc(f.name) + '</span></div>').join('') + '</div>'
+      + '<p class="dbx-msg">파일은 지워지지 않고 폴더 위치만 바뀝니다. 이미 보낸 링크도 그대로 열립니다.</p>'
+      + '<div class="dbx-done">'
+      + '<button type="button" class="btn-sm primary dbx-merge-go">옮기고 링크 만들기</button>'
+      + '<button type="button" class="btn-sm dbx-merge-cancel">취소</button></div>'
+      + '<p class="dbx-msg dbx-stat"></p>');
+    const mgo = pick('.dbx-merge-go');
+    const mno = pick('.dbx-merge-cancel');
+    if (mno) mno.addEventListener('click', () => dbxShare(b, btn, box, input));
+    if (!mgo) return;
+    mgo.addEventListener('click', async () => {
+      const stat = pick('.dbx-stat');
+      const info = (m) => { stat.className = 'dbx-msg dbx-stat'; stat.textContent = m; };
+      const stop = (m) => { stat.className = 'dbx-msg dbx-stat err'; stat.textContent = m; mgo.disabled = false; if (mno) mno.disabled = false; };
+      mgo.disabled = true; if (mno) mno.disabled = true;
+
+      // ① 새 폴더 (이미 같은 이름의 폴더가 있으면 만들지 않는다)
+      let parentPath;
+      if (mergeInto) parentPath = mergeInto.path;
+      else {
+        info('① 새 폴더를 만드는 중…');
+        const mk = await sb.rpc('admin_dbx_mkdir_req', { p_booking_id: b.id, p_name: newName });
+        if (mk.error || (mk.data && mk.data.error)) return stop((mk.error && mk.error.message) || mk.data.error);
+        const mr = await dbxWait('admin_dbx_mkdir_res', { p_req: mk.data.req, p_path: mk.data.path });
+        if (mr.error) return stop(mr.error);
+        parentPath = mr.path;
+      }
+
+      // ② 폴더 옮기기 — 장수가 많으면 드롭박스가 뒤에서 처리한다. 다 될 때까지 물어본다(최대 3분)
+      info('② 폴더를 옮기는 중…');
+      const paths = moving.map((f) => f.path);
+      const mv = await sb.rpc('admin_dbx_move_req', { p_booking_id: b.id, p_parent: parentPath, p_from: paths });
+      if (mv.error || (mv.data && mv.data.error)) return stop((mv.error && mv.error.message) || mv.data.error);
+      const args = { p_booking_id: b.id, p_parent: parentPath, p_from: paths };
+      let mres = await dbxWait('admin_dbx_move_res', Object.assign({ p_req: mv.data.req, p_job: null }, args), 40000);
+      const until = Date.now() + 180000;
+      while (mres.again && Date.now() < until) {
+        await new Promise((x) => setTimeout(x, 1500));
+        mres = await dbxWait('admin_dbx_move_res', Object.assign({ p_req: mres.again, p_job: mres.job }, args), 60000);
+      }
+      if (mres.again) return stop('아직 옮기는 중입니다. 잠시 후 드롭박스에서 확인한 뒤 처음부터 다시 눌러 주세요.');
+      if (mres.error) return stop(mres.error);
+      if (mres.failed) {
+        return stop(mres.failed + '개 폴더를 옮기지 못했습니다' + (mres.why ? ' (' + mres.why + ')' : '')
+          + ' — 드롭박스에서 폴더를 확인한 뒤 처음부터 다시 눌러 주세요.');
+      }
+      toast('폴더 ' + mres.ok + '개를 옮겼습니다');
+
+      // ③ 그 폴더로 공유 링크 — 이미 폴더에 걸린 옛 링크가 있으면 그것을 쓴다
+      info('③ 공유 링크를 만드는 중…');
+      await makeLink({ name: mergeInto ? mergeInto.name : newName, path: parentPath }, null);
     });
   });
 }
