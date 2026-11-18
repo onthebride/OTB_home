@@ -5038,11 +5038,23 @@ async function dbxShare(b, btn, box, input) {
       }
       if (mres.again) return stop('아직 옮기는 중입니다. 잠시 후 드롭박스에서 확인한 뒤 처음부터 다시 눌러 주세요.');
       if (mres.error) return stop(mres.error);
+      let movedN = mres.ok;
       if (mres.failed) {
-        return stop(mres.failed + '개 폴더를 옮기지 못했습니다' + (mres.why ? ' (' + mres.why + ')' : '')
-          + ' — 드롭박스에서 폴더를 확인한 뒤 처음부터 다시 눌러 주세요.');
+        /* 드롭박스가 «internal_error» 로 끝맺어도 실제로는 옮겨져 있는 일이 있다 (2026-11-18 첫 실제 실행 —
+           두 폴더가 다 옮겨졌는데 응답은 둘 다 internal_error). 드롭박스 설명서가 이 오류를
+           «됐는지 직접 확인하라» 는 뜻으로 적어 둔다. 멈추기 전에 서버가 드롭박스를 읽어 확인한다.
+           새 폴더 안에 있고 그날 폴더 바로 밑에는 없는 것만 «옮겨짐» 으로 센다. */
+        const failMsg = (n) => n + '개 폴더를 옮기지 못했습니다' + (mres.why ? ' (' + mres.why + ')' : '')
+          + ' — 드롭박스에서 폴더를 확인한 뒤 처음부터 다시 눌러 주세요.';
+        info('드롭박스가 오류라고 알렸습니다 — 폴더가 옮겨졌는지 직접 확인하는 중…');
+        const vq = await sb.rpc('admin_dbx_move_verify_req', { p_booking_id: b.id, p_parent: parentPath });
+        if (vq.error || (vq.data && vq.data.error)) return stop(failMsg(mres.failed));
+        const vr = await dbxWait('admin_dbx_move_verify_res',
+          { p_req_parent: vq.data.req_parent, p_req_day: vq.data.req_day, p_booking_id: b.id, p_parent: parentPath, p_from: paths }, 40000);
+        if (vr.error || !vr.done || vr.failed) return stop(failMsg(vr.failed || mres.failed));
+        movedN = vr.ok;
       }
-      toast('폴더 ' + mres.ok + '개를 옮겼습니다');
+      toast('폴더 ' + movedN + '개를 옮겼습니다');
 
       // ③ 그 폴더로 공유 링크 — 이미 폴더에 걸린 옛 링크가 있으면 그것을 쓴다
       info('③ 공유 링크를 만드는 중…');
