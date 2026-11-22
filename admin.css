@@ -827,13 +827,17 @@ td .muted { color: var(--ink-soft); }
 
 /* 커스텀 옵션 */
 .custom-opts { display: flex; flex-direction: column; gap: 6px; }
-.co-row { display: flex; align-items: center; gap: 6px; }
+.co-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .co-row .co-name { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-size: .88rem; }
 .co-row .co-price { width: 70px; border: 1px solid var(--line); border-radius: 6px; padding: 8px 8px; font-size: .88rem; text-align: right; }
 .co-row .co-name:focus, .co-row .co-price:focus { outline: none; border-color: var(--gold); }
 .co-row .co-unit { font-size: .82rem; color: var(--ink-soft); }
 .co-row .co-del { border: none; background: none; color: var(--ink-soft); font-size: 1.2rem; cursor: pointer; line-height: 1; padding: 0 4px; }
 .co-row .co-del:hover { color: #b5462f; }
+/* 「작가에게도 보이기」 — 줄 아래에 따로 한 줄 (폰에서 이름·값 칸이 좁아지지 않게) */
+.co-row .co-staff { flex: 0 0 100%; display: flex; align-items: center; gap: 7px; margin: 0 0 6px 2px; font-size: .8rem; color: var(--ink-soft); cursor: pointer; }
+.co-row .co-staff input { width: 16px; height: 16px; accent-color: var(--gold-deep); flex: none; margin: 0; }
+.co-row .co-staff small { font-size: .72rem; opacity: .85; }
 
 /* 캘린더 범례 */
 .cal-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }

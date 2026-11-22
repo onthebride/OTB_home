@@ -1688,14 +1688,18 @@ async function cancelBooking(id) {
   toast(reactivate ? '취소를 해제했어요.' : '예약을 취소 처리했어요.');
 }
 
-function addCustomRow(name, price) {
+/* 직접 넣은 옵션 한 줄. 「작가에게도 보이기」(.co-staff-ck)를 켠 것만 작가 화면에 이름이 간다
+   (대표 2026-11-22 — 얼리스타트처럼 작가가 알아야 하는 것). 값(만원)은 작가에게 안 간다.
+   ⚠ 끄면 안 보인다. 새 줄은 꺼진 채로 시작한다 — 플러스·할인·출장비는 작가가 볼 것이 아니다 */
+function addCustomRow(name, price, staff) {
   const wrap = $('customOpts');
   if (!wrap) return;
   const div = document.createElement('div');
   div.className = 'co-row';
   div.innerHTML = `<input type="text" class="co-name" placeholder="옵션명 (예: 플러스)" value="${esc(name || '')}" />
     <input type="number" class="co-price" placeholder="0" value="${price === '' || price == null ? '' : esc(price)}" /><span class="co-unit">만원</span>
-    <button type="button" class="co-del" aria-label="삭제">×</button>`;
+    <button type="button" class="co-del" aria-label="삭제">×</button>
+    <label class="co-staff"><input type="checkbox" class="co-staff-ck" ${staff === true ? 'checked' : ''} /> 작가에게도 보이기 <small>(이름만 · 금액은 안 보임)</small></label>`;
   div.querySelector('.co-del').addEventListener('click', () => {
     div.remove();
     $('modalCard').dispatchEvent(new Event('change', { bubbles: true }));
@@ -1706,7 +1710,7 @@ function renderCustomOpts(list) {
   const wrap = $('customOpts');
   if (!wrap) return;
   wrap.innerHTML = '';
-  list.forEach((o) => addCustomRow(o.name, o.price));
+  list.forEach((o) => addCustomRow(o.name, o.price, o.staff));
 }
 
 async function saveDetail(id, recalcEdit) {
@@ -1750,7 +1754,13 @@ async function saveDetail(id, recalcEdit) {
   // 2인 촬영이 아니면 서브작가는 항상 비움(2인 → 기본 변경 시 잔존 방지)
   payload.sub_assignee_id = (payload.photographer === '2인 촬영' && $('e_sub_assignee')) ? ($('e_sub_assignee').value || null) : null;
   payload.custom_options = Array.from(document.querySelectorAll('#customOpts .co-row'))
-    .map((r) => ({ name: r.querySelector('.co-name').value.trim(), price: Number(r.querySelector('.co-price').value) || 0 }))
+    .map((r) => {
+      const o = { name: r.querySelector('.co-name').value.trim(), price: Number(r.querySelector('.co-price').value) || 0 };
+      // 켠 것만 표를 단다 — 안 켠 줄은 예전 모양 그대로 (이름·값)
+      const ck = r.querySelector('.co-staff-ck');
+      if (ck && ck.checked) o.staff = true;
+      return o;
+    })
     .filter((o) => o.name);
   payload.line_items = buildEditLineItems(); // 수정 내용으로 단가 스냅샷 갱신
   // 예식 시간은 09:00 ~ 20:00 만 (대표 2026-10-31). 폰의 시각 바퀴는 min·max 를 안 지켜서 여기서 한 번 더 본다
@@ -3029,13 +3039,19 @@ const wdLabel = (b) => { const d = wDate(b); return d ? WD[d.getDay()] : ''; };
    «옵션은 촬영옵션만 보이게 되어 있을텐데? 앨범 플러스 같은거 빼고
      연회장 2부 폐백 2인촬영 옵션들은 보여»).
    앨범·출장·대표지정·직접 넣은 옵션은 작가가 할 일이 아니다 — 그날 판이 달라지지 않는다.
-   ⚠ 작가 체크 페이지(staff-schedule.js 의 opts)와 **같은 넷**이라야 한다 */
+   다만 직접 넣은 옵션 중 대표가 「작가에게도 보이기」를 켠 것(예: 얼리스타트)은 보인다 (2026-11-22).
+   ⚠ 작가 체크 페이지(staff-schedule.js 의 opts)와 **같은 넷 + 켠 것**이라야 한다.
+     켠 것의 규칙은 서버(private.custom_shoot)와 같다 — staff 가 진짜 true 인 줄만, 이름만, 40자까지 */
 function shootOpts(b) {
   const o = [];
   if (b.option_reception) o.push('연회장 인사촬영');
   if (b.option_pyebaek) o.push('폐백촬영');
   if (b.option_part2) o.push('2부 촬영');
   if (b.photographer === '2인 촬영') o.push('2인 촬영');
+  (Array.isArray(b.custom_options) ? b.custom_options : []).forEach((c) => {
+    const n = c && c.staff === true ? String(c.name == null ? '' : c.name).trim().slice(0, 40) : '';
+    if (n) o.push(n);
+  });
   return o;
 }
 

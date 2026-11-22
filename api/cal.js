@@ -67,6 +67,13 @@ function optNames(e) {
   if (e.pyebaek) o.push('폐백촬영');
   if (e.part2) o.push('2부 촬영');
   if (e.two) o.push('2인 촬영');
+  // 대표가 「작가에게도 보이기」를 켠 직접 넣은 옵션(예: 얼리스타트). 이름만 온다 (2026-11-22)
+  if (Array.isArray(e.extra)) {
+    for (const x of e.extra.slice(0, 8)) {
+      const s = String(x == null ? '' : x).trim().slice(0, 40);
+      if (s) o.push(s);
+    }
+  }
   return o;
 }
 

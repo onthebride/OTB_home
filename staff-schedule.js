@@ -58,6 +58,8 @@ function opts(w) {
   if (w.option_pyebaek) o.push('폐백촬영');
   if (w.option_part2) o.push('2부 촬영');
   if (w.photographer === '2인 촬영') o.push('2인 촬영');
+  // 대표가 「작가에게도 보이기」를 켠 직접 넣은 옵션(예: 얼리스타트). 서버가 이름만 걸러서 준다 (2026-11-22)
+  (Array.isArray(w.custom_shoot) ? w.custom_shoot : []).forEach((n) => { if (n) o.push(String(n)); });
   return o;
 }
 

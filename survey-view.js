@@ -49,6 +49,8 @@ function renderWeddingInfo(d) {
   if (d.option_pyebaek) opts.push('폐백촬영');
   if (d.option_part2) opts.push('2부 촬영');
   if (d.photographer === '2인 촬영') opts.push('2인 촬영');
+  // 대표가 「작가에게도 보이기」를 켠 직접 넣은 옵션(예: 얼리스타트). 서버가 이름만 걸러서 준다 (2026-11-22)
+  (Array.isArray(d.custom_shoot) ? d.custom_shoot : []).forEach((n) => { if (n) opts.push(String(n)); });
   const optHtml = opts.length
     ? `<div class="ss-opts">${opts.map((x) => `<span class="ss-opt${x === '2인 촬영' ? ' two' : ''}">${esc(x)}</span>`).join('')}</div>`
     : '<span class="sv-none">없음</span>';
