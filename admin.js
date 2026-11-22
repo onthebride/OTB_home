@@ -1690,6 +1690,7 @@ async function cancelBooking(id) {
 
 /* 직접 넣은 옵션 한 줄. 「작가에게도 보이기」(.co-staff-ck)를 켠 것만 작가 화면에 이름이 간다
    (대표 2026-11-22 — 얼리스타트처럼 작가가 알아야 하는 것). 값(만원)은 작가에게 안 간다.
+   ⚠ 그 예약의 **메인 작가에게만** 간다. 서브에게는 안 간다 — 얼리스타트는 메인만 하는 일이다 (대표 2026-11-22).
    ⚠ 끄면 안 보인다. 새 줄은 꺼진 채로 시작한다 — 플러스·할인·출장비는 작가가 볼 것이 아니다 */
 function addCustomRow(name, price, staff) {
   const wrap = $('customOpts');
@@ -1699,7 +1700,7 @@ function addCustomRow(name, price, staff) {
   div.innerHTML = `<input type="text" class="co-name" placeholder="옵션명 (예: 플러스)" value="${esc(name || '')}" />
     <input type="number" class="co-price" placeholder="0" value="${price === '' || price == null ? '' : esc(price)}" /><span class="co-unit">만원</span>
     <button type="button" class="co-del" aria-label="삭제">×</button>
-    <label class="co-staff"><input type="checkbox" class="co-staff-ck" ${staff === true ? 'checked' : ''} /> 작가에게도 보이기 <small>(이름만 · 금액은 안 보임)</small></label>`;
+    <label class="co-staff"><input type="checkbox" class="co-staff-ck" ${staff === true ? 'checked' : ''} /> 메인 작가에게 보이기 <small>(이름만 · 서브·금액은 안 보임)</small></label>`;
   div.querySelector('.co-del').addEventListener('click', () => {
     div.remove();
     $('modalCard').dispatchEvent(new Event('change', { bubbles: true }));
