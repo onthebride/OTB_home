@@ -1900,17 +1900,34 @@ function toast(msg) {
 
 // 알림톡 실제 발송 (솔라피)
 const ATK_NAME = { A: '계약안내', B: '한달전', C: '잔금안내', D: '최종안내', E: '링크안내', F: '입금확인', G: '촬영설문' };
+// 계약금 확인 톡(F)을 처음 보낼 때 잔금 안내(C)도 이어서 나가는 예약인가 (대표 2026-11-23 «일주일 안 예약은 확정 톡과 함께 바로 나가도록»).
+// 서버(private.alimtalk_c_with_f)와 같은 규칙이다 — 예식이 1~7일 뒤 · 취소 아님 · 계약금 입금됨 · 연락처 있음 · F·C 모두 아직 안 나감.
+// 해당하면 남은 날수를, 아니면 0 을 낸다. (C 를 빼 둔 예약은 서버만 안다 — 그때는 서버가 안 보내고 응답 c_sent 가 false 다)
+function cWithFDays(b) {
+  if (!b || b.status === '취소' || !b.deposit_paid || !b.contractor_phone) return 0;
+  const s = b.alimtalk_sent && typeof b.alimtalk_sent === 'object' ? b.alimtalk_sent : {};
+  if (s.F || s.C) return 0;
+  const d = new Date(String(b.wedding_date).slice(0, 10) + 'T00:00:00');
+  if (isNaN(d.getTime())) return 0;
+  const n = Math.round((d.getTime() - startOfToday().getTime()) / 86400000);
+  return n >= 1 && n <= 7 ? n : 0;
+}
 async function sendAlimtalk(id, tpl) {
   const b = allBookings.find((x) => x.id === id);
-  if (!confirm(`${b ? b.contractor_name + '님께 ' : ''}"${ATK_NAME[tpl] || tpl}" 알림톡을 실제로 발송할까요?`)) return;
+  const withC = tpl === 'F' ? cWithFDays(b) : 0;
+  const ask = `${b ? b.contractor_name + '님께 ' : ''}"${ATK_NAME[tpl] || tpl}" 알림톡을 실제로 발송할까요?`
+    + (withC ? `\n\n예식이 ${withC}일 뒤라 "${ATK_NAME.C}" 알림톡도 이어서 같이 나갑니다.` : '');
+  if (!confirm(ask)) return;
   const { data, error } = await sb.rpc('admin_send_alimtalk', { p_booking_id: id, p_template: tpl });
   if (error) { alert('발송 실패: ' + error.message); return; }
+  const cSent = !!(data && data.c_sent);                      // 서버가 C 도 같이 보냈나
   const i = allBookings.findIndex((x) => x.id === id);
   if (i >= 0) {
     if (!allBookings[i].alimtalk_sent || typeof allBookings[i].alimtalk_sent !== 'object') allBookings[i].alimtalk_sent = {};
     allBookings[i].alimtalk_sent[tpl] = new Date().toISOString();
+    if (cSent) allBookings[i].alimtalk_sent.C = new Date().toISOString();
   }
-  toast(`"${ATK_NAME[tpl] || tpl}" 알림톡 발송 완료 📨`);
+  toast(cSent ? `"${ATK_NAME[tpl] || tpl}"과 "${ATK_NAME.C}" 알림톡 발송 완료 📨` : `"${ATK_NAME[tpl] || tpl}" 알림톡 발송 완료 📨`);
   renderDashboard();
   if (!$('modal').hidden && b) renderView(allBookings[i] || b);
 }
